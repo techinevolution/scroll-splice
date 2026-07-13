@@ -12,7 +12,9 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Katherine — next approval
 
-- [ ] Approve the composition-groups and visibility `/goal` in `PLAN.md` when ready.
+- [x] Approve the composition-groups and visibility slice in `PLAN.md`.
+- [ ] Review the implemented composition groups and eye controls in the running app.
+- [ ] If the checkpoint feels right, approve the Add rail and Asset Library shell slice in `PLAN.md`.
 
 ## Katherine — before submission
 
@@ -24,6 +26,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
 - [x] Build, validate, push, and prepare the complete human editor for Katherine's product review.
 - [x] After Katherine runs `/feedback`: record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
+- [x] Implement and validate the approved composition groups and visibility checkpoint.
 
 ## Joint — only if the human MVP finishes early
 

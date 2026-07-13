@@ -4,7 +4,7 @@
 
 ScrollSplice is a public planning repository at <https://github.com/techinevolution/scroll-splice>. Katherine identified seven documents as July 12 pre-event planning work under the earlier ScrollForge name. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
-Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she can test. The locked scaffold, verified command contracts, flat episode and element types, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed.
+Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she could test. The locked scaffold, verified command contracts, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed. After her product review, Katherine approved and Codex completed the bounded composition-groups and visibility checkpoint locally.
 
 Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. Katherine completed the hands-on review and `/feedback` that day. The review found no blocking defect, leaving the remaining July 13–18 product window available for bounded creator-facing slices without changing the minimum submission contract.
 
@@ -43,9 +43,9 @@ These requests refine the intended product but are not authorization to enlarge 
 - use three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas while the right Layers panel shows only the active group's individual layers
 - keep group selection separate from visibility, preserve individual eye settings when a whole group is hidden, and let constrained displays collapse or overlay the right inspector rather than crushing the canvas
 
-## Next implementation slice: composition groups and visibility
+## Completed implementation slice: composition groups and visibility
 
-**Status:** proposed for Katherine's implementation approval. Today is July 13; public deployment and submission work are reserved for the July 19–21 submission runway rather than interrupting the current product-building window.
+**Status:** implemented and validated July 13; awaiting Katherine's hands-on review. Public deployment and submission work remain reserved for the July 19–21 submission runway rather than interrupting the current product-building window.
 
 **Goal:** establish the simple three-group destination and visibility model that the later Asset Library, backgrounds, and overlays all need.
 
@@ -69,9 +69,11 @@ Acceptance:
 
 Excluded: the Add-rail redesign, real uploads, asset drag-in, layer reordering, moving layers between groups, keyboard shortcuts, speech-balloon assets, backgrounds, resizing, persistence, deployment, submission media, and AI.
 
-### Following product slice: Add rail and Asset Library shell
+Validation passed: 26 unit tests, strict typecheck, ESLint, production build, and the expanded Playwright Chromium walkthrough. The running interface was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768.
 
-After Katherine reviews the composition-group slice, replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Do not add real import, speech-balloon artwork, or AI-generated content in that shell slice.
+### Next product slice: Add rail and Asset Library shell
+
+After Katherine reviews and approves the next checkpoint, replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Do not add real import, speech-balloon artwork, or AI-generated content in that shell slice.
 
 ### Submission runway: July 19–21
 

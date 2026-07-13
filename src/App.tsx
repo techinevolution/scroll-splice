@@ -1,5 +1,6 @@
 import { useEditorStore } from './app/store'
 import { AssetPanel } from './components/AssetPanel'
+import { CompositionGroupControls } from './components/CompositionGroupControls'
 import { EditorCanvas } from './editor/EditorCanvas'
 import { LayersPanel } from './layers/LayersPanel'
 import { EpisodeMinimap } from './minimap/EpisodeMinimap'
@@ -41,11 +42,14 @@ export function App() {
 
         <section className="editor-workspace" aria-labelledby="canvas-heading">
           <header className="workspace-heading">
-            <div>
+            <div className="workspace-title">
               <p className="panel-kicker">Editing viewport</p>
               <h2 id="canvas-heading">Story canvas</h2>
             </div>
-            <p>Scroll to travel · click to select · drag the selection to move</p>
+            <CompositionGroupControls />
+            <p className="workspace-instruction">
+              Scroll to travel · click to select · drag the selection to move
+            </p>
           </header>
           <EditorCanvas />
         </section>

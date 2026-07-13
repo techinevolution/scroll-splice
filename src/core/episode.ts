@@ -1,5 +1,23 @@
-export const EPISODE_FORMAT_VERSION = 1 as const
+export const EPISODE_FORMAT_VERSION = 2 as const
 export const EPISODE_LOGICAL_WIDTH = 800 as const
+
+export const COMPOSITION_GROUPS = [
+  'background',
+  'content',
+  'foreground',
+] as const
+
+export type CompositionGroup = (typeof COMPOSITION_GROUPS)[number]
+
+export const COMPOSITION_GROUP_LABELS = {
+  background: 'Background',
+  content: 'Content',
+  foreground: 'Foreground',
+} as const satisfies Readonly<Record<CompositionGroup, string>>
+
+export type CompositionGroupVisibility = Readonly<
+  Record<CompositionGroup, boolean>
+>
 
 export interface ElementBounds {
   readonly x: number
@@ -25,6 +43,7 @@ export type AssetReference =
 interface EpisodeElementBase {
   readonly id: string
   readonly name: string
+  readonly compositionGroup: CompositionGroup
   readonly bounds: ElementBounds
   readonly visible: boolean
   readonly locked: boolean
@@ -61,5 +80,33 @@ export interface EpisodeDocument {
   readonly name: string
   readonly logicalWidth: typeof EPISODE_LOGICAL_WIDTH
   readonly logicalHeight: number
+  readonly compositionGroupVisibility: CompositionGroupVisibility
   readonly elements: readonly EpisodeElement[]
+}
+
+const COMPOSITION_GROUP_RENDER_ORDER = {
+  background: 0,
+  content: 1,
+  foreground: 2,
+} as const satisfies Readonly<Record<CompositionGroup, number>>
+
+export function isElementEffectivelyVisible(
+  document: EpisodeDocument,
+  element: EpisodeElement,
+): boolean {
+  return (
+    document.compositionGroupVisibility[element.compositionGroup] &&
+    element.visible
+  )
+}
+
+export function compareElementsByRenderOrder(
+  first: EpisodeElement,
+  second: EpisodeElement,
+): number {
+  const groupDifference =
+    COMPOSITION_GROUP_RENDER_ORDER[first.compositionGroup] -
+    COMPOSITION_GROUP_RENDER_ORDER[second.compositionGroup]
+
+  return groupDifference || first.zIndex - second.zIndex
 }

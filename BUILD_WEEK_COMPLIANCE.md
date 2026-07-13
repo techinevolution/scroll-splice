@@ -222,7 +222,9 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Devpost registration/project draft | Created July 13; form advanced to video and later-evidence stage | Complete |
 | Editor core commit | `c33b491`, coordinates, commands, shared state, and 15 passing unit tests | Complete |
 | Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
-| Local validation | Typecheck, lint, 15 unit tests, production build, visual inspection, and Chromium walkthrough repeated three times on July 13 | Complete |
+| Composition groups checkpoint | Background, Content, and Foreground filtering plus independent group/layer visibility | Complete July 13 |
+| Local validation | Typecheck, lint, 26 unit tests, production build, expanded Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 on July 13 | Complete |
+| Progress screenshot | `docs/progress/2026-07-13-first-testable-editor.png`, captured by Katherine before composition groups | Complete |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
 | WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
 | Working project URL | Pending | Pending |

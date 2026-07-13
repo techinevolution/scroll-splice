@@ -1,25 +1,40 @@
 import { create } from 'zustand'
 
 import { buildWeekEpisode } from './fixtures/buildWeekEpisode'
-import { moveElement as moveElementCommand } from '../core/commands'
+import {
+  moveElement as moveElementCommand,
+  setCompositionGroupVisibility as setCompositionGroupVisibilityCommand,
+  setElementVisibility as setElementVisibilityCommand,
+} from '../core/commands'
 import {
   boundsIntersectVerticalViewport,
   centerBoundsInViewport,
   clampViewportY,
   type LogicalPosition,
 } from '../core/coordinates'
-import type { EpisodeDocument } from '../core/episode'
+import {
+  isElementEffectivelyVisible,
+  type CompositionGroup,
+  type EpisodeDocument,
+} from '../core/episode'
 
 interface EditorState {
   readonly episode: EpisodeDocument
   readonly selectedElementId: string | null
+  readonly activeCompositionGroup: CompositionGroup
   readonly viewportY: number
   readonly viewportLogicalHeight: number
   readonly assetPanelOpen: boolean
+  readonly setActiveCompositionGroup: (group: CompositionGroup) => void
   readonly setViewportLogicalHeight: (logicalHeight: number) => void
   readonly setViewportY: (logicalY: number) => void
   readonly panViewport: (logicalDelta: number) => void
   readonly selectElement: (elementId: string | null, reveal?: boolean) => void
+  readonly setElementVisibility: (elementId: string, visible: boolean) => void
+  readonly setCompositionGroupVisibility: (
+    group: CompositionGroup,
+    visible: boolean,
+  ) => void
   readonly moveElement: (
     elementId: string,
     logicalPosition: LogicalPosition,
@@ -30,12 +45,41 @@ interface EditorState {
 
 const INITIAL_VIEWPORT_LOGICAL_HEIGHT = 900
 
+function keepVisibleSelection(
+  episode: EpisodeDocument,
+  selectedElementId: string | null,
+): string | null {
+  if (!selectedElementId) {
+    return null
+  }
+
+  const selectedElement = episode.elements.find(
+    ({ id }) => id === selectedElementId,
+  )
+
+  return selectedElement &&
+    isElementEffectivelyVisible(episode, selectedElement)
+    ? selectedElementId
+    : null
+}
+
 export const useEditorStore = create<EditorState>((set) => ({
   episode: buildWeekEpisode,
   selectedElementId: null,
+  activeCompositionGroup: 'content',
   viewportY: 0,
   viewportLogicalHeight: INITIAL_VIEWPORT_LOGICAL_HEIGHT,
   assetPanelOpen: false,
+
+  setActiveCompositionGroup: (group) => {
+    set((state) => ({
+      activeCompositionGroup: group,
+      selectedElementId:
+        group === state.activeCompositionGroup
+          ? state.selectedElementId
+          : null,
+    }))
+  },
 
   setViewportLogicalHeight: (logicalHeight) => {
     set((state) => ({
@@ -72,7 +116,7 @@ export const useEditorStore = create<EditorState>((set) => ({
     set((state) => {
       const element = state.episode.elements.find(({ id }) => id === elementId)
 
-      if (!element) {
+      if (!element || !isElementEffectivelyVisible(state.episode, element)) {
         return { selectedElementId: null }
       }
 
@@ -84,6 +128,7 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       return {
         selectedElementId: element.id,
+        activeCompositionGroup: element.compositionGroup,
         viewportY:
           reveal && !isVisible
             ? centerBoundsInViewport(
@@ -92,6 +137,42 @@ export const useEditorStore = create<EditorState>((set) => ({
                 state.viewportLogicalHeight,
               )
             : state.viewportY,
+      }
+    })
+  },
+
+  setElementVisibility: (elementId, visible) => {
+    set((state) => {
+      const episode = setElementVisibilityCommand(
+        state.episode,
+        elementId,
+        visible,
+      )
+
+      return {
+        episode,
+        selectedElementId: keepVisibleSelection(
+          episode,
+          state.selectedElementId,
+        ),
+      }
+    })
+  },
+
+  setCompositionGroupVisibility: (group, visible) => {
+    set((state) => {
+      const episode = setCompositionGroupVisibilityCommand(
+        state.episode,
+        group,
+        visible,
+      )
+
+      return {
+        episode,
+        selectedElementId: keepVisibleSelection(
+          episode,
+          state.selectedElementId,
+        ),
       }
     })
   },
@@ -110,6 +191,7 @@ export const useEditorStore = create<EditorState>((set) => ({
     set({
       episode: buildWeekEpisode,
       selectedElementId: null,
+      activeCompositionGroup: 'content',
       viewportY: 0,
       assetPanelOpen: false,
     })

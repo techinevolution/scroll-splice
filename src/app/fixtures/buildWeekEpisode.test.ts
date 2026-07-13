@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { EPISODE_LOGICAL_WIDTH } from '../../core/episode'
+import {
+  COMPOSITION_GROUPS,
+  EPISODE_FORMAT_VERSION,
+  EPISODE_LOGICAL_WIDTH,
+  compareElementsByRenderOrder,
+} from '../../core/episode'
 import { BUILD_WEEK_BEATS, buildWeekEpisode } from './buildWeekEpisode'
 
 describe('buildWeekEpisode', () => {
@@ -18,6 +23,61 @@ describe('buildWeekEpisode', () => {
       expect(
         buildWeekEpisode.elements.filter(({ id }) => id.startsWith(`${beat.id}-`)),
       ).toHaveLength(5)
+    }
+  })
+
+  it('uses format v2 and assigns every element to a fixed composition group', () => {
+    expect(EPISODE_FORMAT_VERSION).toBe(2)
+    expect(buildWeekEpisode.formatVersion).toBe(2)
+    expect(buildWeekEpisode.compositionGroupVisibility).toEqual({
+      background: true,
+      content: true,
+      foreground: true,
+    })
+    expect(
+      buildWeekEpisode.elements.filter(
+        ({ compositionGroup }) => compositionGroup === 'background',
+      ),
+    ).toHaveLength(6)
+    expect(
+      buildWeekEpisode.elements.filter(
+        ({ compositionGroup }) => compositionGroup === 'content',
+      ),
+    ).toHaveLength(12)
+    expect(
+      buildWeekEpisode.elements.filter(
+        ({ compositionGroup }) => compositionGroup === 'foreground',
+      ),
+    ).toHaveLength(12)
+    expect(
+      buildWeekEpisode.elements.every(({ compositionGroup }) =>
+        COMPOSITION_GROUPS.includes(compositionGroup),
+      ),
+    ).toBe(true)
+  })
+
+  it('renders all Background elements below Content and Foreground', () => {
+    const orderedElements = [...buildWeekEpisode.elements].sort(
+      compareElementsByRenderOrder,
+    )
+    const orderedGroups = orderedElements.map(
+      ({ compositionGroup }) => compositionGroup,
+    )
+
+    expect(orderedGroups).toEqual([
+      ...Array(6).fill('background'),
+      ...Array(12).fill('content'),
+      ...Array(12).fill('foreground'),
+    ])
+
+    for (const compositionGroup of COMPOSITION_GROUPS) {
+      const zIndices = orderedElements
+        .filter((element) => element.compositionGroup === compositionGroup)
+        .map(({ zIndex }) => zIndex)
+
+      expect(zIndices).toEqual(
+        [...zIndices].sort((first, second) => first - second),
+      )
     }
   })
 

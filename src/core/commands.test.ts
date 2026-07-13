@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import { buildWeekEpisode } from '../app/fixtures/buildWeekEpisode'
-import { moveElement } from './commands'
+import {
+  moveElement,
+  setCompositionGroupVisibility,
+  setElementVisibility,
+} from './commands'
+import { isElementEffectivelyVisible } from './episode'
 
 describe('moveElement', () => {
   const movableElement = buildWeekEpisode.elements.find(
@@ -59,5 +64,108 @@ describe('moveElement', () => {
     expect(moveElement(buildWeekEpisode, 'missing', { x: 0, y: 0 })).toBe(
       buildWeekEpisode,
     )
+  })
+})
+
+describe('setElementVisibility', () => {
+  const elementId = 'beat-01-stillness-caption'
+
+  it('changes only the requested element eye state', () => {
+    const originalElement = buildWeekEpisode.elements.find(
+      ({ id }) => id === elementId,
+    )
+    const untouchedElement = buildWeekEpisode.elements.find(
+      ({ id }) => id === 'beat-01-stillness-title',
+    )
+    const nextDocument = setElementVisibility(
+      buildWeekEpisode,
+      elementId,
+      false,
+    )
+    const hiddenElement = nextDocument.elements.find(
+      ({ id }) => id === elementId,
+    )
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(hiddenElement).toEqual({ ...originalElement, visible: false })
+    expect(
+      nextDocument.elements.find(
+        ({ id }) => id === 'beat-01-stillness-title',
+      ),
+    ).toBe(untouchedElement)
+  })
+
+  it('returns the original document when no eye state changes', () => {
+    expect(setElementVisibility(buildWeekEpisode, elementId, true)).toBe(
+      buildWeekEpisode,
+    )
+    expect(setElementVisibility(buildWeekEpisode, 'missing', false)).toBe(
+      buildWeekEpisode,
+    )
+  })
+})
+
+describe('setCompositionGroupVisibility', () => {
+  it('changes only the group eye state and preserves individual settings', () => {
+    const individuallyHidden = setElementVisibility(
+      buildWeekEpisode,
+      'beat-01-stillness-caption',
+      false,
+    )
+    const groupHidden = setCompositionGroupVisibility(
+      individuallyHidden,
+      'content',
+      false,
+    )
+    const caption = groupHidden.elements.find(
+      ({ id }) => id === 'beat-01-stillness-caption',
+    )
+    const title = groupHidden.elements.find(
+      ({ id }) => id === 'beat-01-stillness-title',
+    )
+
+    expect(groupHidden).not.toBe(individuallyHidden)
+    expect(groupHidden.compositionGroupVisibility).toEqual({
+      background: true,
+      content: false,
+      foreground: true,
+    })
+    expect(groupHidden.elements).toBe(individuallyHidden.elements)
+    expect(caption?.visible).toBe(false)
+    expect(title?.visible).toBe(true)
+    expect(caption && isElementEffectivelyVisible(groupHidden, caption)).toBe(
+      false,
+    )
+    expect(title && isElementEffectivelyVisible(groupHidden, title)).toBe(
+      false,
+    )
+
+    const groupShown = setCompositionGroupVisibility(
+      groupHidden,
+      'content',
+      true,
+    )
+    const restoredCaption = groupShown.elements.find(
+      ({ id }) => id === 'beat-01-stillness-caption',
+    )
+    const restoredTitle = groupShown.elements.find(
+      ({ id }) => id === 'beat-01-stillness-title',
+    )
+
+    expect(restoredCaption?.visible).toBe(false)
+    expect(restoredTitle?.visible).toBe(true)
+    expect(
+      restoredCaption &&
+        isElementEffectivelyVisible(groupShown, restoredCaption),
+    ).toBe(false)
+    expect(
+      restoredTitle && isElementEffectivelyVisible(groupShown, restoredTitle),
+    ).toBe(true)
+  })
+
+  it('returns the original document when the group eye state is unchanged', () => {
+    expect(
+      setCompositionGroupVisibility(buildWeekEpisode, 'content', true),
+    ).toBe(buildWeekEpisode)
   })
 })

@@ -187,6 +187,7 @@ function createBeatElements(
   const background: ShapeElement = {
     id: `${beat.id}-background`,
     name: `${layerPrefix} · Background`,
+    compositionGroup: 'background',
     type: 'shape',
     shape: 'rectangle',
     bounds: {
@@ -209,6 +210,7 @@ function createBeatElements(
   const accents: ShapeElement[] = beat.accents.map((accent, accentIndex) => ({
     id: `${beat.id}-accent-${accentIndex + 1}`,
     name: `${layerPrefix} · Accent ${accentIndex + 1}`,
+    compositionGroup: 'foreground',
     type: 'shape',
     shape: accent.shape,
     bounds: offsetBounds(accent.bounds, yOffset),
@@ -224,6 +226,7 @@ function createBeatElements(
   const title: TextElement = {
     id: `${beat.id}-title`,
     name: `${layerPrefix} · Title`,
+    compositionGroup: 'content',
     type: 'text',
     bounds: {
       x: 80,
@@ -247,6 +250,7 @@ function createBeatElements(
   const caption: TextElement = {
     id: `${beat.id}-caption`,
     name: `${layerPrefix} · Caption`,
+    compositionGroup: 'content',
     type: 'text',
     bounds: {
       x: 80,
@@ -282,5 +286,10 @@ export const buildWeekEpisode: EpisodeDocument = {
   name: 'Signal in the Fog',
   logicalWidth: EPISODE_LOGICAL_WIDTH,
   logicalHeight,
+  compositionGroupVisibility: {
+    background: true,
+    content: true,
+    foreground: true,
+  },
   elements: BUILD_WEEK_BEATS.flatMap(createBeatElements),
 }

@@ -86,8 +86,8 @@ These command contracts were verified against the July 13 foundation scaffold. K
 - Keep coordinate conversion and ordering logic small, centralized, and tested.
 - Treat the Konva stage as a viewport into logical episode coordinates, never as one full-height episode canvas.
 - Derive canvas, minimap, and layers from the same episode document.
-- Use the current Build Week flat element model, provisional `800`-unit logical width, and one fixed fit scale. The approved creator-ready extension is a flat three-value `compositionGroup` field—Background, Content, or Foreground—not a nested layer tree; implement it only through its explicit slice in `PLAN.md`.
-- When that composition slice is approved, keep active-group filtering in editor state, keep group and layer visibility separate, and use fixed cross-group rendering order plus ordinary ordering within each group.
+- Use the current Build Week flat element model, provisional `800`-unit logical width, and one fixed fit scale. The implemented creator-ready extension is a flat three-value `compositionGroup` field—Background, Content, or Foreground—not a nested layer tree.
+- Keep active-group filtering in editor state, keep group and layer visibility separate, and use fixed cross-group rendering order plus ordinary ordering within each group.
 - Selecting a canvas element must activate its composition group so the filtered Layers panel can reveal the matching row. Hidden elements must not remain selectable.
 - Use **Add rail**, **Asset Library**, **library category**, **composition group**, and **layer** consistently. Do not create real upload, asset-persistence, speech-balloon, or AI-generated categories merely to render the later library shell.
 - Keep the minimap a lightweight React/CSS/SVG representation, not a second Konva editor.

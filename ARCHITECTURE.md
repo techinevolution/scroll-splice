@@ -82,15 +82,12 @@ The left control remains an application-shell concern: a compact **Add** rail op
 
 ## Commands and state ownership
 
-The Build Week command surface is intentionally small:
+The implemented Build Week command surface is intentionally small:
 
 - `moveElement(elementId, logicalPosition)` returns an updated document.
-- `resetEpisode()` restores the known fixture document through application coordination.
-
-The next approved creator-feature slice may add two pure document commands:
-
 - `setElementVisibility(elementId, visible)` changes one layer's eye state.
 - `setCompositionGroupVisibility(group, visible)` changes only the group eye state and preserves every element's individual setting.
+- `resetEpisode()` restores the known fixture document through application coordination.
 
 Navigation and selection do not change the document. They update application state.
 

@@ -7,7 +7,11 @@ import {
   getFitScale,
   getLogicalViewportHeight,
 } from '../core/coordinates'
-import type { EpisodeElement } from '../core/episode'
+import {
+  compareElementsByRenderOrder,
+  isElementEffectivelyVisible,
+  type EpisodeElement,
+} from '../core/episode'
 import { useElementSize } from './useElementSize'
 
 const RENDER_BUFFER = 160
@@ -146,15 +150,15 @@ export function EditorCanvas() {
       episode.elements
         .filter(
           (element) =>
-            element.visible &&
+            isElementEffectivelyVisible(episode, element) &&
             boundsIntersectVerticalViewport(
               element.bounds,
               viewportY - RENDER_BUFFER,
               viewportLogicalHeight + RENDER_BUFFER * 2,
             ),
         )
-        .sort((first, second) => first.zIndex - second.zIndex),
-    [episode.elements, viewportLogicalHeight, viewportY],
+        .sort(compareElementsByRenderOrder),
+    [episode, viewportLogicalHeight, viewportY],
   )
 
   const handleKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {

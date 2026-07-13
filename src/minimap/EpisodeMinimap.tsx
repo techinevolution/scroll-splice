@@ -5,7 +5,11 @@ import {
   getMinimapViewportBox,
   minimapPointerToViewportY,
 } from '../core/coordinates'
-import type { EpisodeElement } from '../core/episode'
+import {
+  compareElementsByRenderOrder,
+  isElementEffectivelyVisible,
+  type EpisodeElement,
+} from '../core/episode'
 
 interface MinimapElementProps {
   readonly element: EpisodeElement
@@ -20,6 +24,7 @@ function MinimapElement({ element, isSelected }: MinimapElementProps) {
   if (element.type === 'text') {
     return (
       <rect
+        data-element-id={element.id}
         x={bounds.x}
         y={bounds.y}
         width={bounds.width}
@@ -36,6 +41,7 @@ function MinimapElement({ element, isSelected }: MinimapElementProps) {
   if (element.shape === 'ellipse') {
     return (
       <ellipse
+        data-element-id={element.id}
         cx={bounds.x + bounds.width / 2}
         cy={bounds.y + bounds.height / 2}
         rx={bounds.width / 2}
@@ -50,6 +56,7 @@ function MinimapElement({ element, isSelected }: MinimapElementProps) {
 
   return (
     <rect
+      data-element-id={element.id}
       x={bounds.x}
       y={bounds.y}
       width={bounds.width}
@@ -76,9 +83,9 @@ export function EpisodeMinimap() {
   const orderedElements = useMemo(
     () =>
       episode.elements
-        .filter(({ visible }) => visible)
-        .sort((first, second) => first.zIndex - second.zIndex),
-    [episode.elements],
+        .filter((element) => isElementEffectivelyVisible(episode, element))
+        .sort(compareElementsByRenderOrder),
+    [episode],
   )
 
   const navigateFromPointer = (
@@ -162,7 +169,9 @@ export function EpisodeMinimap() {
           <p className="panel-kicker">Full episode</p>
           <h2 id="minimap-heading">Minimap</h2>
         </div>
-        <span>{episode.logicalHeight.toLocaleString()}u</span>
+        <span className="panel-count">
+          {episode.logicalHeight.toLocaleString()}u
+        </span>
       </header>
 
       <div

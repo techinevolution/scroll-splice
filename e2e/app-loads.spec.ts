@@ -13,7 +13,14 @@ test('completes the core ScrollSplice editor walkthrough', async ({
   await expect(
     page.getByRole('heading', { level: 2, name: 'Story canvas' }),
   ).toBeVisible()
-  await expect(page.getByRole('listitem')).toHaveCount(30)
+  await expect(
+    page.getByRole('button', { name: 'Content composition group' }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Layers · Content' }),
+  ).toBeVisible()
+  await expect(page.getByRole('list', { name: 'Content layers' })).toBeVisible()
+  await expect(page.getByRole('listitem')).toHaveCount(12)
   await expect(page.getByTestId('selection-status')).toHaveText(
     'Nothing selected',
   )
@@ -40,6 +47,69 @@ test('completes the core ScrollSplice editor walkthrough', async ({
     })
 
   await expect.poll(readEpisodeSample).toBe('33,25,52')
+
+  const backgroundGroup = page.getByRole('button', {
+    name: 'Background composition group',
+  })
+  const contentGroup = page.getByRole('button', {
+    name: 'Content composition group',
+  })
+  const foregroundGroup = page.getByRole('button', {
+    name: 'Foreground composition group',
+  })
+
+  await backgroundGroup.click()
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Layers · Background' }),
+  ).toBeVisible()
+  await expect(page.getByRole('listitem')).toHaveCount(6)
+  await expect.poll(readEpisodeSample).toBe('33,25,52')
+
+  const firstBackgroundLayer = page.locator(
+    '[data-layer-id="beat-01-stillness-background"]',
+  )
+  const firstBackgroundEye = page.getByRole('button', {
+    name: 'Beat 1 · Stillness · Background visibility',
+  })
+  const minimapFirstBackground = page
+    .getByTestId('minimap')
+    .locator('[data-element-id="beat-01-stillness-background"]')
+
+  await firstBackgroundLayer.click()
+  await expect(firstBackgroundLayer).toHaveAttribute('aria-pressed', 'true')
+  await firstBackgroundEye.click()
+  await expect(page.getByTestId('selection-status')).toHaveText(
+    'Nothing selected',
+  )
+  await expect(firstBackgroundLayer).toBeDisabled()
+  await expect.poll(readEpisodeSample).toBe('243,240,234')
+  await expect(minimapFirstBackground).toHaveCount(0)
+
+  const backgroundGroupEye = page.getByRole('button', {
+    name: 'Background group visibility',
+  })
+
+  await backgroundGroupEye.click()
+  await expect(backgroundGroupEye).toHaveAttribute('aria-pressed', 'false')
+  await expect(
+    page.getByText(
+      'Background is hidden on the canvas. Individual eye settings are preserved.',
+    ),
+  ).toBeVisible()
+  await backgroundGroupEye.click()
+  await expect(backgroundGroupEye).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(readEpisodeSample).toBe('243,240,234')
+  await firstBackgroundEye.click()
+  await expect.poll(readEpisodeSample).toBe('33,25,52')
+  await expect(minimapFirstBackground).toHaveCount(1)
+
+  await foregroundGroup.click()
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Layers · Foreground' }),
+  ).toBeVisible()
+  await expect(page.getByRole('listitem')).toHaveCount(12)
+  await contentGroup.click()
+  await expect(page.getByRole('listitem')).toHaveCount(12)
 
   const assetToggle = page.getByRole('button', { name: 'Assets' })
   await assetToggle.click()
@@ -92,6 +162,21 @@ test('completes the core ScrollSplice editor walkthrough', async ({
   }
 
   const fitScale = canvasBounds.width / 800
+  const foregroundPoint = {
+    x: canvasBounds.x + 400 * fitScale,
+    y: canvasBounds.y + 422 * fitScale,
+  }
+  const firstForegroundLayer = page.locator(
+    '[data-layer-id="beat-01-stillness-accent-2"]',
+  )
+
+  await page.mouse.click(foregroundPoint.x, foregroundPoint.y)
+  await expect(foregroundGroup).toHaveAttribute('aria-pressed', 'true')
+  await expect(firstForegroundLayer).toHaveAttribute('aria-pressed', 'true')
+
+  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
+
   const titlePoint = {
     x: canvasBounds.x + 400 * fitScale,
     y: canvasBounds.y + 210 * fitScale,
@@ -133,4 +218,20 @@ test('completes the core ScrollSplice editor walkthrough', async ({
     .toBeLessThan(600)
   await expect.poll(readEpisodeSample).toBe('33,25,52')
   await expect(finalCaptionLayer).toBeVisible()
+
+  await page.setViewportSize({ width: 1024, height: 768 })
+  await expect(contentGroup).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Content group visibility' }),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Layers · Content' }),
+  ).toBeVisible()
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    )
+    .toBe(true)
 })
