@@ -66,7 +66,7 @@ The overview says to create a project using Codex with GPT-5.6. The rules also e
 - [ ] Run `/feedback` in the primary task where the majority of core functionality was built.
 - [ ] Record that Codex Session ID here, in README, and in the Devpost form.
 
-Codex `/feedback` Session ID: **PENDING — core implementation has not started.**
+Codex `/feedback` Session ID: **PENDING — the primary core implementation goal is active; request `/feedback` after Katherine can test the complete human editor.**
 
 ### Stage One ambiguity to manage
 

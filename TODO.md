@@ -6,17 +6,19 @@ Small loose actions only. Product direction and dated implementation work belong
 
 - [x] Park the optional organizer API/SDK clarification question; it does not block the current plan and can be revisited before submission if ambiguity remains.
 - [x] Approve today's narrow implementation start: scaffold the locked stack and create the original six-beat synthetic fixture. This is not approval for the entire July 14 interaction slice.
+- [x] Approve the first testable-editor `/goal` and authorize Codex to commit and push each coherent passing slice to `main` until that complete milestone is ready for product review.
 
 Nothing about OpenAI runtime access needs a decision before the human MVP begins.
 
-## Katherine — after today's progress review
+## Katherine — when the testable editor is ready
 
-- [ ] Review how much of the July 14 foundation remains, then approve or revise the next slice. Do not assume the entire dated slice is pre-approved.
+- [ ] Run the complete editor walkthrough and give product feedback on clarity, navigation, selection, movement, and reset.
+- [ ] Run `/feedback` in this primary core-functionality task and share the returned Session ID so Codex can record it in README and `BUILD_WEEK_COMPLIANCE.md`.
 
 ## Codex — after the relevant gate
 
 - [x] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
-- [ ] After core functionality exists: ask Katherine to run `/feedback`, then record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
+- [ ] After core functionality exists: hand the running editor to Katherine for product review, ask her to run `/feedback`, then record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
 
 ## Joint — only if the human MVP finishes early
 

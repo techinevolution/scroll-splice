@@ -173,3 +173,11 @@ Decision: Treat ScrollSplice account authentication, OpenAI model authorization,
 Reason: These mechanisms carry different permissions and risks. A model needs explicit editor data and actions to understand canvas layout; it does not need direct React, Konva, Zustand, filesystem, or browser access. External connectors introduce separate OAuth scopes and privacy concerns. Coding-harness Sign in with ChatGPT behavior does not by itself prove that the same OAuth flow is supported for a general web application.
 
 Consequences: Add no OAuth or OpenAI dependency until an official supported model-access path is verified and a secure credential boundary is approved. Provider credentials never enter browser bundles, episode data, commands, logs, or git. Every future model write goes through an implemented and tested human command; generated assets carry provenance; and WEBTOON publishing remains manual.
+
+## 2026-07-13: Push passing slices through the first testable editor
+
+Decision: Katherine authorizes Codex to commit and push the current unpushed work and every later coherent, validated slice directly to `main` until the complete human-editor MVP is available for her hands-on product review.
+
+Reason: Katherine is the project manager and creative director rather than the implementation reviewer. Requiring her approval for routine Git operations before a meaningful product exists creates checkpoints where she has little useful product feedback to give.
+
+Consequences: Codex owns routine commit and push mechanics during this goal and reports each pushed checkpoint. Every pushed slice must be understandable, validated in proportion to its behavior, and free of secrets and private creative content. The authorization ends when the testable editor—workspace, canvas, minimap, layers, navigation, synchronized selection, movement, and reset—is pushed and handed to Katherine. Deployment, OpenAI integration, OAuth, external services, and work after her review remain outside this authorization unless separately approved.

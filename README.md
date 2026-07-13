@@ -14,7 +14,7 @@ All judged implementation work will be committed after the July 13, 2026 9:00 AM
 
 Post-start documentation/compliance work is recorded separately in commit `a567865` at 11:50:26 AM PT on July 13. It adds the rules checklist, scope corrections, WEBTOON discovery, license, and privacy ignores, but still contains no application code.
 
-Implementation began later on July 13 under a narrow approval that does not cover the full July 14 interaction slice. The locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture now exist. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. The editor shell, Konva viewport, minimap, layers UI, navigation, selection, movement, and reset are not built yet.
+Implementation began later on July 13 with the locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. Katherine then approved one primary `/goal` through the first complete human-editor MVP and authorized Codex to commit and push each coherent passing checkpoint to `main`. The editor shell, Konva viewport, minimap, layers UI, navigation, selection, movement, and reset are the active milestone; Katherine's next checkpoint is testing the complete walkthrough rather than approving routine implementation mechanics.
 
 ## Product sequence
 
