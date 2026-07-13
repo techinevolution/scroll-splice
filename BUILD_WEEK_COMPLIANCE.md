@@ -1,4 +1,4 @@
-# OpenAI Build Week Compliance
+# ScrollSplice OpenAI Build Week Compliance
 
 This is ScrollSplice's working rule-to-evidence checklist. It was last cross-checked on **July 13, 2026** against the [OpenAI Build Week overview](https://openai.devpost.com/) and [Official Rules](https://openai.devpost.com/rules). The live rules, organizer notices, and Devpost submission form control if this file ever differs from them.
 

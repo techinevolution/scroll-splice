@@ -1,4 +1,4 @@
-# WEBTOON Requirements and Discovery
+# ScrollSplice WEBTOON Requirements and Discovery
 
 This file separates confirmed current WEBTOON guidance from older or still-unverified upload limits. It was last reviewed on **July 13, 2026**. WEBTOON can change creator requirements without changing ScrollSplice, so live platform evidence must win over this record.
 
