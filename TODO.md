@@ -10,7 +10,7 @@ Small loose actions only. Product direction and dated implementation work belong
 
 Nothing about OpenAI runtime access needs a decision before the human MVP begins.
 
-## Katherine — when the testable editor is ready
+## Katherine — needed now
 
 - [ ] Run the complete editor walkthrough and give product feedback on clarity, navigation, selection, movement, and reset.
 - [ ] Run `/feedback` in this primary core-functionality task and share the returned Session ID so Codex can record it in README and `BUILD_WEEK_COMPLIANCE.md`.
@@ -18,7 +18,8 @@ Nothing about OpenAI runtime access needs a decision before the human MVP begins
 ## Codex — after the relevant gate
 
 - [x] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
-- [ ] After core functionality exists: hand the running editor to Katherine for product review, ask her to run `/feedback`, then record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
+- [x] Build, validate, push, and prepare the complete human editor for Katherine's product review.
+- [ ] After Katherine runs `/feedback`: record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
 
 ## Joint — only if the human MVP finishes early
 

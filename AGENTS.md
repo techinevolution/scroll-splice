@@ -168,7 +168,7 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 - Never push to `main` without Katherine's explicit consent.
 - On July 13, Katherine explicitly authorized Codex to commit and push the current unpushed work and each later coherent, passing Build Week slice directly to `main` through the first complete human-editor MVP that she can test. This includes the workspace, shared canvas/minimap/layers behavior, navigation, synchronized selection, movement, reset, tests, and status documentation.
 - During that authorized goal, Codex owns routine commit and push mechanics. Push only after the relevant validation passes, never push secrets or private creative content, and report the pushed commit after each coherent checkpoint. Do not interrupt Katherine for routine Git permission while this authorization is active.
-- This temporary authorization ends once the complete testable milestone is pushed and handed to Katherine for product review. Any later feature push—especially deployment, OpenAI integration, OAuth, external services, or post-review changes—requires a new instruction unless separately authorized.
+- The product implementation portion of that authorization completed in `05ac06b`; the immediately following status/evidence closeout is the final authorized push. After the handoff, any later feature push—especially deployment, OpenAI integration, OAuth, external services, or post-review changes—requires a new instruction unless separately authorized.
 - Never rewrite the baseline commit or tag, even during cleanup.
 
 ## Final Report

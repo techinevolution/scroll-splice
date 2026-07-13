@@ -14,7 +14,9 @@ All judged implementation work will be committed after the July 13, 2026 9:00 AM
 
 Post-start documentation/compliance work is recorded separately in commit `a567865` at 11:50:26 AM PT on July 13. It adds the rules checklist, scope corrections, WEBTOON discovery, license, and privacy ignores, but still contains no application code.
 
-Implementation began later on July 13 with the locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. Katherine then approved one primary `/goal` through the first complete human-editor MVP and authorized Codex to commit and push each coherent passing checkpoint to `main`. The editor shell, Konva viewport, minimap, layers UI, navigation, selection, movement, and reset are the active milestone; Katherine's next checkpoint is testing the complete walkthrough rather than approving routine implementation mechanics.
+Implementation began later on July 13 with the locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. Katherine then approved one primary `/goal` through the first complete human-editor MVP and authorized Codex to commit and push each coherent passing checkpoint to `main`.
+
+That testable editor is now complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, Photoshop-style layers list, wheel and minimap navigation, canvas/layer selection, off-screen layer reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine's next checkpoint is hands-on product review and `/feedback`; public deployment and submission media have not begun.
 
 ## Product sequence
 
@@ -62,14 +64,23 @@ corepack pnpm build
 corepack pnpm test:e2e
 ```
 
-## Run the foundation scaffold
+## Run the editor
 
 ```bash
 corepack pnpm install
 corepack pnpm dev
 ```
 
-Open the local URL printed by Vite. The current page is a foundation status view, not the editor MVP.
+Open the local URL printed by Vite in a desktop Chrome-class browser. The editor has been inspected at 1440 × 900 and 1280 × 720 and verified through Playwright Chromium.
+
+Suggested review walkthrough:
+
+1. Scroll over the story canvas to move through the episode.
+2. Click the minimap or drag its cyan viewport frame.
+3. Select a layer from another beat and confirm the canvas centers it.
+4. Select an element on the canvas and confirm its layer is selected.
+5. Drag the selected element, then choose **Reset demo** and confirm the starting state returns.
+6. Open and close **Assets** to inspect the deliberately limited Build Week placeholder.
 
 Run the available validation with:
 
@@ -83,11 +94,20 @@ corepack pnpm test:e2e
 
 ## Build Week and model-use record
 
-ScrollSplice is planned for the **Apps for Your Life** category. Codex with GPT-5.6 is the implementation collaborator; the local Codex configuration was verified as GPT-5.6 before implementation began. Dated commits will show where Codex accelerated architecture, implementation, testing, and review. The README must be updated with concrete examples from the finished work rather than invented retrospective claims.
+ScrollSplice is planned for the **Apps for Your Life** category. Codex with GPT-5.6 is the implementation collaborator; the local Codex configuration was verified as GPT-5.6 before implementation began.
+
+Katherine made the controlling product decisions: prove the human editor before AI, preserve a shared scroll-native episode model, use only original synthetic demo content, keep export and OAuth out of the milestone, and wait for a genuinely testable product before requesting her product feedback. Within those boundaries, Codex with GPT-5.6:
+
+- scaffolded and verified the locked React/Konva/Zustand stack in `bcb42dd`
+- implemented and tested the framework-independent coordinate, command, and editor-state core in `c33b491`
+- built the complete workspace and interaction story in `05ac06b`
+- used unit, static, production-build, browser, accessibility, and visual evidence to find and correct canvas-startup test timing, layer semantics, responsive layout, and reset-panel behavior
+
+The July 13 validation passed 15 unit tests across four files, strict typecheck, ESLint, the production build, and the complete Playwright Chromium walkthrough three consecutive times. The build warning about a JavaScript chunk slightly above 500 kB is non-blocking and comes from the intentionally bundled React/Konva editor stack; code-splitting is not useful for this single-screen MVP.
 
 OpenAI-powered image creation is an optional product stretch only after the human-operated editor, validation, public access, and submission evidence are secure. If it is not built during Build Week, the submission remains the human editor. If a proof is built, it must use synthetic inputs, preserve unrestricted judge access to the base editor, and be described only to the extent actually demonstrated.
 
-The final submission also requires the Codex Session ID produced by `/feedback` from the primary task that implements ScrollSplice's core functionality. That ID does not exist yet and must be recorded here and in the submission checklist when generated.
+The final submission also requires the Codex Session ID produced by `/feedback` from this primary core-functionality task. Katherine should run `/feedback` after her hands-on walkthrough; the returned ID must then be recorded here and in the submission checklist.
 
 Official event sources:
 

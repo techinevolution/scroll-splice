@@ -4,13 +4,13 @@
 
 ScrollSplice is a public planning repository at <https://github.com/techinevolution/scroll-splice>. Katherine identified seven documents as July 12 pre-event planning work under the earlier ScrollForge name. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
-Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she can test. The locked scaffold, verified command contracts, flat episode and element types, and original six-beat synthetic fixture are complete. The editor shell and defining canvas/minimap/layers interaction are the active implementation milestone.
+Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she can test. The locked scaffold, verified command contracts, flat episode and element types, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed.
 
-Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, and the first foundation slice. Codex may now accelerate the dated interaction work into one testable milestone, committing and pushing each coherent passing checkpoint without additional routine approval. Katherine's next required checkpoint is hands-on product review after the complete human-editor MVP is pushed.
+Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. The complete human-editor MVP is available for Katherine's hands-on review. Later feature work pauses until that review; `/feedback` is also due in this primary task.
 
-## Active `/goal`: first Katherine-testable human editor
+## Completed `/goal`: first Katherine-testable human editor
 
-Build one complete walkthrough before requesting Katherine's product input:
+Completed in the July 13 commits `c33b491` and `05ac06b`:
 
 1. Establish the small framework-independent viewport, coordinate, command, and editor-state modules.
 2. Build the desktop workspace and render the shared synthetic episode in a viewport-sized Konva canvas, a lightweight full-episode minimap, and a layers list.
@@ -19,7 +19,13 @@ Build one complete walkthrough before requesting Katherine's product input:
 5. Add focused unit tests and one complete smoke test, run every documented validation command, and visually inspect representative desktop sizes.
 6. Keep README and compliance evidence accurate, push each coherent passing checkpoint to `main`, then stop for Katherine's hands-on review and `/feedback`.
 
-This goal does not include deployment, real asset import, persistence, export, OpenAI runtime access, OAuth, or submission-media production.
+Validation passed: 15 unit tests, strict typecheck, ESLint, production build, and the complete Playwright Chromium walkthrough repeated three times. The running editor was visually inspected at 1440 × 900 and 1280 × 720. Deployment, real asset import, persistence, export, OpenAI runtime access, OAuth, and submission-media production remain outside this completed goal.
+
+## Next checkpoint: Katherine product review
+
+Katherine now runs the documented editor walkthrough and evaluates the experience as product manager and creative director. She should focus on whether the workspace is understandable, the minimap feels useful, canvas/layer selection is clear, movement is credible, and reset restores confidence. She then runs `/feedback` in this task and shares the returned Session ID.
+
+No later implementation slice is authorized until that review. Afterward, choose one concrete direction: correct product issues Katherine finds, prepare public judge access and submission evidence, or deliberately approve a later stretch. Do not default into OAuth, autonomous generation, export, or other deferred work.
 
 ## Current product goal
 
@@ -76,7 +82,7 @@ End-of-day evidence: the owner-attested provenance and actual Git preservation t
 
 ### July 14 — Remaining foundation and defining interaction
 
-The scaffold, command verification, core episode types, six-beat fixture, and initial fixture tests were completed early on July 13. Katherine approved accelerating the remaining interaction work into the active testable-editor `/goal`:
+The scaffold, command verification, core episode types, six-beat fixture, and initial fixture tests were completed early on July 13. Katherine approved accelerating the remaining interaction work into the now-completed testable-editor `/goal`:
 
 - Build the desktop editor shell: main viewport, upper-right minimap, layers list, and a collapsed visual placeholder for future assets.
 - Add the remaining viewport and selection types with stable IDs when their behavior is introduced.
@@ -227,7 +233,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- Product implementation is authorized through the active first-testable-editor `/goal`. Stop for Katherine's hands-on review once that complete milestone is pushed; do not silently continue into later features.
+- The first-testable-editor `/goal` is complete. Stop for Katherine's hands-on review and do not silently continue into later features.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

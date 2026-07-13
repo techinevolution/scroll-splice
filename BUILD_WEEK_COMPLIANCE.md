@@ -60,13 +60,13 @@ The rules allow a pre-existing project only if it is meaningfully extended after
 The overview says to create a project using Codex with GPT-5.6. The rules also evaluate how thoroughly and skillfully the project uses Codex.
 
 - [x] The local Codex configuration was checked on July 13 and named GPT-5.6 as the active model before implementation.
-- [ ] Use Codex with GPT-5.6 for the majority of ScrollSplice's core implementation in one identifiable primary task.
-- [ ] Keep dated commits showing meaningful implementation, testing, review, and decisions during the submission period.
-- [ ] Update README from actual evidence: how Katherine collaborated with Codex, where Codex accelerated work, Katherine's key product/engineering/design decisions, and how GPT-5.6/Codex affected the result.
+- [x] Use Codex with GPT-5.6 for the majority of ScrollSplice's core implementation in one identifiable primary task.
+- [x] Keep dated commits showing meaningful implementation, testing, review, and decisions during the submission period.
+- [x] Update README from actual evidence: how Katherine collaborated with Codex, where Codex accelerated work, Katherine's key product/engineering/design decisions, and how GPT-5.6/Codex affected the result.
 - [ ] Run `/feedback` in the primary task where the majority of core functionality was built.
 - [ ] Record that Codex Session ID here, in README, and in the Devpost form.
 
-Codex `/feedback` Session ID: **PENDING — the primary core implementation goal is active; request `/feedback` after Katherine can test the complete human editor.**
+Codex `/feedback` Session ID: **PENDING — the primary core implementation goal is complete; Katherine should run `/feedback` after her hands-on walkthrough.**
 
 ### Stage One ambiguity to manage
 
@@ -91,14 +91,14 @@ These items apply only if the generate-and-place proof is actually attempted:
 
 ## 5. Working-project requirements
 
-- [ ] The project installs from documented commands on its specified platform.
+- [x] The project installs from documented commands on its specified platform.
 - [ ] The project runs consistently and matches the text description and video.
-- [ ] README contains verified setup, run, validation, supported-browser, and sample-data instructions.
+- [x] README contains verified setup, run, validation, supported-browser, and sample-data instructions.
 - [x] The original **Signal in the Fog** sample is made from code-defined shapes and text, so judges do not need private assets.
 - [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
-- [ ] The running UI has been visually inspected at representative desktop sizes.
-- [ ] A clean browser can complete the defining story: navigate, select from canvas/layers, move, and reset.
-- [ ] The defining human editor story works with every optional OpenAI feature disabled or unavailable.
+- [x] The running UI has been visually inspected at 1440 × 900 and 1280 × 720.
+- [x] A clean Playwright Chromium context can complete the defining story: navigate, select from canvas/layers, move, and reset.
+- [x] The defining human editor story works with every optional OpenAI feature disabled or unavailable.
 
 ## 6. Free and unrestricted judge access
 
@@ -110,7 +110,7 @@ Rules require a website, functioning demo, or test build that is free and unrest
 - [ ] Test that URL from a signed-out/private browser session with no credentials, local files, private assets, or paid services.
 - [ ] Keep the submitted working project free, unrestricted, and available until **August 5, 2026 at 5:00 PM PT**.
 
-Working-access URL: **PENDING — no application build exists.**
+Working-access URL: **PENDING — the local application and production build exist; public deployment has not begun.**
 
 ## 7. Repository and technical evidence
 
@@ -120,9 +120,10 @@ Working-access URL: **PENDING — no application build exists.**
 - [x] `pnpm-lock.yaml` is included with the first approved implementation slice after resolving compatible stable dependencies on July 13.
 - [x] The first implementation slice contains no secrets, tokens, credentials, private artwork, generated reports, or machine-local files.
 - [ ] Every third-party package, API, SDK, font, icon, visual, and audio asset is authorized and its license/terms are followed.
-- [ ] Repository history remains dated and understandable; no baseline rewrite or misleading authorship/provenance.
+- [x] Repository history remains dated and understandable through the testable-editor milestone; no baseline rewrite or misleading authorship/provenance.
 - [ ] Final README contains repository URL, access URL, accurate current status, verified commands, sample-data explanation, Build Week boundary, and Codex/GPT-5.6 collaboration evidence.
-- [ ] README and the video do not imply that autonomous generation exists unless the submitted build demonstrates it.
+- [x] README does not imply that autonomous generation exists.
+- [ ] Final video must not imply that autonomous generation exists unless the submitted build demonstrates it.
 - [ ] Use of OpenAI services complies with the [Terms of Use](https://openai.com/policies/terms-of-use/), [Business Terms](https://openai.com/policies/business-terms/) where applicable, [Service Credit Terms](https://openai.com/policies/service-credit-terms/), and [Usage Policies](https://openai.com/policies/usage-policies/).
 - [ ] If event credits are used, record their source and monitor usage; the rules say event credits expire July 31, 2026.
 
@@ -217,6 +218,9 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Project-name screen | ScrollForge retired; ScrollSplice exact-name screen found no matching software brand July 13 | Complete basic screen |
 | Documentation/compliance commit | `a567865`, July 13 at 11:50:26 AM PT | Complete |
 | Devpost registration/project draft | Created July 13; form advanced to video and later-evidence stage | Complete |
+| Editor core commit | `c33b491`, coordinates, commands, shared state, and 15 passing unit tests | Complete |
+| Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
+| Local validation | Typecheck, lint, 15 unit tests, production build, visual inspection, and Chromium walkthrough repeated three times on July 13 | Complete |
 | Working project URL | Pending | Pending |
 | Public YouTube URL | Pending | Pending |
 | Primary `/feedback` Session ID | Pending | Pending |
