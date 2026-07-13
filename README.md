@@ -14,7 +14,7 @@ All judged implementation work will be committed after the July 13, 2026 9:00 AM
 
 Post-start documentation/compliance work is recorded separately in commit `a567865` at 11:50:26 AM PT on July 13. It adds the rules checklist, scope corrections, WEBTOON discovery, license, and privacy ignores, but still contains no application code.
 
-No application scaffold or product code exists yet. The approved commands below therefore remain unverified until Katherine separately authorizes implementation.
+Implementation began later on July 13 under a narrow approval that does not cover the full July 14 interaction slice. The locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture now exist. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. The editor shell, Konva viewport, minimap, layers UI, navigation, selection, movement, and reset are not built yet.
 
 ## Product sequence
 
@@ -50,11 +50,30 @@ This is a real product direction, not a Build Week requirement. The manual edito
 - Plain CSS for the application shell and panels
 - Vitest, Playwright, ESLint, and `tsc --noEmit` for validation
 
-The intended command contracts are:
+The command contracts were verified on July 13 against the initial scaffold:
 
 ```bash
 corepack pnpm install
 corepack pnpm dev
+corepack pnpm test
+corepack pnpm typecheck
+corepack pnpm lint
+corepack pnpm build
+corepack pnpm test:e2e
+```
+
+## Run the foundation scaffold
+
+```bash
+corepack pnpm install
+corepack pnpm dev
+```
+
+Open the local URL printed by Vite. The current page is a foundation status view, not the editor MVP.
+
+Run the available validation with:
+
+```bash
 corepack pnpm test
 corepack pnpm typecheck
 corepack pnpm lint

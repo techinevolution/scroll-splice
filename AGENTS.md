@@ -67,7 +67,7 @@ Do not add Next.js, Tauri, a backend, database, cloud service, OAuth dependency,
 
 ## Commands
 
-These are the approved command contracts. They become verified after the separately approved implementation scaffold creates the corresponding package scripts:
+These command contracts were verified against the July 13 foundation scaffold. Keep them working as later slices evolve:
 
 - Setup: `corepack pnpm install`
 - Run: `corepack pnpm dev`

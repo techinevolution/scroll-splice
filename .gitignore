@@ -3,10 +3,12 @@ node_modules/
 dist/
 coverage/
 .vite/
+*.tsbuildinfo
 
 # Test and tool output
 playwright-report/
 test-results/
+output/playwright/
 reports/codex/
 *.log
 

@@ -2,16 +2,20 @@
 
 Small loose actions only. Product direction and dated implementation work belong in [PLAN.md](PLAN.md); the full submission checklist belongs in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPLIANCE.md).
 
-## Katherine — needed now
+## Katherine — no action needed now
 
-- [ ] Optional risk reduction: send the organizer the Stage One API/SDK clarification question recorded in [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md#stage-one-ambiguity-to-manage). Lack of a reply does not block the current plan.
-- [ ] When ready to begin product code, explicitly approve the **July 14 foundation and defining interaction** slice in [PLAN.md](PLAN.md#july-14--full-day-foundation-and-defining-interaction).
+- [x] Park the optional organizer API/SDK clarification question; it does not block the current plan and can be revisited before submission if ambiguity remains.
+- [x] Approve today's narrow implementation start: scaffold the locked stack and create the original six-beat synthetic fixture. This is not approval for the entire July 14 interaction slice.
 
 Nothing about OpenAI runtime access needs a decision before the human MVP begins.
 
+## Katherine — after today's progress review
+
+- [ ] Review how much of the July 14 foundation remains, then approve or revise the next slice. Do not assume the entire dated slice is pre-approved.
+
 ## Codex — after the relevant gate
 
-- [ ] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
+- [x] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
 - [ ] After core functionality exists: ask Katherine to run `/feedback`, then record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
 
 ## Joint — only if the human MVP finishes early

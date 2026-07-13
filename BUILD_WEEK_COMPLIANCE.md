@@ -94,7 +94,7 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [ ] The project installs from documented commands on its specified platform.
 - [ ] The project runs consistently and matches the text description and video.
 - [ ] README contains verified setup, run, validation, supported-browser, and sample-data instructions.
-- [ ] The original sample is made from code-rendered shapes and text, or every separate fixture asset has an entry in a provenance/license manifest, so judges do not need private assets.
+- [x] The original **Signal in the Fog** sample is made from code-defined shapes and text, so judges do not need private assets.
 - [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
 - [ ] The running UI has been visually inspected at representative desktop sizes.
 - [ ] A clean browser can complete the defining story: navigate, select from canvas/layers, move, and reset.
@@ -117,8 +117,8 @@ Working-access URL: **PENDING — no application build exists.**
 - [x] Repository is public and currently accessible without an invitation.
 - [x] Repository has relevant licensing.
 - [x] `.gitignore` excludes local/private assets, secrets, generated output, and local reports.
-- [ ] `pnpm-lock.yaml` is committed when the approved scaffold resolves current stable dependencies.
-- [ ] No secrets, tokens, credentials, private artwork, generated reports, or machine-local files are tracked.
+- [x] `pnpm-lock.yaml` is included with the first approved implementation slice after resolving compatible stable dependencies on July 13.
+- [x] The first implementation slice contains no secrets, tokens, credentials, private artwork, generated reports, or machine-local files.
 - [ ] Every third-party package, API, SDK, font, icon, visual, and audio asset is authorized and its license/terms are followed.
 - [ ] Repository history remains dated and understandable; no baseline rewrite or misleading authorship/provenance.
 - [ ] Final README contains repository URL, access URL, accurate current status, verified commands, sample-data explanation, Build Week boundary, and Codex/GPT-5.6 collaboration evidence.

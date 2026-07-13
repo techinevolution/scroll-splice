@@ -1,0 +1,137 @@
+:root {
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  color: #f7f3ff;
+  background: #171321;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.foundation-page {
+  min-height: 100vh;
+  padding: clamp(2rem, 8vw, 6rem);
+  background:
+    radial-gradient(circle at 12% 20%, rgb(137 92 246 / 24%), transparent 32%),
+    radial-gradient(circle at 86% 70%, rgb(255 161 93 / 16%), transparent 34%),
+    #171321;
+}
+
+.foundation-header,
+.fixture-card {
+  width: min(100%, 64rem);
+  margin-inline: auto;
+}
+
+.eyebrow,
+.fixture-status {
+  margin: 0 0 0.75rem;
+  color: #c7a8ff;
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 1rem;
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.06em;
+}
+
+.foundation-summary {
+  max-width: 42rem;
+  margin-bottom: 3rem;
+  color: #d8cfeb;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  line-height: 1.65;
+}
+
+.fixture-card {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(18rem, 1.2fr);
+  gap: clamp(2rem, 5vw, 4.5rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 1.5rem;
+  background: rgb(34 27 49 / 78%);
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 30%);
+}
+
+.fixture-card h2 {
+  margin-bottom: 0.75rem;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+}
+
+.fixture-card p {
+  color: #c8bedc;
+  line-height: 1.6;
+}
+
+.beat-list {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: beat;
+}
+
+.beat-list li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: 0.15rem 0.8rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgb(255 255 255 / 8%);
+  border-radius: 0.9rem;
+  background: rgb(255 255 255 / 4%);
+  counter-increment: beat;
+}
+
+.beat-list li::before {
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: #a77cf7;
+  font-size: 0.8rem;
+  font-weight: 800;
+  content: counter(beat, decimal-leading-zero);
+}
+
+.beat-list span {
+  font-weight: 700;
+}
+
+.beat-list small {
+  color: #bcb0d2;
+  line-height: 1.4;
+}
+
+@media (width <= 760px) {
+  .fixture-card {
+    grid-template-columns: 1fr;
+  }
+}

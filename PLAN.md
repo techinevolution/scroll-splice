@@ -4,9 +4,9 @@
 
 ScrollSplice is a public planning repository at <https://github.com/techinevolution/scroll-splice>. Katherine identified seven documents as July 12 pre-event planning work under the earlier ScrollForge name. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
-Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. The Build Week stack, architecture, compliance path, and smallest submission target are documented, but product implementation remains unstarted and requires Katherine's separate approval.
+Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved a narrow implementation start without approving the full July 14 interaction slice. The locked scaffold, verified command contracts, flat episode and element types, and original six-beat synthetic fixture are now complete. The editor shell and defining canvas/minimap/layers interaction remain unstarted.
 
-Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 is now the provenance, rules, discovery, and repository day; the implementation schedule starts July 14.
+Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, and the first narrow foundation slice. Katherine will review today's stopping point before approving or revising the remaining July 14 work.
 
 ## Current product goal
 
@@ -57,17 +57,16 @@ The rule-to-evidence checklist is in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPL
 - Confirm the local Codex model is GPT-5.6 and reserve the primary implementation task for the eventual `/feedback` Session ID.
 - Ask the hackathon manager to clarify the Stage One "required APIs/SDKs" wording; treat a response as useful risk reduction, not a blocker absent contrary official guidance.
 - Record the exact-name conflicts found in the basic ScrollForge screen, then select **ScrollSplice** under Katherine's requirement that the final name retain “scroll.”
+- Under a later narrow approval, scaffold the locked stack, verify the command contracts, define the flat episode model, and create the original six-beat synthetic fixture ahead of schedule.
 
-End-of-day evidence: the owner-attested provenance and actual Git preservation time are both explicit, the public repository is compliance-ready, and no pre-event work is represented as judged implementation.
+End-of-day evidence: the owner-attested provenance and actual Git preservation time are explicit, the public repository is compliance-ready, no pre-event work is represented as judged implementation, and the first post-start product code is isolated in a dated scaffold-and-fixture slice.
 
-### July 14 — Full-day foundation and defining interaction
+### July 14 — Remaining foundation and defining interaction
 
-Only after Katherine approves implementation:
+The scaffold, command verification, core episode types, six-beat fixture, and initial fixture tests were completed early on July 13. Only after Katherine reviews that progress and approves the next slice:
 
-- Scaffold the locked stack and verify all command contracts.
 - Build the desktop editor shell: main viewport, upper-right minimap, layers list, and a collapsed visual placeholder for future assets.
-- Define the flat episode, element, asset reference, viewport, and selection types with stable IDs.
-- Create one original six-beat sample episode from code-rendered shapes and text; do not use private Root & Table art.
+- Add the remaining viewport and selection types with stable IDs when their behavior is introduced.
 - Render the shared episode in the viewport, lightweight minimap, and layers list.
 - Implement vertical wheel/trackpad navigation, viewport clamping, minimap click-to-jump, an accurate viewport box, and synchronized selection.
 - Add coordinate, clamping, and selection tests; inspect the running layout at representative desktop sizes.
@@ -188,7 +187,7 @@ Do not treat an OpenAI/ChatGPT OAuth flow used by a coding harness as automatica
 
 ## Validation path
 
-These command contracts are approved but remain unverified until scaffolding exists:
+These command contracts were verified against the July 13 foundation scaffold and must remain passing as the editor evolves:
 
 - Setup: `corepack pnpm install`
 - Run: `corepack pnpm dev`
