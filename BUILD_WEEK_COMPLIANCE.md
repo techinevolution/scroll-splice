@@ -161,6 +161,7 @@ Public YouTube URL: **PENDING.**
 - [ ] It does not violate copyright, trademark, patent, contract, privacy, publicity, or other third-party rights.
 - [ ] Root & Table production art and private creative material are absent unless Katherine separately gives explicit permission for specific files.
 - [ ] Synthetic fixture content, screenshots, thumbnails, icons, fonts, narration, and any music have a documented safe provenance.
+- [x] The exact AI-generated Devpost thumbnail is retained at `public/submission/devpost-thumbnail.png`; its purpose, dimensions, hash, and project-specific provenance are recorded in `public/submission/README.md`.
 - [x] A basic public screen found material conflicts for **ScrollForge**, so that working name was retired.
 - [x] Katherine delegated the replacement choice with the requirement that the final name contain “scroll”; Codex selected **ScrollSplice**.
 - [x] A July 13 exact-name screen found no matching ScrollSplice software brand in general web search, GitHub repositories, npm, or PyPI.
@@ -221,6 +222,7 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Editor core commit | `c33b491`, coordinates, commands, shared state, and 15 passing unit tests | Complete |
 | Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
 | Local validation | Typecheck, lint, 15 unit tests, production build, visual inspection, and Chromium walkthrough repeated three times on July 13 | Complete |
+| Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
 | Working project URL | Pending | Pending |
 | Public YouTube URL | Pending | Pending |
 | Primary `/feedback` Session ID | Pending | Pending |
