@@ -188,7 +188,7 @@ The smallest acceptable proof is one request that produces one image candidate, 
 
 ## WEBTOON discovery track
 
-The Build Week editor can proceed without production export. Before an export slice is approved, complete the authenticated, harmless unpublished upload test in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md). Confirm current per-image dimensions, file-size and episode-total limits, image count, accepted formats, filename behavior, automatic optimization/slicing, ordering, previews, and draft behavior.
+The Build Week editor can proceed without production export. Katherine completed the authenticated form-observation portion on July 13: the current UI displays 800 × 1280 px before automatic optimization, a 2 MB image threshold, 50 MB and 100 images per episode, JPG/JPEG/PNG support, and a separate 202 × 142 episode thumbnail under 500 KB. Before an export slice is approved, complete the remaining harmless unpublished upload behavior tests in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md), including exact boundary enforcement, transformation behavior, ordering, transparency, filename behavior, previews, and draft reopening.
 
 Keep platform constraints in a data-driven export profile so a changed limit can be updated without changing the episode model or editor commands.
 

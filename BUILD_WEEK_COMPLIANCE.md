@@ -223,6 +223,7 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
 | Local validation | Typecheck, lint, 15 unit tests, production build, visual inspection, and Chromium walkthrough repeated three times on July 13 | Complete |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
+| WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
 | Working project URL | Pending | Pending |
 | Public YouTube URL | Pending | Pending |
 | Primary `/feedback` Session ID | Pending | Pending |

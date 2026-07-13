@@ -31,7 +31,43 @@ Source: [Designing Your Series & Episode Thumbnails](https://webtooncanvas.zende
 
 Thumbnail generation is a separate future workflow from slicing episode art. It is not part of the Build Week MVP.
 
-## Episode-image constraints: provisional, not production-ready
+## Authenticated Manage Episode observation — July 13, 2026
+
+Katherine transcribed the complete visible **Manage Episode** form while signed into the WEBTOON website for **Root & Table**, Episode 1. No upload or publication test was performed. This is current first-party UI evidence for the displayed contract, but it does not yet prove exact rejection boundaries, post-upload transformations, or saved-draft behavior.
+
+### Episode metadata and controls
+
+- Episode title: maximum 60 characters.
+- Episode thumbnail: recommended 202 × 142 px, under 500 KB, JPG/JPEG/PNG.
+- Episode-thumbnail basename: English letters and numbers only. Do not assume this displayed restriction also applies to episode-art filenames until tested.
+- The form notes that legacy 160 × 151 px thumbnails uploaded before 2025 are displayed at 202 × 142 px.
+- Creator's Note: optional, maximum 400 characters.
+- Comments: enable or disable.
+- Publishing: immediately or scheduled for later.
+- Save Draft and Add Episode actions are present.
+- PC and mobile preview actions are present.
+
+### Episode-image upload contract displayed by the form
+
+- Accepted formats: JPG, JPEG, and PNG.
+- Input methods shown: file selection, drag and drop, and **Import from Clip Studio Paint**.
+- Images exceeding 800 × 1280 px are automatically sliced and reduced.
+- WEBTOON warns that oversized images may be sliced, have quality reduced, have dimensions reduced, and/or have file size or format changed.
+- The displayed maximum for sliced, resized, and unchanged images is 2 MB. Record this as the form's wording; verify with actual files whether it is enforced per resulting image and whether it is a hard rejection or an optimization threshold.
+- Episode total: up to 50 MB and 100 images.
+- A `0 / 50MB` usage counter and **Delete All** control are visible.
+
+### What this means for ScrollSplice
+
+- The current `800`-unit logical width does not need to change. It now has a particularly simple first WEBTOON mapping: one logical width can render to 800 output pixels.
+- The editor coordinate system remains resolution-independent. WEBTOON's limits belong in a versioned export profile, not the episode document or canvas implementation.
+- The later deterministic exporter should target slices no larger than 800 × 1280 px, encode each result below the observed 2 MB threshold, keep the package at or below 50 MB and 100 images, and preflight the encoded files before manual upload.
+- A 202 × 142 episode-thumbnail workflow is separate from episode slicing and from the 3:2 Devpost project thumbnail.
+- WEBTOON can accept a taller input and perform its own slicing, but ScrollSplice should prefer controlled gutter-aware slices so quality, seams, ordering, and filenames are known before upload.
+
+This observation confirms that current editor geometry is compatible; it does **not** justify interrupting or enlarging the Build Week human-editor milestone.
+
+## Episode-image constraints: public history and remaining uncertainty
 
 Older official WEBTOON guidance describes these episode upload constraints:
 
@@ -47,31 +83,37 @@ Sources:
 - [Before You Publish Checklist 2024 (official PDF)](https://webtoons-static.pstatic.net/creator101/en/pdf/Before-You-Publish-Checklist-2024.pdf?dt=2024011001)
 - [WEBTOON CANVAS notice on image optimization](https://www.webtoons.com/en/notice/detail?noticeNo=1766)
 
-These sources are useful starting evidence but are not a complete, current 2026 upload contract. In particular, public references conflict about the current total episode size, and the unauthenticated help material does not expose every upload behavior. Do not represent `20 MB` or any reported `50 MB` value as confirmed-current until the live test below is recorded.
+These sources remain useful historical evidence, but the authenticated July 13 form supersedes the older `20 MB` total for the currently observed UI by displaying `50 MB`. Actual boundary behavior still requires the harmless unpublished upload tests below.
 
 No current official requirement was found for DPI, bit depth, ICC profile or color space, PNG alpha behavior, or JPEG quality. Do not present a conventional graphics setting as a WEBTOON rule without current evidence.
 
-For now, `800` logical units is a useful episode width and `800 × 1280`, 2 MB, 100 files, and 20 MB are conservative provisional profile values—not guarantees of acceptance and not permanent editor constants.
+For now, an export profile may record 800 px width, 1280 px maximum slice height, a 2 MB displayed image threshold, 100 files, and 50 MB total as **authenticated-form-observed on July 13, 2026**. It must not be labeled upload-verified until representative boundary files have actually been tested without publication. These values remain export data rather than permanent editor constants.
 
 ## Required authenticated discovery test
 
-Complete this before approving production WEBTOON export. Use a harmless original synthetic test series/episode, keep it unpublished, and never automate the login or upload.
+Complete the remaining behavior checks before approving production WEBTOON export. Use harmless original synthetic files, keep the episode unpublished, and never automate the login or upload.
 
 Record the date, browser, account context, observed UI text, screenshots that contain no personal data, test files, and result for each item:
 
-- [ ] Where the episode editor accepts images and whether mobile upload exists or website-only remains enforced.
-- [ ] Accepted MIME types and extensions, including whether PNG transparency is preserved.
+- [x] Authenticated desktop Manage Episode form exposes file selection, drag and drop, Clip Studio Paint import, Delete All, PC/mobile preview, Save Draft, and publish/schedule controls.
+- [ ] Whether mobile upload exists or website-only remains enforced.
+- [x] Displayed accepted extensions are JPG, JPEG, and PNG.
+- [ ] Actual MIME handling and whether PNG transparency is preserved.
 - [ ] Observed treatment of DPI metadata, bit depth, ICC profile/color space, and JPEG quality; distinguish recommendations from platform-enforced rules.
-- [ ] Maximum width and height that are accepted without automatic resize, compression, or slicing.
+- [x] Displayed no-optimization maximum dimensions are 800 × 1280 px; oversized images may be sliced, resized, recompressed, or reformatted.
+- [ ] Confirm the exact 800 × 1280 boundary with actual files and observe which transformations occur above it.
 - [ ] Per-image file-size limit and whether the boundary is strict.
-- [ ] Total episode byte limit: confirm the current value rather than assuming 20 MB or 50 MB.
-- [ ] Maximum image count and whether thumbnails or other episode assets count toward it.
+- [x] Displayed episode total is 50 MB.
+- [ ] Confirm the 50 MB boundary behavior rather than relying only on the counter text.
+- [x] Displayed episode-art maximum is 100 images.
+- [ ] Confirm whether thumbnails or other episode assets count toward the 100-image total.
 - [ ] Filename restrictions, normalization, and whether zero-padded names preserve ordering.
 - [ ] Multi-file selection behavior and whether upload order follows selection, filename, or manual ordering.
 - [ ] Whether folder or ZIP upload is supported; do not design packaging around it until observed.
 - [ ] Reordering, deletion, and replacement behavior after upload.
 - [ ] Exact behavior for an image taller than the accepted limit: rejection, resize, compression, or platform slicing.
-- [ ] PC and mobile preview accuracy for seams, gutters, text size, color, transparency, and image order.
+- [x] PC and mobile preview controls are present.
+- [ ] Verify preview accuracy for seams, gutters, text size, color, transparency, and image order.
 - [ ] Draft saving and reopening without publishing.
 - [ ] Any accessibility, rating, scheduling, or metadata fields that affect the pre-publish checklist.
 
@@ -90,6 +132,8 @@ WEBTOON must be represented as versioned data at the export boundary, not as con
 - alpha/color-handling expectations
 - whether limits are hard rejection limits or thresholds that trigger optimization
 - thumbnail profiles kept separate from episode slices
+
+The first profile can use the ID `webtoon-canvas-2026-07-13-observed`, but its verification state must remain `form-observed` rather than `upload-verified` until the remaining tests pass.
 
 Unknown values must remain visibly unknown. The exporter should refuse a “verified WEBTOON package” claim when the profile is stale or incomplete; it may still offer a clearly labeled provisional export.
 

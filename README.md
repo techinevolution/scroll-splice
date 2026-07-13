@@ -116,7 +116,7 @@ Official event sources:
 
 ## WEBTOON compatibility
 
-Publishing to WEBTOON is manual through its website. ScrollSplice will not automate WEBTOON login, upload, or publishing. Current confirmed requirements, older/provisional episode limits, and the required authenticated discovery test are tracked in [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md).
+Publishing to WEBTOON is manual through its website. ScrollSplice will not automate WEBTOON login, upload, or publishing. Katherine's July 13 authenticated Manage Episode observation, current displayed limits, older guidance, and the remaining harmless upload behavior tests are tracked in [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md).
 
 The Build Week MVP does not claim production-ready WEBTOON export. A future exporter will produce a tall master plus validated, ordered platform slices and will report dimension, file-size, and count problems before export.
 

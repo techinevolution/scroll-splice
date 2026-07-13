@@ -181,3 +181,11 @@ Decision: Katherine authorizes Codex to commit and push the current unpushed wor
 Reason: Katherine is the project manager and creative director rather than the implementation reviewer. Requiring her approval for routine Git operations before a meaningful product exists creates checkpoints where she has little useful product feedback to give.
 
 Consequences: Codex owns routine commit and push mechanics during this goal and reports each pushed checkpoint. Every pushed slice must be understandable, validated in proportion to its behavior, and free of secrets and private creative content. The authorization ends when the testable editor—workspace, canvas, minimap, layers, navigation, synchronized selection, movement, and reset—is pushed and handed to Katherine. Deployment, OpenAI integration, OAuth, external services, and work after her review remain outside this authorization unless separately approved.
+
+## 2026-07-13: Keep the 800-unit editor width after WEBTOON form discovery
+
+Decision: Retain ScrollSplice's fixed `800`-unit logical episode width. In the first future WEBTOON export profile, map that logical width directly to 800 output pixels and slice the flexible episode height according to the separately versioned platform profile.
+
+Reason: Katherine's authenticated Manage Episode form observation displays automatic slicing or reduction above 800 × 1280 px, a 2 MB image threshold, 50 MB and 100 images per episode, and a separate 202 × 142 episode thumbnail. The current editor width therefore aligns cleanly without making platform pixels part of the document model.
+
+Consequences: No Build Week canvas or interaction change is required. Import may later accept source images at other resolutions, while deterministic WEBTOON export targets gutter-aware slices no larger than the observed profile and preflights encoded bytes and count. Treat the July 13 profile as `form-observed`, not `upload-verified`, until harmless unpublished boundary tests confirm actual transformations and enforcement.

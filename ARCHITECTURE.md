@@ -60,7 +60,7 @@ The provisional sample document contains:
 
 The original fixture should contain six visually distinct beats rendered from code-defined shapes and text so that scrolling, minimap navigation, selection, and movement are easy to judge without separate artwork licensing. It may suggest a vertical comic but must not copy or expose private Root & Table work.
 
-The `800`-unit width is a convenient logical coordinate choice and a provisional WEBTOON-safe target, not a permanent platform rule. Platform requirements never belong in this core schema.
+The `800`-unit width is a convenient logical coordinate choice that also maps directly to the 800 px maximum displayed by WEBTOON's authenticated Manage Episode form on July 13, 2026. It remains an editor coordinate choice, not a permanent platform rule. Platform requirements never belong in this core schema.
 
 Selection, hover, active drag, viewport position, panel-collapse state, and reset state are editor state, not episode content. Zoom is deferred; the Build Week MVP uses one predictable fit scale derived from the available viewport width.
 
