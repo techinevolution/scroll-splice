@@ -1,8 +1,8 @@
-# ScrollForge Architecture
+# ScrollSplice Architecture
 
 ## First principles
 
-ScrollForge edits one logical vertical episode. The episode document is durable product data; canvas, minimap, layers, future preview, and future export are replaceable views of it.
+ScrollSplice edits one logical vertical episode. The episode document is durable product data; canvas, minimap, layers, future preview, and future export are replaceable views of it.
 
 The Build Week architecture follows six rules:
 
@@ -130,9 +130,9 @@ These are contracts to preserve, not Build Week infrastructure to implement:
 - `ProjectRepository`: save and load local or account-backed project data.
 - `AssetRepository`: import, identify, and resolve source assets without destructive edits.
 - `ExportService`: render masters and platform slices without editor chrome.
-- `AuthSessionProvider`: expose a neutral ScrollForge session at the application edge.
+- `AuthSessionProvider`: expose a neutral ScrollSplice session at the application edge.
 
-Future OAuth authenticates access to a ScrollForge workspace. It does not authenticate to WEBTOON and does not change the episode document or command layer. Provider tokens and raw identity details stay inside a future auth adapter; the editor may receive only a neutral session/workspace context.
+Future OAuth authenticates access to a ScrollSplice workspace. It does not authenticate to WEBTOON and does not change the episode document or command layer. Provider tokens and raw identity details stay inside a future auth adapter; the editor may receive only a neutral session/workspace context.
 
 Do not scrape WEBTOON, automate login, store WEBTOON credentials, or simulate direct publishing. Publishing remains a manual website workflow unless an official supported integration is later discovered and explicitly approved.
 

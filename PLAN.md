@@ -1,8 +1,8 @@
-# ScrollForge Plan
+# ScrollSplice Plan
 
 ## Current state
 
-ScrollForge is a public planning repository at <https://github.com/techinevolution/scroll-forge>. Katherine identified seven documents as July 12 pre-event planning work. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
+ScrollSplice is a public planning repository at <https://github.com/techinevolution/scroll-splice>. Katherine identified seven documents as July 12 pre-event planning work under the earlier ScrollForge name. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
 Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. The Build Week stack, architecture, compliance path, and smallest submission target are documented, but product implementation remains unstarted and requires Katherine's separate approval.
 
@@ -10,7 +10,7 @@ Available work time is roughly 26 hours: full workdays July 13–14, about two h
 
 ## Current product goal
 
-Submit a small, complete, reliable editor MVP in the **Apps for Your Life** category. A judge should immediately understand ScrollForge's coherent user experience by using one public-safe sample episode to:
+Submit a small, complete, reliable editor MVP in the **Apps for Your Life** category. A judge should immediately understand ScrollSplice's coherent user experience by using one public-safe sample episode to:
 
 1. see a long episode through a viewport-sized editing canvas
 2. understand the whole episode through a synchronized minimap
@@ -50,13 +50,13 @@ The rule-to-evidence checklist is in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPL
 ### July 13 — Provenance, compliance, and discovery
 
 - Preserve the July 12 planning documents as the first commit and annotated tag.
-- Create the public `scroll-forge` GitHub repository and publish that baseline.
+- Create the public `scroll-forge` GitHub repository and publish that baseline; rename it `scroll-splice` after the final project-name decision without rewriting history.
 - Add the MIT License, `.gitignore`, official-rules checklist, and WEBTOON discovery record in a separate July 13 commit.
 - Separate the complete Build Week MVP from the later creator-ready MVP across all project documents.
 - Record current confirmed WEBTOON requirements and the authenticated discovery test still needed before production export.
 - Confirm the local Codex model is GPT-5.6 and reserve the primary implementation task for the eventual `/feedback` Session ID.
 - Ask the hackathon manager to clarify the Stage One "required APIs/SDKs" wording; treat a response as useful risk reduction, not a blocker absent contrary official guidance.
-- Record the exact-name conflicts found in the basic ScrollForge name screen; keep the requested repository slug but obtain Katherine's final branding decision before submission materials are produced.
+- Record the exact-name conflicts found in the basic ScrollForge screen, then select **ScrollSplice** under Katherine's requirement that the final name retain “scroll.”
 
 End-of-day evidence: the owner-attested provenance and actual Git preservation time are both explicit, the public repository is compliance-ready, and no pre-event work is represented as judged implementation.
 

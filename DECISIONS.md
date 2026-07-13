@@ -1,12 +1,14 @@
-# ScrollForge Decisions
+# ScrollSplice Decisions
 
-## 2026-07-12: Name the product ScrollForge
+## 2026-07-12: Name the product ScrollForge (superseded)
 
 Decision: The vertical comic builder is named ScrollForge. Root & Table is its first story project and proving ground.
 
 Reason: The tool should have a concise identity independent of a particular comic.
 
 Consequences: Product documentation and UI should say ScrollForge; Root & Table examples should be presented as project content.
+
+Superseded by the July 13 ScrollSplice decision below.
 
 ## 2026-07-12: Design around scroll-native editing
 
@@ -60,9 +62,9 @@ Superseded by the locked Build Week stack decision below.
 
 ## 2026-07-12: Lock the Build Week stack
 
-Decision: Build the first ScrollForge editor MVP as a local browser app using Node.js 22, pnpm 10, React 19, strict TypeScript, Vite 8, React-Konva/Konva, Zustand, and plain CSS. Use native pointer and drag events for Build Week. Use Vitest for unit tests, Playwright for one editor smoke test, ESLint for linting, and `tsc --noEmit` for type checking.
+Decision: Build the first ScrollSplice editor MVP as a local browser app using Node.js 22, pnpm 10, React 19, strict TypeScript, Vite 8, React-Konva/Konva, Zustand, and plain CSS. Use native pointer and drag events for Build Week. Use Vitest for unit tests, Playwright for one editor smoke test, ESLint for linting, and `tsc --noEmit` for type checking.
 
-Reason: This stack provides the editor, canvas, shared-state, and testing primitives needed to prove ScrollForge's defining interaction within the available Build Week hours without introducing a backend or desktop wrapper.
+Reason: This stack provides the editor, canvas, shared-state, and testing primitives needed to prove ScrollSplice's defining interaction within the available Build Week hours without introducing a backend or desktop wrapper.
 
 Consequences: Do not add Next.js, Tauri, dnd-kit, a backend, database, cloud service, or OAuth dependency during Build Week. Resolve current stable package versions when the approved scaffold begins and commit the generated `pnpm-lock.yaml`. Adding another dependency requires evidence that the current stack cannot safely satisfy the active slice.
 
@@ -86,7 +88,7 @@ Consequences: Provider tokens and identity records must remain outside episode d
 
 Decision: Treat the July 21 submission as the smallest complete editor MVP and the larger import-save-edit-export workflow as the creator-ready MVP.
 
-Reason: The shared canvas, minimap, layers, movement, and reset story is ScrollForge's clearest product insight and can be a coherent end-to-end experience within the available week. Calling every future creator workflow a contest must-have would hide that complete story behind unfinished breadth.
+Reason: The shared canvas, minimap, layers, movement, and reset story is ScrollSplice's clearest product insight and can be a coherent end-to-end experience within the available week. Calling every future creator workflow a contest must-have would hide that complete story behind unfinished breadth.
 
 Consequences: Build Week requires navigation, synchronized selection, one move command, reset, tests, public access, and submission evidence. Import, persistence, undo, resize, ordering, production export, and accounts are explicitly deferred.
 
@@ -102,7 +104,7 @@ Consequences: Never amend, squash, delete, or force-move the baseline commit or 
 
 Decision: Target the **Apps for Your Life** category and publish the passing static build through GitHub Pages. Use an unrestricted downloadable test build only if Pages cannot be made reliable in the allotted session.
 
-Reason: ScrollForge is a focused creator tool for an individual's real creative workflow. Public static access is the simplest way to let judges use it without accounts, backend availability, or special permissions.
+Reason: ScrollSplice is a focused creator tool for an individual's real creative workflow. Public static access is the simplest way to let judges use it without accounts, backend availability, or special permissions.
 
 Consequences: The build must be usable from the public access path, and the submitted repository, demo, video, and access path must remain available through August 5, 2026 at 5:00 PM PT. Deployment does not justify adding a backend or account system.
 
@@ -124,7 +126,7 @@ Consequences: Root & Table remains the real product proving ground after Build W
 
 ## 2026-07-13: Treat WEBTOON as a manual export target
 
-Decision: ScrollForge will prepare files for manual WEBTOON website publishing. It will not automate WEBTOON login, upload, or publishing.
+Decision: ScrollSplice will prepare files for manual WEBTOON website publishing. It will not automate WEBTOON login, upload, or publishing.
 
 Reason: Public WEBTOON guidance confirms a website publishing workflow but does not provide an approved direct-publishing integration for this project. Current public episode limits are not complete enough to hardcode with confidence.
 
@@ -132,16 +134,26 @@ Consequences: A later exporter uses a versioned `ExportProfile`, creates a tall 
 
 ## 2026-07-13: Use Codex with GPT-5.6 as the Build Week AI contribution
 
-Decision: Use Codex with GPT-5.6 to implement and validate ScrollForge, and record that collaboration through dated commits, README evidence, the demo explanation, and a `/feedback` Session ID from the primary core-functionality task. Do not add a token runtime AI feature merely to imply eligibility; first obtain organizer clarification on the Stage One "required APIs/SDKs" wording.
+Decision: Use Codex with GPT-5.6 to implement and validate ScrollSplice, and record that collaboration through dated commits, README evidence, the demo explanation, and a `/feedback` Session ID from the primary core-functionality task. Do not add a token runtime AI feature merely to imply eligibility; first obtain organizer clarification on the Stage One "required APIs/SDKs" wording.
 
-Reason: The official event brief asks builders to create projects with Codex and GPT-5.6 and requires the submission to explain that use. ScrollForge's product value is the editor interaction; a speculative embedded AI feature would enlarge the scope without strengthening it.
+Reason: The official event brief asks builders to create projects with Codex and GPT-5.6 and requires the submission to explain that use. ScrollSplice's product value is the editor interaction; a speculative embedded AI feature would enlarge the scope without strengthening it.
 
 Consequences: Concrete README claims must be written from completed work, not predicted in advance. Requesting clarification is a risk-reduction action, not a submission blocker if the organizer does not reply. If the organizer says an in-product OpenAI feature is required, pause and revise the scope before implementation continues.
 
-## 2026-07-13: Keep the requested repository name but treat final branding as uncleared
+## 2026-07-13: Keep the requested repository name but treat final branding as uncleared (superseded)
 
 Decision: Keep the requested project name **ScrollForge** and repository slug `scroll-forge` for this documentation slice, while recording that final submission-name clearance is unresolved.
 
 Reason: A basic public screen found multiple exact-name uses, including the active **RipSaw ScrollForge** creative-design application, a Scroll Forge browser extension, a ScrollForge PDF converter, and a `scrollforge` programming package. A public search is not legal clearance, and the creative-software overlap is meaningful enough that the submission warranty must not be assumed.
 
 Consequences: Do not state that ScrollForge is trademark-cleared. Katherine must decide before the public video and Devpost submission whether to retain the working name after appropriate review or select a more distinctive brand. A rename would change branding and the repository slug/links, not the framework-independent editor model or architecture.
+
+Superseded by the ScrollSplice decision below.
+
+## 2026-07-13: Rename the product to ScrollSplice
+
+Decision: Rename the vertical comic editor to **ScrollSplice** and rename the repository slug and local project folder to `scroll-splice` and `ScrollSplice` respectively.
+
+Reason: Katherine delegated the replacement name with one requirement: retain “scroll.” ScrollSplice describes joining panels, assets, and story beats into one continuous episode. A July 13 basic exact-name screen found no matching software brand in general web search, GitHub repository names, npm, or PyPI.
+
+Consequences: Current product documentation and future UI use ScrollSplice. ScrollForge remains only in historical provenance and conflict evidence. The GitHub repository becomes `techinevolution/scroll-splice`, and the Mac folder becomes `/Users/katherinephillips/Documents/ScrollSplice`. The basic name screen reduces obvious collision risk but is not legal trademark clearance.

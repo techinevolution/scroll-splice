@@ -1,4 +1,4 @@
-# ScrollForge Agent Guide
+# ScrollSplice Agent Guide
 
 ## Project Documents
 
@@ -150,7 +150,7 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 
 - Work on the current branch unless Katherine says otherwise.
 - Commit only a coherent, passing slice.
-- The public remote is `https://github.com/techinevolution/scroll-forge`; verify it rather than assuming it has not changed.
+- The public remote is `https://github.com/techinevolution/scroll-splice`; verify it rather than assuming it has not changed.
 - Never push to `main` without Katherine's explicit consent.
 - Katherine explicitly approved creating and populating `main` with the July 12 baseline and the July 13 documentation/compliance slice. That approval does not automatically authorize later implementation pushes.
 - Never rewrite the baseline commit or tag, even during cleanup.

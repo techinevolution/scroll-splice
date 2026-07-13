@@ -1,21 +1,21 @@
 # WEBTOON Requirements and Discovery
 
-This file separates confirmed current WEBTOON guidance from older or still-unverified upload limits. It was last reviewed on **July 13, 2026**. WEBTOON can change creator requirements without changing ScrollForge, so live platform evidence must win over this record.
+This file separates confirmed current WEBTOON guidance from older or still-unverified upload limits. It was last reviewed on **July 13, 2026**. WEBTOON can change creator requirements without changing ScrollSplice, so live platform evidence must win over this record.
 
-ScrollForge's goal is to prepare files that a creator can upload manually. It will not automate WEBTOON login, upload, scheduling, or publishing.
+ScrollSplice's goal is to prepare files that a creator can upload manually. It will not automate WEBTOON login, upload, scheduling, or publishing.
 
 ## Confirmed current workflow
 
 - Publishing is performed from the WEBTOON website rather than the mobile app. The April 2026 Creator Dashboard is desktop-only. Sources: [How to Publish on WEBTOON](https://webtooncanvas.zendesk.com/hc/en-us/articles/18556588863380-How-to-Publish-on-WEBTOON) and [CANVAS Creator Dashboard FAQ](https://webtooncanvas.zendesk.com/hc/en-us/articles/48452348349332-CANVAS-Creator-Dashboard-FAQ).
 - An episode can be saved as a draft and resumed later. Source: [How do I save a draft?](https://webtooncanvas.zendesk.com/hc/en-us/articles/18556523173652-How-do-I-save-a-draft).
-- WEBTOON provides PC and mobile episode previews before publishing. Its guidance calls out formatting, font legibility, opacity/ghost lines, panel order, gutter pacing, and fuzziness. ScrollForge should additionally recommend checking cropping and seams. Source: [Preview Episodes Before Publishing](https://webtooncanvas.zendesk.com/hc/en-us/articles/42850360989076-Preview-Episodes-Before-Publishing).
+- WEBTOON provides PC and mobile episode previews before publishing. Its guidance calls out formatting, font legibility, opacity/ghost lines, panel order, gutter pacing, and fuzziness. ScrollSplice should additionally recommend checking cropping and seams. Source: [Preview Episodes Before Publishing](https://webtooncanvas.zendesk.com/hc/en-us/articles/42850360989076-Preview-Episodes-Before-Publishing).
 - Episodes can be scheduled through the website workflow. Source: [How to Schedule Your Episodes](https://webtooncanvas.zendesk.com/hc/en-us/articles/42851069168148-How-to-Schedule-Your-Episodes).
 - Static episode images are the relevant CANVAS output; music, animation, and special effects are reserved for WEBTOON ORIGINALS. Source: [How do I put music/GIF animations into my series?](https://webtooncanvas.zendesk.com/hc/en-us/articles/18556594573076-How-do-I-put-music-gif-animations-into-my-series).
 - CANVAS series require a content rating; the current rating update became mandatory June 1, 2026. Source: [WEBTOON CANVAS Content Rating Updates](https://webtooncanvas.zendesk.com/hc/en-us/articles/48337973227412-WEBTOON-CANVAS-Content-Rating-Updates).
 - Creators can request pre-publication content review and should ordinarily allow two to three business days. Source: [How to request a Content Review](https://webtooncanvas.zendesk.com/hc/en-us/articles/42977173469972-How-to-request-a-Content-Review-before-publishing-your-new-episodes).
 - Creators remain responsible for current platform and content rules. Source: [WEBTOON CANVAS Policy](https://www.webtoons.com/en/terms/canvasPolicy).
 
-ScrollForge may later show workflow reminders and preflight warnings. It must not claim that a comic is policy-compliant or choose a content rating for the creator.
+ScrollSplice may later show workflow reminders and preflight warnings. It must not claim that a comic is policy-compliant or choose a content rating for the creator.
 
 ## Confirmed current thumbnail requirements
 
@@ -101,12 +101,12 @@ The simplest dependable pipeline is:
 2. Plan slices within the selected verified profile.
 3. Prefer slice boundaries in visual gutters so important art and text are not split.
 4. Encode and measure each file; adjust only through documented quality rules.
-5. Give slices a conservative ScrollForge zero-padded alphanumeric basename, such as `episode01001.jpg`; treat this as an ordering convention until live testing confirms episode-image filename rules.
+5. Give slices a conservative ScrollSplice zero-padded alphanumeric basename, such as `episode01001.jpg`; treat this as an ordering convention until live testing confirms episode-image filename rules.
 6. Preflight dimensions, format, per-file bytes, total bytes, count, and sequence.
 7. Write a manifest containing profile version and verification date.
 8. Ask the creator to upload manually, inspect PC/mobile preview, set the content rating, and publish or schedule on WEBTOON.
 
-Export must never overwrite source art. A passing ScrollForge preflight means the files match the recorded profile; it does not guarantee WEBTOON policy approval or replace the creator's preview and content review.
+Export must never overwrite source art. A passing ScrollSplice preflight means the files match the recorded profile; it does not guarantee WEBTOON policy approval or replace the creator's preview and content review.
 
 ## Build Week boundary
 

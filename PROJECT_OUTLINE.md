@@ -1,12 +1,12 @@
-# ScrollForge Project Outline
+# ScrollSplice Project Outline
 
 ## Goal
 
-Build a visual editor specifically for creating long, vertically scrolling comic episodes. ScrollForge should make arranging a Webtoon-style episode feel direct and understandable: creators work on a large canvas, see the whole episode in a minimap, manage overlapping elements through layers, and drag reusable images into place.
+Build a visual editor specifically for creating long, vertically scrolling comic episodes. ScrollSplice should make arranging a Webtoon-style episode feel direct and understandable: creators work on a large canvas, see the whole episode in a minimap, manage overlapping elements through layers, and drag reusable images into place.
 
 ## Intended End State
 
-ScrollForge becomes a focused comic-production workspace rather than a general image editor. A creator can assemble an episode from panels, characters, backgrounds, effects, and text; control pacing through spacing and scale; navigate the full strip without losing context; and export a publishable vertical result.
+ScrollSplice becomes a focused comic-production workspace rather than a general image editor. A creator can assemble an episode from panels, characters, backgrounds, effects, and text; control pacing through spacing and scale; navigate the full strip without losing context; and export a publishable vertical result.
 
 The editor should feel tactile. Most common actions happen directly on the canvas or through drag and drop, while the layers and asset panels provide precise organization when the canvas becomes complex.
 

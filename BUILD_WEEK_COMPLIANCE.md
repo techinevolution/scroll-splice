@@ -1,6 +1,6 @@
 # OpenAI Build Week Compliance
 
-This is ScrollForge's working rule-to-evidence checklist. It was last cross-checked on **July 13, 2026** against the [OpenAI Build Week overview](https://openai.devpost.com/) and [Official Rules](https://openai.devpost.com/rules). The live rules, organizer notices, and Devpost submission form control if this file ever differs from them.
+This is ScrollSplice's working rule-to-evidence checklist. It was last cross-checked on **July 13, 2026** against the [OpenAI Build Week overview](https://openai.devpost.com/) and [Official Rules](https://openai.devpost.com/rules). The live rules, organizer notices, and Devpost submission form control if this file ever differs from them.
 
 Checklist symbols:
 
@@ -14,7 +14,7 @@ Checklist symbols:
 - Submission: July 13, 2026 at 9:00 AM PT through July 21, 2026 at 5:00 PM PT.
 - Judging: July 22, 2026 at 10:00 AM PT through August 5, 2026 at 5:00 PM PT.
 - Winners announced: on or around August 12, 2026 at 2:00 PM PT.
-- ScrollForge internal submission target: July 21 at 12:00 PM PT.
+- ScrollSplice internal submission target: July 21 at 12:00 PM PT.
 
 Do not rely on the internal target as an extension of the official deadline. After the submission period ends, the rules allow no submission changes or alterations except a narrow correction expressly permitted by Sponsor/Devpost for potentially infringing material, personal information, or other inappropriate material. The separate Devpost portfolio may still be updated, but that does not change the entered submission.
 
@@ -33,10 +33,10 @@ The optional Devpost plugin is not required. If additional event credits are nee
 
 ## 2. Project identity and category
 
-- [x] Project name: **ScrollForge**.
+- [x] Project name: **ScrollSplice**.
 - [x] Planned category: **Apps for Your Life**, because this is a creativity tool for a real individual workflow.
 - [x] Intended platform: desktop Chrome-class web browser.
-- [x] Public repository: <https://github.com/techinevolution/scroll-forge>.
+- [x] Public repository: <https://github.com/techinevolution/scroll-splice>.
 - [x] Relevant public license: `LICENSE` uses MIT for repository source and documentation.
 - [ ] Confirm the final Devpost category remains Apps for Your Life before submission.
 
@@ -60,7 +60,7 @@ The rules allow a pre-existing project only if it is meaningfully extended after
 The overview says to create a project using Codex with GPT-5.6. The rules also evaluate how thoroughly and skillfully the project uses Codex.
 
 - [x] The local Codex configuration was checked on July 13 and named GPT-5.6 as the active model before implementation.
-- [ ] Use Codex with GPT-5.6 for the majority of ScrollForge's core implementation in one identifiable primary task.
+- [ ] Use Codex with GPT-5.6 for the majority of ScrollSplice's core implementation in one identifiable primary task.
 - [ ] Keep dated commits showing meaningful implementation, testing, review, and decisions during the submission period.
 - [ ] Update README from actual evidence: how Katherine collaborated with Codex, where Codex accelerated work, Katherine's key product/engineering/design decisions, and how GPT-5.6/Codex affected the result.
 - [ ] Run `/feedback` in the primary task where the majority of core functionality was built.
@@ -75,7 +75,7 @@ The project requirements and overview describe **building with Codex and GPT-5.6
 - [ ] Ask the hackathon manager for written clarification: does substantial Codex-with-GPT-5.6 development plus the required evidence satisfy this requirement for a consumer app, or is an in-product OpenAI API/SDK integration expected?
 - [ ] If a response arrives, save it with the submission notes and revise scope only if the answer requires it.
 
-This clarification reduces risk but is not a blocker if the organizer does not reply: the live project requirements expressly say to build with Codex and GPT-5.6 and do not separately state that the finished consumer app must call an OpenAI API. Until contrary official guidance appears, do not add a decorative or token runtime AI feature. If an in-product integration is required, Katherine must approve the scope change and the implementation must solve a real ScrollForge user need.
+This clarification reduces risk but is not a blocker if the organizer does not reply: the live project requirements expressly say to build with Codex and GPT-5.6 and do not separately state that the finished consumer app must call an OpenAI API. Until contrary official guidance appears, do not add a decorative or token runtime AI feature. If an in-product integration is required, Katherine must approve the scope change and the implementation must solve a real ScrollSplice user need.
 
 ## 5. Working-project requirements
 
@@ -114,11 +114,11 @@ Working-access URL: **PENDING — no application build exists.**
 
 ## 8. Required Devpost submission fields
 
-- [ ] Project name: ScrollForge.
+- [ ] Project name: ScrollSplice.
 - [ ] Category: Apps for Your Life.
 - [ ] English project description explaining features and functionality.
 - [ ] Every submission material is in English or has a complete English translation, including video, description, testing instructions, and other submitted material.
-- [ ] Public repository URL: <https://github.com/techinevolution/scroll-forge>.
+- [ ] Public repository URL: <https://github.com/techinevolution/scroll-splice>.
 - [ ] Working website/demo/test-build URL.
 - [ ] Public YouTube demo URL.
 - [ ] Codex `/feedback` Session ID from the primary core-functionality task.
@@ -146,8 +146,10 @@ Public YouTube URL: **PENDING.**
 - [ ] It does not violate copyright, trademark, patent, contract, privacy, publicity, or other third-party rights.
 - [ ] Root & Table production art and private creative material are absent unless Katherine separately gives explicit permission for specific files.
 - [ ] Synthetic fixture content, screenshots, thumbnails, icons, fonts, narration, and any music have a documented safe provenance.
-- [x] A basic public exact-name screen was run July 13, 2026; it found material conflicts and therefore did **not** clear the name.
-- [ ] Katherine decides whether to retain the working name after appropriate review or choose a more distinctive submission name before recording the public video and Devpost entry.
+- [x] A basic public screen found material conflicts for **ScrollForge**, so that working name was retired.
+- [x] Katherine delegated the replacement choice with the requirement that the final name contain “scroll”; Codex selected **ScrollSplice**.
+- [x] A July 13 exact-name screen found no matching ScrollSplice software brand in general web search, GitHub repositories, npm, or PyPI.
+- [ ] Treat the basic ScrollSplice screen as risk reduction, not legal trademark clearance; obtain additional review if Katherine needs legal certainty.
 - [ ] Any third-party SDK, API, or data is used within its terms and license.
 - [ ] The project has no malware or harmful/disablement code.
 - [ ] Confirm the project is not disqualified by prohibited prior financial or preferential support from the sponsor/administrator or another conflict described in the official rules.
@@ -156,14 +158,14 @@ Public YouTube URL: **PENDING.**
 
 ### Name screen and clearance
 
-The basic screen found at least these existing exact or near-exact software/product uses:
+The retired ScrollForge working name produced at least these existing exact or near-exact software/product uses:
 
 - [RipSaw ScrollForge](https://forgepatterns.com/), an active scroll-saw/intarsia creative-design application.
 - [Scroll Forge](https://addons.mozilla.org/firefox/addon/scroll-forge/), a Firefox scrolling extension.
 - [ScrollForge](https://scroll-forge.vercel.app/upload), an open-source PDF converter web app.
 - [`scrollforge`](https://www.npmjs.com/package/scrollforge), a programming framework package.
 
-This search neither proves infringement nor provides legal clearance. Because one result is another design application, “ScrollForge” must remain a working name until Katherine makes the documented final decision. The GitHub repository remains `scroll-forge` as explicitly requested; it can be renamed later if needed.
+ScrollSplice was then screened as an exact term on July 13. No matching software brand appeared in general web search, GitHub repository names, npm, or PyPI. That substantially reduces the obvious collision risk but does not prove legal availability or trademark clearance.
 
 ## 11. Final submission lock
 
@@ -194,11 +196,11 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 
 | Evidence | Value | Status |
 | --- | --- | --- |
-| Public repository | <https://github.com/techinevolution/scroll-forge> | Complete |
+| Public repository | <https://github.com/techinevolution/scroll-splice> | Complete |
 | Owner-attested pre-event baseline commit | `e4db897`, first committed July 13 at 11:28:56 AM PT | Complete |
 | Baseline marker tag | `pre-build-week-planning`, created July 13 | Complete |
 | Independent July 12 timestamped evidence | Codex session `019f5921-6190-7520-ba51-f5e0897c5af9`, 6:41:50–7:03:03 PM PDT | Complete |
-| Working-name screen | Exact-name conflicts found July 13; final decision pending | At risk |
+| Project-name screen | ScrollForge retired; ScrollSplice exact-name screen found no matching software brand July 13 | Complete basic screen |
 | Documentation/compliance commit | `a567865`, July 13 at 11:50:26 AM PT | Complete |
 | Working project URL | Pending | Pending |
 | Public YouTube URL | Pending | Pending |

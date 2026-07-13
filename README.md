@@ -1,10 +1,10 @@
-# ScrollForge
+# ScrollSplice
 
-ScrollForge is a scroll-native vertical comic editor. Its defining workspace combines a large editing viewport, a full-episode minimap, a synchronized layers list, and direct manipulation of comic elements.
+ScrollSplice is a scroll-native vertical comic editor. Its defining workspace combines a large editing viewport, a full-episode minimap, a synchronized layers list, and direct manipulation of comic elements.
 
-This repository is the public Build Week record for ScrollForge: <https://github.com/techinevolution/scroll-forge>.
+This repository is the public Build Week record for ScrollSplice: <https://github.com/techinevolution/scroll-splice>.
 
-**Working-name notice:** a July 13 public name screen found existing unrelated products using “ScrollForge,” including another creative-design application. The repository keeps Katherine's requested working name, but final submission branding requires the decision recorded in [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md#name-screen-and-clearance).
+**Name screen:** ScrollSplice replaced the conflicted ScrollForge working name on July 13. A basic exact-name screen found no matching software brand in general web search, GitHub repositories, npm, or PyPI. This is practical risk reduction, not legal trademark clearance; see [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md#name-screen-and-clearance).
 
 ## Status and Build Week provenance
 
@@ -20,7 +20,7 @@ No application scaffold or product code exists yet. The approved commands below 
 
 ### Build Week MVP — due July 21
 
-The contest submission is the smallest complete, coherent ScrollForge editor experience:
+The contest submission is the smallest complete, coherent ScrollSplice editor experience:
 
 - one original vertical-comic fixture rendered from code-defined shapes and text
 - a viewport-sized editing canvas
@@ -58,9 +58,9 @@ corepack pnpm test:e2e
 
 ## Build Week and model-use record
 
-ScrollForge is planned for the **Apps for Your Life** category. Codex with GPT-5.6 is the implementation collaborator; the local Codex configuration was verified as GPT-5.6 before implementation began. Dated commits will show where Codex accelerated architecture, implementation, testing, and review. The README must be updated with concrete examples from the finished work rather than invented retrospective claims.
+ScrollSplice is planned for the **Apps for Your Life** category. Codex with GPT-5.6 is the implementation collaborator; the local Codex configuration was verified as GPT-5.6 before implementation began. Dated commits will show where Codex accelerated architecture, implementation, testing, and review. The README must be updated with concrete examples from the finished work rather than invented retrospective claims.
 
-The final submission also requires the Codex Session ID produced by `/feedback` from the primary task that implements ScrollForge's core functionality. That ID does not exist yet and must be recorded here and in the submission checklist when generated.
+The final submission also requires the Codex Session ID produced by `/feedback` from the primary task that implements ScrollSplice's core functionality. That ID does not exist yet and must be recorded here and in the submission checklist when generated.
 
 Official event sources:
 
@@ -69,7 +69,7 @@ Official event sources:
 
 ## WEBTOON compatibility
 
-Publishing to WEBTOON is manual through its website. ScrollForge will not automate WEBTOON login, upload, or publishing. Current confirmed requirements, older/provisional episode limits, and the required authenticated discovery test are tracked in [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md).
+Publishing to WEBTOON is manual through its website. ScrollSplice will not automate WEBTOON login, upload, or publishing. Current confirmed requirements, older/provisional episode limits, and the required authenticated discovery test are tracked in [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md).
 
 The Build Week MVP does not claim production-ready WEBTOON export. A future exporter will produce a tall master plus validated, ordered platform slices and will report dimension, file-size, and count problems before export.
 
