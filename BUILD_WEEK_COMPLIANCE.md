@@ -49,7 +49,7 @@ The rules allow a pre-existing project only if it is meaningfully extended after
 - [x] Annotated tag `pre-build-week-planning` was created on July 13 to mark that owner-attested no-code baseline.
 - [x] The baseline contains only `AGENTS.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `PLAN.md`, `PROJECT_OUTLINE.md`, `README.md`, and `TODO.md`.
 - [x] The baseline contains no application scaffold or product code.
-- [x] Compliance and scope corrections are being added in a separate dated July 13 commit after the 9:00 AM PT submission start.
+- [x] Compliance and scope corrections were added in separate commit `a567865` on July 13 at 11:50:26 AM PT, after the 9:00 AM PT submission start; that commit also contains no application code.
 - [ ] Link a timestamped July 12 Codex task/session or equivalent contemporaneous evidence if available. The Git timestamp records preservation on July 13 and does not independently prove July 12 creation.
 - [ ] Keep all judged implementation in later dated commits and do not rewrite the root commit or tag.
 - [ ] In the final README and Devpost description, say plainly that July 12 produced planning only and identify the implementation completed July 13–21.
@@ -199,7 +199,7 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Baseline marker tag | `pre-build-week-planning`, created July 13 | Complete |
 | Independent July 12 timestamped evidence | Pending if available | Pending |
 | Working-name screen | Exact-name conflicts found July 13; final decision pending | At risk |
-| Documentation/compliance commit | Pending this slice | Pending |
+| Documentation/compliance commit | `a567865`, July 13 at 11:50:26 AM PT | Complete |
 | Working project URL | Pending | Pending |
 | Public YouTube URL | Pending | Pending |
 | Primary `/feedback` Session ID | Pending | Pending |

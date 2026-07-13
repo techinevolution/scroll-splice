@@ -4,7 +4,7 @@
 
 ScrollForge is a public planning repository at <https://github.com/techinevolution/scroll-forge>. Katherine identified seven documents as July 12 pre-event planning work. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
-The Build Week stack, architecture, compliance path, and smallest submission target are documented. Product implementation remains unstarted and requires Katherine's separate approval.
+Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. The Build Week stack, architecture, compliance path, and smallest submission target are documented, but product implementation remains unstarted and requires Katherine's separate approval.
 
 Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 is now the provenance, rules, discovery, and repository day; the implementation schedule starts July 14.
 

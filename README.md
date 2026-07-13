@@ -12,6 +12,8 @@ Katherine identified the seven original planning documents as work completed on 
 
 All judged implementation work will be committed after the July 13, 2026 9:00 AM PT submission-period start. Do not amend, squash, or rewrite the baseline commit or tag. See [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md) for the evidence and final submission checklist.
 
+Post-start documentation/compliance work is recorded separately in commit `a567865` at 11:50:26 AM PT on July 13. It adds the rules checklist, scope corrections, WEBTOON discovery, license, and privacy ignores, but still contains no application code.
+
 No application scaffold or product code exists yet. The approved commands below therefore remain unverified until Katherine separately authorizes implementation.
 
 ## Two milestones
