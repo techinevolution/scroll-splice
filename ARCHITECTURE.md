@@ -1,158 +1,175 @@
 # ScrollForge Architecture
 
-## First Principles
+## First principles
 
-ScrollForge is an editor for one logical vertical episode. The episode document is the product's durable truth; the canvas, minimap, layers list, future preview, and future export are replaceable views of that truth.
+ScrollForge edits one logical vertical episode. The episode document is durable product data; canvas, minimap, layers, future preview, and future export are replaceable views of it.
 
-The architecture follows four rules:
+The Build Week architecture follows six rules:
 
-1. Comic content does not depend on a UI framework.
-2. Every view derives from the same episode document and coordinate system.
-3. Editing behavior enters through explicit document commands.
-4. Storage, export, assets, and future authentication stay at the application edge.
+1. Keep the episode model as plain serializable TypeScript.
+2. Give comic content one source of truth and one logical coordinate system.
+3. Keep document changes pure and explicit.
+4. Treat the main canvas as a viewport into a taller episode.
+5. Keep platform, storage, asset, export, and authentication details at the application edge.
+6. Implement only what the current milestone needs.
 
-This keeps the Build Week prototype small while allowing later persistence, desktop packaging, and OAuth work without rewriting the editor core.
+This is modularity by separation of responsibility, not by speculative infrastructure.
 
-## Locked Technical Shape
+## Build Week runtime
 
-- React 19 and plain CSS own the application shell and panels.
-- React-Konva/Konva renders the interactive canvas viewport.
-- Zustand coordinates the active document, selection, viewport, and transient interaction state.
-- Strict TypeScript defines the core model and boundaries.
-- Vite 8 builds and serves the local browser app.
-- Vitest verifies pure model and coordinate behavior; Playwright verifies one complete editor interaction.
+- React 19 and plain CSS own the static application shell and panels.
+- React-Konva/Konva renders only the interactive editing viewport.
+- Zustand coordinates the current document, selection, viewport, command dispatch, and transient UI state.
+- A lightweight React/CSS/SVG minimap derives from the episode document; it is not a second Konva editor.
+- Strict TypeScript defines the core contracts.
+- Vite 8 serves the local app and produces a static deployment build.
+- GitHub Pages is the preferred judge-access adapter; an unrestricted downloadable build is the fallback.
+- Vitest verifies pure model, command, and coordinate behavior; Playwright verifies one complete editor story.
 
-Konva and Zustand are adapters around the core. Neither is the saved document format.
+The Build Week runtime has no backend, database, login, secrets, external asset upload, runtime OpenAI API dependency, or WEBTOON integration. Codex with GPT-5.6 is used to create and validate the project.
 
-## Module Boundaries
+## Minimal module boundaries
 
-Create modules only when the active slice needs them.
+Create a folder only when its active behavior exists. The intended ownership is:
 
-- `src/core/`: plain TypeScript episode types, coordinate math, invariants, and document commands. It imports no React, Konva, Zustand, persistence, or authentication code.
-- `src/app/`: application composition, Zustand store, command dispatch, workspace layout, and service wiring.
-- `src/editor/`: Konva viewport rendering, selection visuals, pan, zoom, and element interaction.
-- `src/minimap/`: simplified full-episode representation and viewport navigation.
-- `src/layers/`: layer presentation and selection synchronization.
-- `src/assets/`: asset panel, local image intake, thumbnails, and placement requests.
-- `src/adapters/`: future persistence, export, asset storage, and authentication implementations.
-- `src/test/`: shared synthetic fixtures and cross-component tests when colocated tests are insufficient.
+- `src/core/episode.ts`: plain episode and element types.
+- `src/core/coordinates.ts`: episode, viewport, screen, and minimap conversion plus clamping.
+- `src/core/commands.ts`: pure document edits used by the Build Week MVP.
+- `src/app/store.ts`: Zustand application coordination and command dispatch.
+- `src/app/fixtures/`: original public-safe Build Week sample data.
+- `src/editor/`: Konva viewport rendering and element interaction.
+- `src/minimap/`: simplified full-episode representation and navigation requests.
+- `src/layers/`: ordered layer presentation and selection requests.
+- `src/components/`: shell and small ordinary React controls.
 
-## Core Model
+Do not create empty `services`, `adapters`, `auth`, `persistence`, or `export` trees merely to represent future ideas. Their boundaries are documented below and become files only when an approved slice needs them.
 
-The episode document is plain serializable data with:
+## Build Week document model
 
-- a format version and stable episode ID
-- fixed logical width and flexible logical height
-- an ordered collection of elements or panel groups
-- stable element and asset-reference IDs
-- element position, size, visibility, stacking order, and asset reference
+Use a flat element list. Panel groups, nested layers, reusable project records, and schema migration machinery are deferred.
 
-Selection, hover, active drag, viewport position, zoom, and panel-collapse state are editor state, not episode content.
+The provisional sample document contains:
 
-Do not add user IDs, OAuth fields, provider tokens, framework objects, browser handles, or Konva node references to the episode document.
+- a stable episode ID and format version
+- a fixed logical width of `800` units and flexible logical height
+- an ordered flat collection of elements
+- for each element: stable ID, readable name, asset reference, logical `x`, `y`, `width`, `height`, visibility, and stacking order
 
-## Commands and State Ownership
+The original fixture should contain six visually distinct beats rendered from code-defined shapes and text so that scrolling, minimap navigation, selection, and movement are easy to judge without separate artwork licensing. It may suggest a vertical comic but must not copy or expose private Root & Table work.
 
-Document-changing actions such as add, move, delete, reorder, and resize are pure commands over the episode document. This creates one mutation path and leaves room for later undo/redo.
+The `800`-unit width is a convenient logical coordinate choice and a provisional WEBTOON-safe target, not a permanent platform rule. Platform requirements never belong in this core schema.
 
-Zustand owns application coordination:
+Selection, hover, active drag, viewport position, panel-collapse state, and reset state are editor state, not episode content. Zoom is deferred; the Build Week MVP uses one predictable fit scale derived from the available viewport width.
 
-- current episode document
-- selected element ID
-- viewport and zoom
-- active interaction state
-- command dispatch
+Do not put React objects, Konva nodes, browser handles, user IDs, OAuth fields, provider tokens, WEBTOON metadata, or platform upload state in the episode document.
 
-Components subscribe only to the state they need. Canvas, minimap, and layers must never maintain competing copies of episode content or selection.
+## Commands and state ownership
 
-## Viewport Rendering
+The Build Week command surface is intentionally small:
+
+- `moveElement(elementId, logicalPosition)` returns an updated document.
+- `resetEpisode()` restores the known fixture document through application coordination.
+
+Navigation and selection do not change the document. They update application state.
+
+Zustand owns:
+
+- the current episode document
+- the selected element ID
+- the logical vertical viewport
+- active transient pointer state
+- command dispatch and reset
+
+Canvas, minimap, and layers subscribe to this shared state. They must not keep competing copies of comic content, selection, or viewport position.
+
+## Viewport and coordinate model
 
 The episode can be much taller than the screen, but the live Konva stage remains viewport-sized.
 
 1. Elements are stored in logical episode coordinates.
-2. The viewport describes the visible logical rectangle.
-3. Coordinate helpers translate between screen, viewport, episode, and minimap spaces.
-4. The canvas renders visible elements plus a small buffer.
-5. The minimap renders a simplified full-episode representation.
+2. The viewport stores logical `y` and logical height; horizontal positioning is fixed for the Build Week MVP.
+3. A fit scale maps the fixed logical episode width into the available editor width.
+4. Coordinate helpers translate between logical episode, stage screen, and minimap coordinates.
+5. The editor renders intersecting elements plus a small buffer.
+6. Every requested viewport position is clamped to the logical episode bounds.
 
-Do not create a Konva stage with the episode's full height. Canvas and minimap coordinate conversion must live in one tested core module.
+Wheel/trackpad movement updates viewport `y`. The minimap derives its viewport box from the same conversion helpers. Minimap click or box drag requests a new logical `y`; it never mutates comic content.
 
-## Interaction Data Flow
+Selecting an off-screen element from the layers list centers that element in the viewport, clamped to episode bounds. This rule removes an otherwise unclear selection state for reviewers.
+
+Coordinate conversion and clamping live in one tested core module. Do not duplicate formulas in canvas and minimap components.
+
+## Interaction flows
 
 ### Selection
 
 1. Canvas or layers emits an element ID.
-2. The application store updates the single selected ID.
-3. Canvas and layers derive their selected appearance from that ID.
+2. The store updates the single selected ID.
+3. If a layer selected an off-screen element, the store computes a centered, clamped viewport.
+4. Canvas, minimap, and layers render from the resulting state.
 
 ### Navigation
 
-1. Canvas pan/scroll updates the shared viewport.
-2. The minimap derives its viewport box from shared coordinate helpers.
-3. Minimap click or drag requests a new logical viewport position.
-4. The store clamps and applies that position without changing episode content.
+1. Canvas wheel/trackpad input or minimap interaction requests a logical viewport position.
+2. The coordinate module clamps it.
+3. The store applies it.
+4. Canvas and minimap rerender from the same viewport.
 
-### Document editing
+### Movement
 
-1. A component interprets a pointer or control action.
-2. It dispatches a document command with logical coordinates.
-3. The command returns the updated episode document.
-4. Every view rerenders from the updated document.
+1. Konva supplies transient drag feedback in screen space.
+2. On drag end, the editor converts the destination to logical episode coordinates.
+3. The application dispatches `moveElement`.
+4. The pure command returns the next document.
+5. Canvas, minimap, and layers derive their next view from that document.
 
-## Application-Edge Interfaces
+## Future application-edge seams
 
-Add these interfaces only when an approved slice needs an implementation:
+These are contracts to preserve, not Build Week infrastructure to implement:
 
-- `ProjectRepository`: load and save project or episode data.
-- `AssetRepository`: import and resolve source assets without destructive edits.
-- `ExportService`: render or write final output without editor chrome.
-- `AuthSessionProvider`: report the current session and initiate sign-in/sign-out.
+- `ProjectRepository`: save and load local or account-backed project data.
+- `AssetRepository`: import, identify, and resolve source assets without destructive edits.
+- `ExportService`: render masters and platform slices without editor chrome.
+- `AuthSessionProvider`: expose a neutral ScrollForge session at the application edge.
 
-The editor core receives data and commands; it does not know which storage system, export engine, account provider, or OAuth vendor supplies them.
+Future OAuth authenticates access to a ScrollForge workspace. It does not authenticate to WEBTOON and does not change the episode document or command layer. Provider tokens and raw identity details stay inside a future auth adapter; the editor may receive only a neutral session/workspace context.
 
-## Future OAuth Boundary
+Do not scrape WEBTOON, automate login, store WEBTOON credentials, or simulate direct publishing. Publishing remains a manual website workflow unless an official supported integration is later discovered and explicitly approved.
 
-OAuth is a future application-access concern, not an editing concern.
+## Future export boundary
 
-- `AuthSessionProvider` remains provider-neutral.
-- Authentication is resolved before an account-backed repository is used.
-- Provider tokens and raw identity payloads remain inside the auth adapter.
-- The application may pass a neutral session/workspace context to a future repository.
-- Episode documents and document commands remain identical for local and authenticated use.
+Production export is deferred, but its first-principles contract is clear:
 
-Build Week adds no auth interface implementation, provider SDK, user schema, or cloud persistence. The boundary documents where future OAuth belongs without creating speculative infrastructure now.
+1. Render a tall master from the episode document.
+2. Load a versioned, data-driven `ExportProfile` describing platform limits.
+3. Plan boundary-aware slices, preferring gutters where possible.
+4. Produce zero-padded ordered image files.
+5. Preflight format, dimensions, per-file bytes, total bytes, and image count.
+6. Report violations without overwriting source assets.
 
-## Persistence and Assets
+WEBTOON limits can change. The exporter must not scatter fixed limits through the editor or claim compatibility until the current profile has been verified through the manual discovery process in `WEBTOON_REQUIREMENTS.md`.
 
-Persistence is deferred beyond Build Week. When approved, it must preserve these rules:
+## Public access and provenance
 
-- project data remains local by default unless Katherine approves account-backed storage
-- imported source images are never destructively edited
-- placed elements reference source assets and store transforms as metadata
-- missing assets do not destroy the remaining episode document
-- the stored format remains versioned and inspectable
+Katherine identified the seven original documents as July 12 planning work. They were first committed unchanged on July 13 at 11:28:56 AM PT in `e4db897` and tagged `pre-build-week-planning`. The owner-attested baseline contains no code; its Git timestamp records the preservation time. All judged implementation must appear in later dated commits. Do not rewrite that boundary.
 
-Root & Table production art remains local and gitignored unless Katherine explicitly approves committing specific assets.
+The production build must be a static artifact suitable for GitHub Pages. Deployment configuration is an application-edge concern and must not leak repository paths, hosting assumptions, or network state into the editor core.
 
-## Validation Shape
+The public demo uses only original synthetic content or explicitly approved assets. Root & Table production artwork remains local and ignored.
 
-- Vitest: coordinate conversion, viewport clamping, commands, ordering, and serializable model behavior.
-- Playwright: load the proof episode, navigate with the minimap, select from canvas, and select from layers.
-- Static checks: ESLint, strict TypeScript, and production build.
-- Visual inspection: workspace proportions, minimap accuracy, selection synchronization, and representative long-episode behavior.
+## Validation
 
-## Important Invariants
+- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, and serializable model invariants.
+- Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset.
+- Static checks: ESLint, strict TypeScript, and the Vite production build.
+- Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 
-- The episode document is the single source of truth for comic content.
-- The selected element ID and viewport each have one application-state owner.
-- Core model and commands stay framework- and provider-independent.
+## Non-negotiable invariants
+
+- Comic content has one authoritative episode document.
+- Selection and viewport each have one application-state owner.
+- Core model, coordinates, and commands import no React, Konva, Zustand, persistence, export, platform, or authentication code.
 - Canvas, minimap, layers, future preview, and future export agree on geometry and ordering.
 - The live canvas is viewport-sized, not episode-sized.
 - Source assets are never mutated by placed-element edits.
-- Authentication and provider tokens never enter the episode document or editor core.
-
-## Known Constraints
-
-- Very tall final exports may exceed browser or graphics-library limits and require tiled rendering in a later slice.
-- Large images and long episodes may require thumbnails, reduced-detail minimap rendering, and viewport culling.
-- Browser-native file access is not the Build Week persistence strategy.
+- Platform rules, account identity, provider tokens, and upload state never enter the episode document or editor commands.

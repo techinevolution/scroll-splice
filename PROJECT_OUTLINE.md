@@ -17,6 +17,25 @@ Root & Table is the first real story used to test whether the tool supports an e
 - Primary: Katherine, creating and refining Root & Table episodes.
 - Later: visual storytellers who want a simpler, scroll-native alternative to adapting general design software.
 
+## Milestones
+
+### Build Week MVP
+
+The July 21 submission is a small but complete working editor experience, not the full product. It uses a fixed-width original sample episode rendered from code-defined shapes and text to deliver:
+
+- a viewport-sized vertical editing canvas
+- a lightweight full-episode minimap with synchronized navigation
+- a layers list synchronized with canvas selection
+- one meaningful document edit: moving the selected element
+- a reset action that restores the known demonstration state
+- reliable public judge access and a clear demonstration
+
+Import, save/reopen, undo, resize, layer or panel reordering, production export, OAuth, and cloud services are outside this milestone.
+
+### Creator-ready MVP
+
+The creator-ready MVP completes the workflow described below: import original assets, arrange and refine an episode, save safely, undo meaningful changes, preview the reader experience, and export files validated against a selected platform profile.
+
 ## Core Workflows
 
 ### Assemble an episode
@@ -45,15 +64,15 @@ Root & Table is the first real story used to test whether the tool supports an e
 
 1. Preview the episode as a reader would scroll it.
 2. Correct spacing, ordering, crops, and overlaps.
-3. Export one tall image; platform-sized slicing can follow after the core editor is dependable.
+3. Export a tall master and an ordered set of platform-sized slices after validating the selected export profile.
 
-## MVP Components
+## Creator-ready MVP Components
 
 ### 1. App workspace
 
 - Large main editing canvas on the left.
 - Right sidebar with minimap above the layers panel.
-- Collapsible asset panel, initially placed along the bottom or left edge based on the most usable prototype layout.
+- Collapsible asset panel, initially placed along the bottom or left edge based on the most usable MVP layout.
 - Clear controls for project, episode, import, preview, save, and export.
 
 ### 2. Vertical editing canvas
@@ -109,7 +128,8 @@ Root & Table is the first real story used to test whether the tool supports an e
 ### 8. Preview and export
 
 - Reader preview without editor chrome.
-- Export the episode as one tall PNG or JPG.
+- Export a tall PNG or JPG master and zero-padded ordered platform slices.
+- Validate dimensions, file size, image count, format, and other profile limits before writing the final package.
 - Report export failures clearly and do not overwrite source assets.
 
 ## UX Expectations
@@ -145,5 +165,6 @@ Root & Table is the first real story used to test whether the tool supports an e
 - Imported source files must never be destructively edited.
 - Root & Table art and personal creative material must not be committed to the repository without explicit approval; use synthetic fixtures in tests.
 - The minimap, main canvas, and layers panel must share one authoritative episode state rather than drifting into separate representations.
-- Drag-and-drop behavior must be reversible through undo before the MVP is considered production-safe, though undo may follow the first interaction proof.
-
+- Drag-and-drop behavior must be reversible through undo before the creator-ready MVP is considered production-safe, though undo may follow the Build Week MVP.
+- Platform constraints belong in versioned, data-driven export profiles rather than scattered constants in the editor core.
+- WEBTOON publishing remains a manual website workflow. Do not automate login, upload, or publishing unless an official supported integration is discovered and Katherine explicitly approves it.

@@ -1,129 +1,168 @@
 # ScrollForge Plan
 
-## Current State
+## Current state
 
-The repository contains planning documents only. The Build Week stack and submission target are approved, but no application scaffold or product code exists yet.
+ScrollForge is a public planning repository at <https://github.com/techinevolution/scroll-forge>. Katherine identified seven documents as July 12 pre-event planning work. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
-Available work time is approximately 26 hours: full days on July 13–14, two hours each evening July 15–19, a stabilization buffer on July 20, and submission on July 21.
+The Build Week stack, architecture, compliance path, and smallest submission target are documented. Product implementation remains unstarted and requires Katherine's separate approval.
 
-## Current Product Goal
+Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 is now the provenance, rules, discovery, and repository day; the implementation schedule starts July 14.
 
-Deliver a clear, working ScrollForge editor experience using Root & Table as the proof episode. A reviewer must be able to understand the vertical episode, navigate it through a synchronized minimap, and select the same content from the canvas or layers list.
+## Current product goal
 
-Export polish, hosted deployment, and production persistence are not part of the submission target.
+Submit a small, complete, reliable editor MVP in the **Apps for Your Life** category. A judge should immediately understand ScrollForge's coherent user experience by using one public-safe sample episode to:
 
-## Current Architecture Shape
+1. see a long episode through a viewport-sized editing canvas
+2. understand the whole episode through a synchronized minimap
+3. navigate from the canvas or minimap
+4. select the same element from the canvas or layers list
+5. move the selected element and reset the demo
 
-A local React browser app with a framework-independent episode model and command core. Zustand coordinates application state, React-Konva renders a viewport into logical episode coordinates, and normal React/CSS owns the workspace panels. See [ARCHITECTURE.md](ARCHITECTURE.md).
+That is the simplest MVP for Build Week. It proves the product's distinctive interaction without pretending that import, persistence, undo, or production export is complete.
 
-## Build Week Must-Haves
+## Build Week must-haves
 
-- Documented local setup and run commands.
-- Large vertical-comic editing viewport.
-- Shared episode model rendered by the canvas, minimap, and layers list.
-- Full-episode minimap with an accurate viewport box.
-- Canvas-to-minimap and minimap-to-canvas navigation.
-- Canvas/layers selection synchronization.
-- A readable Root & Table proof episode using approved local assets or safe placeholders.
+### Working product
+
+- A recognizable vertical-comic workspace at representative desktop sizes.
+- One original six-beat sample episode made from code-rendered shapes and text, with clear named layers.
+- One shared episode model rendered by the canvas, minimap, and layers list.
+- Accurate two-way canvas/minimap navigation and viewport clamping.
+- Canvas/layers selection synchronization, including centering an off-screen layer selection.
+- Selected-element movement committed through a pure document command.
+- A visible reset action restoring the known demo state.
 - Passing typecheck, lint, unit tests, production build, and one Playwright smoke test.
-- Visual inspection at representative desktop sizes.
+- Visual inspection of the running experience.
 
-## Dated Work Plan
+### Submission evidence
 
-### July 13 — Foundation and workspace
+- Public GitHub repository with the MIT License and dated provenance intact.
+- A working website, functioning demo, or unrestricted test build available to judges through August 5, 2026 at 5:00 PM PT.
+- A public YouTube demonstration under three minutes with audio, showing the working project and explaining how Codex and GPT-5.6 were used.
+- Devpost category, description, public repository URL, working-access URL, video URL, and required Codex `/feedback` Session ID.
+- README evidence explaining concrete Codex collaboration, acceleration, decisions, and GPT-5.6 contributions.
+- Only original, synthetic, licensed, or explicitly approved content in the repository and demo.
 
-- Scaffold React 19, strict TypeScript, Vite 8, React-Konva/Konva, Zustand, Vitest, Playwright, and ESLint with pnpm.
-- Add the approved `dev`, `test`, `typecheck`, `lint`, `build`, and `test:e2e` scripts.
-- Establish the main canvas area, upper-right minimap, layers panel, and collapsed asset area.
-- Define the episode, element, asset-reference, viewport, and selection types with stable IDs.
-- Create a synthetic or locally supplied Root & Table proof episode without committing private art.
-- Render the same episode model in the canvas, minimap, and layers list.
-- Add initial model and coordinate tests.
+The rule-to-evidence checklist is in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPLIANCE.md).
 
-End-of-day proof: the app runs, the editor layout is recognizable, and all three surfaces represent one shared episode.
+## Dated work plan
 
-### July 14 — Defining interaction
+### July 13 — Provenance, compliance, and discovery
 
-- Implement viewport-sized Konva rendering over logical episode coordinates.
-- Add vertical pan/scroll and viewport clamping.
-- Draw and synchronize the minimap viewport box.
-- Support minimap click and viewport-box dragging to navigate.
-- Select an element from either the canvas or layers list and synchronize selection.
-- Visually inspect the complete interaction at representative desktop sizes.
+- Preserve the July 12 planning documents as the first commit and annotated tag.
+- Create the public `scroll-forge` GitHub repository and publish that baseline.
+- Add the MIT License, `.gitignore`, official-rules checklist, and WEBTOON discovery record in a separate July 13 commit.
+- Separate the complete Build Week MVP from the later creator-ready MVP across all project documents.
+- Record current confirmed WEBTOON requirements and the authenticated discovery test still needed before production export.
+- Confirm the local Codex model is GPT-5.6 and reserve the primary implementation task for the eventual `/feedback` Session ID.
+- Ask the hackathon manager to clarify the Stage One "required APIs/SDKs" wording; treat a response as useful risk reduction, not a blocker absent contrary official guidance.
+- Record the exact-name conflicts found in the basic ScrollForge name screen; keep the requested repository slug but obtain Katherine's final branding decision before submission materials are produced.
 
-End-of-day proof: a reviewer can understand the episode, navigate it through the minimap, and select matching content from canvas or layers.
+End-of-day evidence: the owner-attested provenance and actual Git preservation time are both explicit, the public repository is compliance-ready, and no pre-event work is represented as judged implementation.
 
-### July 15 — Two-hour editing pass
+### July 14 — Full-day foundation and defining interaction
 
-- Add the selected-element outline and move behavior.
-- Commit movement through a document command on drag end.
-- Add movement and boundary tests.
-- Do not begin resize, rotation, or undo unless movement is already stable.
+Only after Katherine approves implementation:
 
-### July 16 — Two-hour asset pass
+- Scaffold the locked stack and verify all command contracts.
+- Build the desktop editor shell: main viewport, upper-right minimap, layers list, and a collapsed visual placeholder for future assets.
+- Define the flat episode, element, asset reference, viewport, and selection types with stable IDs.
+- Create one original six-beat sample episode from code-rendered shapes and text; do not use private Root & Table art.
+- Render the shared episode in the viewport, lightweight minimap, and layers list.
+- Implement vertical wheel/trackpad navigation, viewport clamping, minimap click-to-jump, an accurate viewport box, and synchronized selection.
+- Add coordinate, clamping, and selection tests; inspect the running layout at representative desktop sizes.
 
-- Add the collapsible asset panel with locally selected or synthetic thumbnails.
-- Attempt asset-to-canvas drag with an accurate logical drop position.
-- If drag-in is unstable by the end of the session, keep a clear **Add to canvas** fallback and stop debugging drag-in.
+End-of-day evidence: a reviewer can understand the long episode, navigate it in both directions, and select matching content from canvas or layers.
 
-### July 17 — Two-hour Root & Table proof pass
+The formal navigation floor is reliable canvas scrolling plus minimap click-to-jump with an accurate synchronized viewport box. Add viewport-box dragging only if that floor is already stable.
 
-- Compose a readable short episode using approved local assets or safe placeholders.
-- Refine spacing, layer names, selection feedback, empty states, and minimap readability.
-- Keep real Root & Table art gitignored unless Katherine separately approves committing it.
+### July 15 — Two-hour selection clarity pass
 
-### July 18 — Two-hour reliability pass
+- Add a clear selected-element outline and selected layer treatment.
+- When a layer is selected off-screen, center it in the viewport and update the minimap.
+- Add focused selection and coordinate tests.
+- Stop after the complete selection story is visually verified.
 
-- Test coordinate conversion, viewport clamping, selection synchronization, movement commands, and layer ordering.
-- Add one Playwright smoke test covering load, minimap navigation, and canvas/layer selection.
-- Run typecheck, lint, tests, and production build.
+### July 16 — Two-hour editing pass
 
-### July 19 — Two-hour submission preparation
+- Add selected-element movement.
+- Commit the final position through a pure document command on drag end.
+- Add a prominent reset action and movement/boundary tests.
+- Do not begin resize, rotation, undo, or reorder.
 
-- Perform the full reviewer walkthrough from a clean start.
-- Fix only problems that interrupt understanding or the defining interaction.
-- Update README run instructions and current-status text from verified commands.
-- Prepare concise submission notes covering what works, what was deferred, and why ScrollForge is distinct from a general image editor.
+### July 17 — Two-hour judge-access and smoke-test pass
+
+- Add one Playwright smoke test covering load, minimap navigation, canvas/layer selection, movement, and reset.
+- Publish the passing static build through GitHub Pages and verify it in a clean browser session.
+- If Pages cannot be made reliable within the session, prepare an unrestricted downloadable test build and document exact launch steps.
+- Record the access URL and keep it available through August 5 at 5:00 PM PT.
+
+### July 18 — Two-hour reliability and design pass
+
+- Test coordinate conversion, viewport clamping, synchronization, movement, and reset.
+- Improve only the hierarchy, labels, contrast, empty/error states, and minimap readability needed for a coherent judge experience.
+- Run typecheck, lint, unit tests, build, and the smoke test.
+- Visually inspect representative desktop sizes.
+
+### July 19 — Two-hour submission-material pass
+
+- Perform the reviewer walkthrough from a clean start using the public access path.
+- Update README commands and status from verified evidence.
+- Document concrete examples of Codex/GPT-5.6 collaboration and key decisions from the actual implementation history.
+- Run `/feedback` in the primary core-functionality Codex task and record its Session ID.
+- Draft the Devpost category, description, repository URL, access URL, and concise explanation of what was deliberately deferred.
+- Record a scripted public YouTube demo under three minutes with audio; use only original or approved visual/audio material.
 
 ### July 20 — Stabilization buffer
 
-- Use only for blocking defects, broken setup, failed validation, or essential visual cleanup.
-- Do not add features.
-- Re-run the complete validation suite and reviewer walkthrough.
+- Make no feature additions.
+- Use the buffer only for blocking defects, broken setup/access, failed validation, submission-evidence gaps, or essential visual cleanup.
+- Verify from a clean clone or equivalent fresh checkout.
+- Re-run the complete validation suite and public reviewer walkthrough.
+- Confirm no secrets, private art, unlicensed media, or unintended files are tracked.
 
 ### July 21 — Submit
 
-- Confirm the documented setup works from a clean start.
-- Confirm private Root & Table source assets are not tracked unintentionally.
-- Submit the passing Build Week state.
+- Complete final checklist review and registration/account checks in the morning.
+- Confirm the submission name has Katherine's approval after the documented exact-name conflict review.
+- Use **12:00 PM PT as the internal submission target**, leaving five hours for Devpost or access problems.
+- Confirm every required link opens without special permission.
+- Submit before the official **5:00 PM PT** deadline.
+- Tag the exact submitted commit as `build-week-submission` and record it in the compliance evidence table.
+- Preserve the submitted repository, demo, video, and access path unchanged and available through the judging period ending August 5 at 5:00 PM PT.
 
-## Recommended Next Slice
+## Stretch work
 
-Start **July 13 — Foundation and workspace**. The first checkpoint is not complete until the locked toolchain runs and the canvas, minimap, and layers list visibly derive from one shared episode model.
+Attempt only if every must-have and submission dependency is already stable:
 
-## Stretch Work
+1. A collapsible asset tray populated with code-rendered sample thumbnails.
+2. Minimap viewport-box dragging.
+3. A safe **Add to canvas** action.
+4. Asset-to-canvas drag if the fallback is already reliable.
+5. A layer visibility toggle.
 
-Attempt only after the must-haves for the current date are stable:
+Stop immediately if stretch work threatens validation, public access, the video, or the submission checklist.
 
-- basic element movement
-- asset-to-canvas dragging
-- a safe **Add to canvas** fallback
-- additional Root & Table visual polish
+## Deferred work
 
-## Deferred Work
-
-- Persistence, save/reopen, and project-folder design.
+- Real asset import and project-folder design.
+- Persistence, save/reopen, autosave, and recovery.
 - Undo/redo, resize, rotation, crop, masks, and advanced transforms.
-- Layer and panel-group reordering.
-- Tall-image export and WEBTOON/Tapas presets.
-- Desktop packaging and mobile editing.
-- AI assistance, voice control, accounts, OAuth, cloud storage, collaboration, and publishing integrations.
+- Layer reordering and panel-group concepts.
+- Production tall-master and WEBTOON slice export.
+- Authenticated WEBTOON upload verification and other platform profiles.
+- Desktop packaging, mobile editing, accounts, OAuth, cloud storage, collaboration, and publishing integrations.
+- Runtime AI features, unless the organizer clarifies that an in-product OpenAI API/SDK integration is required; any resulting scope change needs Katherine's approval and must solve a real editor need.
 
-## Open Questions
+## WEBTOON discovery track
 
-None block Build Week. Export dimensions, durable persistence, desktop packaging, and OAuth provider choice belong to later approved slices.
+The Build Week editor can proceed without production export. Before an export slice is approved, complete the authenticated, harmless unpublished upload test in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md). Confirm current per-image dimensions, file-size and episode-total limits, image count, accepted formats, filename behavior, automatic optimization/slicing, ordering, previews, and draft behavior.
 
-## Validation Path
+Keep platform constraints in a data-driven export profile so a changed limit can be updated without changing the episode model or editor commands.
+
+## Validation path
+
+These command contracts are approved but remain unverified until scaffolding exists:
 
 - Setup: `corepack pnpm install`
 - Run: `corepack pnpm dev`
@@ -132,29 +171,27 @@ None block Build Week. Export dimensions, durable persistence, desktop packaging
 - Lint: `corepack pnpm lint`
 - Production build: `corepack pnpm build`
 - Editor smoke test: `corepack pnpm test:e2e`
-- Visually inspect the running app at representative desktop sizes.
-- Walk through canvas navigation, minimap navigation, canvas selection, and layer selection using the proof episode.
 
-The commands are approved contracts but remain unverified until the July 13 scaffold creates the package scripts.
+For each UI slice, also exercise the affected user story in the running app and visually inspect it. Before submission, repeat the walkthrough through the public judge-access path from a clean browser session.
 
-## Submission Acceptance
+## Acceptance criteria
 
-- The local app starts from documented commands.
-- A vertical Root & Table proof episode appears on the main canvas.
-- The minimap represents the full episode and visible viewport accurately.
-- Canvas movement updates the minimap, and minimap navigation moves the canvas correctly.
-- Selecting an element on the canvas selects its layer, and selecting a layer selects its canvas element.
-- Basic movement is included only if it does not destabilize navigation or selection.
-- Typecheck, lint, unit tests, production build, and the Playwright smoke test pass.
-- The running application has been visually inspected.
-- Private assets, OAuth infrastructure, export, hosting, and desktop packaging remain outside the required submission.
+The Build Week submission is complete only when:
 
-## Stop Rules
+- the official checklist in `BUILD_WEEK_COMPLIANCE.md` is satisfied or each remaining item is visibly assigned and not yet due
+- the project starts from documented commands and its public access path works without special permission
+- the sample episode, canvas, minimap, layers, selection, movement, and reset behave as described
+- all automated checks pass and the application has been visually inspected
+- the repository and README clearly distinguish July 12 planning from judged July 13–21 implementation
+- the public video, repository URL, access URL, category, description, and `/feedback` Session ID are ready
+- private Root & Table art, secrets, OAuth infrastructure, direct WEBTOON publishing, and production export remain outside the submission
 
-- Do not implement product code until Katherine explicitly approves the first implementation slice; documentation approval alone does not authorize app construction.
-- Do not expand the submission target to export, persistence, hosting, or desktop packaging.
-- Do not add Next.js, Tauri, dnd-kit, a backend, database, cloud service, or OAuth dependency during Build Week without explicit approval.
-- Stop a stretch task when it threatens the next dated must-have or the July 20 no-new-features boundary.
-- Do not commit Root & Table or other personal creative assets without Katherine's explicit approval.
-- Do not claim visual behavior works unless the running app was inspected.
-- If the outline, plan, and architecture disagree, resolve the documents before coding.
+## Stop rules
+
+- Do not implement product code until Katherine explicitly approves the first implementation slice; this documentation/repository approval does not authorize app construction.
+- Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
+- Do not expand the submission target to import, persistence, undo, resize, ordering, production export, or OAuth. Do not add runtime AI unless the organizer confirms it is required and Katherine approves a real, narrow use.
+- Do not add Next.js, Tauri, dnd-kit, a backend, database, cloud service, OAuth dependency, or WEBTOON automation during Build Week without explicit approval and a recorded decision.
+- Do not commit private Root & Table assets, secrets, or unlicensed content.
+- Do not claim visual or public-access behavior works unless it was actually inspected.
+- If the outline, plan, architecture, and compliance checklist disagree, resolve the documents before coding.

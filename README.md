@@ -1,18 +1,48 @@
 # ScrollForge
 
-ScrollForge is a desktop-oriented vertical comic builder. It combines a large editing canvas, a full-episode minimap, Photoshop-style layers, a collapsible asset library, and direct drag-and-drop editing so creators can assemble and refine scroll-native comic episodes visually.
+ScrollForge is a scroll-native vertical comic editor. Its defining workspace combines a large editing viewport, a full-episode minimap, a synchronized layers list, and direct manipulation of comic elements.
 
-Root & Table is the first story project and proving ground for the editor.
+This repository is the public Build Week record for ScrollForge: <https://github.com/techinevolution/scroll-forge>.
 
-## Status
+**Working-name notice:** a July 13 public name screen found existing unrelated products using “ScrollForge,” including another creative-design application. The repository keeps Katherine's requested working name, but final submission branding requires the decision recorded in [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md#name-screen-and-clearance).
 
-Build Week planning is approved and the stack is locked; no application code exists yet. The July 21 target is a clear local editor prototype demonstrating the canvas, synchronized minimap, layers, shared episode model, and selection with Root & Table as the proof episode.
+## Status and Build Week provenance
 
-## Quick Start
+Katherine identified the seven original planning documents as work completed on July 12, 2026, before the Build Week submission period opened. They were first committed unchanged on July 13 at 11:28:56 AM PT as root commit `e4db897`, then marked by the annotated tag `pre-build-week-planning`. That owner-attested baseline contains seven Markdown planning files and no application code. The Git timestamp proves when the snapshot was preserved; it does not independently prove the earlier creation date.
 
-The approved stack is React 19, strict TypeScript, Vite 8, React-Konva/Konva, Zustand, and plain CSS on Node.js 22 with pnpm 10.
+All judged implementation work will be committed after the July 13, 2026 9:00 AM PT submission-period start. Do not amend, squash, or rewrite the baseline commit or tag. See [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md) for the evidence and final submission checklist.
 
-The command contracts below will become runnable after the approved July 13 scaffold is implemented:
+No application scaffold or product code exists yet. The approved commands below therefore remain unverified until Katherine separately authorizes implementation.
+
+## Two milestones
+
+### Build Week MVP — due July 21
+
+The contest submission is the smallest complete, coherent ScrollForge editor experience:
+
+- one original vertical-comic fixture rendered from code-defined shapes and text
+- a viewport-sized editing canvas
+- a synchronized full-episode minimap
+- a layers list synchronized with canvas selection
+- one meaningful edit: move the selected element, plus reset
+- public judge access and the required submission evidence
+
+Import, persistence, undo, resize, ordering, production export, accounts, OAuth, and direct publishing are deliberately outside this milestone.
+
+### Creator-ready MVP — after Build Week
+
+The longer product milestone adds local asset import, saving and reopening, safe undo, ordering, reader preview, and a validated export pipeline. WEBTOON requirements are discovery inputs for that future exporter, not a reason to enlarge the one-week MVP.
+
+## Locked stack
+
+- Node.js 22 and pnpm 10
+- React 19 with strict TypeScript and Vite 8
+- React-Konva/Konva for the viewport-sized interactive canvas
+- Zustand for shared document and editor state
+- Plain CSS for the application shell and panels
+- Vitest, Playwright, ESLint, and `tsc --noEmit` for validation
+
+The intended command contracts are:
 
 ```bash
 corepack pnpm install
@@ -24,22 +54,36 @@ corepack pnpm build
 corepack pnpm test:e2e
 ```
 
-These commands are not yet verified because documentation approval does not authorize application scaffolding.
+## Build Week and model-use record
 
-## Main Workflows
+ScrollForge is planned for the **Apps for Your Life** category. Codex with GPT-5.6 is the implementation collaborator; the local Codex configuration was verified as GPT-5.6 before implementation began. Dated commits will show where Codex accelerated architecture, implementation, testing, and review. The README must be updated with concrete examples from the finished work rather than invented retrospective claims.
 
-- Create or open a local comic project and episode.
-- Drag images from the asset library onto the vertical canvas.
-- Select, move, resize, and reorder elements and panels.
-- Navigate a long episode through a synchronized minimap.
-- Select and reorder elements through the layers panel.
-- Preview and export a finished vertical comic strip.
+The final submission also requires the Codex Session ID produced by `/feedback` from the primary task that implements ScrollForge's core functionality. That ID does not exist yet and must be recorded here and in the submission checklist when generated.
 
-## Project Docs
+Official event sources:
 
-- [Project Outline](PROJECT_OUTLINE.md)
-- [Plan](PLAN.md)
-- [Architecture](ARCHITECTURE.md)
-- [Agent Guide](AGENTS.md)
-- [Decisions](DECISIONS.md)
-- [TODO](TODO.md)
+- [OpenAI Build Week overview](https://openai.devpost.com/)
+- [OpenAI Build Week official rules](https://openai.devpost.com/rules)
+
+## WEBTOON compatibility
+
+Publishing to WEBTOON is manual through its website. ScrollForge will not automate WEBTOON login, upload, or publishing. Current confirmed requirements, older/provisional episode limits, and the required authenticated discovery test are tracked in [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md).
+
+The Build Week MVP does not claim production-ready WEBTOON export. A future exporter will produce a tall master plus validated, ordered platform slices and will report dimension, file-size, and count problems before export.
+
+## Project documents
+
+- [Project Outline](PROJECT_OUTLINE.md) — product vision and milestone boundaries
+- [Plan](PLAN.md) — dated Build Week schedule and acceptance criteria
+- [Architecture](ARCHITECTURE.md) — first-principles technical boundaries
+- [Decisions](DECISIONS.md) — dated product and architecture decisions
+- [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md) — rule-to-evidence checklist
+- [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md) — publishing/export discovery
+- [Agent Guide](AGENTS.md) — repository working rules
+- [TODO](TODO.md) — small follow-up items only
+
+## Privacy and licensing
+
+Build Week fixtures, tests, screenshots, and the demo must use original synthetic content or content with documented permission. Root & Table production artwork and other private creative material must not be committed without Katherine's explicit approval.
+
+The source code and documentation in this repository are licensed under the [MIT License](LICENSE). That license does not automatically grant rights to third-party artwork, trademarks, or separately identified creative assets.

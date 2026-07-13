@@ -1,0 +1,26 @@
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+.vite/
+
+# Test and tool output
+playwright-report/
+test-results/
+reports/codex/
+*.log
+
+# Local and private creative assets
+local-assets/
+public/local-assets/
+proof-assets/private/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Editors and operating system
+.DS_Store
+.idea/
+.vscode/
