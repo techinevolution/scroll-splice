@@ -50,7 +50,7 @@ The rules allow a pre-existing project only if it is meaningfully extended after
 - [x] The baseline contains only `AGENTS.md`, `ARCHITECTURE.md`, `DECISIONS.md`, `PLAN.md`, `PROJECT_OUTLINE.md`, `README.md`, and `TODO.md`.
 - [x] The baseline contains no application scaffold or product code.
 - [x] Compliance and scope corrections were added in separate commit `a567865` on July 13 at 11:50:26 AM PT, after the 9:00 AM PT submission start; that commit also contains no application code.
-- [ ] Link a timestamped July 12 Codex task/session or equivalent contemporaneous evidence if available. The Git timestamp records preservation on July 13 and does not independently prove July 12 creation.
+- [x] Local Codex session `019f5921-6190-7520-ba51-f5e0897c5af9` supplies contemporaneous July 12 evidence: the session began at 6:41:50 PM PDT, the naming request appears at 6:46:56 PM, and the ScrollForge MVP-spec request appears at 7:03:03 PM. The Git timestamp still records preservation on July 13 rather than the original work time.
 - [ ] Keep all judged implementation in later dated commits and do not rewrite the root commit or tag.
 - [ ] In the final README and Devpost description, say plainly that July 12 produced planning only and identify the implementation completed July 13–21.
 - [ ] Retain the primary Codex task/session record as further timestamped evidence.
@@ -197,7 +197,7 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Public repository | <https://github.com/techinevolution/scroll-forge> | Complete |
 | Owner-attested pre-event baseline commit | `e4db897`, first committed July 13 at 11:28:56 AM PT | Complete |
 | Baseline marker tag | `pre-build-week-planning`, created July 13 | Complete |
-| Independent July 12 timestamped evidence | Pending if available | Pending |
+| Independent July 12 timestamped evidence | Codex session `019f5921-6190-7520-ba51-f5e0897c5af9`, 6:41:50–7:03:03 PM PDT | Complete |
 | Working-name screen | Exact-name conflicts found July 13; final decision pending | At risk |
 | Documentation/compliance commit | `a567865`, July 13 at 11:50:26 AM PT | Complete |
 | Working project URL | Pending | Pending |
