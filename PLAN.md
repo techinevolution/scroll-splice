@@ -6,7 +6,7 @@ ScrollSplice is a public planning repository at <https://github.com/techinevolut
 
 Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she can test. The locked scaffold, verified command contracts, flat episode and element types, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed.
 
-Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. Katherine completed the hands-on review and `/feedback` that day. The review found no blocking defect in the defining editor interaction, so the newly requested creator features remain later work rather than expanding the Build Week target.
+Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. Katherine completed the hands-on review and `/feedback` that day. The review found no blocking defect, leaving the remaining July 13–18 product window available for bounded creator-facing slices without changing the minimum submission contract.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -43,34 +43,11 @@ These requests refine the intended product but are not authorization to enlarge 
 - use three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas while the right Layers panel shows only the active group's individual layers
 - keep group selection separate from visibility, preserve individual eye settings when a whole group is hidden, and let constrained displays collapse or overlay the right inspector rather than crushing the canvas
 
-## Next implementation slice: public judge access
+## Next implementation slice: composition groups and visibility
 
-**Status:** proposed for Katherine's implementation approval. Approval of this documentation and its push does not itself authorize deployment.
+**Status:** proposed for Katherine's implementation approval. Today is July 13; public deployment and submission work are reserved for the July 19–21 submission runway rather than interrupting the current product-building window.
 
-**Goal:** turn the current passing local editor into a judge-accessible baseline before another creator feature changes it.
-
-Scope:
-
-1. Configure the existing Vite build for the public `scroll-splice` repository path without changing local development commands.
-2. Publish the static build through GitHub Pages using the smallest maintainable deployment configuration.
-3. Verify the complete minimap, selection, movement, asset-drawer, and reset walkthrough while signed out in a clean browser.
-4. Run typecheck, lint, unit tests, production build, and Playwright against the deployment-ready state.
-5. Confirm no private artwork, secrets, local-only files, or unsupported future-feature claims are published.
-6. Record the verified public URL and date in README and `BUILD_WEEK_COMPLIANCE.md`, then push the passing deployment checkpoint.
-
-Acceptance:
-
-- the editor opens from a public URL without login, payment, rebuilding, or special permission
-- the local development workflow still works
-- the defining walkthrough passes from the public path
-- all validation commands pass and the public build is visually inspected at representative desktop sizes
-- the public URL is documented and remains available through the judging period
-
-Excluded: composition groups, visibility controls, Asset Library redesign, imports, speech balloons, production export, OAuth, and OpenAI runtime work.
-
-### First creator-feature slice after judge access: composition groups and visibility
-
-This is the first product slice to propose after the public baseline is secure because the Asset Library needs a dependable destination model before real assets are added.
+**Goal:** establish the simple three-group destination and visibility model that the later Asset Library, backgrounds, and overlays all need.
 
 - Add a flat `compositionGroup` value—Background, Content, or Foreground—to every episode element and assign the synthetic fixture intentionally.
 - Keep fixed cross-group rendering order while preserving ordinary layer order within each group.
@@ -81,9 +58,24 @@ This is the first product slice to propose after the public baseline is secure b
 - Keep the Layers list independently scrollable and verify usability at 1440 × 900, 1280 × 720, and 1024 × 768 without adding a panel-resize system.
 - Add focused model, command, store, and browser coverage for filtering, selection synchronization, effective visibility, reset, and existing minimap behavior.
 
-Excluded from that slice: the Add-rail redesign, real uploads, asset drag-in, layer reordering, moving layers between groups, keyboard shortcuts, speech-balloon assets, backgrounds, resizing, persistence, and AI.
+Acceptance:
 
-The slice after composition groups is the **Add rail and Asset Library shell**: category buttons and responsive drawer behavior using only public-safe placeholders, before any real import or speech-balloon content.
+- Background, Content, and Foreground controls fit above the story canvas at supported desktop sizes
+- the right Layers list shows the active group's layers without hiding other visible groups from the canvas or minimap
+- canvas selection activates the selected element's group and reveals its layer row
+- group and individual eye controls work independently, preserve child visibility settings, and clear invisible selection safely
+- existing navigation, movement, reset, and minimap behavior remain passing
+- typecheck, lint, unit tests, production build, Playwright, and visual inspection pass
+
+Excluded: the Add-rail redesign, real uploads, asset drag-in, layer reordering, moving layers between groups, keyboard shortcuts, speech-balloon assets, backgrounds, resizing, persistence, deployment, submission media, and AI.
+
+### Following product slice: Add rail and Asset Library shell
+
+After Katherine reviews the composition-group slice, replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Do not add real import, speech-balloon artwork, or AI-generated content in that shell slice.
+
+### Submission runway: July 19–21
+
+Public judge access, clean-browser verification, Devpost evidence, video production, final rules review, and submission are intentionally scheduled near the deadline. They remain mandatory, but they are not the July 13 next slice.
 
 ## Current product goal
 
@@ -124,78 +116,47 @@ The rule-to-evidence checklist is in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPL
 
 ## Dated work plan
 
-### July 13 — Provenance, compliance, and discovery
+### July 13 — Foundation, testable editor, and product review
 
-- Preserve the July 12 planning documents as the first commit and annotated tag.
-- Create the public `scroll-forge` GitHub repository and publish that baseline; rename it `scroll-splice` after the final project-name decision without rewriting history.
-- Add the MIT License, `.gitignore`, official-rules checklist, and WEBTOON discovery record in a separate July 13 commit.
-- Separate the complete Build Week MVP from the later creator-ready MVP across all project documents.
-- Record current confirmed WEBTOON requirements and the authenticated discovery test still needed before production export.
-- Confirm the local Codex model is GPT-5.6 and reserve the primary implementation task for the eventual `/feedback` Session ID.
-- Ask the hackathon manager to clarify the Stage One "required APIs/SDKs" wording; treat a response as useful risk reduction, not a blocker absent contrary official guidance.
-- Record the exact-name conflicts found in the basic ScrollForge screen, then select **ScrollSplice** under Katherine's requirement that the final name retain “scroll.”
-- Under a later narrow approval, scaffold the locked stack, verify the command contracts, define the flat episode model, and create the original six-beat synthetic fixture ahead of schedule.
+- Preserve and publish the pre-event planning boundary, compliance record, license, and WEBTOON discovery notes.
+- Scaffold and verify the locked stack, core model, synthetic fixture, and command contracts.
+- Complete the first testable editor with canvas, minimap, synchronized layers, movement, reset, validation, and visual inspection.
+- Complete Katherine's hands-on review and `/feedback` evidence.
+- Lock the three composition groups and category-based Asset Library direction in documentation.
+- After separate implementation approval, begin the composition-groups and visibility slice rather than deployment or submission preparation.
 
-End-of-day evidence: the owner-attested provenance and actual Git preservation time are explicit, the public repository is compliance-ready, no pre-event work is represented as judged implementation, and the first post-start product code is isolated in a dated scaffold-and-fixture slice.
+End-of-day target: the current editor remains passing, and the next creator-facing organization model is either testable or cleanly in progress.
 
-### July 14 — Remaining foundation and defining interaction
+### July 14 — Full product-building day
 
-The scaffold, command verification, core episode types, six-beat fixture, and initial fixture tests were completed early on July 13. Katherine approved accelerating the remaining interaction work into the now-completed testable-editor `/goal`:
+- Finish and visually review composition groups and visibility if they were not completed July 13.
+- If that slice passes and Katherine approves the next one, build the Add rail and Asset Library shell with public-safe placeholders.
+- Use remaining time only for one additional bounded creator-facing slice selected from the reviewed backlog; do not begin several partially connected features.
+- Keep every coherent checkpoint tested and independently understandable.
+- Do not spend the full product day on deployment, video, or Devpost assembly.
 
-- Build the desktop editor shell: main viewport, upper-right minimap, layers list, and a collapsed visual placeholder for future assets.
-- Add the remaining viewport and selection types with stable IDs when their behavior is introduced.
-- Render the shared episode in the viewport, lightweight minimap, and layers list.
-- Implement vertical wheel/trackpad navigation, viewport clamping, minimap click-to-jump, an accurate viewport box, and synchronized selection.
-- Add coordinate, clamping, and selection tests; inspect the running layout at representative desktop sizes.
+### July 15–18 — Two-hour product and reliability evenings
 
-End-of-day evidence: a reviewer can understand the long episode, navigate it in both directions, and select matching content from canvas or layers.
+- Continue one approved, bounded human-editor slice at a time.
+- Prioritize creator-facing foundations that later features depend on; avoid OAuth, autonomous generation, production export, and other infrastructure expansion.
+- Preserve navigation, minimap, selection, movement, reset, and the shared episode model after every change.
+- Use one evening for regression tests and visual refinement before the submission runway.
+- Stop starting new product features after July 18.
 
-The formal navigation floor is reliable canvas scrolling plus minimap click-to-jump with an accurate synchronized viewport box. Add viewport-box dragging only if that floor is already stable.
+### July 19 — Two-hour public-access pass
 
-### July 15 — Two-hour selection clarity pass
+- Configure and publish the passing static build through GitHub Pages.
+- Verify the complete editor walkthrough while signed out in a clean browser.
+- If Pages cannot be made reliable within the session, prepare the documented unrestricted fallback build.
+- Record the verified access URL in README and `BUILD_WEEK_COMPLIANCE.md` and keep it available through August 5 at 5:00 PM PT.
 
-- Add a clear selected-element outline and selected layer treatment.
-- When a layer is selected off-screen, center it in the viewport and update the minimap.
-- Add focused selection and coordinate tests.
-- Stop after the complete selection story is visually verified.
-
-### July 16 — Two-hour editing pass
-
-- Add selected-element movement.
-- Commit the final position through a pure document command on drag end.
-- Add a prominent reset action and movement/boundary tests.
-- Do not begin resize, rotation, undo, or reorder.
-
-### July 17 — Two-hour judge-access and smoke-test pass
-
-- Add one Playwright smoke test covering load, minimap navigation, canvas/layer selection, movement, and reset.
-- Publish the passing static build through GitHub Pages and verify it in a clean browser session.
-- If Pages cannot be made reliable within the session, prepare an unrestricted downloadable test build and document exact launch steps.
-- Record the access URL and keep it available through August 5 at 5:00 PM PT.
-
-### July 18 — Two-hour reliability and design pass
-
-- Test coordinate conversion, viewport clamping, synchronization, movement, and reset.
-- Improve only the hierarchy, labels, contrast, empty/error states, and minimap readability needed for a coherent judge experience.
-- Run typecheck, lint, unit tests, build, and the smoke test.
-- Visually inspect representative desktop sizes.
-
-### July 19 — Two-hour submission-material pass
-
-- Perform the reviewer walkthrough from a clean start using the public access path.
-- Update README commands and status from verified evidence.
-- Document concrete examples of Codex/GPT-5.6 collaboration and key decisions from the actual implementation history.
-- Confirm the already recorded `/feedback` Session ID appears in README, the compliance checklist, and the Devpost form.
-- Draft the Devpost category, description, repository URL, access URL, and concise explanation of what was deliberately deferred.
-- Record a scripted public YouTube demo under three minutes with audio; use only original or approved visual/audio material.
-
-### July 20 — Stabilization buffer
+### July 20 — Stabilization and submission package
 
 - Make no feature additions.
-- Use the buffer only for blocking defects, broken setup/access, failed validation, submission-evidence gaps, or essential visual cleanup.
-- Verify from a clean clone or equivalent fresh checkout.
-- Re-run the complete validation suite and public reviewer walkthrough.
-- Confirm no secrets, private art, unlicensed media, or unintended files are tracked.
+- Fix only blocking defects, broken setup/access, failed validation, submission-evidence gaps, or essential visual cleanup.
+- Verify from a clean clone or equivalent fresh checkout and re-run the full public walkthrough.
+- Finalize the Devpost description and testing instructions, confirm the `/feedback` ID, and record the under-three-minute public YouTube demonstration using only original or approved material.
+- Re-read the live rules and confirm no secrets, private art, unlicensed media, or unintended files are published.
 
 ### July 21 — Submit
 
@@ -207,9 +168,9 @@ The formal navigation floor is reliable canvas scrolling plus minimap click-to-j
 - Tag the exact submitted commit as `build-week-submission` and record it in the compliance evidence table.
 - Preserve the submitted repository, demo, video, and access path unchanged and available through the judging period ending August 5 at 5:00 PM PT.
 
-## Stretch work
+## Optional Build Week product slices
 
-Attempt only after public judge access is stable and while enough schedule buffer remains to complete the submission evidence. Submission blockers always outrank stretch work:
+Work through these only in order, with separate approval and a passing checkpoint after each. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above.
 2. The Add rail and Asset Library shell using public-safe placeholders.
@@ -217,7 +178,7 @@ Attempt only after public judge access is stable and while enough schedule buffe
 4. Asset-to-canvas drag if the fallback is already reliable.
 5. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
-Stop immediately if stretch work threatens validation, public access, the video, or the submission checklist.
+Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
 ### Additional gate for the OpenAI stretch
 

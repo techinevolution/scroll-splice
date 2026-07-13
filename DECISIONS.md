@@ -196,7 +196,7 @@ Decision: Treat Katherine's first hands-on review as validation of the defining 
 
 Reason: Minimap dragging, direct element movement, and the collapsible asset panel all worked well in the reviewed build, and no reported issue blocked the reviewer story. Background composition, transparent imports, speech balloons, episode management, snapping, and resizing are valuable product work but would widen a stable submission target before public access and evidence are complete.
 
-Consequences: The Build Week must-haves remain unchanged. Public judge access stays ahead of creator-feature implementation, and any later approved product slice must remain optional, bounded, and unable to block submission.
+Consequences: The Build Week must-haves remain unchanged, and any later approved product slice remains optional, bounded, and unable to block submission. The original public-access-first sequencing from this review was superseded later on July 13 by the product-window decision below.
 
 ## 2026-07-13: Use three fixed composition groups and a category-based Asset Library
 
@@ -205,3 +205,11 @@ Decision: Organize placed elements under three fixed composition groups—**Back
 Reason: Three broad groups use the canvas header's available horizontal space and prevent the narrow right inspector from accumulating tabs. They also give imported and built-in assets a predictable destination without introducing a complex nested layer tree. A category-based library accurately describes both creator uploads and free built-in elements.
 
 Consequences: Background always renders below Content, and Foreground always renders above it; ordinary stacking remains adjustable only within each group. Activating a group filters organization but does not change canvas visibility. Group and individual eye controls are separate, and hiding a group preserves each layer's eye state. Selecting an element activates its group. The Layers list scrolls independently and may collapse or overlay the canvas on narrow displays. Exact keyboard shortcuts, cross-group moves, user-created groups, actual imports, and AI-generated assets remain later decisions or slices.
+
+## 2026-07-13: Use the early Build Week days for product work
+
+Decision: Keep July 13–18 focused on bounded human-editor product slices. Reserve July 19 for public judge access, July 20 for stabilization and submission materials, and July 21 for final checks and submission.
+
+Reason: July 13 is the first submission-period day, the testable editor was completed ahead of its original schedule, and the deadline is July 21. Moving immediately into deployment and submission assembly would waste the two full product-building days and the scheduled evening work while there is still time to improve the editor safely.
+
+Consequences: Composition groups and visibility become the next proposed slice, followed by the Add rail and Asset Library shell if each prior checkpoint passes and Katherine approves it. Stop starting new product features after July 18. Public access and submission evidence remain mandatory but must not displace the earlier product window.

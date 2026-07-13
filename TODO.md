@@ -12,10 +12,11 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Katherine — next approval
 
-- [ ] Approve the public judge-access `/goal` in `PLAN.md` when ready; this separately authorizes GitHub Pages configuration and deployment.
+- [ ] Approve the composition-groups and visibility `/goal` in `PLAN.md` when ready.
 
 ## Katherine — before submission
 
+- [ ] On or around July 19, approve the separately scoped GitHub Pages deployment after the product-building window closes.
 - [ ] Paste the recorded Codex Feedback Session ID into the Devpost submission form.
 
 ## Codex — after the relevant gate

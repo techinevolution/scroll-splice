@@ -87,7 +87,7 @@ The Build Week command surface is intentionally small:
 - `moveElement(elementId, logicalPosition)` returns an updated document.
 - `resetEpisode()` restores the known fixture document through application coordination.
 
-The first creator-feature slice after judge access may add two pure document commands:
+The next approved creator-feature slice may add two pure document commands:
 
 - `setElementVisibility(elementId, visible)` changes one layer's eye state.
 - `setCompositionGroupVisibility(group, visible)` changes only the group eye state and preserves every element's individual setting.
