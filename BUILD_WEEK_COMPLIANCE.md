@@ -63,10 +63,11 @@ The overview says to create a project using Codex with GPT-5.6. The rules also e
 - [x] Use Codex with GPT-5.6 for the majority of ScrollSplice's core implementation in one identifiable primary task.
 - [x] Keep dated commits showing meaningful implementation, testing, review, and decisions during the submission period.
 - [x] Update README from actual evidence: how Katherine collaborated with Codex, where Codex accelerated work, Katherine's key product/engineering/design decisions, and how GPT-5.6/Codex affected the result.
-- [ ] Run `/feedback` in the primary task where the majority of core functionality was built.
-- [ ] Record that Codex Session ID here, in README, and in the Devpost form.
+- [x] Run `/feedback` in the primary task where the majority of core functionality was built.
+- [x] Record that Codex Session ID here and in README.
+- [ ] Enter the recorded Codex Session ID in the Devpost form before submission.
 
-Codex `/feedback` Session ID: **PENDING — the primary core implementation goal is complete; Katherine should run `/feedback` after her hands-on walkthrough.**
+Codex `/feedback` Session ID: **`019f5921-6190-7520-ba51-f5e0897c5af9`**, returned after Katherine's July 13 hands-on walkthrough.
 
 ### Stage One ambiguity to manage
 
@@ -136,7 +137,7 @@ Working-access URL: **PENDING — the local application and production build exi
 - [ ] Public repository URL: <https://github.com/techinevolution/scroll-splice>.
 - [ ] Working website/demo/test-build URL.
 - [ ] Public YouTube demo URL.
-- [ ] Codex `/feedback` Session ID from the primary core-functionality task.
+- [ ] Codex `/feedback` Session ID from the primary core-functionality task: `019f5921-6190-7520-ba51-f5e0897c5af9` is ready to paste into Devpost.
 - [ ] Testing instructions that identify a desktop Chrome-class browser and require no rebuilding, account, private data, or payment.
 - [ ] Submit all required fields before July 21 at 5:00 PM PT.
 
@@ -226,7 +227,7 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
 | Working project URL | Pending | Pending |
 | Public YouTube URL | Pending | Pending |
-| Primary `/feedback` Session ID | Pending | Pending |
+| Primary `/feedback` Session ID | `019f5921-6190-7520-ba51-f5e0897c5af9` | Complete locally; Devpost entry pending |
 | Devpost submission URL | Pending | Pending |
 | Submitted commit/tag | Pending / `build-week-submission` | Pending |
 | Final submission timestamp | Pending | Pending |

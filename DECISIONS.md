@@ -189,3 +189,11 @@ Decision: Retain ScrollSplice's fixed `800`-unit logical episode width. In the f
 Reason: Katherine's authenticated Manage Episode form observation displays automatic slicing or reduction above 800 × 1280 px, a 2 MB image threshold, 50 MB and 100 images per episode, and a separate 202 × 142 episode thumbnail. The current editor width therefore aligns cleanly without making platform pixels part of the document model.
 
 Consequences: No Build Week canvas or interaction change is required. Import may later accept source images at other resolutions, while deterministic WEBTOON export targets gutter-aware slices no larger than the observed profile and preflights encoded bytes and count. Treat the July 13 profile as `form-observed`, not `upload-verified`, until harmless unpublished boundary tests confirm actual transformations and enforcement.
+
+## 2026-07-13: Preserve the contest MVP after the first hands-on review
+
+Decision: Treat Katherine's first hands-on review as validation of the defining Build Week interaction and record its additional creator features for later slices rather than adding them to the required contest build.
+
+Reason: Minimap dragging, direct element movement, and the collapsible asset panel all worked well in the reviewed build, and no reported issue blocked the reviewer story. Background composition, transparent imports, speech balloons, episode management, snapping, and resizing are valuable product work but would widen a stable submission target before public access and evidence are complete.
+
+Consequences: The next recommended Build Week slice remains unrestricted judge access and submission evidence. The creator-ready requests are documented in `PROJECT_OUTLINE.md` and `PLAN.md`; each requires explicit later approval and validation appropriate to its user story.

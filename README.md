@@ -16,7 +16,7 @@ Post-start documentation/compliance work is recorded separately in commit `a5678
 
 Implementation began later on July 13 with the locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. Katherine then approved one primary `/goal` through the first complete human-editor MVP and authorized Codex to commit and push each coherent passing checkpoint to `main`.
 
-That testable editor is now complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, Photoshop-style layers list, wheel and minimap navigation, canvas/layer selection, off-screen layer reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine's next checkpoint is hands-on product review and `/feedback`; public deployment and submission media have not begun.
+That testable editor is now complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, Photoshop-style layers list, wheel and minimap navigation, canvas/layer selection, off-screen layer reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine completed the hands-on product review on July 13 and confirmed that minimap navigation, canvas movement, and the collapsible asset panel work well. Her creator-ready feature feedback is now recorded without enlarging the Build Week MVP. Public deployment and submission media have not begun.
 
 ## Product sequence
 
@@ -107,7 +107,7 @@ The July 13 validation passed 15 unit tests across four files, strict typecheck,
 
 OpenAI-powered image creation is an optional product stretch only after the human-operated editor, validation, public access, and submission evidence are secure. If it is not built during Build Week, the submission remains the human editor. If a proof is built, it must use synthetic inputs, preserve unrestricted judge access to the base editor, and be described only to the extent actually demonstrated.
 
-The final submission also requires the Codex Session ID produced by `/feedback` from this primary core-functionality task. Katherine should run `/feedback` after her hands-on walkthrough; the returned ID must then be recorded here and in the submission checklist.
+Katherine completed `/feedback` after the hands-on walkthrough. The primary core-functionality Codex Feedback Session ID is **`019f5921-6190-7520-ba51-f5e0897c5af9`**. It is also recorded in the submission checklist and still needs to be entered in the Devpost form before submission.
 
 Official event sources:
 

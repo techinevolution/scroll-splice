@@ -2,24 +2,23 @@
 
 Small loose actions only. Product direction and dated implementation work belong in [PLAN.md](PLAN.md); the full submission checklist belongs in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPLIANCE.md).
 
-## Katherine — no action needed now
+## Katherine — completed
 
 - [x] Park the optional organizer API/SDK clarification question; it does not block the current plan and can be revisited before submission if ambiguity remains.
 - [x] Approve today's narrow implementation start: scaffold the locked stack and create the original six-beat synthetic fixture. This is not approval for the entire July 14 interaction slice.
 - [x] Approve the first testable-editor `/goal` and authorize Codex to commit and push each coherent passing slice to `main` until that complete milestone is ready for product review.
+- [x] Run the complete editor walkthrough and give product feedback on clarity, navigation, selection, movement, and reset.
+- [x] Run `/feedback` in this primary core-functionality task; Session ID `019f5921-6190-7520-ba51-f5e0897c5af9` is recorded in README and `BUILD_WEEK_COMPLIANCE.md`.
 
-Nothing about OpenAI runtime access needs a decision before the human MVP begins.
+## Katherine — before submission
 
-## Katherine — needed now
-
-- [ ] Run the complete editor walkthrough and give product feedback on clarity, navigation, selection, movement, and reset.
-- [ ] Run `/feedback` in this primary core-functionality task and share the returned Session ID so Codex can record it in README and `BUILD_WEEK_COMPLIANCE.md`.
+- [ ] Paste the recorded Codex Feedback Session ID into the Devpost submission form.
 
 ## Codex — after the relevant gate
 
 - [x] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
 - [x] Build, validate, push, and prepare the complete human editor for Katherine's product review.
-- [ ] After Katherine runs `/feedback`: record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
+- [x] After Katherine runs `/feedback`: record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
 
 ## Joint — only if the human MVP finishes early
 
@@ -29,5 +28,7 @@ Nothing about OpenAI runtime access needs a decision before the human MVP begins
 
 ## Joint — later, not Build Week scope
 
+- [ ] Before the speech-balloon asset slice: research common comic balloon forms, meanings, accessibility concerns, and safe original starter designs.
+- [ ] When built-in elements and creator files both exist: test **Assets**, **Uploads**, and a split-library label with the real panel workflow before renaming it.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
 - [ ] Before full autonomous creation: define approved project context, reference-image consent, generation budget, cancellation/recovery behavior, provenance fields, and which editor commands may run without per-action approval.

@@ -6,7 +6,7 @@ ScrollSplice is a public planning repository at <https://github.com/techinevolut
 
 Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she can test. The locked scaffold, verified command contracts, flat episode and element types, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed.
 
-Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. The complete human-editor MVP is available for Katherine's hands-on review. Later feature work pauses until that review; `/feedback` is also due in this primary task.
+Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. Katherine completed the hands-on review and `/feedback` that day. The review found no blocking defect in the defining editor interaction, so the newly requested creator features remain later work rather than expanding the Build Week target.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -21,11 +21,29 @@ Completed in the July 13 commits `c33b491` and `05ac06b`:
 
 Validation passed: 15 unit tests, strict typecheck, ESLint, production build, and the complete Playwright Chromium walkthrough repeated three times. The running editor was visually inspected at 1440 × 900 and 1280 × 720. Deployment, real asset import, persistence, export, OpenAI runtime access, OAuth, and submission-media production remain outside this completed goal.
 
-## Next checkpoint: Katherine product review
+## Completed checkpoint: Katherine product review
 
-Katherine now runs the documented editor walkthrough and evaluates the experience as product manager and creative director. She should focus on whether the workspace is understandable, the minimap feels useful, canvas/layer selection is clear, movement is credible, and reset restores confidence. She then runs `/feedback` in this task and shares the returned Session ID.
+Katherine completed the documented walkthrough on July 13. She confirmed that the minimap viewport is easy to drag, placed elements are easy to move, and the sliding asset panel hides correctly. No reported issue prevents a judge from understanding or using the current Build Week interaction.
 
-No later implementation slice is authorized until that review. Afterward, choose one concrete direction: correct product issues Katherine finds, prepare public judge access and submission evidence, or deliberately approve a later stretch. Do not default into OAuth, autonomous generation, export, or other deferred work.
+The associated Codex Feedback Session ID is **`019f5921-6190-7520-ba51-f5e0897c5af9`**.
+
+## Creator-ready feedback recorded July 13
+
+These requests refine the intended product but are not authorization to enlarge the contest MVP:
+
+- combine a solid RGB base, an uploaded background image, and optional decorative edges in one independently editable background treatment
+- let the episode and background extend downward as the story grows, with the final add-space interaction chosen during that slice
+- preserve transparency in imported and placed images
+- provide a researched starter library of resizable comic speech balloons while allowing creators to add their own reusable balloon and decorative assets
+- make episode names editable and provide a **File > New Episode** command
+- use a familiar File, Edit, View, Window, and Help command model, with native operating-system menus deferred until desktop packaging exists
+- add optional center/edge/nearby-element snapping behind a magnet toggle
+- resize images and text directly with corner handles
+- test **Assets**, **Uploads**, or a split label when the panel contains both built-in elements and creator files
+
+## Next recommended Build Week checkpoint: public judge access
+
+The review did not identify a blocking product correction. The safest next coherent slice is therefore the already planned unrestricted static deployment and clean-browser judge walkthrough, followed by submission evidence. Do not begin the creator-ready requests above, OAuth, autonomous generation, or production export unless Katherine explicitly changes the Build Week priority.
 
 ## Current product goal
 
@@ -127,7 +145,7 @@ The formal navigation floor is reliable canvas scrolling plus minimap click-to-j
 - Perform the reviewer walkthrough from a clean start using the public access path.
 - Update README commands and status from verified evidence.
 - Document concrete examples of Codex/GPT-5.6 collaboration and key decisions from the actual implementation history.
-- Run `/feedback` in the primary core-functionality Codex task and record its Session ID.
+- Confirm the already recorded `/feedback` Session ID appears in README, the compliance checklist, and the Devpost form.
 - Draft the Devpost category, description, repository URL, access URL, and concise explanation of what was deliberately deferred.
 - Record a scripted public YouTube demo under three minutes with audio; use only original or approved visual/audio material.
 
@@ -177,8 +195,14 @@ The smallest acceptable proof is one request that produces one image candidate, 
 ## Deferred work
 
 - Real asset import and project-folder design.
+- Composable background color, uploaded background imagery, optional edge decoration, and downward episode/background extension.
+- Transparency-preserving image import and preview.
+- A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
+- Editable episode naming, new-episode creation, and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging.
+- Optional snapping/alignment guides and direct corner-handle resizing.
+- Final naming and information architecture for built-in assets versus creator uploads.
 - Persistence, save/reopen, autosave, and recovery.
-- Undo/redo, resize, rotation, crop, masks, and advanced transforms.
+- Undo/redo, rotation, crop, masks, and advanced transforms.
 - Layer reordering and panel-group concepts.
 - Production tall-master and WEBTOON slice export.
 - Authenticated WEBTOON upload verification and other platform profiles.
@@ -233,7 +257,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal` is complete. Stop for Katherine's hands-on review and do not silently continue into later features.
+- The first-testable-editor `/goal` and Katherine's hands-on review are complete. Do not treat the new creator-ready feedback as silent authorization for a feature slice.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

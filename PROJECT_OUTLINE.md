@@ -57,10 +57,11 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 ### Assemble an episode
 
 1. Open an episode.
-2. Import images into the asset library.
-3. Drag an asset onto the canvas to create an element.
-4. Position and resize it within the vertical composition.
-5. Add more panels or elements as the episode grows downward.
+2. Give the episode an editable name and choose its base background treatment.
+3. Import images into the asset library.
+4. Drag an asset onto the canvas to create an element.
+5. Position and resize it within the vertical composition.
+6. Add more panels or elements as the episode grows downward.
 
 ### Navigate a long scroll
 
@@ -99,12 +100,18 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Right sidebar with minimap above the layers panel.
 - Collapsible asset panel, initially placed along the bottom or left edge based on the most usable MVP layout.
 - Clear controls for project, episode, import, preview, save, and export.
+- Editable episode names and a **File > New Episode** command.
+- A familiar File, Edit, View, Window, and Help command structure. A browser build may present these as an in-app menu bar; native macOS and Windows menu integration belongs with later desktop packaging.
 
 ### 2. Vertical editing canvas
 
 - A tall episode surface inside a pannable and zoomable workspace.
 - Selection, move, resize, and delete for placed elements.
-- Visible selection outline and handles.
+- Visible selection outline with corner handles for direct resizing.
+- Optional snapping and alignment guides, controlled by a clearly visible magnet toggle.
+- A composable background stack that can use a solid RGB color, an uploaded background image, and an optional decorative edge treatment together.
+- Preserve alpha transparency in imported and placed images rather than flattening them onto white.
+- Let the creator extend the episode and its background downward as the story grows, without imposing an arbitrary fixed-height project limit. The exact add-space control remains an interaction-design choice.
 - Panel groups that can be reordered vertically by dragging.
 - Drop targets and insertion feedback while dragging.
 - Canvas scrolling that remains synchronized with the minimap.
@@ -132,6 +139,9 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Collapse the panel to preserve canvas space.
 - Drag an asset onto the canvas to create an independently editable instance.
 - Reusing an asset must not duplicate the original source file unnecessarily.
+- Include a free starter set of resizable comic speech balloons and let creators add their own reusable balloon or decorative assets.
+- Research common speech-balloon forms and their storytelling conventions before choosing the starter set; do not present stylistic conventions as universal rules.
+- Test whether **Assets**, **Uploads**, or a split library/upload label is clearest once both built-in and creator-provided items exist.
 
 ### 6. Drag-and-drop interaction system
 
@@ -147,6 +157,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 - One local project containing assets and one or more episode documents.
 - Episode data records canvas dimensions, panels, elements, transforms, and ordering.
+- Episode names are editable and remain associated with the correct saved document.
 - Save and reopen without losing layout.
 - Keep imported source assets separate from placed element instances.
 
@@ -193,6 +204,9 @@ These components follow the creator-ready human workflow and are not Build Week 
 - Dragging must always show what will happen before the user drops.
 - The asset panel should be available without permanently shrinking the working area.
 - Empty states should teach the first action: import an image or create a panel.
+- Background color, background imagery, and optional decoration should remain independently editable while composing into one continuous reader view.
+- Transparent areas should preview accurately against the current background treatment.
+- Snapping must be optional, easy to toggle, and clear about which center, edge, or nearby element is being matched.
 - Long episodes must remain usable; off-screen content should not make basic editing sluggish.
 - The manual editor must remain complete and understandable when OpenAI features are disconnected or unavailable.
 - Autonomous work must show progress, allow cancellation, make generated assets distinguishable, and preserve a clear path back to manual editing.
@@ -200,6 +214,8 @@ These components follow the creator-ready human workflow and are not Build Week 
 ## Examples of Success
 
 - A creator imports six images, drags them into a vertical episode, reorders two panels, adjusts their spacing, and exports the strip without reading instructions.
+- A creator combines a chosen background color with a transparent uploaded background and optional edge decoration, then extends the episode as new story beats are added.
+- A creator adds a starter speech balloon, resizes it with corner handles, and replaces or supplements the starter library with a personal reusable balloon asset.
 - Dragging the minimap viewport moves the main canvas to the matching portion of the episode.
 - Selecting an image on the canvas highlights its layer; moving that layer changes the visible stacking immediately.
 - Closing and reopening the project restores the same asset list and episode layout.
