@@ -10,6 +10,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Run the complete editor walkthrough and give product feedback on clarity, navigation, selection, movement, and reset.
 - [x] Run `/feedback` in this primary core-functionality task; Session ID `019f5921-6190-7520-ba51-f5e0897c5af9` is recorded in README and `BUILD_WEEK_COMPLIANCE.md`.
 
+## Katherine — next approval
+
+- [ ] Approve the public judge-access `/goal` in `PLAN.md` when ready; this separately authorizes GitHub Pages configuration and deployment.
+
 ## Katherine — before submission
 
 - [ ] Paste the recorded Codex Feedback Session ID into the Devpost submission form.
@@ -29,6 +33,5 @@ Small loose actions only. Product direction and dated implementation work belong
 ## Joint — later, not Build Week scope
 
 - [ ] Before the speech-balloon asset slice: research common comic balloon forms, meanings, accessibility concerns, and safe original starter designs.
-- [ ] When built-in elements and creator files both exist: test **Assets**, **Uploads**, and a split-library label with the real panel workflow before renaming it.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
 - [ ] Before full autonomous creation: define approved project context, reference-image consent, generation budget, cancellation/recovery behavior, provenance fields, and which editor commands may run without per-action approval.

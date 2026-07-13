@@ -10,7 +10,7 @@ ScrollSplice becomes a focused comic-production workspace rather than a general 
 
 After that complete human workflow is dependable, an optional OpenAI-powered creation mode can take a story brief, inspect the project and current episode geometry through explicit tools, generate or edit the needed images, and compose a complete scroll using the same asset and document-command system as the manual editor. The human workflow remains first-class and does not require model access.
 
-The editor should feel tactile. Most common actions happen directly on the canvas or through drag and drop, while the layers and asset panels provide precise organization when the canvas becomes complex.
+The editor should feel tactile. Most common actions happen directly on the canvas or through drag and drop, while the Layers panel and Asset Library provide precise organization when the canvas becomes complex.
 
 Root & Table is the first real story used to test whether the tool supports an expressive episode from beginning to end.
 
@@ -58,7 +58,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 1. Open an episode.
 2. Give the episode an editable name and choose its base background treatment.
-3. Import images into the asset library.
+3. Import images into the Asset Library.
 4. Drag an asset onto the canvas to create an element.
 5. Position and resize it within the vertical composition.
 6. Add more panels or elements as the episode grows downward.
@@ -73,9 +73,10 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 ### Organize the composition
 
 1. Select an element on the canvas or in the layers panel.
-2. The same element becomes selected in both places.
-3. Drag layers to change their stacking order.
-4. Drag panel groups to change their vertical episode order.
+2. The same element becomes selected in both places, and its composition group becomes active.
+3. Use the fixed **Background**, **Content**, and **Foreground** controls above the story canvas to choose which group's layers appear in the right panel.
+4. Toggle a whole composition group or one individual layer without disturbing the other visibility settings.
+5. Drag layers to change their stacking order within the active group.
 
 ### Refine and export
 
@@ -98,7 +99,9 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 - Large main editing canvas on the left.
 - Right sidebar with minimap above the layers panel.
-- Collapsible asset panel, initially placed along the bottom or left edge based on the most usable MVP layout.
+- Narrow left **Add** rail that opens an **Asset Library** drawer without permanently taking space from the story canvas.
+- Library category buttons for **Uploads**, **Speech Balloons**, **Decorations**, and **Shapes & Frames**; add **AI Generated** only when that future mode actually exists.
+- Fixed **Background**, **Content**, and **Foreground** composition-group controls above the story canvas.
 - Clear controls for project, episode, import, preview, save, and export.
 - Editable episode names and a **File > New Episode** command.
 - A familiar File, Edit, View, Window, and Help command structure. A browser build may present these as an in-app menu bar; native macOS and Windows menu integration belongs with later desktop packaging.
@@ -112,7 +115,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - A composable background stack that can use a solid RGB color, an uploaded background image, and an optional decorative edge treatment together.
 - Preserve alpha transparency in imported and placed images rather than flattening them onto white.
 - Let the creator extend the episode and its background downward as the story grows, without imposing an arbitrary fixed-height project limit. The exact add-space control remains an interaction-design choice.
-- Panel groups that can be reordered vertically by dragging.
+- Later story-section or panel-sequence reordering for moving whole beats vertically without confusing those sections with the three composition groups.
 - Drop targets and insertion feedback while dragging.
 - Canvas scrolling that remains synchronized with the minimap.
 
@@ -126,30 +129,36 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 ### 4. Layers panel
 
-- List every placed element in visual stacking order.
-- Select a layer to select its canvas element, and vice versa.
-- Drag layers to reorder stacking.
+- Organize every placed element into exactly one fixed composition group: **Background**, **Content**, or **Foreground**.
+- Render all visible Background layers below Content and all visible Foreground layers above Content.
+- Use Background for base color and scenery, Content for panels, characters, dialogue, and balloons, and Foreground for borders, edge decoration, overlays, and effects; creators may still choose another group when the desired visual stack calls for it.
+- Show only the active group's individual layers in the right panel, in their visual stacking order; activating a group filters the list but does not hide the other groups from the canvas.
+- Select a layer to select its canvas element, and vice versa. Selecting an element on the canvas also activates its group so the matching layer row is visible.
+- Give each group and each individual layer an eye control. Hiding a group must preserve its layers' individual visibility choices.
+- Drag layers to reorder stacking within the active group. Moving a layer between groups is a separate explicit action rather than an accidental cross-group drag.
 - Basic names and type icons so similar elements can be distinguished.
-- Show/hide and lock controls are desirable but may follow after selection and ordering work.
+- Keep the list independently scrollable. On narrow displays, allow the right inspector to collapse or open as an overlay rather than squeezing the story canvas past usability.
+- Lock controls may follow after selection, grouping, and visibility are dependable.
 
-### 5. Asset panel
+### 5. Add rail and Asset Library
 
-- Import local images into the current project.
-- Show image thumbnails and names.
-- Collapse the panel to preserve canvas space.
-- Drag an asset onto the canvas to create an independently editable instance.
+- Keep the collapsed left rail visible as a compact set of category buttons and open the selected category in the Asset Library drawer.
+- Use **Uploads** for creator-imported files; use separate categories for built-in speech balloons, decorations, and shapes or frames.
+- Show asset thumbnails and names inside the selected category.
+- Collapse the drawer to preserve canvas space, and prefer overlay behavior when display width is constrained.
+- Drag an asset onto the canvas to create an independently editable layer in the active composition group.
+- Allow a later precise drop onto the Layers panel to choose the group or stacking destination directly.
 - Reusing an asset must not duplicate the original source file unnecessarily.
 - Include a free starter set of resizable comic speech balloons and let creators add their own reusable balloon or decorative assets.
 - Research common speech-balloon forms and their storytelling conventions before choosing the starter set; do not present stylistic conventions as universal rules.
-- Test whether **Assets**, **Uploads**, or a split library/upload label is clearest once both built-in and creator-provided items exist.
 
 ### 6. Drag-and-drop interaction system
 
 - One consistent interaction language across the app.
-- Drag assets onto the canvas.
+- Drag assets from the Asset Library onto the canvas, where they become layers in the active composition group.
+- Allow a precise Layers-panel drop later without making it the only way to add an asset.
 - Drag canvas elements to reposition them.
-- Drag layer rows to change stacking.
-- Drag panel groups to change episode order.
+- Drag layer rows to change stacking within their composition group.
 - Provide clear previews, valid drop zones, and cancellation behavior.
 - Keep different drag types distinct so one action cannot accidentally trigger another.
 
@@ -202,7 +211,10 @@ These components follow the creator-ready human workflow and are not Build Week 
 - Minimap navigation should feel immediate, with no confusing jump between the viewport box and main canvas.
 - Selection must stay synchronized across canvas and layers.
 - Dragging must always show what will happen before the user drops.
-- The asset panel should be available without permanently shrinking the working area.
+- The Add rail should remain easy to reach, while its Asset Library drawer must not permanently shrink the working area.
+- The composition-group selector must fit above the story canvas at supported desktop sizes; the right Layers list scrolls independently and can collapse into an overlay on narrower displays.
+- Group selection filters organization only. Visibility changes happen through explicit eye controls, not merely by switching groups.
+- Keyboard shortcuts may supplement group and layer visibility, but every action must remain available through visible controls.
 - Empty states should teach the first action: import an image or create a panel.
 - Background color, background imagery, and optional decoration should remain independently editable while composing into one continuous reader view.
 - Transparent areas should preview accurately against the current background treatment.
@@ -214,6 +226,8 @@ These components follow the creator-ready human workflow and are not Build Week 
 ## Examples of Success
 
 - A creator imports six images, drags them into a vertical episode, reorders two panels, adjusts their spacing, and exports the strip without reading instructions.
+- A creator chooses **Content**, opens **Uploads** from the Add rail, and drags an image onto the canvas; its new layer appears in the filtered Content list.
+- On a smaller monitor, the creator can scroll or collapse the right inspector without losing the composition-group controls or access to the Asset Library.
 - A creator combines a chosen background color with a transparent uploaded background and optional edge decoration, then extends the episode as new story beats are added.
 - A creator adds a starter speech balloon, resizes it with corner handles, and replaces or supplements the starter library with a personal reusable balloon asset.
 - Dragging the minimap viewport moves the main canvas to the matching portion of the episode.

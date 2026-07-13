@@ -86,7 +86,10 @@ These command contracts were verified against the July 13 foundation scaffold. K
 - Keep coordinate conversion and ordering logic small, centralized, and tested.
 - Treat the Konva stage as a viewport into logical episode coordinates, never as one full-height episode canvas.
 - Derive canvas, minimap, and layers from the same episode document.
-- Use the Build Week flat element model, provisional `800`-unit logical width, and one fixed fit scale; do not add panel groups, nested layers, or zoom during the MVP.
+- Use the current Build Week flat element model, provisional `800`-unit logical width, and one fixed fit scale. The approved creator-ready extension is a flat three-value `compositionGroup` field—Background, Content, or Foreground—not a nested layer tree; implement it only through its explicit slice in `PLAN.md`.
+- When that composition slice is approved, keep active-group filtering in editor state, keep group and layer visibility separate, and use fixed cross-group rendering order plus ordinary ordering within each group.
+- Selecting a canvas element must activate its composition group so the filtered Layers panel can reveal the matching row. Hidden elements must not remain selectable.
+- Use **Add rail**, **Asset Library**, **library category**, **composition group**, and **layer** consistently. Do not create real upload, asset-persistence, speech-balloon, or AI-generated categories merely to render the later library shell.
 - Keep the minimap a lightweight React/CSS/SVG representation, not a second Konva editor.
 - Center and clamp the viewport when the layers list selects an off-screen element.
 - Keep future persistence, asset, export, and authentication integrations behind application-edge interfaces.
@@ -147,6 +150,7 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 
 - Run and visually inspect the application for any UI slice.
 - Verify the main canvas, minimap, and layers panel at representative desktop sizes; inspect the collapsed asset placeholder only if that approved placeholder exists.
+- For the future composition-group slice, verify group filtering, group and layer eyes, canvas-driven group switching, independent Layers scrolling, and the existing minimap interaction at 1440 × 900, 1280 × 720, and 1024 × 768.
 - Do not claim drag behavior, synchronization, or visual correctness from static checks alone.
 - Use screenshots when they materially help Katherine review a layout or interaction.
 

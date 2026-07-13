@@ -196,4 +196,12 @@ Decision: Treat Katherine's first hands-on review as validation of the defining 
 
 Reason: Minimap dragging, direct element movement, and the collapsible asset panel all worked well in the reviewed build, and no reported issue blocked the reviewer story. Background composition, transparent imports, speech balloons, episode management, snapping, and resizing are valuable product work but would widen a stable submission target before public access and evidence are complete.
 
-Consequences: The next recommended Build Week slice remains unrestricted judge access and submission evidence. The creator-ready requests are documented in `PROJECT_OUTLINE.md` and `PLAN.md`; each requires explicit later approval and validation appropriate to its user story.
+Consequences: The Build Week must-haves remain unchanged. Public judge access stays ahead of creator-feature implementation, and any later approved product slice must remain optional, bounded, and unable to block submission.
+
+## 2026-07-13: Use three fixed composition groups and a category-based Asset Library
+
+Decision: Organize placed elements under three fixed composition groups—**Background**, **Content**, and **Foreground**—selected from controls above the story canvas. The right Layers panel shows the active group's individual layers. Replace the single-purpose left Assets control with a compact **Add** rail that opens an **Asset Library** organized into Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated.
+
+Reason: Three broad groups use the canvas header's available horizontal space and prevent the narrow right inspector from accumulating tabs. They also give imported and built-in assets a predictable destination without introducing a complex nested layer tree. A category-based library accurately describes both creator uploads and free built-in elements.
+
+Consequences: Background always renders below Content, and Foreground always renders above it; ordinary stacking remains adjustable only within each group. Activating a group filters organization but does not change canvas visibility. Group and individual eye controls are separate, and hiding a group preserves each layer's eye state. Selecting an element activates its group. The Layers list scrolls independently and may collapse or overlay the canvas on narrow displays. Exact keyboard shortcuts, cross-group moves, user-created groups, actual imports, and AI-generated assets remain later decisions or slices.

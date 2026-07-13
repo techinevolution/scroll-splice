@@ -66,6 +66,20 @@ Selection, hover, active drag, viewport position, panel-collapse state, and rese
 
 Do not put React objects, Konva nodes, browser handles, user IDs, OAuth fields, provider tokens, WEBTOON metadata, or platform upload state in the episode document.
 
+## Approved creator-ready composition extension
+
+The approved organization model keeps the element list flat. It does not introduce a nested layer tree or arbitrary group system.
+
+- `CompositionGroup` has exactly three values: `background`, `content`, and `foreground`.
+- Every element records one `compositionGroup`.
+- The episode records group visibility separately from each element's existing visibility so hiding a whole group does not erase individual eye settings.
+- Effective visibility is `group visible AND element visible`.
+- Cross-group rendering order is fixed: Background below Content below Foreground. `zIndex` orders elements only within their group.
+- `activeCompositionGroup` is transient editor state. It filters the right Layers list and becomes the destination for later asset placement, but it does not hide the other visible groups.
+- Selecting an element on the canvas activates that element's group so its matching layer row remains discoverable.
+
+The left control remains an application-shell concern: a compact **Add** rail opens an **Asset Library** drawer with Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated. The selected library category and drawer state are transient UI state. Source assets still belong behind `AssetRepository`; category navigation does not justify creating asset persistence before an approved import slice.
+
 ## Commands and state ownership
 
 The Build Week command surface is intentionally small:
@@ -73,14 +87,21 @@ The Build Week command surface is intentionally small:
 - `moveElement(elementId, logicalPosition)` returns an updated document.
 - `resetEpisode()` restores the known fixture document through application coordination.
 
+The first creator-feature slice after judge access may add two pure document commands:
+
+- `setElementVisibility(elementId, visible)` changes one layer's eye state.
+- `setCompositionGroupVisibility(group, visible)` changes only the group eye state and preserves every element's individual setting.
+
 Navigation and selection do not change the document. They update application state.
 
 Zustand owns:
 
 - the current episode document
 - the selected element ID
+- the active composition group when that approved slice exists
 - the logical vertical viewport
 - active transient pointer state
+- the active Asset Library category and drawer state when that later shell exists
 - command dispatch and reset
 
 Canvas, minimap, and layers subscribe to this shared state. They must not keep competing copies of comic content, selection, or viewport position.
@@ -125,6 +146,16 @@ Coordinate conversion and clamping live in one tested core module. Do not duplic
 3. The application dispatches `moveElement`.
 4. The pure command returns the next document.
 5. Canvas, minimap, and layers derive their next view from that document.
+
+### Composition-group selection and visibility
+
+1. A Background, Content, or Foreground control updates the transient active group.
+2. The right Layers panel filters its rows to that group while the canvas continues to render every effectively visible group.
+3. Selecting a canvas element updates both the selected element ID and active group.
+4. A group or layer eye dispatches its pure visibility command.
+5. Canvas, minimap, and Layers panel derive effective visibility from the same episode document.
+
+Hidden elements do not render and cannot capture canvas selection. Hiding a selected element or its group clears selection rather than leaving an invisible active target.
 
 ## Future application-edge seams
 
@@ -236,8 +267,8 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, and serializable model invariants.
-- Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset.
+- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, and—when implemented—composition ordering and effective visibility.
+- Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset; extend the same story with group filtering and visibility only when that slice exists.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 
@@ -247,6 +278,8 @@ The public demo uses only original synthetic content or explicitly approved asse
 - Selection and viewport each have one application-state owner.
 - Core model, coordinates, and commands import no React, Konva, Zustand, persistence, export, platform, or authentication code.
 - Canvas, minimap, layers, future preview, and future export agree on geometry and ordering.
+- Fixed composition-group rank and within-group layer order produce one deterministic stack; active-group filtering never changes rendered visibility.
+- Group visibility and individual layer visibility remain separate state.
 - The live canvas is viewport-sized, not episode-sized.
 - Source assets are never mutated by placed-element edits.
 - Platform rules, account identity, provider tokens, and upload state never enter the episode document or editor commands.

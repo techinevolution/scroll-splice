@@ -16,7 +16,7 @@ Post-start documentation/compliance work is recorded separately in commit `a5678
 
 Implementation began later on July 13 with the locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. Katherine then approved one primary `/goal` through the first complete human-editor MVP and authorized Codex to commit and push each coherent passing checkpoint to `main`.
 
-That testable editor is now complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, Photoshop-style layers list, wheel and minimap navigation, canvas/layer selection, off-screen layer reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine completed the hands-on product review on July 13 and confirmed that minimap navigation, canvas movement, and the collapsible asset panel work well. Her creator-ready feature feedback is now recorded without enlarging the Build Week MVP. Public deployment and submission media have not begun.
+That testable editor is now complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, Photoshop-style layers list, wheel and minimap navigation, canvas/layer selection, off-screen layer reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine completed the hands-on product review on July 13 and confirmed that minimap navigation, canvas movement, and the collapsible asset panel work well. She then approved the creator-ready organization model documented below; those controls are not implemented in the current build. Public deployment and submission media have not begun.
 
 ## Product sequence
 
@@ -36,6 +36,8 @@ Import, persistence, undo, resize, ordering, production export, accounts, OAuth,
 ### Creator-ready MVP — after Build Week
 
 The longer product milestone adds local asset import, saving and reopening, safe undo, ordering, reader preview, and a validated export pipeline. WEBTOON requirements are discovery inputs for that future exporter, not a reason to enlarge the one-week MVP.
+
+Its approved workspace model uses three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas. The right Layers panel filters to the active group's individual layers while all visible groups remain composited. A compact left **Add** rail opens a category-based **Asset Library** for Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md#first-creator-feature-slice-after-judge-access-composition-groups-and-visibility).
 
 ### Autonomous creation — after the human workflow
 

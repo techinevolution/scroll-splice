@@ -39,11 +39,51 @@ These requests refine the intended product but are not authorization to enlarge 
 - use a familiar File, Edit, View, Window, and Help command model, with native operating-system menus deferred until desktop packaging exists
 - add optional center/edge/nearby-element snapping behind a magnet toggle
 - resize images and text directly with corner handles
-- test **Assets**, **Uploads**, or a split label when the panel contains both built-in elements and creator files
+- use a compact left **Add** rail that opens a category-based **Asset Library** with Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated
+- use three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas while the right Layers panel shows only the active group's individual layers
+- keep group selection separate from visibility, preserve individual eye settings when a whole group is hidden, and let constrained displays collapse or overlay the right inspector rather than crushing the canvas
 
-## Next recommended Build Week checkpoint: public judge access
+## Next implementation slice: public judge access
 
-The review did not identify a blocking product correction. The safest next coherent slice is therefore the already planned unrestricted static deployment and clean-browser judge walkthrough, followed by submission evidence. Do not begin the creator-ready requests above, OAuth, autonomous generation, or production export unless Katherine explicitly changes the Build Week priority.
+**Status:** proposed for Katherine's implementation approval. Approval of this documentation and its push does not itself authorize deployment.
+
+**Goal:** turn the current passing local editor into a judge-accessible baseline before another creator feature changes it.
+
+Scope:
+
+1. Configure the existing Vite build for the public `scroll-splice` repository path without changing local development commands.
+2. Publish the static build through GitHub Pages using the smallest maintainable deployment configuration.
+3. Verify the complete minimap, selection, movement, asset-drawer, and reset walkthrough while signed out in a clean browser.
+4. Run typecheck, lint, unit tests, production build, and Playwright against the deployment-ready state.
+5. Confirm no private artwork, secrets, local-only files, or unsupported future-feature claims are published.
+6. Record the verified public URL and date in README and `BUILD_WEEK_COMPLIANCE.md`, then push the passing deployment checkpoint.
+
+Acceptance:
+
+- the editor opens from a public URL without login, payment, rebuilding, or special permission
+- the local development workflow still works
+- the defining walkthrough passes from the public path
+- all validation commands pass and the public build is visually inspected at representative desktop sizes
+- the public URL is documented and remains available through the judging period
+
+Excluded: composition groups, visibility controls, Asset Library redesign, imports, speech balloons, production export, OAuth, and OpenAI runtime work.
+
+### First creator-feature slice after judge access: composition groups and visibility
+
+This is the first product slice to propose after the public baseline is secure because the Asset Library needs a dependable destination model before real assets are added.
+
+- Add a flat `compositionGroup` value—Background, Content, or Foreground—to every episode element and assign the synthetic fixture intentionally.
+- Keep fixed cross-group rendering order while preserving ordinary layer order within each group.
+- Add the three group controls above the story canvas and filter the right Layers list to the active group.
+- Selecting a canvas element activates its group so its layer row remains discoverable.
+- Add separate group and individual-layer visibility commands; a group toggle preserves individual layer settings.
+- Ensure hidden elements do not render or capture canvas selection.
+- Keep the Layers list independently scrollable and verify usability at 1440 × 900, 1280 × 720, and 1024 × 768 without adding a panel-resize system.
+- Add focused model, command, store, and browser coverage for filtering, selection synchronization, effective visibility, reset, and existing minimap behavior.
+
+Excluded from that slice: the Add-rail redesign, real uploads, asset drag-in, layer reordering, moving layers between groups, keyboard shortcuts, speech-balloon assets, backgrounds, resizing, persistence, and AI.
+
+The slice after composition groups is the **Add rail and Asset Library shell**: category buttons and responsive drawer behavior using only public-safe placeholders, before any real import or speech-balloon content.
 
 ## Current product goal
 
@@ -169,14 +209,13 @@ The formal navigation floor is reliable canvas scrolling plus minimap click-to-j
 
 ## Stretch work
 
-Attempt only if every must-have and submission dependency is already stable:
+Attempt only after public judge access is stable and while enough schedule buffer remains to complete the submission evidence. Submission blockers always outrank stretch work:
 
-1. A collapsible asset tray populated with code-rendered sample thumbnails.
-2. Minimap viewport-box dragging.
+1. The bounded composition-groups and visibility slice defined above.
+2. The Add rail and Asset Library shell using public-safe placeholders.
 3. A safe **Add to canvas** action.
 4. Asset-to-canvas drag if the fallback is already reliable.
-5. A layer visibility toggle.
-6. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+5. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
 Stop immediately if stretch work threatens validation, public access, the video, or the submission checklist.
 
@@ -200,10 +239,9 @@ The smallest acceptable proof is one request that produces one image candidate, 
 - A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
 - Editable episode naming, new-episode creation, and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging.
 - Optional snapping/alignment guides and direct corner-handle resizing.
-- Final naming and information architecture for built-in assets versus creator uploads.
 - Persistence, save/reopen, autosave, and recovery.
 - Undo/redo, rotation, crop, masks, and advanced transforms.
-- Layer reordering and panel-group concepts.
+- Layer reordering, moving layers between composition groups, and any user-created or nested group structure.
 - Production tall-master and WEBTOON slice export.
 - Authenticated WEBTOON upload verification and other platform profiles.
 - Desktop packaging, mobile editing, accounts, OAuth, cloud storage, collaboration, and publishing integrations.
@@ -257,7 +295,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal` and Katherine's hands-on review are complete. Do not treat the new creator-ready feedback as silent authorization for a feature slice.
+- The first-testable-editor `/goal` and Katherine's hands-on review are complete. The approved product design and documentation push do not silently authorize deployment or either proposed implementation slice.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.
