@@ -4,7 +4,6 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Katherine — needed now
 
-- [ ] Confirm that you joined the Devpost hackathon, then personally review the eligibility and submission acknowledgements in [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md#1-entrant-and-registration-confirmations). Do not commit private eligibility details.
 - [ ] Optional risk reduction: send the organizer the Stage One API/SDK clarification question recorded in [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md#stage-one-ambiguity-to-manage). Lack of a reply does not block the current plan.
 - [ ] When ready to begin product code, explicitly approve the **July 14 foundation and defining interaction** slice in [PLAN.md](PLAN.md#july-14--full-day-foundation-and-defining-interaction).
 

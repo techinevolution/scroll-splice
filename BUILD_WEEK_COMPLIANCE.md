@@ -22,7 +22,7 @@ Do not rely on the internal target as an extension of the official deadline. Aft
 
 These are personal/legal confirmations that the repository cannot prove:
 
-- [ ] Katherine has clicked **Join Hackathon**, is registered on Devpost, and can create a submission.
+- [x] Katherine has clicked **Join Hackathon**, registered on Devpost, created the ScrollSplice project, and advanced its draft form to the video and later-evidence stage as of July 13.
 - [ ] Katherine is at least the age of majority where she resides.
 - [ ] Katherine resides in an [OpenAI-supported country or territory](https://platform.openai.com/docs/supported-countries) and is not in an excluded jurisdiction identified by the rules.
 - [ ] Katherine is not an event judge; an employee, representative, or agent of a promotion entity; an ineligible family/household member; or otherwise subject to a real or apparent conflict described in the rules.
@@ -202,6 +202,7 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Independent July 12 timestamped evidence | Codex session `019f5921-6190-7520-ba51-f5e0897c5af9`, 6:41:50–7:03:03 PM PDT | Complete |
 | Project-name screen | ScrollForge retired; ScrollSplice exact-name screen found no matching software brand July 13 | Complete basic screen |
 | Documentation/compliance commit | `a567865`, July 13 at 11:50:26 AM PT | Complete |
+| Devpost registration/project draft | Created July 13; form advanced to video and later-evidence stage | Complete |
 | Working project URL | Pending | Pending |
 | Public YouTube URL | Pending | Pending |
 | Primary `/feedback` Session ID | Pending | Pending |
