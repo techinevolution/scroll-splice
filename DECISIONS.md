@@ -138,7 +138,7 @@ Decision: Use Codex with GPT-5.6 to implement and validate ScrollSplice, and rec
 
 Reason: The official event brief asks builders to create projects with Codex and GPT-5.6 and requires the submission to explain that use. ScrollSplice's product value is the editor interaction; a speculative embedded AI feature would enlarge the scope without strengthening it.
 
-Consequences: Concrete README claims must be written from completed work, not predicted in advance. Requesting clarification is a risk-reduction action, not a submission blocker if the organizer does not reply. If the organizer says an in-product OpenAI feature is required, pause and revise the scope before implementation continues.
+Consequences: Concrete README claims must be written from completed work, not predicted in advance. Requesting clarification is a risk-reduction action, not a submission blocker if the organizer does not reply. If the organizer says an in-product OpenAI feature is required, pause and revise the scope before implementation continues. The later autonomous-creation decision clarifies that runtime OpenAI is also a genuine future product direction, while remaining optional for Build Week.
 
 ## 2026-07-13: Keep the requested repository name but treat final branding as uncleared (superseded)
 
@@ -157,3 +157,19 @@ Decision: Rename the vertical comic editor to **ScrollSplice** and rename the re
 Reason: Katherine delegated the replacement name with one requirement: retain “scroll.” ScrollSplice describes joining panels, assets, and story beats into one continuous episode. A July 13 basic exact-name screen found no matching software brand in general web search, GitHub repository names, npm, or PyPI.
 
 Consequences: Current product documentation and future UI use ScrollSplice. ScrollForge remains only in historical provenance and conflict evidence. The GitHub repository becomes `techinevolution/scroll-splice`, and the Mac folder becomes `/Users/katherinephillips/Documents/ScrollSplice`. The basic name screen reduces obvious collision risk but is not legal trademark clearance.
+
+## 2026-07-13: Build the human editor before autonomous creation
+
+Decision: Keep the human-operated editor as the required Build Week product. After the human workflow is dependable, add an OpenAI-powered creation mode that can inspect bounded project and episode context, generate or edit comic images, add them as assets, and compose the scroll through the same document commands used by a human. A single synthetic generate-and-place proof may be attempted during Build Week only after every human MVP and submission dependency passes.
+
+Reason: Autonomous creation is a real ScrollSplice product goal, but it depends on reliable document geometry, asset handling, placement commands, validation, recovery, and clear creative controls. Building those human-facing primitives first gives the future model safe, testable tools and prevents AI integration from obscuring the defining editor experience.
+
+Consequences: The manual editor must work without OpenAI access. Full episode generation, repeated continuity passes, and unattended layout work follow the creator-ready human workflow. The optional Build Week proof requires Katherine's separate approval of network, privacy, credential, cost, and dependency changes and must never threaten public access or submission evidence.
+
+## 2026-07-13: Separate model access, editor tools, and external connectors
+
+Decision: Treat ScrollSplice account authentication, OpenAI model authorization, application-owned editor tools, and external service connectors as four separate boundaries. Use custom function tools to expose normalized project context and tested document commands to the model. Reserve connectors or remote MCP for optional external services, not for reading ScrollSplice's own episode state.
+
+Reason: These mechanisms carry different permissions and risks. A model needs explicit editor data and actions to understand canvas layout; it does not need direct React, Konva, Zustand, filesystem, or browser access. External connectors introduce separate OAuth scopes and privacy concerns. Coding-harness Sign in with ChatGPT behavior does not by itself prove that the same OAuth flow is supported for a general web application.
+
+Consequences: Add no OAuth or OpenAI dependency until an official supported model-access path is verified and a secure credential boundary is approved. Provider credentials never enter browser bundles, episode data, commands, logs, or git. Every future model write goes through an implemented and tested human command; generated assets carry provenance; and WEBTOON publishing remains manual.

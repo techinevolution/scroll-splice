@@ -16,7 +16,7 @@ Post-start documentation/compliance work is recorded separately in commit `a5678
 
 No application scaffold or product code exists yet. The approved commands below therefore remain unverified until Katherine separately authorizes implementation.
 
-## Two milestones
+## Product sequence
 
 ### Build Week MVP — due July 21
 
@@ -29,11 +29,17 @@ The contest submission is the smallest complete, coherent ScrollSplice editor ex
 - one meaningful edit: move the selected element, plus reset
 - public judge access and the required submission evidence
 
-Import, persistence, undo, resize, ordering, production export, accounts, OAuth, and direct publishing are deliberately outside this milestone.
+Import, persistence, undo, resize, ordering, production export, accounts, OAuth, OpenAI model access, autonomous generation, and direct publishing are deliberately outside the required milestone. If the human editor and every submission dependency are already stable, a narrowly bounded OpenAI image-generation proof may be attempted as stretch work; the submitted editor must not depend on it.
 
 ### Creator-ready MVP — after Build Week
 
 The longer product milestone adds local asset import, saving and reopening, safe undo, ordering, reader preview, and a validated export pipeline. WEBTOON requirements are discovery inputs for that future exporter, not a reason to enlarge the one-week MVP.
+
+### Autonomous creation — after the human workflow
+
+The intended product later adds an OpenAI-powered creation mode that can understand a story brief, inspect a safe normalized view of the current project and episode layout, generate or edit comic images, add them to the asset library, and place them on the scroll through the same document commands used by a human.
+
+This is a real product direction, not a Build Week requirement. The manual editor remains fully usable with AI turned off. A future model connection, editor tools, skills/instruction packs, generated-asset provenance, cost controls, and approval boundaries are described in [Architecture](ARCHITECTURE.md#future-openai-creation-boundary).
 
 ## Locked stack
 
@@ -59,6 +65,8 @@ corepack pnpm test:e2e
 ## Build Week and model-use record
 
 ScrollSplice is planned for the **Apps for Your Life** category. Codex with GPT-5.6 is the implementation collaborator; the local Codex configuration was verified as GPT-5.6 before implementation began. Dated commits will show where Codex accelerated architecture, implementation, testing, and review. The README must be updated with concrete examples from the finished work rather than invented retrospective claims.
+
+OpenAI-powered image creation is an optional product stretch only after the human-operated editor, validation, public access, and submission evidence are secure. If it is not built during Build Week, the submission remains the human editor. If a proof is built, it must use synthetic inputs, preserve unrestricted judge access to the base editor, and be described only to the extent actually demonstrated.
 
 The final submission also requires the Codex Session ID produced by `/feedback` from the primary task that implements ScrollSplice's core functionality. That ID does not exist yet and must be recorded here and in the submission checklist when generated.
 

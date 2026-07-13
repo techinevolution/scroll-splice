@@ -63,7 +63,7 @@ When unsure, choose the smallest clean implementation that can be understood, re
 - Vitest for unit tests and Playwright for one editor smoke test.
 - ESLint and `tsc --noEmit` for static validation.
 
-Do not add Next.js, Tauri, a backend, database, cloud service, or OAuth dependency during Build Week. Resolve current stable package versions during scaffolding and commit `pnpm-lock.yaml`.
+Do not add Next.js, Tauri, a backend, database, cloud service, OAuth dependency, or OpenAI runtime dependency to the required human MVP. Resolve current stable package versions during scaffolding and commit `pnpm-lock.yaml`. The optional OpenAI stretch in `PLAN.md` requires a separate recorded stack/auth decision; its gate does not silently amend this stack.
 
 ## Commands
 
@@ -90,6 +90,9 @@ These are the approved command contracts. They become verified after the separat
 - Keep the minimap a lightweight React/CSS/SVG representation, not a second Konva editor.
 - Center and clamp the viewport when the layers list selects an off-screen element.
 - Keep future persistence, asset, export, and authentication integrations behind application-edge interfaces.
+- Keep future OpenAI model access, image generation, project context, editor tools, and run coordination behind the application-edge interfaces in `ARCHITECTURE.md`.
+- Expose logical, serializable project context to a future model; never expose React components, Konva nodes, Zustand setters, raw filesystem handles, or credentials.
+- Route every future model-driven document edit through the same implemented and tested command used by the human editor.
 - Keep future platform limits in a versioned `ExportProfile`, never in the episode model or scattered UI constants.
 - Prefer original code-rendered shapes and text for the Build Week sample. If a separate fixture asset is introduced, record its provenance and license.
 - Create architectural folders only when the active slice needs them.
@@ -99,7 +102,7 @@ These are the approved command contracts. They become verified after the separat
 - Work locally by default. The approved exceptions for Build Week are the public GitHub repository, an unrestricted static judge-access deployment, and the public submission video. Do not upload private assets to any of them.
 - Never destructively modify imported source images.
 - Do not commit Root & Table art or other personal creative material without Katherine's explicit approval.
-- Do not add AI generation, accounts, collaboration, direct publishing, or advanced art tools unless the plan is explicitly broadened.
+- Do not add AI generation before the human MVP and submission path pass. Afterward, follow the explicit OpenAI stretch gate in `PLAN.md`; full autonomous creation remains a later milestone.
 - Do not put provider tokens, OAuth identity, or user-account fields in the episode document or editor command layer.
 - Do not automate WEBTOON login, upload, or publishing; do not store WEBTOON credentials.
 - Do not make major framework or storage changes without checking the project documents and recording the decision.
@@ -116,7 +119,17 @@ The July 21 submission must prove reviewer understanding and UX clarity through:
 - one selected-element move command and a reliable reset action
 - public judge access and all evidence required by BUILD_WEEK_COMPLIANCE.md
 
-Production export, import, persistence, undo, resize, ordering, desktop packaging, OAuth, accounts, cloud storage, and direct publishing are not required for the submission. Runtime AI is deferred unless the organizer's answer to the Stage One API/SDK clarification says otherwise. Static deployment is required only as the simplest judge-access path. Follow the dated schedule and fallback rules in `PLAN.md`.
+Production export, import, persistence, undo, resize, ordering, desktop packaging, OAuth, accounts, cloud storage, autonomous creation, and direct publishing are not required for the submission. A single synthetic OpenAI generate-and-place proof is optional only after the complete human MVP, validation, public access, and submission evidence pass and Katherine approves its additional gate. The editor and judge walkthrough must work without model access. Static deployment is required only as the simplest judge-access path. Follow the dated schedule and fallback rules in `PLAN.md`.
+
+## Future OpenAI Autonomy Boundary
+
+- Treat the human editor as the source of the tools an autonomous mode may use; do not create a second model-only mutation path.
+- Keep ScrollSplice user/workspace authentication separate from OpenAI model authorization.
+- Do not assume coding-harness Sign in with ChatGPT OAuth is supported for this web app; verify an official path before choosing dependencies.
+- Treat internal editor operations as custom function tools. Treat OpenAI connectors or remote MCP as optional external-service integrations with separate authorization, scopes, privacy review, and approvals.
+- Keep private comic assets local unless Katherine explicitly approves the exact material and context for an OpenAI request.
+- Record generated-asset provenance and provide visible progress, cancellation, error, and cost-limit behavior before autonomous runs are considered safe.
+- Never give a model WEBTOON credentials or automate WEBTOON login, upload, or publication.
 
 ## Build Week Provenance and Compliance
 
@@ -144,6 +157,7 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 - When deployment exists, repeat the defining user story through the public judge-access URL in a clean browser session.
 - Confirm no real creative assets or private content were added to git.
 - Confirm no secrets, credentials, generated reports, or local-only files were added to git.
+- If the optional OpenAI proof exists, confirm the base editor works with it disabled, synthetic inputs are used, credentials are absent from the client bundle and git, generated-asset provenance is visible, and the run respects its cancellation and spend limit.
 - Check `git diff` and report unrelated pre-existing changes separately.
 
 ## Git Behavior

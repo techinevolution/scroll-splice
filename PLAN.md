@@ -10,7 +10,7 @@ Available work time is roughly 26 hours: full workdays July 13–14, about two h
 
 ## Current product goal
 
-Submit a small, complete, reliable editor MVP in the **Apps for Your Life** category. A judge should immediately understand ScrollSplice's coherent user experience by using one public-safe sample episode to:
+Submit a small, complete, reliable **human-operated** editor MVP in the **Apps for Your Life** category. A judge should immediately understand ScrollSplice's coherent user experience by using one public-safe sample episode to:
 
 1. see a long episode through a viewport-sized editing canvas
 2. understand the whole episode through a synchronized minimap
@@ -18,7 +18,7 @@ Submit a small, complete, reliable editor MVP in the **Apps for Your Life** cate
 4. select the same element from the canvas or layers list
 5. move the selected element and reset the demo
 
-That is the simplest MVP for Build Week. It proves the product's distinctive interaction without pretending that import, persistence, undo, or production export is complete.
+That is the simplest MVP for Build Week. It proves the product's distinctive interaction without pretending that import, persistence, undo, production export, or autonomous creation is complete. The editor must work without an OpenAI connection.
 
 ## Build Week must-haves
 
@@ -140,8 +140,21 @@ Attempt only if every must-have and submission dependency is already stable:
 3. A safe **Add to canvas** action.
 4. Asset-to-canvas drag if the fallback is already reliable.
 5. A layer visibility toggle.
+6. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
 Stop immediately if stretch work threatens validation, public access, the video, or the submission checklist.
+
+### Additional gate for the OpenAI stretch
+
+The image-generation proof is lower priority than the human interaction stretches above. It may begin only when:
+
+- the complete human editor story, automated validation, public access, and required submission evidence are already passing
+- Katherine separately approves the network, privacy, credential, and cost implications
+- a supported model-access method and secret-handling boundary have been verified and recorded; never place an API key or reusable provider token in browser code or git
+- the base editor remains usable by judges without login, credits, or model access
+- the proof has a strict time and spend limit and uses only synthetic prompts and references
+
+The smallest acceptable proof is one request that produces one image candidate, records its generation provenance, adds it through the asset boundary, and places it through the ordinary episode command path. Read-only project tools may expose a normalized episode snapshot, viewport, selection, asset metadata, and prepared canvas-region preview. Do not attempt full autonomous episode creation, private-asset upload, external-service connectors, or unrestricted agent writes during Build Week.
 
 ## Deferred work
 
@@ -152,13 +165,26 @@ Stop immediately if stretch work threatens validation, public access, the video,
 - Production tall-master and WEBTOON slice export.
 - Authenticated WEBTOON upload verification and other platform profiles.
 - Desktop packaging, mobile editing, accounts, OAuth, cloud storage, collaboration, and publishing integrations.
-- Runtime AI features, unless the organizer clarifies that an in-product OpenAI API/SDK integration is required; any resulting scope change needs Katherine's approval and must solve a real editor need.
+- Full autonomous episode creation, including planning, repeated generation, continuity passes, and unattended layout changes. This is an intended product track after the human workflow, not a required Build Week feature.
+- External asset-source connectors and production model-account integration. A narrowly bounded OpenAI generate-and-place proof is permitted only through the stretch gate above.
 
 ## WEBTOON discovery track
 
 The Build Week editor can proceed without production export. Before an export slice is approved, complete the authenticated, harmless unpublished upload test in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md). Confirm current per-image dimensions, file-size and episode-total limits, image count, accepted formats, filename behavior, automatic optimization/slicing, ordering, previews, and draft behavior.
 
 Keep platform constraints in a data-driven export profile so a changed limit can be updated without changing the episode model or editor commands.
+
+## Open questions for autonomous creation
+
+These questions do not block the human MVP:
+
+- Which officially supported credential path will ScrollSplice use for model access: a future user-authorized OpenAI connection, an app-managed server credential, or another documented method?
+- What project information and reference images may be sent to OpenAI, and how will the creator preview and approve that context?
+- What cost ceiling, cancellation behavior, generation history, and retry policy should each run have?
+- Which actions may eventually run autonomously, and which require review until undo, recovery, and provenance are mature?
+- Should external connectors ever import creator assets from services such as Drive or Dropbox, or should local import remain the only source?
+
+Do not treat an OpenAI/ChatGPT OAuth flow used by a coding harness as automatically approved for a general web application. Verify the supported product path before choosing dependencies or designing the login UI.
 
 ## Validation path
 
@@ -184,14 +210,16 @@ The Build Week submission is complete only when:
 - all automated checks pass and the application has been visually inspected
 - the repository and README clearly distinguish July 12 planning from judged July 13–21 implementation
 - the public video, repository URL, access URL, category, description, and `/feedback` Session ID are ready
-- private Root & Table art, secrets, OAuth infrastructure, direct WEBTOON publishing, and production export remain outside the submission
+- private Root & Table art, secrets, required OAuth infrastructure, direct WEBTOON publishing, and production export remain outside the submission
+- the human editor works without OpenAI access; any autonomous feature shown is clearly labeled as completed stretch rather than implied future behavior
 
 ## Stop rules
 
 - Do not implement product code until Katherine explicitly approves the first implementation slice; this documentation/repository approval does not authorize app construction.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
-- Do not expand the submission target to import, persistence, undo, resize, ordering, production export, or OAuth. Do not add runtime AI unless the organizer confirms it is required and Katherine approves a real, narrow use.
-- Do not add Next.js, Tauri, dnd-kit, a backend, database, cloud service, OAuth dependency, or WEBTOON automation during Build Week without explicit approval and a recorded decision.
+- Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
+- Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.
+- Do not add Next.js, Tauri, dnd-kit, a backend, database, cloud service, OAuth dependency, OpenAI SDK, or WEBTOON automation during Build Week without explicit approval and a recorded decision. The OpenAI stretch gate does not silently authorize those changes.
 - Do not commit private Root & Table assets, secrets, or unlicensed content.
 - Do not claim visual or public-access behavior works unless it was actually inspected.
 - If the outline, plan, architecture, and compliance checklist disagree, resolve the documents before coding.

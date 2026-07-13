@@ -75,7 +75,19 @@ The project requirements and overview describe **building with Codex and GPT-5.6
 - [ ] Ask the hackathon manager for written clarification: does substantial Codex-with-GPT-5.6 development plus the required evidence satisfy this requirement for a consumer app, or is an in-product OpenAI API/SDK integration expected?
 - [ ] If a response arrives, save it with the submission notes and revise scope only if the answer requires it.
 
-This clarification reduces risk but is not a blocker if the organizer does not reply: the live project requirements expressly say to build with Codex and GPT-5.6 and do not separately state that the finished consumer app must call an OpenAI API. Until contrary official guidance appears, do not add a decorative or token runtime AI feature. If an in-product integration is required, Katherine must approve the scope change and the implementation must solve a real ScrollSplice user need.
+This clarification reduces risk but is not a blocker if the organizer does not reply: the live project requirements expressly say to build with Codex and GPT-5.6 and do not separately state that the finished consumer app must call an OpenAI API. OpenAI-powered autonomous comic creation is now an intended ScrollSplice product direction, but it follows the human editor and must not become a decorative eligibility feature or a new submission dependency. If an in-product integration is required or attempted as stretch, Katherine must approve the scope change and the implementation must solve the real generate-and-place need described in `PLAN.md`.
+
+### Optional OpenAI runtime stretch
+
+These items apply only if the generate-and-place proof is actually attempted:
+
+- [ ] The complete human editor, validation suite, public access, and submission evidence passed before runtime OpenAI work began.
+- [ ] Katherine approved the network, privacy, credential, cost, and dependency boundary in writing in the project record.
+- [ ] The base judge experience remains free and usable without OpenAI login, API credits, or model access.
+- [ ] Only synthetic prompts and references are sent; no Root & Table production art or other private creative material is uploaded.
+- [ ] No API key, OAuth token, reusable provider credential, or private response data appears in the browser bundle, repository, logs, screenshots, or video.
+- [ ] Generated assets record provenance, and the demo distinguishes implemented behavior from the later full-autonomy vision.
+- [ ] The integration follows current OpenAI terms, usage policies, model availability, and an officially supported authorization path.
 
 ## 5. Working-project requirements
 
@@ -86,6 +98,7 @@ This clarification reduces risk but is not a blocker if the organizer does not r
 - [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
 - [ ] The running UI has been visually inspected at representative desktop sizes.
 - [ ] A clean browser can complete the defining story: navigate, select from canvas/layers, move, and reset.
+- [ ] The defining human editor story works with every optional OpenAI feature disabled or unavailable.
 
 ## 6. Free and unrestricted judge access
 
@@ -109,6 +122,7 @@ Working-access URL: **PENDING — no application build exists.**
 - [ ] Every third-party package, API, SDK, font, icon, visual, and audio asset is authorized and its license/terms are followed.
 - [ ] Repository history remains dated and understandable; no baseline rewrite or misleading authorship/provenance.
 - [ ] Final README contains repository URL, access URL, accurate current status, verified commands, sample-data explanation, Build Week boundary, and Codex/GPT-5.6 collaboration evidence.
+- [ ] README and the video do not imply that autonomous generation exists unless the submitted build demonstrates it.
 - [ ] Use of OpenAI services complies with the [Terms of Use](https://openai.com/policies/terms-of-use/), [Business Terms](https://openai.com/policies/business-terms/) where applicable, [Service Credit Terms](https://openai.com/policies/service-credit-terms/), and [Usage Policies](https://openai.com/policies/usage-policies/).
 - [ ] If event credits are used, record their source and monitor usage; the rules say event credits expire July 31, 2026.
 
