@@ -85,7 +85,7 @@ interface EditorState {
     readonly fill: string
     readonly startY: number
     readonly height: number
-  }) => void
+  }) => boolean
   readonly moveElement: (
     elementId: string,
     logicalPosition: LogicalPosition,
@@ -126,7 +126,7 @@ function getLogicalViewport(state: EditorState): LogicalViewport {
   }
 }
 
-export const useEditorStore = create<EditorState>((set) => ({
+export const useEditorStore = create<EditorState>((set, get) => ({
   episode: buildWeekEpisode,
   selectedElementId: null,
   activeCompositionGroup: INITIAL_COMPOSITION_GROUP,
@@ -544,25 +544,25 @@ export const useEditorStore = create<EditorState>((set) => ({
   },
 
   createBackgroundColorRegion: ({ fill, startY, height }) => {
-    set((state) => {
-      const episode = createBackgroundColorRegionCommand(state.episode, {
-        layerPlaneId: state.activeLayerPlaneId,
-        fill,
-        startY,
-        height,
-      })
-
-      if (episode === state.episode) {
-        return state
-      }
-
-      const createdElement = episode.elements.at(-1)
-
-      return {
-        episode,
-        selectedElementId: createdElement?.id ?? state.selectedElementId,
-      }
+    const state = get()
+    const episode = createBackgroundColorRegionCommand(state.episode, {
+      layerPlaneId: state.activeLayerPlaneId,
+      fill,
+      startY,
+      height,
     })
+
+    if (episode === state.episode) {
+      return false
+    }
+
+    const createdElement = episode.elements.at(-1)
+    set({
+      episode,
+      selectedElementId: createdElement?.id ?? state.selectedElementId,
+    })
+
+    return true
   },
 
   moveElement: (elementId, logicalPosition) => {

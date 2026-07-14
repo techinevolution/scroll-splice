@@ -127,12 +127,29 @@ export function LayersPanel() {
 
   const handleCreateColorRegion = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    createBackgroundColorRegion({
+    const startY = Number(colorRegionStart)
+    const height = Number(colorRegionHeight)
+
+    if (
+      colorRegionStart.trim() === '' ||
+      colorRegionHeight.trim() === '' ||
+      !Number.isFinite(startY) ||
+      !Number.isFinite(height) ||
+      startY < 0 ||
+      height <= 0
+    ) {
+      return
+    }
+
+    const created = createBackgroundColorRegion({
       fill: colorRegionFill,
-      startY: Number(colorRegionStart),
-      height: Number(colorRegionHeight),
+      startY,
+      height,
     })
-    setShowColorRegionForm(false)
+
+    if (created) {
+      setShowColorRegionForm(false)
+    }
   }
 
   return (
@@ -217,6 +234,7 @@ export function LayersPanel() {
               min="0"
               max={episode.logicalHeight}
               step="1"
+              required
               value={colorRegionStart}
               onChange={(event) => setColorRegionStart(event.currentTarget.value)}
             />
@@ -229,6 +247,7 @@ export function LayersPanel() {
               min="1"
               max={episode.logicalHeight}
               step="1"
+              required
               value={colorRegionHeight}
               onChange={(event) => setColorRegionHeight(event.currentTarget.value)}
             />
@@ -256,8 +275,17 @@ export function LayersPanel() {
             <button
               className="layer-empty-action layer-empty-attach"
               type="button"
-              aria-label={`Add asset to ${planeLabel}`}
-              title="Open the synthetic Asset Library"
+              disabled={!canHoldElements}
+              aria-label={
+                canHoldElements
+                  ? `Add asset to ${planeLabel}`
+                  : 'Add asset unavailable: Background plane 1 is the full-episode base color'
+              }
+              title={
+                canHoldElements
+                  ? 'Open the synthetic Asset Library'
+                  : 'Select an ordinary numbered plane to add an element'
+              }
               onClick={openAssetPanel}
             >
               <PaperclipIcon />

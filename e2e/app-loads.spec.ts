@@ -258,6 +258,11 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       name: 'Delete plane unavailable: Background plane 1 is pinned and cannot be deleted.',
     }),
   ).toBeDisabled()
+  await expect(
+    page.getByRole('button', {
+      name: 'Add asset unavailable: Background plane 1 is the full-episode base color',
+    }),
+  ).toBeDisabled()
   const baseColor = page.getByLabel('Base color', { exact: true })
   const canvasBaseColor = page.getByLabel('Canvas base color', { exact: true })
   await expect(baseColor).toHaveValue('#f3f0ea')
@@ -298,6 +303,9 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await page.getByRole('button', { name: 'Color region' }).click()
   await page.getByLabel('Color region color').fill('#334477')
   await page.getByLabel('Color region start').fill('300')
+  await page.getByLabel('Color region length').fill('')
+  await page.getByRole('button', { name: 'Add', exact: true }).click()
+  await expect(page.locator('.color-region-form')).toBeVisible()
   await page.getByLabel('Color region length').fill('600')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   const colorRegionRow = page.locator(
