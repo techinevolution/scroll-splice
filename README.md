@@ -20,6 +20,8 @@ That testable editor is complete in commits `c33b491` and `05ac06b`. It includes
 
 The July 13 composition checkpoint in `f02776f` adds the approved **Background**, **Content**, and **Foreground** groups. The completed layer-plane checkpoint in `c5f83c5` then implements the clarified format-v3 model: each fixed group contains numbered editable layer planes, only Background plane 1 is a pinned editable base, colored beat rectangles are Content panels, and canvas/minimap backdrops derive from document data instead of a hardcoded fill. The right inspector now reaches the top of the workspace, hidden elements remain selectable from Layers, and each active plane lists its elements from top to bottom on the scroll. Public deployment remains scheduled for the July 19–21 submission runway. Dated, public-safe visual checkpoints are preserved in [Progress Screenshots](docs/progress/README.md), including the [completed layer-plane checkpoint](docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png).
 
+Katherine reviewed `c5f83c5` positively on July 13 and identified the next creator-facing needs: safely remove an accidentally created empty plane, edit the episode title, add more story space from the bottom of the scroll, keep the minimap fitted to the changing episode, and make the main-canvas view scale adjustable. These are recorded as future work below; they are not implemented in the current checkpoint.
+
 ## Product sequence
 
 ### Build Week MVP — due July 21
@@ -41,7 +43,9 @@ The full creator-ready milestone adds local asset import, saving and reopening, 
 
 Its workspace model uses three fixed full-scroll composition groups—**Background**, **Content**, and **Foreground**—above the story canvas. Inside each group, numbered **layer planes** provide open-ended creative surfaces; assets, text, shapes, color regions, and other placed items are **elements** inside one plane. Only Background plane 1 is pinned as the editable episode-wide base color. Every other plane remains flexible rather than forcing creators into predefined panel, character, or effect boxes.
 
-That numbered-plane and editable-backdrop foundation is now implemented. The recommended next slice is **asset properties and opacity**, which remains proposed for separate approval. Movable background color regions, tab drag reordering, the category-based **Add** rail, import, resize, persistence, export, deployment, and AI work all remain deferred. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md#recommended-next-slice-asset-properties-and-opacity).
+That numbered-plane and editable-backdrop foundation is now implemented. The recommended next slice is **Episode Setup and Expandable Scroll**: safe deletion of empty ordinary planes, direct episode-title editing, a bottom **Add scroll space** action, and automatic full-episode minimap refitting as the scroll grows. It remains proposed for Katherine's approval and is not part of the running checkpoint.
+
+A separate second slice should add proper canvas view scaling with **Fit Width**, a 50–200% range, and horizontal access when the enlarged episode is wider than the viewport. **Asset properties and opacity** moves to third in the proposed sequence. Keeping zoom separate avoids presenting a percentage control before the viewport and minimap can represent the enlarged view accurately. Movable background color regions, tab drag reordering, the category-based **Add** rail, import, resize, persistence, export, deployment, and AI work all remain deferred. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md).
 
 ### Autonomous creation — after the human workflow
 

@@ -54,6 +54,7 @@ The implemented format-v3 document uses one shallow, explicit organization path:
 The sample document contains:
 
 - a stable episode ID and format version
+- an episode name field
 - a fixed logical width of `800` units and flexible logical height
 - ordered `LayerPlane` records with stable IDs, group ownership, visibility, and base or ordinary kind
 - an ordered flat collection of elements
@@ -63,7 +64,7 @@ The original fixture should contain six visually distinct beats rendered from co
 
 The `800`-unit width is a convenient logical coordinate choice that also maps directly to the 800 px maximum displayed by WEBTOON's authenticated Manage Episode form on July 13, 2026. It remains an editor coordinate choice, not a permanent platform rule. Platform requirements never belong in this core schema.
 
-Selection, hover, active drag, viewport position, panel-collapse state, and reset state are editor state, not episode content. Zoom is deferred; the Build Week MVP uses one predictable fit scale derived from the available viewport width.
+Selection, hover, active drag, viewport position, panel-collapse state, and reset state are editor state, not episode content. The current implementation uses one predictable fit scale derived from the available viewport width. Adjustable zoom remains a planned following slice and must not be described as implemented yet.
 
 Do not put React objects, Konva nodes, browser handles, user IDs, OAuth fields, provider tokens, WEBTOON metadata, or platform upload state in the episode document.
 
@@ -92,6 +93,7 @@ Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without specul
 - A later layer-management slice gives ordinary tabs a dedicated drag handle and dispatches a pure reorder command inside the active group. Background plane 1 remains pinned.
 - Move Left/Right commands provide a keyboard and non-drag alternative in that same management slice. Small left and right overflow arrows scroll the tab strip without changing plane order, and the active tab scrolls into view from the foundation onward.
 - A `+` creates another ordinary plane in the active group. Plane numbers reflect current order; stable IDs preserve identity when numbers change.
+- The planned episode-structure slice may delete an ordinary plane only when it contains no elements. Hidden elements still count as contents, Background plane 1 is never deletable, and every group must retain at least one plane. After deletion, application coordination activates the nearest remaining plane.
 - Group, plane, and element eye states remain independent and preserve child settings.
 
 The left control remains an application-shell concern: a compact **Add** rail opens an **Asset Library** drawer with Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated. The selected library category and drawer state are transient UI state. Source assets still belong behind `AssetRepository`; category navigation does not justify creating asset persistence before an approved import slice.
@@ -110,7 +112,17 @@ The implemented Build Week command surface is intentionally small:
 
 Navigation and selection do not change the document. They update application state.
 
-The completed layer-plane foundation added only those pure commands. Reordering, rename/delete, element opacity, moving elements between planes, color regions, and the Add rail belong to later separately approved slices. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
+The completed layer-plane foundation added only those pure commands. Reordering, plane rename, element opacity, moving elements between planes, color regions, and the Add rail belong to later separately approved slices. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
+
+### Planned episode-structure command extension
+
+The next proposed structure checkpoint uses fields that already exist in format v3, so it does not require a format bump or migration framework:
+
+- `setEpisodeName(document, name)` trims the proposed name, rejects an empty result, and enforces the current 60-character editor limit.
+- `extendEpisodeHeight(document, amount)` increases `logicalHeight` by a positive logical-unit amount and never shrinks or moves existing content. The first UI uses one centralized default increment of `1280` logical units rather than scattering that value through components.
+- `deleteEmptyLayerPlane(document, planeId)` accepts only an ordinary plane with no elements, rejects deletion of the final plane in a group, and always protects the pinned base. Hidden elements count as contents; after deletion, application coordination selects the nearest remaining plane.
+
+Background plane 1 has no independent rectangle height. Its full-scroll coverage derives from `episode.logicalHeight`, so extending the episode automatically extends the base without duplicating data. The bottom-of-story `+` is editor chrome that dispatches `extendEpisodeHeight`; it is not an episode element and must not appear in the minimap or export. The minimap continues fitting the complete logical episode inside its own available frame whenever height changes, independent of the main editor's scale.
 
 Zustand owns:
 
@@ -143,6 +155,12 @@ Selecting an off-screen element from the layers list centers that element in the
 Coordinate conversion and clamping live in one tested core module. Do not duplicate formulas in canvas and minimap components.
 
 The current movement command clamps every element inside the 800-unit episode width. A later panel/frame slice must replace that blanket rule with explicit overflow behavior: irregular panels, effects, and breakout art may extend into an editor bleed area while final rendering clips to the episode output boundary. Optional snapping is a proximity aid and must never silently resize, crop, straighten, or force those elements back inside.
+
+### Planned adjustable zoom and two-dimensional viewport
+
+The current editor remains fixed-fit until this separately approved following checkpoint is implemented. That checkpoint adds transient `zoomFactor`, `viewportX`, and `viewportY` state without changing the episode format. Visible controls replace the passive fit readout with **Fit Width** plus a 50–200% zoom range, and scroll progress is calculated over the navigable range so the episode end reads 100%. Changing zoom preserves the current logical viewport center where possible, then clamps both axes so no portion of the episode becomes permanently unreachable.
+
+At adjustable zoom, logical viewport width and height are derived from the stage dimensions and `zoomFactor`. All episode-to-stage conversions, centering, panning, and clamping stay in the shared coordinate module. The minimap always scales the complete episode to its own frame independently of editor zoom and draws an accurate two-dimensional viewport box from the same logical bounds; its interaction hit target may be larger than a very small visible box without falsifying that visible geometry.
 
 ## Interaction flows
 
@@ -292,8 +310,8 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, pinned Background plane 1, group/plane/element ordering, three-level effective visibility, and hidden-row selection. Opacity bounds belong to the later opacity slice.
-- Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset; extend the same story as slices land with group/plane filtering, independent eye states, hidden-row selection, base-color synchronization, and tab overflow navigation.
+- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, pinned Background plane 1, group/plane/element ordering, three-level effective visibility, and hidden-row selection. When the planned slices land, add name validation, extend-only height changes, guarded empty-plane deletion and fallback selection, center-preserving two-dimensional zoom, and minimap viewport geometry. Opacity bounds belong to the later opacity slice.
+- Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset; extend the same story as slices land with group/plane filtering, independent eye states, hidden-row selection, base-color synchronization, tab overflow navigation, title editing, empty-plane deletion, episode extension, minimap refitting, and adjustable zoom.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 

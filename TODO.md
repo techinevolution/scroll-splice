@@ -15,7 +15,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Approve the composition-groups and visibility slice in `PLAN.md`.
 - [x] Review the implemented composition groups and eye controls in the running app and clarify the numbered layer-plane model.
 - [x] Approve the **layer planes and episode backdrop** foundation in `PLAN.md`.
-- [ ] Approve or revise the proposed **asset properties and opacity** slice in `PLAN.md`; no implementation is authorized yet.
+- [ ] Approve or revise the recommended **Episode Setup and Expandable Scroll** slice and its proposed follow-up order in `PLAN.md`; no implementation is authorized yet.
 
 ## Katherine — before submission
 
@@ -30,7 +30,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement and validate the approved composition groups and visibility checkpoint.
 - [x] Record Katherine's clarified base-background, unrestricted planes, opacity, movable color-region, tab-overflow, draggable-tab, and Clip Studio-style panel-mask direction in the project documents.
 - [x] Implement and validate the approved numbered layer-plane and editable-backdrop foundation in `c5f83c5`.
-- [ ] After separate approval: implement only the asset-properties and opacity slice, then stop for review before color regions, tab dragging, the Add rail, import, resize, persistence, export, deployment, or AI work.
+- [x] Record Katherine's empty-plane deletion, editable-title, expandable-scroll, minimap-refit, and adjustable-view feedback and map it into separately gated slices.
+- [ ] After separate approval: implement only **Episode Setup and Expandable Scroll**, including safe empty-plane deletion, editable current-episode title, repeatable 1280-unit downward extension, minimap refitting, reset coverage, and regression validation.
+- [ ] After that checkpoint passes and receives separate approval: implement only **Canvas Zoom and 2D Viewport**, then stop for review before opacity or later product slices.
+- [ ] After the zoom checkpoint passes and receives separate approval: implement only **Asset Properties and Opacity**, then stop for review before color regions, tab dragging, the Add rail, import, resize, persistence, export, deployment, or AI work.
 
 ## Joint — only if the human MVP finishes early
 

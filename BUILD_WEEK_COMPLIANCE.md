@@ -121,7 +121,7 @@ Working-access URL: **PENDING — the local application and production build exi
 - [x] `pnpm-lock.yaml` is included with the first approved implementation slice after resolving compatible stable dependencies on July 13.
 - [x] The first implementation slice contains no secrets, tokens, credentials, private artwork, generated reports, or machine-local files.
 - [ ] Every third-party package, API, SDK, font, icon, visual, and audio asset is authorized and its license/terms are followed.
-- [x] Repository history remains dated and understandable through the testable-editor milestone; no baseline rewrite or misleading authorship/provenance.
+- [x] Repository history remains dated and understandable through the numbered layer-plane milestone; no baseline rewrite or misleading authorship/provenance.
 - [ ] Final README contains repository URL, access URL, accurate current status, verified commands, sample-data explanation, Build Week boundary, and Codex/GPT-5.6 collaboration evidence.
 - [x] README does not imply that autonomous generation exists.
 - [ ] Final video must not imply that autonomous generation exists unless the submitted build demonstrates it.
@@ -223,11 +223,11 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Editor core commit | `c33b491`, coordinates, commands, shared state, and 15 passing unit tests | Complete |
 | Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
 | Composition groups checkpoint | `f02776f`, Background, Content, and Foreground filtering plus independent group/element visibility | Complete July 13 |
-| Numbered layer-plane checkpoint | `c5f83c5`, format-v3 planes, pinned editable backdrop, three-level visibility, hidden-row selection, top-to-bottom rows, overflow navigation, and full-height inspector | Complete locally July 13; push pending |
+| Numbered layer-plane checkpoint | `c5f83c5`, format-v3 planes, pinned editable backdrop, three-level visibility, hidden-row selection, top-to-bottom rows, overflow navigation, and full-height inspector | Complete July 13 |
 | Local validation | Typecheck, lint, 38 unit tests, production build, three consecutive isolated Chromium walkthroughs on port `4174`, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 on July 13 | Complete |
 | Progress screenshot | `docs/progress/2026-07-13-first-testable-editor.png`, captured by Katherine before composition groups | Complete |
-| Composition progress screenshot | `docs/progress/2026-07-13-composition-groups-and-visibility.png`, 1440 × 900, SHA-256 `32ad4cf5dfa38826404703c3dc1bb2e66db2131b2e3085bb6c27db2631c95202` | Complete locally; push pending |
-| Layer-plane progress screenshot | `docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png`, 1440 × 900, SHA-256 `d9688284f870786821a7cdf9c25010a21dac0f5dec1ecdfaf83561bea2da6d76` | Complete locally; push pending |
+| Composition progress screenshot | `docs/progress/2026-07-13-composition-groups-and-visibility.png`, 1440 × 900, SHA-256 `32ad4cf5dfa38826404703c3dc1bb2e66db2131b2e3085bb6c27db2631c95202` | Complete |
+| Layer-plane progress screenshot | `docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png`, 1440 × 900, SHA-256 `d9688284f870786821a7cdf9c25010a21dac0f5dec1ecdfaf83561bea2da6d76` | Complete |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
 | WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
 | Working project URL | Pending | Pending |
