@@ -104,19 +104,20 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Narrow left **Add** rail that opens an **Asset Library** drawer without permanently taking space from the story canvas.
 - Library category buttons for **Uploads**, **Speech Balloons**, **Decorations**, and **Shapes & Frames**; add **AI Generated** only when that future mode actually exists.
 - Fixed **Background**, **Content**, and **Foreground** composition-group controls centered above the story canvas without persistent instruction copy competing for that bar.
-- Episode title and reset/project controls aligned over the canvas rather than consuming the top of the right inspector. The title text itself is the edit target, with no permanent pencil, input border, or cursor until clicked. Enter or leaving the field saves, Escape cancels, blank titles are rejected, and the field follows WEBTOON's observed 60-character limit.
+- Episode title and reset/project controls aligned over the canvas rather than consuming the top of the right inspector. The title text itself is the edit target, with no permanent pencil, input border, or cursor until clicked. Its label and inline input keep the same anchored footprint so entering edit mode does not shift the header. Enter or leaving the field saves, Escape cancels, blank titles are rejected, and the field follows WEBTOON's observed 60-character limit.
 - Clear controls for project, episode, import, preview, save, and export.
 - Editable episode names and a **File > New Episode** command.
 - A familiar File, Edit, View, Window, and Help command structure. A browser build may present these as an in-app menu bar; native macOS and Windows menu integration belongs with later desktop packaging.
 
 ### 2. Vertical editing canvas
 
-- A tall episode surface inside a pannable and zoomable workspace. **Fit Width** is the dependable default; a later view-control slice replaces the passive fit readout with a 50–200% display scale, accurate scroll progress, and horizontal access whenever the enlarged episode is wider than the viewport. View scale changes presentation only and never alters logical episode or export dimensions.
+- A tall episode surface inside a pannable and zoomable workspace. **Fit Width** is the dependable default, with an implemented 50–200% display scale, accurate scroll progress, and horizontal access whenever the enlarged episode is wider than the viewport. View scale changes presentation only and never alters logical episode or export dimensions.
+- Default-on, toggleable dotted horizontal guides derived from the selected provisional export profile show each 1,280-unit boundary across the 800-unit episode width. These guides are editor chrome for composition awareness: they track pan and zoom but are not episode elements, generated slice files, minimap content, or proof that production export has run.
 - Selection, move, resize, and delete for placed elements.
 - Visible selection outline with corner handles for direct resizing.
-- Optional proximity snapping and alignment guides, controlled by a clearly visible magnet toggle. Snapping suggests centers, edges, and guides without forcing an element into a box, resizing it, or preventing intentional asymmetry.
+- Default-on proximity snapping and alignment guides, controlled by a clearly visible magnet toggle and a documented temporary bypass during a drag. Snapping suggests centers, edges, and guides without forcing an ordinary element into a box, resizing it, or preventing intentional asymmetry.
 - A pinned first Background plane that supplies the editable full-scroll base RGB color instead of relying on a hardcoded white canvas. Selecting it exposes the same **Base color** through a compact Layers swatch and a direct canvas-side control, so the base stays discoverable without being buried in a menu. Hiding it reveals an editor-only transparency checkerboard rather than changing episode data.
-- Ordinary Background planes that can hold movable and resizable full-width color regions, gradients, photos, textures, splatters, or edge decoration. Adding a color region asks where on the scroll it should begin and defaults sensibly to the current viewport.
+- Ordinary Background planes that can hold full-width color regions, gradients, photos, textures, splatters, or edge decoration. A full-width solid color region is structurally `x = 0` and 800 units wide, so it stays horizontally centered and moves vertically only; the magnet toggle does not release that invariant. Adding one asks where on the scroll it should begin and defaults sensibly to the current viewport.
 - Quick panel/frame creation with rectangular and angled or polygonal masks so an image can be repositioned inside an irregular panel without destructive cropping.
 - Allow intentional bleed and panel-breakout effects beyond an irregular frame or episode edge while clipping only at the final output boundary.
 - Preserve alpha transparency in imported and placed images rather than flattening them onto white.
@@ -147,7 +148,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Give each group, numbered plane, and element its own eye state. Hiding a parent preserves every child setting.
 - Give each element row a small trash action beside its eye. It removes that placed episode instance only and never deletes the reusable source asset.
 - In a truly empty ordinary plane, show a centered empty-state **Delete plane** action with a small trash icon and text. Hidden elements still count as contents, Background plane 1 is never deletable, and every composition group retains at least one plane. After deletion, activate the nearest remaining plane and renumber the visible tabs without changing their stable identities.
-- Keep a paperclip **Attach asset** affordance below the active ordinary plane's list whether that plane is empty or populated. Pair it with the same-size empty-plane delete action when applicable, but keep the paperclip visibly disabled and labeled as future until the Asset Library can complete the workflow. The numbered-tab `+` creates another plane; it never attaches an asset or adds story height.
+- Keep a paperclip **Add asset** affordance at the bottom of the active ordinary plane's list whether that plane is empty or populated. Pair it with the same-size empty-plane delete action when applicable. The current proof opens the Asset Library and places only code-defined synthetic demo rectangles; real image import remains future work. The numbered-tab `+` creates another plane; it never attaches an asset or adds story height.
 - Later let creators move an element to another plane from its row's context menu and an equivalent visible keyboard-accessible action; right-click is a shortcut, not the only route.
 - Basic names and type icons so similar elements can be distinguished.
 - Keep the list independently scrollable. On narrow displays, allow the right inspector to collapse or open as an overlay rather than squeezing the story canvas past usability.
@@ -187,7 +188,8 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 - Reader preview without editor chrome.
 - Export a tall PNG or JPG master and zero-padded ordered platform slices.
-- Validate dimensions, file size, image count, format, and other profile limits before writing the final package.
+- After upload verification, use the selected WEBTOON profile to self-slice locally at no more than its verified dimensions, encode only an accepted format, and preflight every file and the complete package before writing. The currently observed UI labels are 800 × 1280 px, 2 MB per image, 50 MB total, 100 images, and JPG/JPEG/PNG; keep them visibly provisional until the upload test resolves exact enforcement and byte boundaries.
+- Passing local preflight does not guarantee WEBTOON will preserve the encoded bytes, dimensions, quality, or format; the creator must still upload manually and inspect the platform previews for optimization or recompression.
 - Report export failures clearly and do not overwrite source assets.
 
 ## Future Autonomous Creation Components
@@ -228,14 +230,14 @@ These components follow the creator-ready human workflow and are not Build Week 
 - The composition-group selector must stay centered above the story canvas at supported desktop sizes; the full-height right inspector and its element list scroll independently and can collapse into an overlay on narrower displays.
 - Group selection filters organization only. Visibility changes happen through explicit eye controls, not merely by switching groups.
 - Numbered planes are unrestricted creative surfaces. Examples and optional names may guide creators, but ScrollSplice must not force panels, characters, effects, or decorations into particular numbered tabs.
-- Keep the addition concepts unambiguous: the numbered-tab `+` creates a plane, the disabled paperclip previews a future element attachment, **Add scroll space** makes one coarse extension, and the bottom-edge handle fine-tunes total episode height.
+- Keep the addition concepts unambiguous: the numbered-tab `+` creates a plane, the bottom paperclip opens the current synthetic Asset Library proof, **Add scroll space** makes one coarse extension, and the bottom-edge handle fine-tunes total episode height. Real image import remains clearly labeled as future work.
 - Keyboard shortcuts may supplement group and layer visibility, but every action must remain available through visible controls.
 - Empty states should teach the first action: import an image or create a panel. A genuinely empty ordinary plane may also offer its centered, clearly labeled **Delete plane** action; do not hide this destructive action in the narrow numbered tab.
 - The pinned base color, movable color regions, fades, background imagery, and optional decoration should remain independently editable while composing into one continuous reader view.
 - Height reduction must consume only unused tail space; hidden content and long Background color regions protect their full logical bounds just like visible Content elements.
 - Transparent areas should preview accurately against the current background treatment.
 - Element opacity must be adjustable independently of source-image alpha and displayed as a precise percentage for the selected element.
-- Snapping must be optional, easy to toggle or temporarily bypass, and clear about which center, edge, guide, or nearby element is being matched.
+- Ordinary-element snapping is on by default, easy to toggle or temporarily bypass, and clear about which center, edge, guide, or nearby element is being matched. Structural constraints such as an 800-wide Background color region remaining at `x = 0` are not disabled by bypassing the magnet.
 - Long episodes must remain usable; off-screen content should not make basic editing sluggish.
 - The manual editor must remain complete and understandable when OpenAI features are disconnected or unavailable.
 - Autonomous work must show progress, allow cancellation, make generated assets distinguishable, and preserve a clear path back to manual editing.
@@ -244,12 +246,12 @@ These components follow the creator-ready human workflow and are not Build Week 
 
 - A creator imports six images, drags them into a vertical episode, reorders two panels, adjusts their spacing, and exports the strip without reading instructions.
 - A creator chooses a numbered **Content** plane, opens **Uploads** from the Add rail, and drags an image onto the canvas; the new element appears in that plane's list.
-- A creator switches to Background plane 2, adds a long purple color region beginning at the current viewport, adjusts its start and end, and places a separate transparent fade above it.
+- A creator switches to Background plane 2, adds a long purple color region beginning at the current viewport, moves it vertically while it remains centered across the full 800-unit width, and places a separate transparent fade above it.
 - A creator makes an angled panel mask, repositions a photo inside it, and lets a character or sound effect break beyond the frame without snapping forcing it back inside.
 - On a smaller monitor, the creator can scroll or collapse the right inspector without losing the composition-group controls or access to the Asset Library.
 - A creator combines a chosen background color with a transparent uploaded background and optional edge decoration, then extends the episode as new story beats are added.
-- A creator clicks the ordinary title text to edit it, reaches the end of the current scroll, adds another 1,280 logical units, drags the bottom edge upward to remove only the unused portion, and sees the minimap immediately refit without moving or clipping existing content.
-- A creator deletes one placed panel from its Layers-row trash action, then sees the paperclip affordance remain available below the other rows without mistaking it for implemented import.
+- A creator clicks the ordinary title text and edits it without the title or header shifting, reaches the end of the current scroll, adds another 1,280 logical units, drags the bottom edge upward to remove only the unused portion, and sees the minimap immediately refit without moving or clipping existing content.
+- A creator deletes one placed panel from its Layers-row trash action, then uses the bottom paperclip to add another code-defined demo asset without mistaking that proof for real image import.
 - A creator adds a starter speech balloon, resizes it with corner handles, and replaces or supplements the starter library with a personal reusable balloon asset.
 - Dragging the minimap viewport moves the main canvas to the matching portion of the episode.
 - Selecting an image on the canvas highlights its element row; reordering that element within its plane changes the visible stacking immediately.
@@ -275,6 +277,6 @@ These components follow the creator-ready human workflow and are not Build Week 
 - Third-party comic screenshots used to explain panels, transitions, or effects remain uncommitted design references, not project fixtures or submission assets.
 - The minimap, main canvas, and layers panel must share one authoritative episode state rather than drifting into separate representations.
 - Drag-and-drop behavior must be reversible through undo before the creator-ready MVP is considered production-safe, though undo may follow the Build Week MVP.
-- Platform constraints belong in versioned, data-driven export profiles rather than scattered constants in the editor core.
+- Platform constraints belong in versioned, data-driven export profiles rather than scattered constants in the editor core. Editor-only boundary guides may read the selected profile, but they never become episode data or an export-success claim.
 - WEBTOON publishing remains a manual website workflow. Do not automate login, upload, or publishing unless an official supported integration is discovered and Katherine explicitly approves it.
 - Human and autonomous edits must share the same authoritative document, coordinate system, asset records, and command layer; the model must not manipulate React, Konva, or Zustand state directly.

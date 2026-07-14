@@ -18,7 +18,9 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Approve **Episode Setup and Expandable Scroll** in `PLAN.md`.
 - [x] Test **Episode Setup and Expandable Scroll**; confirm empty-plane deletion and minimap behavior after expansion.
 - [x] Approve the ordered A/B/C work request: **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, then **Canvas Zoom and 2D Viewport**.
-- [ ] Run the next **HUMAN TEST and direction checkpoint** on the completed local A/B/C build before approving opacity or another creator-facing slice.
+- [x] Run the next **HUMAN TEST and direction checkpoint** on the completed A/B/C build; confirm placed-element deletion, the bottom **Add asset** action, minimap behavior, and ordinary movement; record the title-anchor and Background-region drag findings.
+- [x] Approve **Export-aware polish and alpha controls** as the next implementation goal after the documentation/publication checkpoint.
+- [x] Authorize publishing the already passing A/B/C implementation and matching documentation to `main` on July 14.
 
 ## Katherine — before submission
 
@@ -39,7 +41,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement and validate checkpoint B: safe precise pointer/keyboard height changes plus solid movable Background color regions with chosen start, length, and color, without clipping visible or hidden elements or shrinking below 1280 units.
 - [x] Implement and validate checkpoint C: **Canvas Zoom and 2D Viewport** with Fit Width-relative 50–200%, horizontal access, accurate minimap geometry, and element movement at non-default zoom.
 - [x] Record the local A/B/C evidence: 94 unit tests, strict typecheck, ESLint, production build, isolated Playwright Chromium walkthrough, and visual QA at 1440 × 900, 1280 × 720, and 1024 × 768.
-- [ ] After Katherine completes the human test and separately approves it: implement only the chosen next slice. **Asset Properties and Opacity** is a candidate, not the automatic next action.
+- [x] Document the current creator-controls screenshot as the build Katherine tested on July 14, including what worked and the follow-up findings.
+- [ ] In the next implementation checkpoint, complete D: keep the **EPISODE** label anchored, remove horizontal jitter from full-width Background regions, add a default-on 8-pixel episode-center snap with Alt/Option bypass, and add toggleable profile-derived 1280-unit candidate guides that never enter document or output data.
+- [ ] After D passes, complete E: bump the unsaved fixture to format v4, add selected-element opacity and a basic vertical two-stop alpha fade for solid Background color regions, and keep opacity independent from visibility and source alpha with explicit defaults/reset behavior.
+- [ ] After D and E pass, run the full validation and visual review, capture a new public-safe screenshot, commit and push each coherent passing checkpoint as separately authorized at implementation time, then give Katherine one reconciled list of implemented features and remaining requests from the documents and this task.
 
 ## Joint — only if the human MVP finishes early
 
@@ -51,4 +56,5 @@ Small loose actions only. Product direction and dated implementation work belong
 
 - [ ] Before the speech-balloon asset slice: research common comic balloon forms, meanings, accessibility concerns, and safe original starter designs.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
+- [ ] After that upload verification and a separate export-slice approval: implement creator-reviewed deterministic slicing and preflight against a verified `ExportProfile`; do not promise that WEBTOON will preserve accepted files without optimization.
 - [ ] Before full autonomous creation: define approved project context, reference-image consent, generation budget, cancellation/recovery behavior, provenance fields, and which editor commands may run without per-action approval.

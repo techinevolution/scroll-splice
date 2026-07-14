@@ -1,6 +1,6 @@
 # ScrollSplice WEBTOON Requirements and Discovery
 
-This file separates confirmed current WEBTOON guidance from older or still-unverified upload limits. It was last reviewed on **July 13, 2026**. WEBTOON can change creator requirements without changing ScrollSplice, so live platform evidence must win over this record.
+This file separates confirmed current WEBTOON guidance from older or still-unverified upload limits. It was last reviewed on **July 14, 2026**. WEBTOON can change creator requirements without changing ScrollSplice, so live platform evidence must win over this record.
 
 ScrollSplice's goal is to prepare files that a creator can upload manually. It will not automate WEBTOON login, upload, scheduling, or publishing.
 
@@ -61,9 +61,10 @@ Katherine transcribed the complete visible **Manage Episode** form while signed 
 
 - The current `800`-unit logical width does not need to change. It now has a particularly simple first WEBTOON mapping: one logical width can render to 800 output pixels.
 - The editor coordinate system remains resolution-independent. WEBTOON's limits belong in a versioned export profile, not the episode document or canvas implementation.
-- The later deterministic exporter should target slices no larger than 800 × 1280 px, encode each result below the observed 2 MB threshold, keep the package at or below 50 MB and 100 images, and preflight the encoded files before manual upload.
+- The later deterministic exporter should target slices no larger than 800 × 1280 px and preflight each encoded result against the UI-labeled 2 MB maximum, the 50 MB package total, and the 100-image count before manual upload. Exact byte units and enforcement remain subject to the authenticated upload test.
 - A 202 × 142 episode-thumbnail workflow is separate from episode slicing and from the 3:2 Devpost project thumbnail.
 - WEBTOON can accept a taller input and perform its own slicing, but ScrollSplice should prefer controlled gutter-aware slices so quality, seams, ordering, and filenames are known before upload.
+- The editor may show default-on gray dotted horizontal planning guides at each candidate slice boundary from the selected `ExportProfile`. With the observed profile's 800 px target width mapped to the 800-unit episode, that interval is 1280 logical units. These guides are editor overlays only: creators can toggle them, and they never enter episode data, the minimap, rendered masters, or exported slices.
 
 This observation confirms that current editor geometry is compatible; it does **not** justify interrupting or enlarging the Build Week human-editor milestone.
 
@@ -132,25 +133,34 @@ WEBTOON must be represented as versioned data at the export boundary, not as con
 - alpha/color-handling expectations
 - whether limits are hard rejection limits or thresholds that trigger optimization
 - thumbnail profiles kept separate from episode slices
+- the candidate guide interval derived from target width and maximum slice height, rather than a separate editor constant
 
 The first profile can use the ID `webtoon-canvas-2026-07-13-observed`, but its verification state must remain `form-observed` rather than `upload-verified` until the remaining tests pass.
 
 Unknown values must remain visibly unknown. The exporter should refuse a “verified WEBTOON package” claim when the profile is stale or incomplete; it may still offer a clearly labeled provisional export.
+
+The observed profile may drive provisional planning guides before it is upload-verified, but the editor must label that profile state and must not present those guides as proof that WEBTOON will accept or preserve the resulting files unchanged.
 
 ## Future export behavior
 
 The simplest dependable pipeline is:
 
 1. Render a non-destructive tall master from the logical episode.
-2. Plan slices within the selected verified profile.
-3. Prefer slice boundaries in visual gutters so important art and text are not split.
+2. Plan slices within the selected verified profile. Start from its maximum-height candidate boundaries, then prefer an earlier visual gutter when that avoids splitting important art or text; never move a boundary beyond the profile maximum.
+3. Present the proposed cut plan for creator review and adjustment before writing files. Revalidate every adjusted span against the profile.
 4. Encode and measure each file; adjust only through documented quality rules.
 5. Give slices a conservative ScrollSplice zero-padded alphanumeric basename, such as `episode01001.jpg`; treat this as an ordering convention until live testing confirms episode-image filename rules.
 6. Preflight dimensions, format, per-file bytes, total bytes, count, and sequence.
 7. Write a manifest containing profile version and verification date.
 8. Ask the creator to upload manually, inspect PC/mobile preview, set the content rating, and publish or schedule on WEBTOON.
 
-Export must never overwrite source art. A passing ScrollSplice preflight means the files match the recorded profile; it does not guarantee WEBTOON policy approval or replace the creator's preview and content review.
+Export must never overwrite source art. A passing ScrollSplice preflight means the files match the recorded profile; it does not guarantee WEBTOON policy approval, guarantee that WEBTOON will avoid recompression or other optimization, or replace the creator's PC/mobile preview and content review.
+
+### Later bounded checkpoint: slice planning and export
+
+Candidate guides may be added as a small editor-planning checkpoint without implementing file output. Deterministic self-slicing remains a separate later checkpoint after the authenticated unpublished upload tests establish boundary, byte, ordering, transparency, and transformation behavior. That export checkpoint must keep every produced file within the selected profile, expose the proposed cuts before writing, preserve creator adjustments that remain valid, and rerun preflight after any quality or boundary change.
+
+Validation for the guide checkpoint should cover profile-to-logical boundary calculation, guides at 1280-unit multiples for the observed 800-wide mapping, toggle behavior, zoom/pan alignment, and proof that the episode document, minimap, reset fixture, rendered master, and export files contain no guide marks or records. Export-checkpoint validation later adds deterministic filenames and ordering, maximum dimensions and bytes, total count and bytes, stale/unverified-profile labeling, and comparison against the manual upload observations.
 
 ## Build Week boundary
 

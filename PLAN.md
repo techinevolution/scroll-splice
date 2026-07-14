@@ -8,7 +8,9 @@ Post-start documentation/compliance work is recorded in commit `a567865` at 11:5
 
 Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. Katherine completed the hands-on review and `/feedback` that day. The review found no blocking defect, leaving the remaining July 13–18 product window available for bounded creator-facing slices without changing the minimum submission contract.
 
-Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed and validated that checkpoint locally on July 13. In her follow-up test she confirmed that empty-plane deletion works and that the minimap remains dependable after repeated episode expansion. She then authorized one multi-slice work request, kept as three separately testable checkpoints: **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. All three are now implemented and validated locally. They have not been pushed; publication to `main` was not implied by the implementation approval. The next step is Katherine's **HUMAN TEST and direction checkpoint**, not an automatic opacity slice.
+Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed and validated that checkpoint locally on July 13. In her follow-up test she confirmed that empty-plane deletion works and that the minimap remains dependable after repeated episode expansion. She then authorized one multi-slice work request, kept as three separately testable checkpoints: **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. All three were implemented and validated locally on July 13.
+
+Katherine completed the required hands-on test of that combined build on July 14. She confirmed placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary canvas movement. She also identified title-editor layout shift and horizontally janky full-width Background-region dragging, requested default-on alignment help and visible WEBTOON candidate boundaries, and confirmed the need for later controlled self-slicing. She explicitly authorized publishing the passing checkpoints and their documentation to `main`. The next approved code goal is documented below and does not begin during this documentation-only checkpoint.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -29,9 +31,9 @@ Katherine completed the documented walkthrough on July 13. She confirmed that th
 
 The associated Codex Feedback Session ID is **`019f5921-6190-7520-ba51-f5e0897c5af9`**.
 
-## Creator-ready feedback recorded July 13
+## Creator-ready feedback recorded July 13–14
 
-These requests refine the intended product but are not authorization to enlarge the contest MVP:
+These requests refine the intended product without enlarging the required contest MVP. July 13 items were product direction unless a later checkpoint explicitly approved them; the final five July 14 items are now split between approved checkpoint D/E work and the separately gated export checkpoint below.
 
 - combine a solid RGB base, an uploaded background image, and optional decorative edges in one independently editable background treatment
 - let the episode and background extend downward through an editor-only **+ Add scroll space** control at the logical bottom of the story canvas; each activation uses one centralized default increment of 1280 logical units
@@ -39,7 +41,7 @@ These requests refine the intended product but are not authorization to enlarge 
 - provide a researched starter library of resizable comic speech balloons while allowing creators to add their own reusable balloon and decorative assets
 - make the current episode title editable in the header, with **File > New Episode** following later
 - use a familiar File, Edit, View, Window, and Help command model, with native operating-system menus deferred until desktop packaging exists
-- add optional center/edge/nearby-element snapping behind a magnet toggle
+- add default-on center/edge/nearby-element snapping behind a visible magnet toggle, with an intentional off or temporary-bypass path
 - resize images and text directly with corner handles
 - use a compact left **Add** rail that opens a category-based **Asset Library** with Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated
 - use three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas while the right Layers panel follows the active group's numbered planes and elements
@@ -61,6 +63,11 @@ These requests refine the intended product but are not authorization to enlarge 
 - replace the fixed fit-only view later with **Fit Width** plus 50–200% zoom, horizontal access above fit, center-preserving zoom changes, and an accurate two-dimensional minimap viewport box
 - later provide **Move to plane** from an element-row context menu plus a visible keyboard-accessible action; right-click must not be the only route
 - add Clip Studio-style rectangular and irregular panel masks later, with optional snapping that never prevents intentional asymmetry, bleed, or panel-breakout effects
+- keep the fixed **EPISODE** label anchored when title editing activates; the input replaces only the title's visual footprint and must not shift the header
+- show default-on, toggleable gray dotted candidate slice boundaries from the selected export profile; for the observed WEBTOON mapping, draw a horizontal guide every 1280 logical units across the 800-unit episode
+- keep planning guides as editor chrome that follows pan and zoom but never enters the episode document, minimap, tall master, or exported images
+- keep full-width Background color regions structurally centered at `x = 0` and 800 units wide while allowing vertical movement; use a default-on magnet for optional ordinary-element alignment without preventing intentional asymmetry
+- add deterministic creator-reviewed self-slicing later so ScrollSplice can control cut positions and preflight output before manual WEBTOON upload, while making no promise that WEBTOON will avoid recompression or optimization
 
 ## Completed implementation slice: composition groups and visibility
 
@@ -126,7 +133,7 @@ Validation passed: 38 unit tests, strict typecheck, ESLint, production build, an
 
 ## Completed implementation slice: Episode Setup and Expandable Scroll
 
-**Status:** approved, implemented, validated, and visually inspected locally July 13. Remote publication remains separately gated.
+**Status:** approved, implemented, validated, and visually inspected locally July 13. Katherine authorized publication of this checkpoint with the post-review stack on July 14.
 
 **Goal:** make the current episode easier to set up and extend without introducing persistence, arbitrary resizing, or a new document format.
 
@@ -159,7 +166,7 @@ Validation passed: 63 unit tests, strict typecheck, ESLint, production build, an
 
 ## Completed local multi-slice work request: post-review creator controls
 
-**Status:** authorized, implemented, and validated locally July 13 as three coherent checkpoints. The combined build passes 94 unit tests, strict typecheck, ESLint, production build, and one isolated expanded Playwright Chromium walkthrough, including element movement at 200% zoom. It was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. The public-safe result is [preserved in the progress record](docs/progress/2026-07-13-creator-controls-height-and-zoom.png). No new `main` push authorization was recorded.
+**Status:** authorized, implemented, and validated locally July 13 as three coherent checkpoints, then tested by Katherine on July 14. The combined build passes 94 unit tests, strict typecheck, ESLint, production build, and one isolated expanded Playwright Chromium walkthrough, including element movement at 200% zoom. It was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. The public-safe result is [preserved in the progress record](docs/progress/2026-07-13-creator-controls-height-and-zoom.png). Katherine explicitly authorized publishing this passing stack and its documentation to `main` on July 14.
 
 ### Slice A — Direct Creator Controls
 
@@ -235,18 +242,54 @@ Acceptance:
 
 Excluded: opacity, general element resize handles, snapping, canvas rotation, plane renaming/reordering, real imports, persistence, export, deployment, submission media, OAuth, and AI.
 
-### Human test and later bounded slices
+## Approved next `/goal`: Export-aware polish and alpha controls
 
-Stop here for Katherine's **HUMAN TEST and direction checkpoint**. Do not begin opacity merely because A, B, and C pass. Continue only through a newly approved slice after she reviews the creator controls, height behavior, color regions, zoom, and minimap together:
+**Status:** approved by Katherine on July 14 as the next implementation goal after the current documentation and publication checkpoint. No code for this goal is part of the documentation-only checkpoint.
 
-1. **Asset Properties and Opacity:** add one focused property strip for the currently selected element with a 0–100% opacity slider and exact percentage input. Opacity remains separate from eye visibility and source alpha, and zero-opacity elements remain selectable from Layers.
-2. **Background fades:** add a simple transparent two-stop fade only after solid movable color regions are stable.
-3. **Layer management:** add dedicated drag grips, a clear insertion marker, accessible Move Left/Right actions, and optional names. Reorder only inside the active group, renumber labels while retaining stable IDs, and never move or delete Background plane 1. Safe empty-plane deletion is complete; populated-plane deletion remains deferred until moving content and undo/recovery are designed.
-4. **Add rail and Asset Library shell:** replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Its later Add-to-canvas action targets the active numbered plane; real import, speech-balloon artwork, and AI-generated content remain outside the shell-only slice.
+Keep it reviewable as two coherent passing checkpoints:
+
+### D. Stable editing chrome and candidate slice guides
+
+- Keep the fixed **EPISODE** label and surrounding header controls on stable anchors. When title editing activates, replace only the title text's footprint with a tightly sized input; do not move the label or reset control.
+- Keep every full-width Background color region structurally at `x = 0` and 800 logical units wide. Pointer movement changes only its vertical position, so horizontal pointer noise cannot produce visible jitter.
+- Add a clearly visible magnet control whose transient state starts enabled. In this checkpoint, implement one actual, conservative rule: when an ordinary movable element's horizontal center comes within 8 CSS pixels of the episode centerline, snap it to logical `x = (800 - element.width) / 2` and show a temporary vertical center guide. Turning the magnet off or holding Alt/Option during that drag bypasses the snap. Edge-to-edge and nearby-element snapping remain later work. The full-width Background-region invariant does not depend on the magnet.
+- Add default-on, toggleable gray dotted horizontal candidate guides derived from the selected versioned export profile. For `webtoon-canvas-2026-07-13-observed`, map 800 logical units to 800 output pixels and place interior candidates at `y = 1280, 2560, ...` while the value remains below the episode height.
+- Keep the guides aligned through pan, zoom, height changes, and reset. They are editor overlays only and must not appear in the episode document, Layers, minimap, tall master, or exported files.
+
+Acceptance:
+
+- activating, committing, canceling, or blurring title editing causes no header shift
+- full-width Background color regions drag smoothly on the vertical axis and remain exactly full width
+- the magnet defaults on; one browser test proves the 8-pixel center snap and guide, another proves Alt/Option bypass; toggling it never changes document geometry by itself
+- candidate guides appear at the correct logical boundaries at every supported zoom and can be hidden without changing the document
+- title, movement, deletion, height, zoom, minimap, selection, placement, visibility, and reset regressions remain passing
+
+### E. Asset Properties and Opacity plus basic Background fades
+
+- Add one focused bottom property strip for the selected element with a 0–100% opacity slider and exact percentage input.
+- Keep element opacity independent from eye visibility and source-image alpha. A 0%-opacity element remains selectable from Layers and does not intercept canvas input.
+- Add only a simple vertical two-stop alpha fade to solid Background color regions, with top and bottom percentages. Do not add a multi-stop editor, arbitrary angle, blend mode, image mask, or general gradient-color system.
+- Make canvas and minimap agree on the resulting element compositing while keeping candidate guides out of the minimap.
+- Because this adds document fields before persistence exists, bump the in-memory fixture directly from format v3 to v4 without migration machinery. Give every existing and newly created element `opacity = 1`; give a color region no fade by default. Store an optional color-region-only vertical fade with normalized top and bottom alpha values. Rendering multiplies source alpha by element opacity and, when present, the interpolated fade alpha. **Reset demo** restores fixture opacity `1` and no-fade defaults.
+
+Acceptance:
+
+- opacity clamps to 0–100%, persists across selection/group/plane changes, multiplies rather than flattens source alpha, and returns to the documented fixture default on reset
+- eye visibility and opacity remain independent, and zero-opacity rows stay recoverable through Layers
+- a solid Background color region can transition vertically between two alpha endpoints in canvas and minimap
+- focused model/command/store/render tests, strict typecheck, lint, production build, Playwright, and visual inspection pass
+
+Explicitly excluded from this goal: production file export, real import, persistence, undo/redo, general gradients, arbitrary fade angles, blend modes, masks, resizing, tab reordering, deployment, OAuth, OpenAI runtime work, and AI. After D and E pass, stop and produce the requested reconciled inventory of implemented features versus remaining documented/chat requests before proposing more product work.
+
+### Later bounded slices
+
+1. **Deterministic WEBTOON slice planning and export:** after the harmless unpublished upload verification, let the creator review cut positions, render ordered files within the selected verified profile, and preflight dimensions, encoded bytes, total bytes, count, format, and order. Matching the profile cannot guarantee WEBTOON will avoid later optimization.
+2. **Layer management:** add dedicated drag grips, a clear insertion marker, accessible Move Left/Right actions, and optional names. Reorder only inside the active group, renumber labels while retaining stable IDs, and never move or delete Background plane 1. Safe empty-plane deletion is complete; populated-plane deletion remains deferred until moving content and undo/recovery are designed.
+3. **Add rail and Asset Library shell:** replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Its later Add-to-canvas action targets the active numbered plane; real import, speech-balloon artwork, and AI-generated content remain outside the shell-only slice.
 
 ### Submission runway: July 19–21
 
-Public judge access, clean-browser verification, Devpost evidence, video production, final rules review, and submission are intentionally scheduled near the deadline. They remain mandatory, but they are not the July 13 next slice.
+Public judge access, clean-browser verification, Devpost evidence, video production, final rules review, and submission are intentionally scheduled near the deadline. They remain mandatory, but they are not the current implementation goal.
 
 ## Current product goal
 
@@ -300,14 +343,14 @@ The rule-to-evidence checklist is in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPL
 - Complete and validate Episode Setup and Expandable Scroll with safe empty-plane deletion, editable title, repeatable downward extension, minimap refitting, and reset coverage.
 - Complete and validate Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D as separate local checkpoints.
 
-End-of-day target: the current editor and all three post-review checkpoints remain passing locally and stop at a **HUMAN TEST and direction checkpoint** before any opacity work.
+End-of-day target achieved: the current editor and all three post-review checkpoints remained passing locally and stopped at a **HUMAN TEST and direction checkpoint** before any opacity work.
 
 ### July 14 — Full product-building day
 
-- Begin with Katherine's hands-on test of the completed local **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport** checkpoints.
-- Record her feedback and choose the next bounded slice deliberately.
-- Do not begin **Asset Properties and Opacity** without that direction checkpoint and separate approval.
-- Use remaining time only for one additional bounded creator-facing slice selected from the reviewed backlog; do not begin several partially connected features.
+- Complete Katherine's hands-on test of **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. **Complete.**
+- Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Documentation and publication checkpoint in progress.**
+- Follow only the approved **Export-aware polish and alpha controls** goal after that handoff: checkpoint D first, then checkpoint E if D is stable.
+- Keep deterministic WEBTOON file export separate until the harmless authenticated upload verification and a later explicit export checkpoint.
 - Keep every coherent checkpoint tested and independently understandable.
 - Do not spend the full product day on deployment, video, or Devpost assembly.
 
@@ -346,21 +389,22 @@ End-of-day target: the current editor and all three post-review checkpoints rema
 
 ## Optional Build Week product slices
 
-Work through these only in order, with a passing checkpoint after each. Items 4–6 were authorized together by Katherine's follow-up review and are complete locally; item 7 onward still requires her direction checkpoint and later approval. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
+Work through these only in order, with a passing checkpoint after each. Items 4–6 were authorized together by Katherine's follow-up review and are complete; items 7–8 are approved as the next goal; item 9 onward remains separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above. **Complete.**
 2. The layer-planes and episode-backdrop foundation defined above. **Complete.**
 3. Episode Setup and Expandable Scroll. **Complete.**
-4. Direct Creator Controls. **Complete locally.**
-5. Safe Precise Height and solid Background Color Regions. **Complete locally.**
-6. Canvas Zoom and 2D Viewport. **Complete locally.**
-7. Asset Properties and Opacity. **Separate later approval required.**
-8. Background fades.
-9. Layer-tab naming and reordering.
-10. The Add rail and Asset Library shell using public-safe placeholders.
-11. A safe **Add to canvas** action targeting the active numbered plane.
-12. Asset-to-canvas drag if the fallback is already reliable.
-13. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+4. Direct Creator Controls. **Complete and human-tested.**
+5. Safe Precise Height and solid Background Color Regions. **Complete and human-tested.**
+6. Canvas Zoom and 2D Viewport. **Complete and human-tested.**
+7. Stable editing chrome and candidate slice guides. **Approved next.**
+8. Asset Properties and Opacity plus basic Background fades. **Approved next.**
+9. Deterministic WEBTOON slice planning and export after upload verification.
+10. Layer-tab naming and reordering.
+11. The Add rail and Asset Library shell using public-safe placeholders.
+12. A safe **Add to canvas** action targeting the active numbered plane.
+13. Asset-to-canvas drag if the fallback is already reliable.
+14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
 Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
@@ -379,13 +423,13 @@ The smallest acceptable proof is one request that produces one image candidate, 
 ## Deferred work
 
 - Real asset import and project-folder design. The per-plane paperclip currently opens the Asset Library and places only code-defined synthetic demo rectangles; it is not a real import path.
-- Gradients, blend modes, uploaded background imagery, and optional edge decoration. Solid movable full-width Background color regions are complete locally.
+- General gradients, arbitrary fade angles, blend modes, uploaded background imagery, and optional edge decoration. Solid movable full-width Background color regions are complete; only a basic vertical alpha fade is in the approved next goal.
 - Transparency-preserving image import and preview.
 - A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
-- New-episode creation and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging. Editing the current episode title is complete.
+- New-episode creation and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging. Title editing behavior is complete, while its stable-header anchor correction is approved in checkpoint D.
 - Canvas Zoom and 2D Viewport is complete locally; its state is transient and does not alter episode or export geometry.
-- Asset Properties and Opacity remains a candidate only after Katherine's human test and requires its own approval.
-- Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, optional snapping/alignment guides, and direct corner-handle resizing.
+- Asset Properties and Opacity plus a basic vertical Background fade are approved as checkpoint E of the next goal.
+- Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, advanced edge/nearby-element snapping beyond checkpoint D's single centerline rule, and direct corner-handle resizing.
 - Persistence, save/reopen, autosave, and recovery.
 - Undo/redo, rotation, crop, masks, and advanced transforms.
 - Moving elements between planes or groups, including the later element-row **Move to plane** context action and its visible keyboard-accessible alternative; arbitrary nested groups; and element-order editing beyond the numbered-plane foundation.
@@ -397,9 +441,9 @@ The smallest acceptable proof is one request that produces one image candidate, 
 
 ## WEBTOON discovery track
 
-The Build Week editor can proceed without production export. Katherine completed the authenticated form-observation portion on July 13: the current UI displays 800 × 1280 px before automatic optimization, a 2 MB image threshold, 50 MB and 100 images per episode, JPG/JPEG/PNG support, and a separate 202 × 142 episode thumbnail under 500 KB. Before an export slice is approved, complete the remaining harmless unpublished upload behavior tests in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md), including exact boundary enforcement, transformation behavior, ordering, transparency, filename behavior, previews, and draft reopening.
+The Build Week editor can proceed without production export. Katherine completed the authenticated form-observation portion on July 13: the current UI displays 800 × 1280 px before automatic optimization, a 2 MB image threshold, 50 MB and 100 images per episode, JPG/JPEG/PNG support, and a separate 202 × 142 episode thumbnail under 500 KB. Checkpoint D may use that visibly `form-observed` profile only to draw provisional candidate guides. Before deterministic file export begins, complete the remaining harmless unpublished upload behavior tests in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md), including exact boundary enforcement, transformation behavior, ordering, transparency, filename behavior, previews, and draft reopening.
 
-Keep platform constraints in a data-driven export profile so a changed limit can be updated without changing the episode model or editor commands.
+Keep platform constraints in a data-driven export profile so a changed limit can be updated without changing the episode model or editor commands. The later exporter should plan creator-reviewed cuts, produce files no larger than the selected verified profile allows, and preflight every encoded file and the whole package. That gives the creator control over seams and known limits; it cannot guarantee that WEBTOON will not recompress, resize, reformat, or otherwise optimize an accepted upload.
 
 ## Open questions for autonomous creation
 
@@ -442,7 +486,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, Katherine's hands-on review, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete locally. Stop for Katherine's next human test and direction checkpoint. Asset Properties and Opacity, real uploads, deployment, and later slices remain unauthorized.
+- The first-testable-editor `/goal`, both hands-on review checkpoints, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete. Publish the already passing stack and this documentation as Katherine authorized, then begin only the approved **Export-aware polish and alpha controls** goal in a later implementation checkpoint. Real uploads, production export, deployment, and other later slices remain unauthorized.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

@@ -251,3 +251,27 @@ Decision: Treat Direct Creator Controls, Safe Precise Height and Background Colo
 Reason: These changes now work together as one creator story: direct title and base editing, placed-element removal and synthetic demo placement, coarse and fine episode-height control, local Background color regions, and detailed two-axis viewing. Moving directly into opacity would skip the product-owner checkpoint required to confirm that the new controls feel right in the running editor.
 
 Consequences: The local build passes 94 unit tests, strict typecheck, ESLint, production build, and an isolated Playwright Chromium walkthrough including element movement at 200% zoom. It was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768, and its public-safe state is recorded in `docs/progress/2026-07-13-creator-controls-height-and-zoom.png`. Zoom and viewport remain transient editor state; the episode model stays format v3. No `main` push, deployment, opacity, real import, persistence, export, OAuth, or AI work is authorized by this completion record.
+
+## 2026-07-14: Show export-profile boundaries without confusing them with export
+
+Decision: Add default-on, toggleable gray dotted candidate guides as transient editor chrome. The selected versioned `ExportProfile` supplies the geometry; the currently observed WEBTOON profile maps the 800-unit episode to 800 output pixels and therefore suggests a horizontal boundary every 1280 logical units. The guides never enter the episode document, Layers, minimap, tall master, or output files.
+
+Reason: Creators should be able to see where ScrollSplice's provisional maximum-height plan would place a candidate cut under the observed WEBTOON dimensions and keep important lettering or art away from that seam. WEBTOON's exact automatic-slicing algorithm is unverified. A guide is useful before production export exists, but it is not a slice, an upload test, or a compatibility guarantee.
+
+Consequences: The guide checkpoint may use the clearly labeled `form-observed` profile. Actual deterministic self-slicing remains a separate later checkpoint after harmless unpublished upload verification. That exporter will present creator-reviewed cuts, encode and preflight ordered files within the selected verified profile, and keep publishing manual. Matching known dimensions, displayed byte thresholds, formats, and counts reduces avoidable platform intervention; it cannot guarantee that WEBTOON will not recompress, resize, reformat, or otherwise optimize an accepted file.
+
+## 2026-07-14: Approve export-aware polish and alpha controls after the second human test
+
+Decision: Treat Katherine's second hands-on checkpoint as complete and make **Export-aware polish and alpha controls** the next implementation goal. First stabilize the title editor, full-width Background-region movement, default-on magnet behavior, and profile-derived candidate guides. Then add the two previously proposed alpha features: selected-element opacity and a basic vertical two-stop alpha fade for solid Background color regions.
+
+Reason: Katherine confirmed that placed-element deletion, the bottom **Add asset** action, minimap behavior after expansion, and ordinary canvas movement work. She found that the title input shifts the fixed **EPISODE** label and that horizontal pointer movement makes a structurally full-width Background color region feel janky. Opacity and a restrained fade share one small compositing/property foundation and are the next useful visual controls once those interaction defects are fixed.
+
+Consequences: The title input replaces only the title text's anchored footprint. Full-width Background color regions remain structurally `x = 0`, 800 units wide, and vertically movable; the magnet is default-on but remains visible and bypassable for ordinary alignment, not for violating that full-width invariant. General gradients, arbitrary fade angles, blend modes, masks, production export, real import, persistence, undo, deployment, OAuth, and AI remain outside this goal. After the goal passes, stop and reconcile implemented features against every remaining project-document and task request before choosing more work.
+
+## 2026-07-14: Publish the validated post-review checkpoints
+
+Decision: Publish the already passing Episode Setup and post-review A/B/C implementation stack, its public-safe progress evidence, and the matching documentation to the current `main` branch.
+
+Reason: Katherine completed the required review and explicitly requested that this documented checkpoint be pushed to `main`.
+
+Consequences: This supersedes only the earlier statements that the A/B/C stack lacked push authorization. It does not authorize deployment, production export, or pushing a future implementation checkpoint without its own applicable authorization. Do not rewrite the pre-event baseline commit or tag.

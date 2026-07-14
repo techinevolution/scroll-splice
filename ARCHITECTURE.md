@@ -77,8 +77,8 @@ The approved organization model remains shallow and predictable rather than beco
 - Exactly one plane is special: Background plane 1 is the pinned lowest plane, carries the editable full-scroll base RGB color, and automatically follows episode height. It may be recolored or hidden but cannot be reordered or deleted.
 - Every other plane is an unrestricted creative surface. Examples such as “Fade,” “Characters,” or “Film” are optional names, never enforced content types.
 - Every element references one `layerPlaneId`; its group is derived from that plane rather than duplicated as a second source of truth.
-- A later asset-properties slice adds a required element opacity value from 0–1 in addition to preserving any per-pixel alpha in the source asset. The completed layer-plane foundation intentionally does not add that field or its UI.
-- Ordinary full-width color regions are elements with logical start `y`, height, and color. Creating one asks for a start and length, defaults the start to the current viewport, and leaves the region vertically movable. Gradient data and post-creation length editing remain later work.
+- The approved next asset-properties checkpoint bumps the unsaved fixture directly from format v3 to v4 and adds required element `opacity` from 0–1 while preserving per-pixel source alpha. Existing fixture elements and every creation command default to `opacity = 1`. Eye visibility remains independent, and a zero-opacity element remains addressable through Layers. No migration layer is needed before persistence exists; any future loader must handle versions explicitly.
+- Ordinary full-width color regions are elements with logical start `y`, height, and color. They are structurally `x = 0` and 800 units wide, so movement changes only `y` and horizontal pointer noise cannot create jitter. Creating one asks for a start and length and defaults the start to the current viewport. Format v4 may add an optional color-region-only `verticalAlphaFade` with normalized `top` and `bottom` values; absence means no fade. Rendering multiplies source alpha, element opacity, and interpolated fade alpha. General gradients and post-creation length editing remain later work.
 - Effective visibility is `group visible AND plane visible AND element visible`. A hidden element is absent from the canvas and hit testing but may remain selected from the Layers panel.
 - Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents elements by logical `y` from top to bottom and uses local stacking only to resolve equal or overlapping positions.
 - `activeCompositionGroup` and `activeLayerPlaneId` are transient editor state. Canvas selection activates both so the matching row remains discoverable.
@@ -121,7 +121,9 @@ The implemented Build Week command surface is intentionally small:
 
 Navigation and selection do not change the document. They update application state.
 
-Reordering, plane rename, element opacity, moving elements between planes, real image attachment/import, and the full Add rail belong to later separately approved slices. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
+Reordering, plane rename, moving elements between planes, real image attachment/import, and the full Add rail belong to later separately approved slices. Element opacity and a basic vertical Background alpha fade belong only to the approved next goal. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
+
+Checkpoint E adds pure `setElementOpacity(document, elementId, opacity)` and `setBackgroundRegionFade(document, elementId, fade)` commands. They clamp normalized alpha to 0–1; the fade command rejects non-color-region elements and accepts `undefined` to restore a uniform region. Reset replaces the document with the format-v4 fixture, where every element has opacity `1` and every color region has no fade.
 
 ### Implemented episode-structure command extension
 
@@ -142,11 +144,11 @@ These extensions are implemented and validated locally in checkpoints A and B:
 - `deleteElement(document, elementId)` removes one placed episode instance and nothing from a future source-asset repository. The trash control sits beside that element's eye in Layers.
 - `createSyntheticShapeElement(document, input)` creates one code-defined demo rectangle only in an ordinary plane; application coordination detects and selects the appended stable element ID.
 - `resizeEpisodeHeight(document, requestedHeight)` supports precise growth and shrink requests. It clamps to `MIN_EPISODE_LOGICAL_HEIGHT = 1280` and to the greatest logical bottom bound of all elements, including hidden elements and Background color regions, so it never clips or moves content. The existing `extendEpisodeHeight` remains the coarse 1280-unit shortcut.
-- `createBackgroundColorRegion(document, input)` creates a full-width solid element only in an ordinary Background plane from a chosen start, length, and color. The ordinary movement command changes its vertical position; fixed group/plane order supplies its compositing position rather than a renderer exception.
+- `createBackgroundColorRegion(document, input)` creates a full-width solid element only in an ordinary Background plane from a chosen start, length, and color. The movement command preserves `x = 0` and the 800-unit width while changing only its vertical position; fixed group/plane order supplies its compositing position rather than a renderer exception.
 
-The bottom resize handle converts pointer movement through the shared coordinate module and requests logical height through `setEpisodeHeight`. Background plane 1 derives from the resulting document height and is excluded from the content-floor calculation because it has no independent bounds. Canvas viewport clamping and minimap fitting respond to the same committed height. Gradients, opacity, imported background photos, and blend modes remain deferred.
+The bottom resize handle converts pointer movement through the shared coordinate module and requests logical height through `resizeEpisodeHeight`. Background plane 1 derives from the resulting document height and is excluded from the content-floor calculation because it has no independent bounds. Canvas viewport clamping and minimap fitting respond to the same committed height. General gradients, imported background photos, and blend modes remain deferred.
 
-The title's existing validation does not change in checkpoint A. Only the interaction changes: ordinary title text is the click target, and the input is created after activation with no permanent pencil control.
+The title's existing validation does not change in checkpoint A. Ordinary title text is the click target, and the input is created after activation with no permanent pencil control. The approved next correction gives the fixed **EPISODE** label, title text, and title input stable layout ownership so activation replaces only the title footprint and cannot shift neighboring header controls.
 
 Zustand owns:
 
@@ -187,6 +189,12 @@ Checkpoint C adds transient `zoomFactor`, `viewportX`, and `viewportY` state wit
 
 At adjustable zoom, logical viewport width and height are derived from the stage dimensions and `zoomFactor`. All episode-to-stage conversions, centering, panning, and clamping stay in the shared coordinate module. The minimap always scales the complete episode to its own frame independently of editor zoom and draws an accurate two-dimensional viewport box from the same logical bounds; its interaction hit target may be larger than a very small visible box without falsifying that visible geometry.
 
+### Approved export-profile planning guides
+
+The approved next editor checkpoint draws default-on gray dotted horizontal guides across the 800-unit episode at candidate slice boundaries derived from the selected versioned `ExportProfile`. For `webtoon-canvas-2026-07-13-observed`, mapping the 800-unit episode to an 800 px target yields interior guides at `y = 1280, 2560, ...` while the value is below `episode.logicalHeight`. Calculate that interval from profile width and maximum slice height; do not introduce a second hardcoded platform limit.
+
+Guide visibility and the selected preview profile are transient editor state. Guides move correctly with pan and zoom, can be toggled, and never enter the episode document, document commands, minimap, tall master, or exported files. They are layout aids rather than promises about final cut positions or platform processing.
+
 ## Interaction flows
 
 ### Selection
@@ -212,6 +220,8 @@ At adjustable zoom, logical viewport width and height are derived from the stage
 3. The application dispatches `moveElement`.
 4. The pure command returns the next document.
 5. Canvas, minimap, and layers derive their next view from that document.
+
+The approved next checkpoint adds transient `magnetEnabled` state that defaults to `true`. Its first intentionally small rule snaps an ordinary movable element's horizontal center to the episode centerline when the distance is at most 8 CSS pixels at the current zoom. The canvas shows a temporary vertical center guide while snapped. Turning the magnet off or holding Alt/Option during that drag bypasses snapping; edge and nearby-element targets remain deferred. The shared coordinate module converts the 8-pixel screen threshold to logical units before the same `moveElement` command is dispatched. Toggling the magnet never mutates the document by itself. Structural element rules still win: a full-width Background color region always remains `x = 0` and 800 units wide whether the magnet is enabled or bypassed.
 
 ### Composition-group, plane, and visibility flow
 
@@ -318,12 +328,14 @@ Production export is deferred, but its first-principles contract is clear:
 
 1. Render a tall master from the episode document.
 2. Load a versioned, data-driven `ExportProfile` describing platform limits.
-3. Plan boundary-aware slices, preferring gutters where possible.
-4. Produce zero-padded ordered image files.
-5. Preflight format, dimensions, per-file bytes, total bytes, and image count.
+3. Start from profile-derived maximum-height candidates, prefer earlier gutters where possible, and present the proposed cuts for creator review. Creator adjustments are accepted only while every span remains within the profile.
+4. Produce zero-padded ordered image files deterministically from the approved plan.
+5. Preflight format, dimensions, per-file bytes, total bytes, image count, and sequence after encoding or any adjustment.
 6. Report violations without overwriting source assets.
 
-WEBTOON limits can change. The exporter must not scatter fixed limits through the editor or claim compatibility until the current profile has been verified through the manual discovery process in `WEBTOON_REQUIREMENTS.md`.
+WEBTOON limits can change. The exporter must not scatter fixed limits through the editor or claim compatibility until the current profile has been verified through the manual discovery process in `WEBTOON_REQUIREMENTS.md`. Matching a verified profile reduces avoidable platform transformations but cannot guarantee that WEBTOON will never recompress, resize, reformat, or otherwise optimize an upload.
+
+Planning guides and deterministic file export are separate bounded checkpoints. The guide checkpoint may use a visibly `form-observed` profile without writing files. Self-slicing waits for the harmless unpublished upload verification, then uses `ExportService` at the application edge; it never adds slice records or platform state to the episode document.
 
 ## Public access and provenance
 
@@ -340,7 +352,9 @@ The public demo uses only original synthetic content or explicitly approved asse
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 
-The local post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. Remote publication remains separately gated.
+Checkpoint D validation covers the stable title anchor, vertical-only full-width region movement, default-on magnet state, the 8-pixel center snap and Alt/Option bypass, profile-to-logical interval calculation, the observed 1280-unit candidate boundaries, guide toggle state, alignment at every supported zoom and viewport position, and absence from document serialization, minimap, and rendered output. Checkpoint E adds format-v4 defaults/reset, opacity clamping, visibility independence, zero-opacity hit testing, source-alpha multiplication, color-region-only fade guards, and canvas/minimap agreement. The separate export checkpoint adds deterministic boundary planning, creator-adjustment validation, encoded dimension/byte/count preflight, stale-profile handling, and comparison with the authenticated unpublished upload results.
+
+The local post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. Katherine authorized publication of that passing checkpoint and its documentation on July 14; the evidence record is updated after the push completes.
 
 ## Non-negotiable invariants
 
