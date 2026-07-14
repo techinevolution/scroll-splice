@@ -16,7 +16,8 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Review the implemented composition groups and eye controls in the running app and clarify the numbered layer-plane model.
 - [x] Approve the **layer planes and episode backdrop** foundation in `PLAN.md`.
 - [x] Approve **Episode Setup and Expandable Scroll** in `PLAN.md`.
-- [ ] Approve or revise the recommended **Canvas Zoom and 2D Viewport** slice in `PLAN.md`; no zoom implementation is authorized yet.
+- [x] Test **Episode Setup and Expandable Scroll**; confirm empty-plane deletion and minimap behavior after expansion.
+- [x] Approve the ordered A/B/C work request: **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, then **Canvas Zoom and 2D Viewport**.
 
 ## Katherine — before submission
 
@@ -33,8 +34,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement and validate the approved numbered layer-plane and editable-backdrop foundation in `c5f83c5`.
 - [x] Record Katherine's empty-plane deletion, editable-title, expandable-scroll, minimap-refit, and adjustable-view feedback and map it into separately gated slices.
 - [x] Implement and validate **Episode Setup and Expandable Scroll**, including paired empty-plane actions, safe deletion, editable current-episode title, repeatable 1280-unit downward extension, minimap refitting, reset coverage, and regression validation.
-- [ ] After separate approval: implement only **Canvas Zoom and 2D Viewport**, then stop for review before opacity or later product slices.
-- [ ] After the zoom checkpoint passes and receives separate approval: implement only **Asset Properties and Opacity**, then stop for review before color regions, tab dragging, the Add rail, import, resize, persistence, export, deployment, or AI work.
+- [ ] Implement and validate checkpoint A: click-to-edit title without a pencil, synchronized Layers/canvas base controls, placed-element trash beside the eye, and the disabled paperclip in populated ordinary planes.
+- [ ] Implement and validate checkpoint B: safe precise height drag plus solid movable Background color regions, without clipping visible or hidden elements.
+- [ ] Implement and validate checkpoint C: **Canvas Zoom and 2D Viewport** with Fit Width, 50–200%, horizontal access, and accurate minimap geometry.
+- [ ] After A/B/C pass and Katherine separately approves it: implement only **Asset Properties and Opacity**, then stop before fades, tab dragging, the Add rail, real import, persistence, export, deployment, or AI work.
 
 ## Joint — only if the human MVP finishes early
 

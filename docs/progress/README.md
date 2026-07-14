@@ -48,3 +48,15 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured in bundled Chromium at a 1440 × 900 viewport during supported-size visual QA.
 - File: 1440 × 900 PNG, 97,494 bytes.
 - SHA-256: `007a46bf91815d4f78546d9a8561c6bb456ca4f8b3c7b12389ca3ec9e621bec3`.
+
+## July 13 — Post-review expandable-scroll baseline
+
+![ScrollSplice post-review expandable-scroll baseline](2026-07-13-post-review-expandable-scroll.png)
+
+- Captured by Codex from the running local Episode Setup checkpoint after Katherine verified empty-plane deletion and minimap behavior following expansion, and before the next authorized A/B/C changes began.
+- Shows populated Content plane 1, the synchronized full-episode minimap, the fixed-fit story canvas, and the direct-title pencil that the next checkpoint is approved to remove.
+- This is baseline evidence, not evidence that click-to-edit title activation, element-row deletion, precise height dragging, movable Background color regions, or adjustable zoom already works.
+- Contains only the public-safe code-rendered **Signal in the Fog** fixture; no Root & Table production artwork or third-party comic reference appears.
+- Captured in bundled Chromium at a 1440 × 900 viewport.
+- File: 1440 × 900 PNG, 103,161 bytes.
+- SHA-256: `3513a6bcaec50ceb3ddeeb60bdbafa4fdd57db9fa503cce1b27c2345fc011820`.

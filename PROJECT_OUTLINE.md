@@ -61,8 +61,8 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 3. Import images into the Asset Library.
 4. Choose a composition group and numbered layer plane, then drag an asset onto the canvas to create an element there.
 5. Position and resize it within the vertical composition.
-6. At the bottom of the current story, use **Add scroll space** to extend the episode in predictable increments as the story grows downward.
-7. Add more panels, effects, color regions, or elements in the new space.
+6. At the bottom of the current story, use **Add scroll space** for a fast predictable extension or drag the bottom height handle to fine-tune unused tail space without clipping existing content.
+7. Add more panels, effects, color regions, or elements in the new space. Remove a placed element from its Layers row without deleting its reusable source asset.
 
 ### Navigate a long scroll
 
@@ -104,7 +104,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Narrow left **Add** rail that opens an **Asset Library** drawer without permanently taking space from the story canvas.
 - Library category buttons for **Uploads**, **Speech Balloons**, **Decorations**, and **Shapes & Frames**; add **AI Generated** only when that future mode actually exists.
 - Fixed **Background**, **Content**, and **Foreground** composition-group controls centered above the story canvas without persistent instruction copy competing for that bar.
-- Episode title and reset/project controls aligned over the canvas rather than consuming the top of the right inspector. The title itself enters a direct inline edit state; Enter or leaving the field saves, Escape cancels, blank titles are rejected, and the field follows WEBTOON's observed 60-character limit.
+- Episode title and reset/project controls aligned over the canvas rather than consuming the top of the right inspector. The title text itself is the edit target, with no permanent pencil, input border, or cursor until clicked. Enter or leaving the field saves, Escape cancels, blank titles are rejected, and the field follows WEBTOON's observed 60-character limit.
 - Clear controls for project, episode, import, preview, save, and export.
 - Editable episode names and a **File > New Episode** command.
 - A familiar File, Edit, View, Window, and Help command structure. A browser build may present these as an in-app menu bar; native macOS and Windows menu integration belongs with later desktop packaging.
@@ -115,13 +115,13 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Selection, move, resize, and delete for placed elements.
 - Visible selection outline with corner handles for direct resizing.
 - Optional proximity snapping and alignment guides, controlled by a clearly visible magnet toggle. Snapping suggests centers, edges, and guides without forcing an element into a box, resizing it, or preventing intentional asymmetry.
-- A pinned first Background plane that supplies the editable full-scroll base RGB color instead of relying on a hardcoded white canvas. Selecting it exposes a compact **Base color** swatch and native color picker in the inspector; hiding it reveals an editor-only transparency checkerboard rather than changing episode data.
+- A pinned first Background plane that supplies the editable full-scroll base RGB color instead of relying on a hardcoded white canvas. Selecting it exposes the same **Base color** through a compact Layers swatch and a direct canvas-side control, so the base stays discoverable without being buried in a menu. Hiding it reveals an editor-only transparency checkerboard rather than changing episode data.
 - Ordinary Background planes that can hold movable and resizable full-width color regions, gradients, photos, textures, splatters, or edge decoration. Adding a color region asks where on the scroll it should begin and defaults sensibly to the current viewport.
 - Quick panel/frame creation with rectangular and angled or polygonal masks so an image can be repositioned inside an irregular panel without destructive cropping.
 - Allow intentional bleed and panel-breakout effects beyond an irregular frame or episode edge while clipping only at the final output boundary.
 - Preserve alpha transparency in imported and placed images rather than flattening them onto white.
 - Give every selected element an independent opacity value from 0–100%, editable through a contextual bottom control with a precise percentage input.
-- Let the creator extend the episode downward as the story grows. When the creator reaches the current end, a centered editor-only **Add scroll space** control adds 1,280 logical units per click; it is never episode content or export output. Extension only increases the document height in this slice, leaves existing elements in place, and automatically extends the pinned base backdrop and every full-scroll composition group. Precise trimming or shrinking is later work.
+- Let the creator extend the episode downward as the story grows. When the creator reaches the current end, a centered editor-only **Add scroll space** control adds 1,280 logical units per click for speed. A distinct bottom-edge drag handle fine-tunes the height upward or downward; shrinking stops at the lowest bound of every visible or hidden element and never moves, crops, or deletes content. Both controls are editor chrome rather than episode/export content, and the pinned base and minimap follow the resulting document height.
 - Later story-section or panel-sequence reordering for moving whole beats vertically without confusing those sections with the three composition groups.
 - Drop targets and insertion feedback while dragging.
 - Canvas scrolling that remains synchronized with the minimap.
@@ -145,8 +145,9 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Show only the active plane's elements below the tabs, ordered from the top of the scroll downward; use local stacking as a tie-breaker for overlapping elements.
 - Select an element row even when its eye or parent plane is hidden. Hidden elements do not render or capture canvas clicks, but Layers selection remains available so the creator can inspect or reveal them.
 - Give each group, numbered plane, and element its own eye state. Hiding a parent preserves every child setting.
+- Give each element row a small trash action beside its eye. It removes that placed episode instance only and never deletes the reusable source asset.
 - In a truly empty ordinary plane, show a centered empty-state **Delete plane** action with a small trash icon and text. Hidden elements still count as contents, Background plane 1 is never deletable, and every composition group retains at least one plane. After deletion, activate the nearest remaining plane and renumber the visible tabs without changing their stable identities.
-- Pair that empty-state action with a same-size paperclip **Attach asset** placeholder, but keep it visibly disabled and labeled as future until the Asset Library can complete the workflow. The numbered-tab `+` creates another plane; it never attaches an asset or adds story height.
+- Keep a paperclip **Attach asset** affordance below the active ordinary plane's list whether that plane is empty or populated. Pair it with the same-size empty-plane delete action when applicable, but keep the paperclip visibly disabled and labeled as future until the Asset Library can complete the workflow. The numbered-tab `+` creates another plane; it never attaches an asset or adds story height.
 - Later let creators move an element to another plane from its row's context menu and an equivalent visible keyboard-accessible action; right-click is a shortcut, not the only route.
 - Basic names and type icons so similar elements can be distinguished.
 - Keep the list independently scrollable. On narrow displays, allow the right inspector to collapse or open as an overlay rather than squeezing the story canvas past usability.
@@ -227,10 +228,11 @@ These components follow the creator-ready human workflow and are not Build Week 
 - The composition-group selector must stay centered above the story canvas at supported desktop sizes; the full-height right inspector and its element list scroll independently and can collapse into an overlay on narrower displays.
 - Group selection filters organization only. Visibility changes happen through explicit eye controls, not merely by switching groups.
 - Numbered planes are unrestricted creative surfaces. Examples and optional names may guide creators, but ScrollSplice must not force panels, characters, effects, or decorations into particular numbered tabs.
-- Keep the three addition concepts unambiguous: the numbered-tab `+` creates a plane, the disabled paperclip previews a future asset attachment, and the bottom **Add scroll space** control extends the episode.
+- Keep the addition concepts unambiguous: the numbered-tab `+` creates a plane, the disabled paperclip previews a future element attachment, **Add scroll space** makes one coarse extension, and the bottom-edge handle fine-tunes total episode height.
 - Keyboard shortcuts may supplement group and layer visibility, but every action must remain available through visible controls.
 - Empty states should teach the first action: import an image or create a panel. A genuinely empty ordinary plane may also offer its centered, clearly labeled **Delete plane** action; do not hide this destructive action in the narrow numbered tab.
 - The pinned base color, movable color regions, fades, background imagery, and optional decoration should remain independently editable while composing into one continuous reader view.
+- Height reduction must consume only unused tail space; hidden content and long Background color regions protect their full logical bounds just like visible Content elements.
 - Transparent areas should preview accurately against the current background treatment.
 - Element opacity must be adjustable independently of source-image alpha and displayed as a precise percentage for the selected element.
 - Snapping must be optional, easy to toggle or temporarily bypass, and clear about which center, edge, guide, or nearby element is being matched.
@@ -246,7 +248,8 @@ These components follow the creator-ready human workflow and are not Build Week 
 - A creator makes an angled panel mask, repositions a photo inside it, and lets a character or sound effect break beyond the frame without snapping forcing it back inside.
 - On a smaller monitor, the creator can scroll or collapse the right inspector without losing the composition-group controls or access to the Asset Library.
 - A creator combines a chosen background color with a transparent uploaded background and optional edge decoration, then extends the episode as new story beats are added.
-- A creator edits the episode title directly in the header, reaches the end of the current scroll, adds another 1,280 logical units, and sees the minimap immediately refit the complete longer episode without moving existing content.
+- A creator clicks the ordinary title text to edit it, reaches the end of the current scroll, adds another 1,280 logical units, drags the bottom edge upward to remove only the unused portion, and sees the minimap immediately refit without moving or clipping existing content.
+- A creator deletes one placed panel from its Layers-row trash action, then sees the paperclip affordance remain available below the other rows without mistaking it for implemented import.
 - A creator adds a starter speech balloon, resizes it with corner handles, and replaces or supplements the starter library with a personal reusable balloon asset.
 - Dragging the minimap viewport moves the main canvas to the matching portion of the episode.
 - Selecting an image on the canvas highlights its element row; reordering that element within its plane changes the visible stacking immediately.

@@ -8,7 +8,7 @@ Post-start documentation/compliance work is recorded in commit `a567865` at 11:5
 
 Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. Katherine completed the hands-on review and `/feedback` that day. The review found no blocking defect, leaving the remaining July 13–18 product window available for bounded creator-facing slices without changing the minimum submission contract.
 
-Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed and validated that checkpoint locally on July 13. **Canvas Zoom and 2D Viewport** is now the recommended next slice, followed by **Asset Properties and Opacity**; both remain separately gated and unapproved.
+Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed and validated that checkpoint locally on July 13. In her follow-up test she confirmed that empty-plane deletion works and that the minimap remains dependable after repeated episode expansion. She then authorized one multi-slice work request, kept as three separately testable checkpoints: **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. Implementation is authorized; publication to `main` is not implied by that approval.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -53,6 +53,11 @@ These requests refine the intended product but are not authorization to enlarge 
 - show an active plane's elements from top to bottom on the scroll instead of presenting later beats first solely because of stacking values
 - support compact draggable numbered tabs with a dedicated handle, a non-drag reorder alternative, `+` creation, and left/right overflow navigation that does not change order
 - let a creator remove an accidentally added empty ordinary plane through a centered, accessible action while keeping Background plane 1 and at least one plane per group
+- let the creator remove a placed element from its Layers row through a trash action beside its eye; this removes only that episode instance, not its reusable source asset
+- keep a clear add-element affordance available below the active plane's list whether the plane is empty or populated, while leaving the paperclip visibly disabled until real placement/import exists
+- make the episode title text itself the edit target, with no permanent pencil and no input border or cursor until the title is clicked
+- keep Background plane 1 easy to find and editable from both its Layers inspector and a direct canvas-side color control backed by the same command
+- retain the coarse 1280-unit **Add scroll space** action while adding a bottom drag handle for precise growth or safe removal of unused tail space; shrinking must stop before any visible or hidden element would be clipped
 - replace the fixed fit-only view later with **Fit Width** plus 50–200% zoom, horizontal access above fit, center-preserving zoom changes, and an accurate two-dimensional minimap viewport box
 - later provide **Move to plane** from an element-row context menu plus a visible keyboard-accessible action; right-click must not be the only route
 - add Clip Studio-style rectangular and irregular panel masks later, with optional snapping that never prevents intentional asymmetry, bleed, or panel-breakout effects
@@ -152,9 +157,55 @@ Excluded: episode shrinking, arbitrary extension amounts, drag-to-resize canvas 
 
 Validation passed: 63 unit tests, strict typecheck, ESLint, production build, and one isolated Playwright Chromium walkthrough. The running interface was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. The public-safe checkpoint is [preserved in the progress record](docs/progress/2026-07-13-episode-setup-and-expandable-scroll.png).
 
-## Recommended next slice: Canvas Zoom and 2D Viewport
+## Authorized multi-slice work request: post-review creator controls
 
-**Status:** proposed for separate approval; no implementation is authorized yet.
+**Status:** authorized July 13 and not yet complete. Treat A, B, and C as separate coherent checkpoints with their own focused tests, running-app walkthrough, visual inspection, and commit. Completing one must not be reported as completing the others. This is implementation authorization, not standing authorization to push `main`.
+
+### Slice A — Direct Creator Controls
+
+**Goal:** remove unnecessary indirection from the controls Katherine is already using and make the active plane useful whether it is empty or populated.
+
+Must-have work:
+
+- Make the displayed episode title itself the click target. Keep it ordinary text until clicked, then show the existing validated inline input. Remove the permanent pencil; retain Enter/blur commit, Escape cancel, blank rejection, and the 60-character limit.
+- Keep Background plane 1 as a visible dedicated plane. Its existing Layers **Base color** control remains, and activating that base also exposes a compact direct canvas-side color control. Both dispatch the same `setBaseColor` command and are editor chrome rather than episode content.
+- Add a small trash action beside each element eye in the active plane list. It removes only the placed episode element, never its reusable source asset or another plane's content.
+- Keep the paperclip **Attach asset** affordance available below the element rows in every ordinary active plane, including populated planes. It remains visibly disabled and accurately labeled as future work until real import/placement is approved.
+- Keep safe empty-plane deletion in the empty state and preserve all existing protection rules.
+
+Acceptance:
+
+- clicking the title enters edit mode without a persistent pencil, border, or text cursor before the click
+- the Layers and canvas base-color controls remain synchronized and update both canvas and minimap
+- deleting an element removes the correct placed instance and leaves its plane, unrelated elements, selection, ordering, and shared fixture data coherent
+- the disabled paperclip remains reachable in empty and populated ordinary planes without claiming that attachment works
+- existing plane deletion, title validation, navigation, selection, movement, extension, minimap, and reset behavior remain passing
+
+Excluded: real attachment/import, source-asset deletion, undo/redo, persistence, opacity, resize handles, tab reordering, export, deployment, OAuth, and AI.
+
+### Slice B — Safe Precise Height and Background Color Regions
+
+**Goal:** let a creator fine-tune unused scroll length and paint long movable sections of the episode backdrop without clipping story content or turning Background planes into fixed roles.
+
+Must-have work:
+
+- Retain **Add scroll space** as the fast 1280-unit action, and add a distinct bottom-edge drag handle for precise height adjustment.
+- Convert the pointer drag through shared logical-coordinate helpers. Allow growth and shrinking of unused tail space, but clamp the minimum to the lowest content bound across every plane; hidden elements and color regions count. Never move, crop, or delete content to satisfy a shrink request.
+- Keep the current viewport valid as height changes, let the pinned base follow the resulting document height, and refit the complete minimap continuously or immediately after commit.
+- Introduce a solid full-width color-region element for ordinary Background planes. Creation asks for or sensibly defaults its start to the current viewport, stores a logical start and height, remains movable and vertically adjustable, and participates in normal selection, visibility, ordering, deletion, minimap, and height-safety rules.
+- Keep each color region independent from pinned Background plane 1. The base remains a full-scroll fallback; ordinary regions provide local color changes above it and below Content.
+
+Acceptance:
+
+- dragging the bottom handle down adds only the requested amount, while dragging up removes only unused tail space
+- a shrink request cannot pass the bottom of any visible or hidden element and never changes element coordinates
+- repeated coarse additions and precise adjustments keep canvas, base, viewport, and minimap in agreement
+- an ordinary Background plane can hold a long solid color region at a chosen vertical start, move it, adjust its extent, hide it, select it from Layers, and delete the placed region
+- fixed group and plane ordering keep the region above the base and below Content without a special hardcoded renderer path
+
+Excluded: gradients, blend modes, opacity, uploaded background photos, source-asset import, arbitrary panel masks, undo, persistence, export, deployment, OAuth, and AI.
+
+### Slice C — Canvas Zoom and 2D Viewport
 
 **Goal:** make the story canvas adjustable without changing episode geometry or allowing zoomed content to become unreachable.
 
@@ -165,7 +216,7 @@ Must-have work:
 - Add horizontal viewport state and input so the creator can reach the entire 800-unit episode whenever zoom makes it wider than the visible stage.
 - Extend the centralized coordinate helpers and minimap viewport representation to both axes; the minimap box must accurately show the visible logical rectangle at every supported zoom.
 - Keep zoom and viewport position as transient editor state. They must not alter episode dimensions, element coordinates, or eventual export geometry.
-- Preserve selection, dragging, wheel/keyboard navigation, minimap click/drag navigation, extension, title editing, visibility, and reset behavior.
+- Preserve selection, dragging, height adjustment, color regions, wheel/keyboard navigation, minimap click/drag navigation, title editing, visibility, and reset behavior.
 
 Acceptance:
 
@@ -176,14 +227,14 @@ Acceptance:
 - reset restores the documented default fit and viewport
 - focused coordinate/store coverage, typecheck, lint, production build, Playwright, and visual inspection at the supported desktop sizes pass
 
-Excluded: opacity, element resize handles, snapping, canvas rotation, episode-height shrinking, background color regions or fades, plane renaming/reordering, imports, persistence, export, deployment, submission media, OAuth, and AI.
+Excluded: opacity, general element resize handles, snapping, canvas rotation, plane renaming/reordering, real imports, persistence, export, deployment, submission media, OAuth, and AI.
 
 ### Later bounded slices
 
-After the separately approved Canvas Zoom and 2D Viewport checkpoint passes, continue one separately approved checkpoint at a time:
+After A, B, and C each pass as their own checkpoint, continue only through a newly approved slice:
 
 1. **Asset Properties and Opacity:** add one focused property strip for the currently selected element with a 0–100% opacity slider and exact percentage input. Opacity remains separate from eye visibility and source alpha, and zero-opacity elements remain selectable from Layers.
-2. **Background color regions and fades:** create an ordinary movable color-region element on a Background plane, ask where its vertical span begins, default to the current viewport, and add a simple transparent two-stop fade only if the solid region is stable.
+2. **Background fades:** add a simple transparent two-stop fade only after solid movable color regions are stable.
 3. **Layer management:** add dedicated drag grips, a clear insertion marker, accessible Move Left/Right actions, and optional names. Reorder only inside the active group, renumber labels while retaining stable IDs, and never move or delete Background plane 1. Safe empty-plane deletion is complete; populated-plane deletion remains deferred until moving content and undo/recovery are designed.
 4. **Add rail and Asset Library shell:** replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Its later Add-to-canvas action targets the active numbered plane; real import, speech-balloon artwork, and AI-generated content remain outside the shell-only slice.
 
@@ -242,12 +293,13 @@ The rule-to-evidence checklist is in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPL
 - Complete and validate the numbered layer-plane and editable-backdrop checkpoint.
 - Complete and validate Episode Setup and Expandable Scroll with safe empty-plane deletion, editable title, repeatable downward extension, minimap refitting, and reset coverage.
 
-End-of-day target: the current editor, creator-facing layer organization, and episode-setup checkpoint remain passing, with Canvas Zoom held behind a separate approval.
+End-of-day target: the current editor, creator-facing layer organization, and episode-setup checkpoint remain passing, with the newly authorized A/B/C work kept as separate reviewable checkpoints.
 
 ### July 14 — Full product-building day
 
-- Episode Setup and Expandable Scroll is already complete; if Katherine separately approves implementation, begin **Canvas Zoom and 2D Viewport**.
-- After the zoom checkpoint passes, the next separately approved follow-up is **Asset Properties and Opacity**. Do not combine them into one large slice.
+- Continue the authorized work in order: **Direct Creator Controls**, then **Safe Precise Height and Background Color Regions**, then **Canvas Zoom and 2D Viewport**.
+- Validate and commit each as its own coherent checkpoint. Do not combine their success criteria into one all-or-nothing change.
+- After all three pass, the next separately approved follow-up is **Asset Properties and Opacity**.
 - Use remaining time only for one additional bounded creator-facing slice selected from the reviewed backlog; do not begin several partially connected features.
 - Keep every coherent checkpoint tested and independently understandable.
 - Do not spend the full product day on deployment, video, or Devpost assembly.
@@ -287,19 +339,21 @@ End-of-day target: the current editor, creator-facing layer organization, and ep
 
 ## Optional Build Week product slices
 
-Work through these only in order, with separate approval and a passing checkpoint after each. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
+Work through these only in order, with a passing checkpoint after each. Items 4–6 are authorized together by Katherine's follow-up review but remain separately testable; item 7 onward still requires later approval. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above. **Complete.**
 2. The layer-planes and episode-backdrop foundation defined above. **Complete.**
 3. Episode Setup and Expandable Scroll. **Complete.**
-4. Canvas Zoom and 2D Viewport. **Recommended next; not yet approved.**
-5. Asset Properties and Opacity. **Separate approval required after slice 4 passes.**
-6. Background color regions and a basic fade.
-7. Layer-tab naming and reordering.
-8. The Add rail and Asset Library shell using public-safe placeholders.
-9. A safe **Add to canvas** action targeting the active numbered plane.
-10. Asset-to-canvas drag if the fallback is already reliable.
-11. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+4. Direct Creator Controls. **Authorized; pending implementation.**
+5. Safe Precise Height and solid Background Color Regions. **Authorized after item 4 passes.**
+6. Canvas Zoom and 2D Viewport. **Authorized after item 5 passes.**
+7. Asset Properties and Opacity. **Separate later approval required.**
+8. Background fades.
+9. Layer-tab naming and reordering.
+10. The Add rail and Asset Library shell using public-safe placeholders.
+11. A safe **Add to canvas** action targeting the active numbered plane.
+12. Asset-to-canvas drag if the fallback is already reliable.
+13. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
 Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
@@ -317,13 +371,13 @@ The smallest acceptable proof is one request that produces one image candidate, 
 
 ## Deferred work
 
-- Real asset import and project-folder design.
-- Movable full-width color regions, gradients, blend modes, uploaded background imagery, and optional edge decoration. Repeatable 1280-unit downward episode/background extension is complete; shrinking, arbitrary extension amounts, and drag-to-resize height remain deferred.
+- Real asset import and project-folder design. The disabled per-plane paperclip remains only an affordance until this work exists.
+- Gradients, blend modes, uploaded background imagery, and optional edge decoration. Solid movable full-width Background color regions are in the authorized B checkpoint.
 - Transparency-preserving image import and preview.
 - A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
 - New-episode creation and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging. Editing the current episode title is complete.
-- Canvas Zoom and 2D Viewport remains deferred until Katherine separately approves it; incomplete zoom that clips the episode without horizontal access is not acceptable.
-- Asset Properties and Opacity follows the complete zoom checkpoint and requires its own approval.
+- Canvas Zoom and 2D Viewport is approved as checkpoint C; incomplete zoom that clips the episode without horizontal access is not acceptable.
+- Asset Properties and Opacity follows the complete A/B/C work and requires its own approval.
 - Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, optional snapping/alignment guides, and direct corner-handle resizing.
 - Persistence, save/reopen, autosave, and recovery.
 - Undo/redo, rotation, crop, masks, and advanced transforms.
@@ -381,7 +435,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, Katherine's hands-on review, the layer-plane checkpoint, and Episode Setup and Expandable Scroll are complete. Canvas Zoom and Asset Properties and Opacity remain documented recommendations only; they do not authorize implementation, deployment, or later slices.
+- The first-testable-editor `/goal`, Katherine's hands-on review, the layer-plane checkpoint, and Episode Setup and Expandable Scroll are complete. Katherine has now authorized Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D as one ordered request with separate passing checkpoints. Asset Properties and Opacity, real uploads, deployment, and later slices remain unauthorized.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

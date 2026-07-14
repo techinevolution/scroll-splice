@@ -99,6 +99,7 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
 - [x] The running UI has been visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768.
 - [x] An isolated Playwright Chromium context can complete the defining story, including title commit/cancel/validation, numbered-plane navigation, safe empty-plane deletion, base-color changes, hidden-row selection, canvas/layers selection, movement, repeated episode extension, minimap refitting, and reset. The paired **Attach asset** paperclip is verified disabled and is not claimed as functionality.
+- [x] Katherine's July 13 hands-on follow-up confirmed that empty-plane deletion works and that minimap navigation remains reliable after episode expansion.
 - [x] The defining human editor story works with every optional OpenAI feature disabled or unavailable.
 
 ## 6. Free and unrestricted judge access
@@ -231,6 +232,8 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Composition progress screenshot | `docs/progress/2026-07-13-composition-groups-and-visibility.png`, 1440 × 900, SHA-256 `32ad4cf5dfa38826404703c3dc1bb2e66db2131b2e3085bb6c27db2631c95202` | Complete |
 | Layer-plane progress screenshot | `docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png`, 1440 × 900, SHA-256 `d9688284f870786821a7cdf9c25010a21dac0f5dec1ecdfaf83561bea2da6d76` | Complete |
 | Episode Setup progress screenshot | `docs/progress/2026-07-13-episode-setup-and-expandable-scroll.png`, 1440 × 900, SHA-256 `007a46bf91815d4f78546d9a8561c6bb456ca4f8b3c7b12389ca3ec9e621bec3` | Complete locally; remote publication separately gated |
+| Post-review expandable-scroll baseline | `docs/progress/2026-07-13-post-review-expandable-scroll.png`, 1440 × 900, 103,161 bytes, SHA-256 `3513a6bcaec50ceb3ddeeb60bdbafa4fdd57db9fa503cce1b27c2345fc011820`; captured before A/B/C implementation and does not imply those features exist | Complete locally; remote publication separately gated |
+| Katherine follow-up verification | Empty-plane deletion works; minimap remains reliable after episode expansion | Complete July 13 |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
 | WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
 | Working project URL | Pending | Pending |
