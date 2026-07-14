@@ -5,11 +5,19 @@ import {
   buildWeekEpisode,
 } from '../app/fixtures/buildWeekEpisode'
 import {
+  BACKGROUND_COLOR_REGION_GENERATOR_ID,
   DEFAULT_EPISODE_HEIGHT_INCREMENT,
+  SYNTHETIC_SHAPE_GENERATOR_ID,
+  createBackgroundColorRegion,
   createLayerPlane,
+  createSyntheticShapeElement,
+  deleteElement,
   deleteEmptyLayerPlane,
   extendEpisodeHeight,
+  getEpisodeContentBottom,
+  MIN_EPISODE_LOGICAL_HEIGHT,
   moveElement,
+  resizeEpisodeHeight,
   setBaseColor,
   setCompositionGroupVisibility,
   setElementVisibility,
@@ -109,6 +117,87 @@ describe('extendEpisodeHeight', () => {
       enormousDocument,
     )
   })
+
+  it('delegates through the content-safe exact resize command', () => {
+    const contentBottom = getEpisodeContentBottom(buildWeekEpisode)
+    const undersizedDocument = {
+      ...buildWeekEpisode,
+      logicalHeight: 100,
+    }
+
+    expect(extendEpisodeHeight(undersizedDocument, 10).logicalHeight).toBe(
+      contentBottom,
+    )
+  })
+})
+
+describe('resizeEpisodeHeight', () => {
+  it('grows or trims to an exact finite positive logical height', () => {
+    const grown = resizeEpisodeHeight(
+      buildWeekEpisode,
+      buildWeekEpisode.logicalHeight + 37.5,
+    )
+    const trimmed = resizeEpisodeHeight(
+      buildWeekEpisode,
+      buildWeekEpisode.logicalHeight - 100,
+    )
+
+    expect(grown.logicalHeight).toBe(buildWeekEpisode.logicalHeight + 37.5)
+    expect(trimmed.logicalHeight).toBe(buildWeekEpisode.logicalHeight - 100)
+    expect(trimmed.elements).toBe(buildWeekEpisode.elements)
+    expect(trimmed.layerPlanes).toBe(buildWeekEpisode.layerPlanes)
+  })
+
+  it('stops at the lowest element bottom, including hidden elements', () => {
+    const contentBottom = getEpisodeContentBottom(buildWeekEpisode)
+    const lowestElement = buildWeekEpisode.elements.find(
+      (element) =>
+        element.bounds.y + element.bounds.height === contentBottom,
+    )
+
+    if (!lowestElement) {
+      throw new Error('The lowest fixture element is missing.')
+    }
+
+    const withLowestHidden = setElementVisibility(
+      buildWeekEpisode,
+      lowestElement.id,
+      false,
+    )
+    const nextDocument = resizeEpisodeHeight(withLowestHidden, 1)
+
+    expect(nextDocument.logicalHeight).toBe(contentBottom)
+    expect(nextDocument.elements).toBe(withLowestHidden.elements)
+    expect(
+      nextDocument.elements.find(({ id }) => id === lowestElement.id)?.visible,
+    ).toBe(false)
+  })
+
+  it('keeps an empty episode at a usable minimum height', () => {
+    const emptyEpisode = { ...buildWeekEpisode, elements: [] }
+
+    expect(resizeEpisodeHeight(emptyEpisode, 1).logicalHeight).toBe(
+      MIN_EPISODE_LOGICAL_HEIGHT,
+    )
+  })
+
+  it.each([
+    0,
+    -1,
+    Number.NaN,
+    Number.POSITIVE_INFINITY,
+    Number.NEGATIVE_INFINITY,
+  ])('returns the original document for invalid height %s', (height) => {
+    expect(resizeEpisodeHeight(buildWeekEpisode, height)).toBe(
+      buildWeekEpisode,
+    )
+  })
+
+  it('returns the original document when the safe height is unchanged', () => {
+    expect(
+      resizeEpisodeHeight(buildWeekEpisode, buildWeekEpisode.logicalHeight),
+    ).toBe(buildWeekEpisode)
+  })
 })
 
 describe('moveElement', () => {
@@ -205,6 +294,264 @@ describe('setElementVisibility', () => {
     expect(setElementVisibility(buildWeekEpisode, 'missing', false)).toBe(
       buildWeekEpisode,
     )
+  })
+})
+
+describe('deleteElement', () => {
+  it('removes only the requested placed element', () => {
+    const elementId = 'beat-01-stillness-caption'
+    const untouchedElement = buildWeekEpisode.elements.find(
+      ({ id }) => id === 'beat-01-stillness-title',
+    )
+    const nextDocument = deleteElement(buildWeekEpisode, elementId)
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(nextDocument.elements).toHaveLength(
+      buildWeekEpisode.elements.length - 1,
+    )
+    expect(nextDocument.elements.some(({ id }) => id === elementId)).toBe(
+      false,
+    )
+    expect(
+      nextDocument.elements.find(
+        ({ id }) => id === 'beat-01-stillness-title',
+      ),
+    ).toBe(untouchedElement)
+    expect(nextDocument.layerPlanes).toBe(buildWeekEpisode.layerPlanes)
+  })
+
+  it('returns the original document for an unknown element', () => {
+    expect(deleteElement(buildWeekEpisode, 'missing')).toBe(buildWeekEpisode)
+  })
+})
+
+describe('createSyntheticShapeElement', () => {
+  it('adds a movable code-defined rectangle to an ordinary plane', () => {
+    const nextDocument = createSyntheticShapeElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: '  Violet swatch  ',
+      fill: '  #7048B8  ',
+      bounds: {
+        x: buildWeekEpisode.logicalWidth - 25,
+        y: buildWeekEpisode.logicalHeight - 25,
+        width: 100,
+        height: 100,
+      },
+    })
+    const created = nextDocument.elements.at(-1)
+    const planeZIndexes = buildWeekEpisode.elements
+      .filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      )
+      .map(({ zIndex }) => zIndex)
+
+    expect(created).toEqual({
+      id: 'synthetic-shape-1',
+      name: 'Violet swatch',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      type: 'shape',
+      shape: 'rectangle',
+      bounds: {
+        x: buildWeekEpisode.logicalWidth - 100,
+        y: buildWeekEpisode.logicalHeight - 100,
+        width: 100,
+        height: 100,
+      },
+      fill: '#7048B8',
+      opacity: 1,
+      visible: true,
+      locked: false,
+      zIndex: Math.max(...planeZIndexes) + 1,
+      assetReference: {
+        kind: 'synthetic',
+        generatorId: SYNTHETIC_SHAPE_GENERATOR_ID,
+      },
+    })
+  })
+
+  it('uses deterministic collision-safe IDs and plane-local z-indexes', () => {
+    const input = {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      name: 'Swatch',
+      fill: '#123456',
+      bounds: { x: 10, y: 20, width: 30, height: 40 },
+    }
+    const first = createSyntheticShapeElement(buildWeekEpisode, input)
+    const second = createSyntheticShapeElement(first, input)
+
+    expect(first.elements.at(-1)?.id).toBe('synthetic-shape-1')
+    expect(first.elements.at(-1)?.zIndex).toBe(0)
+    expect(second.elements.at(-1)?.id).toBe('synthetic-shape-2')
+    expect(second.elements.at(-1)?.zIndex).toBe(1)
+  })
+
+  it('clamps oversized bounds to the episode', () => {
+    const nextDocument = createSyntheticShapeElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Full episode swatch',
+      fill: '#123456',
+      bounds: {
+        x: 100,
+        y: 100,
+        width: buildWeekEpisode.logicalWidth * 2,
+        height: buildWeekEpisode.logicalHeight * 2,
+      },
+    })
+
+    expect(nextDocument.elements.at(-1)?.bounds).toEqual({
+      x: 0,
+      y: 0,
+      width: buildWeekEpisode.logicalWidth,
+      height: buildWeekEpisode.logicalHeight,
+    })
+  })
+
+  it('rejects the pinned base, missing planes, and invalid shape data', () => {
+    const validInput = {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      name: 'Swatch',
+      fill: '#123456',
+      bounds: { x: 0, y: 0, width: 100, height: 100 },
+    }
+
+    expect(createSyntheticShapeElement(buildWeekEpisode, validInput)).toBe(
+      buildWeekEpisode,
+    )
+    expect(
+      createSyntheticShapeElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: 'missing',
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createSyntheticShapeElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        bounds: { ...validInput.bounds, width: Number.NaN },
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createSyntheticShapeElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        name: '   ',
+      }),
+    ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('createBackgroundColorRegion', () => {
+  it('adds a full-width solid region to an ordinary Background plane', () => {
+    const nextDocument = createBackgroundColorRegion(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      fill: ' #332255 ',
+      startY: 900,
+      height: 1600,
+    })
+    const created = nextDocument.elements.at(-1)
+
+    expect(created).toEqual({
+      id: 'background-color-region-1',
+      name: 'Background color region 1',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      type: 'shape',
+      shape: 'rectangle',
+      bounds: {
+        x: 0,
+        y: 900,
+        width: buildWeekEpisode.logicalWidth,
+        height: 1600,
+      },
+      fill: '#332255',
+      opacity: 1,
+      visible: true,
+      locked: false,
+      zIndex: 0,
+      assetReference: {
+        kind: 'synthetic',
+        generatorId: BACKGROUND_COLOR_REGION_GENERATOR_ID,
+      },
+    })
+
+    if (!created) {
+      throw new Error('The Background color region was not created.')
+    }
+
+    const moved = moveElement(nextDocument, created.id, {
+      x: 200,
+      y: 1200,
+    }).elements.at(-1)
+
+    expect(moved?.bounds.x).toBe(0)
+    expect(moved?.bounds.y).toBe(1200)
+  })
+
+  it('keeps the chosen start and trims a region at the episode bottom', () => {
+    const startY = buildWeekEpisode.logicalHeight - 100
+    const nextDocument = createBackgroundColorRegion(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      fill: '#332255',
+      startY,
+      height: 1000,
+    })
+
+    expect(nextDocument.elements.at(-1)?.bounds).toEqual({
+      x: 0,
+      y: startY,
+      width: buildWeekEpisode.logicalWidth,
+      height: 100,
+    })
+  })
+
+  it('uses deterministic collision-safe IDs and next plane z-indexes', () => {
+    const input = {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      fill: '#332255',
+      startY: 0,
+      height: 100,
+    }
+    const first = createBackgroundColorRegion(buildWeekEpisode, input)
+    const second = createBackgroundColorRegion(first, input)
+
+    expect(first.elements.at(-1)?.id).toBe('background-color-region-1')
+    expect(first.elements.at(-1)?.zIndex).toBe(0)
+    expect(second.elements.at(-1)?.id).toBe('background-color-region-2')
+    expect(second.elements.at(-1)?.name).toBe('Background color region 2')
+    expect(second.elements.at(-1)?.zIndex).toBe(1)
+  })
+
+  it('rejects non-Background planes, the pinned base, and invalid geometry', () => {
+    const validInput = {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      fill: '#332255',
+      startY: 0,
+      height: 100,
+    }
+
+    expect(createBackgroundColorRegion(buildWeekEpisode, validInput)).toBe(
+      buildWeekEpisode,
+    )
+    expect(
+      createBackgroundColorRegion(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createBackgroundColorRegion(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+        height: 0,
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createBackgroundColorRegion(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+        startY: buildWeekEpisode.logicalHeight,
+      }),
+    ).toBe(buildWeekEpisode)
   })
 })
 
