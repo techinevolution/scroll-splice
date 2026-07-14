@@ -315,6 +315,30 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(
     minimap.locator('[data-element-id="background-color-region-1"]'),
   ).toHaveAttribute('fill', '#334477')
+  const colorRegionCanvasBounds = await sceneCanvas.boundingBox()
+  if (!colorRegionCanvasBounds) {
+    throw new Error('The color-region canvas did not produce visible bounds.')
+  }
+  const colorRegionScale = colorRegionCanvasBounds.width / 800
+  const colorRegionDragPoint = {
+    x: colorRegionCanvasBounds.x + 12 * colorRegionScale,
+    y: colorRegionCanvasBounds.y + 350 * colorRegionScale,
+  }
+  await page.mouse.move(colorRegionDragPoint.x, colorRegionDragPoint.y)
+  await page.mouse.down()
+  await page.mouse.move(
+    colorRegionDragPoint.x,
+    colorRegionDragPoint.y + 40 * colorRegionScale,
+    { steps: 4 },
+  )
+  await page.mouse.up()
+  await expect
+    .poll(async () => {
+      const status = (await selectionStatus.textContent()) ?? ''
+      const position = status.match(/Background color region 1 · x 0 · y (\d+)/)
+      return position ? Number(position[1]) : 0
+    })
+    .toBeGreaterThan(300)
 
   await contentGroup.click()
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
