@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef } from 'react'
 
 import { useEditorStore } from '../app/store'
+import { VisibilityIcon } from '../components/VisibilityIcon'
 import {
   COMPOSITION_GROUP_LABELS,
+  compareElementsByCanvasPosition,
+  getLayerPlaneById,
   isElementEffectivelyVisible,
 } from '../core/episode'
-import { VisibilityIcon } from '../components/VisibilityIcon'
+import { LayerPlaneTabs } from './LayerPlaneTabs'
 
 export function LayersPanel() {
   const elements = useEditorStore((state) => state.episode.elements)
@@ -13,27 +16,32 @@ export function LayersPanel() {
   const activeCompositionGroup = useEditorStore(
     (state) => state.activeCompositionGroup,
   )
+  const activeLayerPlaneId = useEditorStore(
+    (state) => state.activeLayerPlaneId,
+  )
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
   const selectElement = useEditorStore((state) => state.selectElement)
+  const setBaseColor = useEditorStore((state) => state.setBaseColor)
   const setElementVisibility = useEditorStore(
     (state) => state.setElementVisibility,
   )
   const selectedLayerRef = useRef<HTMLButtonElement>(null)
   const layersListRef = useRef<HTMLUListElement>(null)
+  const activeLayerPlane = getLayerPlaneById(episode, activeLayerPlaneId)
 
   const orderedElements = useMemo(
     () =>
       elements
-        .filter(
-          ({ compositionGroup }) =>
-            compositionGroup === activeCompositionGroup,
-        )
-        .sort((first, second) => second.zIndex - first.zIndex),
-    [activeCompositionGroup, elements],
+        .filter(({ layerPlaneId }) => layerPlaneId === activeLayerPlaneId)
+        .sort(compareElementsByCanvasPosition),
+    [activeLayerPlaneId, elements],
   )
   const groupLabel = COMPOSITION_GROUP_LABELS[activeCompositionGroup]
   const isGroupVisible =
     episode.compositionGroupVisibility[activeCompositionGroup]
+  const planeLabel = activeLayerPlane
+    ? `${groupLabel} plane ${activeLayerPlane.order}`
+    : `${groupLabel} plane`
 
   useEffect(() => {
     if (selectedElementId) {
@@ -41,7 +49,7 @@ export function LayersPanel() {
     } else {
       layersListRef.current?.scrollTo({ top: 0 })
     }
-  }, [activeCompositionGroup, selectedElementId])
+  }, [activeLayerPlaneId, selectedElementId])
 
   return (
     <section className="panel-card layers-card" aria-labelledby="layers-heading">
@@ -53,18 +61,48 @@ export function LayersPanel() {
         <span className="panel-count">{orderedElements.length}</span>
       </header>
 
-      <p
-        className={`group-visibility-note${isGroupVisible ? '' : ' is-visible'}`}
-        role="status"
-      >
-        {groupLabel} is hidden on the canvas. Individual eye settings are
-        preserved.
-      </p>
+      <LayerPlaneTabs />
+
+      {!isGroupVisible ? (
+        <p className="visibility-note" role="status">
+          {groupLabel} is hidden. Plane and element eye settings are preserved.
+        </p>
+      ) : null}
+
+      {isGroupVisible && activeLayerPlane && !activeLayerPlane.visible ? (
+        <p className="visibility-note" role="status">
+          {planeLabel} is hidden. Its elements remain editable here.
+        </p>
+      ) : null}
+
+      {activeLayerPlane?.kind === 'base' ? (
+        <label className="base-color-control">
+          <span>
+            <strong>Base color</strong>
+            <small>Full episode</small>
+          </span>
+          <input
+            type="color"
+            aria-label="Base color"
+            value={activeLayerPlane.baseColor}
+            onChange={(event) => setBaseColor(event.currentTarget.value)}
+          />
+        </label>
+      ) : null}
+
+      {orderedElements.length === 0 ? (
+        <p className="layer-empty-state">
+          {activeLayerPlane?.kind === 'base'
+            ? 'This pinned plane supplies the episode backdrop.'
+            : 'This plane is empty and ready for elements.'}
+        </p>
+      ) : null}
 
       <ul
         ref={layersListRef}
         className="layers-list"
-        aria-label={`${groupLabel} layers`}
+        aria-label={`${planeLabel} elements`}
+        data-testid="layer-elements-list"
       >
         {orderedElements.map((element) => {
           const isSelected = element.id === selectedElementId
@@ -83,7 +121,6 @@ export function LayersPanel() {
                 className={`layer-row${isSelected ? ' is-selected' : ''}`}
                 type="button"
                 aria-pressed={isSelected}
-                disabled={!isEffectivelyVisible}
                 data-layer-id={element.id}
                 onClick={() => selectElement(element.id, true)}
               >

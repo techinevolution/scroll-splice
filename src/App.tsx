@@ -37,6 +37,11 @@ export function App() {
         </button>
       </header>
 
+      <aside className="inspector" aria-label="Episode overview and layers">
+        <EpisodeMinimap />
+        <LayersPanel />
+      </aside>
+
       <div className="workspace">
         <AssetPanel />
 
@@ -47,17 +52,9 @@ export function App() {
               <h2 id="canvas-heading">Story canvas</h2>
             </div>
             <CompositionGroupControls />
-            <p className="workspace-instruction">
-              Scroll to travel · click to select · drag the selection to move
-            </p>
           </header>
           <EditorCanvas />
         </section>
-
-        <aside className="inspector" aria-label="Episode overview and layers">
-          <EpisodeMinimap />
-          <LayersPanel />
-        </aside>
       </div>
 
       <footer className="status-bar">

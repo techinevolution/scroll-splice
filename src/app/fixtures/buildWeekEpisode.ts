@@ -5,6 +5,7 @@ import {
   type ElementBounds,
   type EpisodeDocument,
   type EpisodeElement,
+  type LayerPlane,
   type ShapeElement,
   type TextElement,
 } from '../../core/episode'
@@ -28,7 +29,7 @@ interface FixtureBeat {
   readonly id: string
   readonly title: string
   readonly caption: string
-  readonly background: string
+  readonly panelColor: string
   readonly titleColor: string
   readonly captionColor: string
   readonly accents: readonly [FixtureShape, FixtureShape]
@@ -39,7 +40,7 @@ export const BUILD_WEEK_BEATS = [
     id: 'beat-01-stillness',
     title: 'Stillness',
     caption: 'The city sleeps beneath a violet sky.',
-    background: '#211934',
+    panelColor: '#211934',
     titleColor: '#F7F1FF',
     captionColor: '#C8B9E1',
     accents: [
@@ -60,7 +61,7 @@ export const BUILD_WEEK_BEATS = [
     id: 'beat-02-spark',
     title: 'Spark',
     caption: 'One small light answers the dark.',
-    background: '#14273D',
+    panelColor: '#14273D',
     titleColor: '#EDF7FF',
     captionColor: '#B8D1E5',
     accents: [
@@ -81,7 +82,7 @@ export const BUILD_WEEK_BEATS = [
     id: 'beat-03-search',
     title: 'Search',
     caption: 'It follows a ribbon no map remembers.',
-    background: '#143734',
+    panelColor: '#143734',
     titleColor: '#ECFFFA',
     captionColor: '#B7DCD5',
     accents: [
@@ -103,7 +104,7 @@ export const BUILD_WEEK_BEATS = [
     id: 'beat-04-crossing',
     title: 'Crossing',
     caption: 'The gap becomes a bridge.',
-    background: '#3B2430',
+    panelColor: '#3B2430',
     titleColor: '#FFF2F7',
     captionColor: '#E3C0CC',
     accents: [
@@ -125,7 +126,7 @@ export const BUILD_WEEK_BEATS = [
     id: 'beat-05-chorus',
     title: 'Chorus',
     caption: 'Other lights wake and join the path.',
-    background: '#352A13',
+    panelColor: '#352A13',
     titleColor: '#FFF9E8',
     captionColor: '#E4D2A0',
     accents: [
@@ -145,7 +146,7 @@ export const BUILD_WEEK_BEATS = [
     id: 'beat-06-dawn',
     title: 'Dawn',
     caption: 'Together, they draw a new horizon.',
-    background: '#362449',
+    panelColor: '#362449',
     titleColor: '#FFF4FF',
     captionColor: '#DDC8E8',
     accents: [
@@ -163,6 +164,53 @@ export const BUILD_WEEK_BEATS = [
     ],
   },
 ] as const satisfies readonly FixtureBeat[]
+
+export const BUILD_WEEK_LAYER_PLANE_IDS = {
+  backgroundBase: 'background-plane-1',
+  backgroundFree: 'background-plane-2',
+  contentPanels: 'content-plane-1',
+  contentText: 'content-plane-2',
+  foregroundAccents: 'foreground-plane-1',
+} as const
+
+const buildWeekLayerPlanes = [
+  {
+    id: BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+    kind: 'base',
+    compositionGroup: 'background',
+    order: 1,
+    visible: true,
+    baseColor: '#F3F0EA',
+  },
+  {
+    id: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+    kind: 'ordinary',
+    compositionGroup: 'background',
+    order: 2,
+    visible: true,
+  },
+  {
+    id: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+    kind: 'ordinary',
+    compositionGroup: 'content',
+    order: 1,
+    visible: true,
+  },
+  {
+    id: BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    kind: 'ordinary',
+    compositionGroup: 'content',
+    order: 2,
+    visible: true,
+  },
+  {
+    id: BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
+    kind: 'ordinary',
+    compositionGroup: 'foreground',
+    order: 1,
+    visible: true,
+  },
+] as const satisfies readonly LayerPlane[]
 
 const syntheticReference = {
   kind: 'synthetic',
@@ -184,10 +232,10 @@ function createBeatElements(
   const baseZIndex = beatIndex * 5
   const layerPrefix = `Beat ${beatIndex + 1} · ${beat.title}`
 
-  const background: ShapeElement = {
+  const panel: ShapeElement = {
     id: `${beat.id}-background`,
-    name: `${layerPrefix} · Background`,
-    compositionGroup: 'background',
+    name: `${layerPrefix} · Panel`,
+    layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
     type: 'shape',
     shape: 'rectangle',
     bounds: {
@@ -196,7 +244,7 @@ function createBeatElements(
       width: BEAT_WIDTH,
       height: BEAT_HEIGHT,
     },
-    fill: beat.background,
+    fill: beat.panelColor,
     stroke: '#FFFFFF',
     strokeWidth: 2,
     cornerRadius: 32,
@@ -210,7 +258,7 @@ function createBeatElements(
   const accents: ShapeElement[] = beat.accents.map((accent, accentIndex) => ({
     id: `${beat.id}-accent-${accentIndex + 1}`,
     name: `${layerPrefix} · Accent ${accentIndex + 1}`,
-    compositionGroup: 'foreground',
+    layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
     type: 'shape',
     shape: accent.shape,
     bounds: offsetBounds(accent.bounds, yOffset),
@@ -226,7 +274,7 @@ function createBeatElements(
   const title: TextElement = {
     id: `${beat.id}-title`,
     name: `${layerPrefix} · Title`,
-    compositionGroup: 'content',
+    layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentText,
     type: 'text',
     bounds: {
       x: 80,
@@ -250,7 +298,7 @@ function createBeatElements(
   const caption: TextElement = {
     id: `${beat.id}-caption`,
     name: `${layerPrefix} · Caption`,
-    compositionGroup: 'content',
+    layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentText,
     type: 'text',
     bounds: {
       x: 80,
@@ -271,7 +319,7 @@ function createBeatElements(
     assetReference: syntheticReference,
   }
 
-  return [background, ...accents, title, caption]
+  return [panel, ...accents, title, caption]
 }
 
 const logicalHeight =
@@ -291,5 +339,6 @@ export const buildWeekEpisode: EpisodeDocument = {
     content: true,
     foreground: true,
   },
+  layerPlanes: buildWeekLayerPlanes,
   elements: BUILD_WEEK_BEATS.flatMap(createBeatElements),
 }

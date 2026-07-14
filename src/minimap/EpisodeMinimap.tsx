@@ -7,6 +7,7 @@ import {
 } from '../core/coordinates'
 import {
   compareElementsByRenderOrder,
+  getEffectiveEpisodeBaseColor,
   isElementEffectivelyVisible,
   type EpisodeElement,
 } from '../core/episode'
@@ -80,11 +81,14 @@ export function EpisodeMinimap() {
   const setViewportY = useEditorStore((state) => state.setViewportY)
   const panViewport = useEditorStore((state) => state.panViewport)
   const dragOffset = useRef<number | null>(null)
+  const baseColor = getEffectiveEpisodeBaseColor(episode)
   const orderedElements = useMemo(
     () =>
       episode.elements
         .filter((element) => isElementEffectivelyVisible(episode, element))
-        .sort(compareElementsByRenderOrder),
+        .sort((first, second) =>
+          compareElementsByRenderOrder(episode, first, second),
+        ),
     [episode],
   )
 
@@ -206,11 +210,14 @@ export function EpisodeMinimap() {
           preserveAspectRatio="none"
           aria-hidden="true"
         >
-          <rect
-            width={episode.logicalWidth}
-            height={episode.logicalHeight}
-            fill="#F3F0EA"
-          />
+          {baseColor ? (
+            <rect
+              data-testid="minimap-base"
+              width={episode.logicalWidth}
+              height={episode.logicalHeight}
+              fill={baseColor}
+            />
+          ) : null}
           {orderedElements.map((element) => (
             <MinimapElement
               key={element.id}

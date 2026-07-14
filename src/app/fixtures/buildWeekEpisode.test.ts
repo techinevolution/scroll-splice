@@ -4,9 +4,18 @@ import {
   COMPOSITION_GROUPS,
   EPISODE_FORMAT_VERSION,
   EPISODE_LOGICAL_WIDTH,
+  compareElementsByCanvasPosition,
   compareElementsByRenderOrder,
+  getBackgroundBaseLayerPlane,
+  getElementCompositionGroup,
+  getLayerPlaneById,
+  getLayerPlanesForGroup,
 } from '../../core/episode'
-import { BUILD_WEEK_BEATS, buildWeekEpisode } from './buildWeekEpisode'
+import {
+  BUILD_WEEK_BEATS,
+  BUILD_WEEK_LAYER_PLANE_IDS,
+  buildWeekEpisode,
+} from './buildWeekEpisode'
 
 describe('buildWeekEpisode', () => {
   it('contains six original story beats made only from shapes and text', () => {
@@ -26,9 +35,9 @@ describe('buildWeekEpisode', () => {
     }
   })
 
-  it('uses format v2 and assigns every element to a fixed composition group', () => {
-    expect(EPISODE_FORMAT_VERSION).toBe(2)
-    expect(buildWeekEpisode.formatVersion).toBe(2)
+  it('uses format v3 and assigns every element to a stable layer plane', () => {
+    expect(EPISODE_FORMAT_VERSION).toBe(3)
+    expect(buildWeekEpisode.formatVersion).toBe(3)
     expect(buildWeekEpisode.compositionGroupVisibility).toEqual({
       background: true,
       content: true,
@@ -36,61 +45,180 @@ describe('buildWeekEpisode', () => {
     })
     expect(
       buildWeekEpisode.elements.filter(
-        ({ compositionGroup }) => compositionGroup === 'background',
+        ({ layerPlaneId }) =>
+          getLayerPlaneById(buildWeekEpisode, layerPlaneId)?.compositionGroup ===
+          'background',
       ),
-    ).toHaveLength(6)
+    ).toHaveLength(0)
     expect(
       buildWeekEpisode.elements.filter(
-        ({ compositionGroup }) => compositionGroup === 'content',
+        ({ layerPlaneId }) =>
+          getLayerPlaneById(buildWeekEpisode, layerPlaneId)?.compositionGroup ===
+          'content',
+      ),
+    ).toHaveLength(18)
+    expect(
+      buildWeekEpisode.elements.filter(
+        ({ layerPlaneId }) =>
+          getLayerPlaneById(buildWeekEpisode, layerPlaneId)?.compositionGroup ===
+          'foreground',
       ),
     ).toHaveLength(12)
     expect(
-      buildWeekEpisode.elements.filter(
-        ({ compositionGroup }) => compositionGroup === 'foreground',
-      ),
-    ).toHaveLength(12)
-    expect(
-      buildWeekEpisode.elements.every(({ compositionGroup }) =>
-        COMPOSITION_GROUPS.includes(compositionGroup),
+      buildWeekEpisode.elements.every(({ layerPlaneId }) =>
+        Boolean(getLayerPlaneById(buildWeekEpisode, layerPlaneId)),
       ),
     ).toBe(true)
   })
 
-  it('renders all Background elements below Content and Foreground', () => {
-    const orderedElements = [...buildWeekEpisode.elements].sort(
-      compareElementsByRenderOrder,
+  it('seeds a pinned full-episode base and ordinary planes in every group', () => {
+    const baseLayerPlane = getBackgroundBaseLayerPlane(buildWeekEpisode)
+
+    expect(buildWeekEpisode.layerPlanes).toHaveLength(5)
+    expect(baseLayerPlane).toEqual({
+      id: BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      kind: 'base',
+      compositionGroup: 'background',
+      order: 1,
+      visible: true,
+      baseColor: '#F3F0EA',
+    })
+    expect(getLayerPlanesForGroup(buildWeekEpisode, 'background')).toEqual([
+      baseLayerPlane,
+      expect.objectContaining({
+        id: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+        kind: 'ordinary',
+        order: 2,
+      }),
+    ])
+    expect(getLayerPlanesForGroup(buildWeekEpisode, 'content')).toHaveLength(2)
+    expect(getLayerPlanesForGroup(buildWeekEpisode, 'foreground')).toHaveLength(
+      1,
     )
-    const orderedGroups = orderedElements.map(
-      ({ compositionGroup }) => compositionGroup,
+    expect(
+      buildWeekEpisode.elements.some(
+        ({ layerPlaneId }) => layerPlaneId === baseLayerPlane?.id,
+      ),
+    ).toBe(false)
+  })
+
+  it('puts panels below text in Content and accents in Foreground', () => {
+    expect(
+      buildWeekEpisode.elements.filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      ),
+    ).toHaveLength(6)
+    expect(
+      buildWeekEpisode.elements.filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      ),
+    ).toHaveLength(12)
+    expect(
+      buildWeekEpisode.elements.filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
+      ),
+    ).toHaveLength(12)
+  })
+
+  it('renders by fixed group, then plane, then local stacking order', () => {
+    const orderedElements = [...buildWeekEpisode.elements].sort(
+      (first, second) =>
+        compareElementsByRenderOrder(buildWeekEpisode, first, second),
+    )
+    const orderedGroups = orderedElements.map((element) =>
+      getElementCompositionGroup(buildWeekEpisode, element),
     )
 
     expect(orderedGroups).toEqual([
-      ...Array(6).fill('background'),
-      ...Array(12).fill('content'),
+      ...Array(18).fill('content'),
       ...Array(12).fill('foreground'),
     ])
 
     for (const compositionGroup of COMPOSITION_GROUPS) {
-      const zIndices = orderedElements
-        .filter((element) => element.compositionGroup === compositionGroup)
-        .map(({ zIndex }) => zIndex)
-
-      expect(zIndices).toEqual(
-        [...zIndices].sort((first, second) => first - second),
+      const groupElements = orderedElements.filter(
+        (element) =>
+          getElementCompositionGroup(buildWeekEpisode, element) ===
+          compositionGroup,
       )
+      const planeOrders = groupElements.map(
+        ({ layerPlaneId }) =>
+          getLayerPlaneById(buildWeekEpisode, layerPlaneId)?.order,
+      )
+
+      expect(planeOrders).toEqual(
+        [...planeOrders].sort((first, second) =>
+          (first ?? 0) - (second ?? 0),
+        ),
+      )
+
+      for (const layerPlane of getLayerPlanesForGroup(
+        buildWeekEpisode,
+        compositionGroup,
+      )) {
+        const zIndices = groupElements
+          .filter(({ layerPlaneId }) => layerPlaneId === layerPlane.id)
+          .map(({ zIndex }) => zIndex)
+
+        expect(zIndices).toEqual(
+          [...zIndices].sort((first, second) => first - second),
+        )
+      }
     }
   })
 
-  it('uses stable unique layer IDs, names, and stacking positions', () => {
+  it('orders a plane from top to bottom with local stacking as the tie-break', () => {
+    const orderedText = buildWeekEpisode.elements
+      .filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      )
+      .sort(compareElementsByCanvasPosition)
+
+    expect(orderedText.slice(0, 3).map(({ id }) => id)).toEqual([
+      'beat-01-stillness-title',
+      'beat-01-stillness-caption',
+      'beat-02-spark-title',
+    ])
+
+    const title = orderedText[0]
+    if (!title) throw new Error('Missing text ordering fixture')
+
+    const lowerStack = { ...title, id: 'lower-stack', zIndex: 1 }
+    const higherStack = { ...title, id: 'higher-stack', zIndex: 2 }
+
+    expect(
+      [lowerStack, higherStack]
+        .sort(compareElementsByCanvasPosition)
+        .map(({ id }) => id),
+    ).toEqual(['higher-stack', 'lower-stack'])
+  })
+
+  it('uses stable unique plane and element identities', () => {
+    const layerPlaneIds = buildWeekEpisode.layerPlanes.map(({ id }) => id)
     const ids = buildWeekEpisode.elements.map(({ id }) => id)
     const names = buildWeekEpisode.elements.map(({ name }) => name)
-    const zIndices = buildWeekEpisode.elements.map(({ zIndex }) => zIndex)
 
+    expect(new Set(layerPlaneIds).size).toBe(layerPlaneIds.length)
     expect(new Set(ids).size).toBe(ids.length)
     expect(new Set(names).size).toBe(names.length)
-    expect(new Set(zIndices).size).toBe(zIndices.length)
+    expect(layerPlaneIds.every(Boolean)).toBe(true)
     expect(ids.every(Boolean)).toBe(true)
     expect(names.every(Boolean)).toBe(true)
+
+    for (const compositionGroup of COMPOSITION_GROUPS) {
+      const orders = getLayerPlanesForGroup(
+        buildWeekEpisode,
+        compositionGroup,
+      ).map(({ order }) => order)
+
+      expect(new Set(orders).size).toBe(orders.length)
+      expect(orders).toEqual(
+        [...orders].sort((first, second) => first - second),
+      )
+    }
   })
 
   it('keeps every element within the logical episode', () => {

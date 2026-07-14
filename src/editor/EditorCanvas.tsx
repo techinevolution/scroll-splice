@@ -9,6 +9,7 @@ import {
 } from '../core/coordinates'
 import {
   compareElementsByRenderOrder,
+  getEffectiveEpisodeBaseColor,
   isElementEffectivelyVisible,
   type EpisodeElement,
 } from '../core/episode'
@@ -133,6 +134,7 @@ export function EditorCanvas() {
   const stageWidth = Math.max(size.width, 1)
   const stageHeight = Math.max(size.height, 1)
   const fitScale = getFitScale(stageWidth, episode.logicalWidth)
+  const baseColor = getEffectiveEpisodeBaseColor(episode)
 
   useEffect(() => {
     setViewportLogicalHeight(
@@ -157,7 +159,9 @@ export function EditorCanvas() {
               viewportLogicalHeight + RENDER_BUFFER * 2,
             ),
         )
-        .sort(compareElementsByRenderOrder),
+        .sort((first, second) =>
+          compareElementsByRenderOrder(episode, first, second),
+        ),
     [episode, viewportLogicalHeight, viewportY],
   )
 
@@ -181,6 +185,7 @@ export function EditorCanvas() {
         className="editor-canvas-frame"
         data-testid="editor-canvas"
         data-ready={size.width > 0 && size.height > 0}
+        data-base-color={baseColor ?? 'transparent'}
         role="region"
         aria-busy={size.width <= 0 || size.height <= 0}
         aria-label="Episode editing canvas. Use the mouse wheel or arrow keys to move through the episode."
@@ -202,12 +207,14 @@ export function EditorCanvas() {
         >
           <Layer>
             <Group scaleX={fitScale} scaleY={fitScale} y={-viewportY * fitScale}>
-              <Rect
-                width={episode.logicalWidth}
-                height={episode.logicalHeight}
-                fill="#F3F0EA"
-                listening={false}
-              />
+              {baseColor ? (
+                <Rect
+                  width={episode.logicalWidth}
+                  height={episode.logicalHeight}
+                  fill={baseColor}
+                  listening={false}
+                />
+              ) : null}
               {visibleElements.map((element) => (
                 <ElementNode
                   key={element.id}

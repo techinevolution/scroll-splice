@@ -1,10 +1,16 @@
 import { create } from 'zustand'
 
-import { buildWeekEpisode } from './fixtures/buildWeekEpisode'
 import {
+  BUILD_WEEK_LAYER_PLANE_IDS,
+  buildWeekEpisode,
+} from './fixtures/buildWeekEpisode'
+import {
+  createLayerPlane as createLayerPlaneCommand,
   moveElement as moveElementCommand,
+  setBaseColor as setBaseColorCommand,
   setCompositionGroupVisibility as setCompositionGroupVisibilityCommand,
   setElementVisibility as setElementVisibilityCommand,
+  setLayerPlaneVisibility as setLayerPlaneVisibilityCommand,
 } from '../core/commands'
 import {
   boundsIntersectVerticalViewport,
@@ -13,7 +19,9 @@ import {
   type LogicalPosition,
 } from '../core/coordinates'
 import {
-  isElementEffectivelyVisible,
+  getElementCompositionGroup,
+  getLayerPlaneById,
+  getLayerPlanesForGroup,
   type CompositionGroup,
   type EpisodeDocument,
 } from '../core/episode'
@@ -22,19 +30,27 @@ interface EditorState {
   readonly episode: EpisodeDocument
   readonly selectedElementId: string | null
   readonly activeCompositionGroup: CompositionGroup
+  readonly activeLayerPlaneId: string
   readonly viewportY: number
   readonly viewportLogicalHeight: number
   readonly assetPanelOpen: boolean
   readonly setActiveCompositionGroup: (group: CompositionGroup) => void
+  readonly setActiveLayerPlane: (layerPlaneId: string) => void
+  readonly createLayerPlane: () => void
   readonly setViewportLogicalHeight: (logicalHeight: number) => void
   readonly setViewportY: (logicalY: number) => void
   readonly panViewport: (logicalDelta: number) => void
   readonly selectElement: (elementId: string | null, reveal?: boolean) => void
   readonly setElementVisibility: (elementId: string, visible: boolean) => void
+  readonly setLayerPlaneVisibility: (
+    layerPlaneId: string,
+    visible: boolean,
+  ) => void
   readonly setCompositionGroupVisibility: (
     group: CompositionGroup,
     visible: boolean,
   ) => void
+  readonly setBaseColor: (color: string) => void
   readonly moveElement: (
     elementId: string,
     logicalPosition: LogicalPosition,
@@ -44,41 +60,79 @@ interface EditorState {
 }
 
 const INITIAL_VIEWPORT_LOGICAL_HEIGHT = 900
-
-function keepVisibleSelection(
-  episode: EpisodeDocument,
-  selectedElementId: string | null,
-): string | null {
-  if (!selectedElementId) {
-    return null
-  }
-
-  const selectedElement = episode.elements.find(
-    ({ id }) => id === selectedElementId,
-  )
-
-  return selectedElement &&
-    isElementEffectivelyVisible(episode, selectedElement)
-    ? selectedElementId
-    : null
-}
+const INITIAL_COMPOSITION_GROUP = 'content' as const
+const INITIAL_LAYER_PLANE_ID = BUILD_WEEK_LAYER_PLANE_IDS.contentPanels
 
 export const useEditorStore = create<EditorState>((set) => ({
   episode: buildWeekEpisode,
   selectedElementId: null,
-  activeCompositionGroup: 'content',
+  activeCompositionGroup: INITIAL_COMPOSITION_GROUP,
+  activeLayerPlaneId: INITIAL_LAYER_PLANE_ID,
   viewportY: 0,
   viewportLogicalHeight: INITIAL_VIEWPORT_LOGICAL_HEIGHT,
   assetPanelOpen: false,
 
   setActiveCompositionGroup: (group) => {
-    set((state) => ({
-      activeCompositionGroup: group,
-      selectedElementId:
-        group === state.activeCompositionGroup
-          ? state.selectedElementId
-          : null,
-    }))
+    set((state) => {
+      if (group === state.activeCompositionGroup) {
+        return state
+      }
+
+      const firstLayerPlane = getLayerPlanesForGroup(state.episode, group)[0]
+
+      return {
+        activeCompositionGroup: group,
+        activeLayerPlaneId: firstLayerPlane?.id ?? state.activeLayerPlaneId,
+        selectedElementId: null,
+      }
+    })
+  },
+
+  setActiveLayerPlane: (layerPlaneId) => {
+    set((state) => {
+      const layerPlane = getLayerPlaneById(state.episode, layerPlaneId)
+
+      if (
+        !layerPlane ||
+        layerPlane.compositionGroup !== state.activeCompositionGroup ||
+        layerPlane.id === state.activeLayerPlaneId
+      ) {
+        return state
+      }
+
+      const selectedElement = state.episode.elements.find(
+        ({ id }) => id === state.selectedElementId,
+      )
+
+      return {
+        activeLayerPlaneId: layerPlane.id,
+        selectedElementId:
+          selectedElement?.layerPlaneId === layerPlane.id
+            ? selectedElement.id
+            : null,
+      }
+    })
+  },
+
+  createLayerPlane: () => {
+    set((state) => {
+      const episode = createLayerPlaneCommand(
+        state.episode,
+        state.activeCompositionGroup,
+      )
+      const layerPlanes = getLayerPlanesForGroup(
+        episode,
+        state.activeCompositionGroup,
+      )
+      const createdLayerPlane = layerPlanes[layerPlanes.length - 1]
+
+      return {
+        episode,
+        activeLayerPlaneId:
+          createdLayerPlane?.id ?? state.activeLayerPlaneId,
+        selectedElementId: null,
+      }
+    })
   },
 
   setViewportLogicalHeight: (logicalHeight) => {
@@ -114,9 +168,16 @@ export const useEditorStore = create<EditorState>((set) => ({
 
   selectElement: (elementId, reveal = false) => {
     set((state) => {
-      const element = state.episode.elements.find(({ id }) => id === elementId)
+      if (!elementId) {
+        return { selectedElementId: null }
+      }
 
-      if (!element || !isElementEffectivelyVisible(state.episode, element)) {
+      const element = state.episode.elements.find(({ id }) => id === elementId)
+      const compositionGroup = element
+        ? getElementCompositionGroup(state.episode, element)
+        : undefined
+
+      if (!element || !compositionGroup) {
         return { selectedElementId: null }
       }
 
@@ -128,7 +189,8 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       return {
         selectedElementId: element.id,
-        activeCompositionGroup: element.compositionGroup,
+        activeCompositionGroup: compositionGroup,
+        activeLayerPlaneId: element.layerPlaneId,
         viewportY:
           reveal && !isVisible
             ? centerBoundsInViewport(
@@ -142,39 +204,39 @@ export const useEditorStore = create<EditorState>((set) => ({
   },
 
   setElementVisibility: (elementId, visible) => {
-    set((state) => {
-      const episode = setElementVisibilityCommand(
+    set((state) => ({
+      episode: setElementVisibilityCommand(
         state.episode,
         elementId,
         visible,
-      )
+      ),
+    }))
+  },
 
-      return {
-        episode,
-        selectedElementId: keepVisibleSelection(
-          episode,
-          state.selectedElementId,
-        ),
-      }
-    })
+  setLayerPlaneVisibility: (layerPlaneId, visible) => {
+    set((state) => ({
+      episode: setLayerPlaneVisibilityCommand(
+        state.episode,
+        layerPlaneId,
+        visible,
+      ),
+    }))
   },
 
   setCompositionGroupVisibility: (group, visible) => {
-    set((state) => {
-      const episode = setCompositionGroupVisibilityCommand(
+    set((state) => ({
+      episode: setCompositionGroupVisibilityCommand(
         state.episode,
         group,
         visible,
-      )
+      ),
+    }))
+  },
 
-      return {
-        episode,
-        selectedElementId: keepVisibleSelection(
-          episode,
-          state.selectedElementId,
-        ),
-      }
-    })
+  setBaseColor: (color) => {
+    set((state) => ({
+      episode: setBaseColorCommand(state.episode, color),
+    }))
   },
 
   moveElement: (elementId, logicalPosition) => {
@@ -191,7 +253,8 @@ export const useEditorStore = create<EditorState>((set) => ({
     set({
       episode: buildWeekEpisode,
       selectedElementId: null,
-      activeCompositionGroup: 'content',
+      activeCompositionGroup: INITIAL_COMPOSITION_GROUP,
+      activeLayerPlaneId: INITIAL_LAYER_PLANE_ID,
       viewportY: 0,
       assetPanelOpen: false,
     })

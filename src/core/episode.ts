@@ -1,4 +1,4 @@
-export const EPISODE_FORMAT_VERSION = 2 as const
+export const EPISODE_FORMAT_VERSION = 3 as const
 export const EPISODE_LOGICAL_WIDTH = 800 as const
 
 export const COMPOSITION_GROUPS = [
@@ -18,6 +18,26 @@ export const COMPOSITION_GROUP_LABELS = {
 export type CompositionGroupVisibility = Readonly<
   Record<CompositionGroup, boolean>
 >
+
+interface LayerPlaneBase {
+  readonly id: string
+  readonly compositionGroup: CompositionGroup
+  readonly order: number
+  readonly visible: boolean
+  readonly name?: string
+}
+
+export interface BackgroundBaseLayerPlane extends LayerPlaneBase {
+  readonly kind: 'base'
+  readonly compositionGroup: 'background'
+  readonly baseColor: string
+}
+
+export interface OrdinaryLayerPlane extends LayerPlaneBase {
+  readonly kind: 'ordinary'
+}
+
+export type LayerPlane = BackgroundBaseLayerPlane | OrdinaryLayerPlane
 
 export interface ElementBounds {
   readonly x: number
@@ -43,7 +63,7 @@ export type AssetReference =
 interface EpisodeElementBase {
   readonly id: string
   readonly name: string
-  readonly compositionGroup: CompositionGroup
+  readonly layerPlaneId: string
   readonly bounds: ElementBounds
   readonly visible: boolean
   readonly locked: boolean
@@ -81,6 +101,7 @@ export interface EpisodeDocument {
   readonly logicalWidth: typeof EPISODE_LOGICAL_WIDTH
   readonly logicalHeight: number
   readonly compositionGroupVisibility: CompositionGroupVisibility
+  readonly layerPlanes: readonly LayerPlane[]
   readonly elements: readonly EpisodeElement[]
 }
 
@@ -94,19 +115,106 @@ export function isElementEffectivelyVisible(
   document: EpisodeDocument,
   element: EpisodeElement,
 ): boolean {
+  const layerPlane = getLayerPlaneById(document, element.layerPlaneId)
+
   return (
-    document.compositionGroupVisibility[element.compositionGroup] &&
+    layerPlane !== undefined &&
+    isLayerPlaneEffectivelyVisible(document, layerPlane) &&
     element.visible
   )
 }
 
+export function isLayerPlaneEffectivelyVisible(
+  document: EpisodeDocument,
+  layerPlane: LayerPlane,
+): boolean {
+  return (
+    document.compositionGroupVisibility[layerPlane.compositionGroup] &&
+    layerPlane.visible
+  )
+}
+
+export function getLayerPlaneById(
+  document: EpisodeDocument,
+  layerPlaneId: string,
+): LayerPlane | undefined {
+  return document.layerPlanes.find(({ id }) => id === layerPlaneId)
+}
+
+export function getLayerPlanesForGroup(
+  document: EpisodeDocument,
+  compositionGroup: CompositionGroup,
+): readonly LayerPlane[] {
+  return document.layerPlanes
+    .filter((layerPlane) => layerPlane.compositionGroup === compositionGroup)
+    .sort((first, second) => first.order - second.order)
+}
+
+export function getElementCompositionGroup(
+  document: EpisodeDocument,
+  element: EpisodeElement,
+): CompositionGroup | undefined {
+  return getLayerPlaneById(document, element.layerPlaneId)?.compositionGroup
+}
+
+export function getBackgroundBaseLayerPlane(
+  document: EpisodeDocument,
+): BackgroundBaseLayerPlane | undefined {
+  return document.layerPlanes.find(
+    (layerPlane): layerPlane is BackgroundBaseLayerPlane =>
+      layerPlane.kind === 'base',
+  )
+}
+
+export function getEffectiveEpisodeBaseColor(
+  document: EpisodeDocument,
+): string | undefined {
+  const baseLayerPlane = getBackgroundBaseLayerPlane(document)
+
+  return baseLayerPlane &&
+    isLayerPlaneEffectivelyVisible(document, baseLayerPlane)
+    ? baseLayerPlane.baseColor
+    : undefined
+}
+
 export function compareElementsByRenderOrder(
+  document: EpisodeDocument,
   first: EpisodeElement,
   second: EpisodeElement,
 ): number {
-  const groupDifference =
-    COMPOSITION_GROUP_RENDER_ORDER[first.compositionGroup] -
-    COMPOSITION_GROUP_RENDER_ORDER[second.compositionGroup]
+  const firstLayerPlane = getLayerPlaneById(document, first.layerPlaneId)
+  const secondLayerPlane = getLayerPlaneById(document, second.layerPlaneId)
 
-  return groupDifference || first.zIndex - second.zIndex
+  const groupDifference =
+    getCompositionGroupRenderRank(firstLayerPlane) -
+    getCompositionGroupRenderRank(secondLayerPlane)
+
+  const layerPlaneDifference =
+    getLayerPlaneRenderOrder(firstLayerPlane) -
+    getLayerPlaneRenderOrder(secondLayerPlane)
+
+  return groupDifference || layerPlaneDifference || first.zIndex - second.zIndex
+}
+
+export function compareElementsByCanvasPosition(
+  first: EpisodeElement,
+  second: EpisodeElement,
+): number {
+  return (
+    first.bounds.y - second.bounds.y ||
+    second.zIndex - first.zIndex ||
+    first.id.localeCompare(second.id)
+  )
+}
+
+function getCompositionGroupRenderRank(
+  layerPlane: LayerPlane | undefined,
+): number {
+  return layerPlane
+    ? COMPOSITION_GROUP_RENDER_ORDER[layerPlane.compositionGroup]
+    : Number.MAX_SAFE_INTEGER
+}
+
+function getLayerPlaneRenderOrder(layerPlane: LayerPlane | undefined): number {
+  return layerPlane?.order ?? Number.MAX_SAFE_INTEGER
 }

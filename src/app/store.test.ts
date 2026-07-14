@@ -1,12 +1,23 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 
-import { buildWeekEpisode } from './fixtures/buildWeekEpisode'
+import {
+  BUILD_WEEK_LAYER_PLANE_IDS,
+  buildWeekEpisode,
+} from './fixtures/buildWeekEpisode'
 import { useEditorStore } from './store'
-import type { CompositionGroup, EpisodeElement } from '../core/episode'
+import {
+  getBackgroundBaseLayerPlane,
+  getElementCompositionGroup,
+  getLayerPlaneById,
+  getLayerPlanesForGroup,
+  type CompositionGroup,
+  type EpisodeElement,
+} from '../core/episode'
 
 function fixtureElementInGroup(group: CompositionGroup): EpisodeElement {
   const element = buildWeekEpisode.elements.find(
-    ({ compositionGroup }) => compositionGroup === group,
+    (candidate) =>
+      getElementCompositionGroup(buildWeekEpisode, candidate) === group,
   )
 
   if (!element) {
@@ -22,7 +33,12 @@ describe('editor store', () => {
     useEditorStore.getState().setViewportLogicalHeight(900)
   })
 
-  it('clamps navigation and reveals off-screen layer selections', () => {
+  it('starts on a valid Content plane and reveals off-screen selections', () => {
+    expect(useEditorStore.getState().activeCompositionGroup).toBe('content')
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+    )
+
     useEditorStore.getState().setViewportY(99_000)
     expect(useEditorStore.getState().viewportY).toBe(3_700)
 
@@ -34,6 +50,9 @@ describe('editor store', () => {
     expect(useEditorStore.getState().selectedElementId).toBe(
       'beat-06-dawn-caption',
     )
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    )
     expect(useEditorStore.getState().viewportY).toBeGreaterThan(3_000)
   })
 
@@ -44,11 +63,13 @@ describe('editor store', () => {
       .selectElement('beat-01-stillness-title', false)
 
     expect(useEditorStore.getState().viewportY).toBe(0)
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    )
   })
 
-  it('activates a visible selected element group and rejects hidden elements', () => {
+  it('activates the selected element group and plane', () => {
     const foregroundElement = fixtureElementInGroup('foreground')
-    const backgroundElement = fixtureElementInGroup('background')
 
     useEditorStore.getState().selectElement(foregroundElement.id)
 
@@ -58,75 +79,89 @@ describe('editor store', () => {
     expect(useEditorStore.getState().activeCompositionGroup).toBe(
       'foreground',
     )
-
-    useEditorStore
-      .getState()
-      .setCompositionGroupVisibility('background', false)
-    useEditorStore.getState().selectElement(backgroundElement.id)
-
-    expect(useEditorStore.getState().selectedElementId).toBeNull()
-    expect(useEditorStore.getState().activeCompositionGroup).toBe(
-      'foreground',
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      foregroundElement.layerPlaneId,
     )
   })
 
-  it('clears selection when its layer or group becomes hidden', () => {
-    const contentElement = fixtureElementInGroup('content')
+  it('keeps hidden elements selected and selectable from Layers', () => {
+    const elementId = 'beat-01-stillness-title'
 
-    useEditorStore.getState().selectElement(contentElement.id)
-    useEditorStore
-      .getState()
-      .setElementVisibility(contentElement.id, false)
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore.getState().setElementVisibility(elementId, false)
+    expect(useEditorStore.getState().selectedElementId).toBe(elementId)
 
-    expect(useEditorStore.getState().selectedElementId).toBeNull()
-    useEditorStore.getState().selectElement(contentElement.id)
-    expect(useEditorStore.getState().selectedElementId).toBeNull()
+    useEditorStore.getState().setLayerPlaneVisibility(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      false,
+    )
+    expect(useEditorStore.getState().selectedElementId).toBe(elementId)
 
-    useEditorStore
-      .getState()
-      .setElementVisibility(contentElement.id, true)
-    useEditorStore.getState().selectElement(contentElement.id)
     useEditorStore
       .getState()
       .setCompositionGroupVisibility('content', false)
+    expect(useEditorStore.getState().selectedElementId).toBe(elementId)
 
-    expect(useEditorStore.getState().selectedElementId).toBeNull()
-    expect(
-      useEditorStore
-        .getState()
-        .episode.elements.find(({ id }) => id === contentElement.id)?.visible,
-    ).toBe(true)
-  })
-
-  it('keeps selection when visibility changes do not hide it', () => {
-    const contentElement = fixtureElementInGroup('content')
-
-    useEditorStore.getState().selectElement(contentElement.id)
-    useEditorStore
-      .getState()
-      .setCompositionGroupVisibility('background', false)
-
-    expect(useEditorStore.getState().selectedElementId).toBe(
-      contentElement.id,
+    useEditorStore.getState().selectElement(null)
+    useEditorStore.getState().selectElement(elementId, true)
+    expect(useEditorStore.getState().selectedElementId).toBe(elementId)
+    expect(useEditorStore.getState().activeCompositionGroup).toBe('content')
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
     )
   })
 
-  it('clears selection only when the active group actually changes', () => {
-    const contentElement = fixtureElementInGroup('content')
-
-    useEditorStore.getState().selectElement(contentElement.id)
+  it('changes groups and planes without leaving an incompatible selection', () => {
+    useEditorStore
+      .getState()
+      .selectElement('beat-01-stillness-title')
     useEditorStore.getState().setActiveCompositionGroup('content')
-
     expect(useEditorStore.getState().selectedElementId).toBe(
-      contentElement.id,
+      'beat-01-stillness-title',
     )
 
     useEditorStore.getState().setActiveCompositionGroup('background')
-
     expect(useEditorStore.getState().selectedElementId).toBeNull()
-    expect(useEditorStore.getState().activeCompositionGroup).toBe(
-      'background',
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
     )
+
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree)
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+    )
+
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.contentText)
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+    )
+  })
+
+  it('appends and selects a new ordinary plane in the active group', () => {
+    const before = getLayerPlanesForGroup(
+      useEditorStore.getState().episode,
+      'content',
+    )
+
+    useEditorStore.getState().createLayerPlane()
+
+    const state = useEditorStore.getState()
+    const after = getLayerPlanesForGroup(state.episode, 'content')
+
+    expect(after).toHaveLength(before.length + 1)
+    expect(after.at(-1)).toEqual({
+      id: 'content-plane-3',
+      kind: 'ordinary',
+      compositionGroup: 'content',
+      order: 3,
+      visible: true,
+    })
+    expect(state.activeLayerPlaneId).toBe('content-plane-3')
+    expect(state.selectedElementId).toBeNull()
   })
 
   it('moves through the command and resets the known demo state', () => {
@@ -144,25 +179,50 @@ describe('editor store', () => {
     expect(useEditorStore.getState().episode).toBe(buildWeekEpisode)
     expect(useEditorStore.getState().selectedElementId).toBeNull()
     expect(useEditorStore.getState().activeCompositionGroup).toBe('content')
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+    )
     expect(useEditorStore.getState().viewportY).toBe(0)
   })
 
-  it('resets active group and visibility after editing them', () => {
-    useEditorStore.getState().setActiveCompositionGroup('foreground')
+  it('restores planes, base color, and visibility on reset', () => {
+    useEditorStore.getState().setActiveCompositionGroup('background')
+    useEditorStore.getState().createLayerPlane()
+    useEditorStore.getState().setBaseColor('#123456')
+    useEditorStore.getState().setLayerPlaneVisibility(
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      false,
+    )
     useEditorStore
       .getState()
       .setCompositionGroupVisibility('background', false)
 
+    expect(
+      getLayerPlanesForGroup(useEditorStore.getState().episode, 'background'),
+    ).toHaveLength(3)
+    expect(
+      getBackgroundBaseLayerPlane(useEditorStore.getState().episode)
+        ?.baseColor,
+    ).toBe('#123456')
+
     useEditorStore.getState().resetEpisode()
 
-    expect(useEditorStore.getState().activeCompositionGroup).toBe('content')
-    expect(useEditorStore.getState().episode).toBe(buildWeekEpisode)
+    const state = useEditorStore.getState()
+    expect(state.episode).toBe(buildWeekEpisode)
+    expect(getLayerPlanesForGroup(state.episode, 'background')).toHaveLength(2)
+    expect(getBackgroundBaseLayerPlane(state.episode)?.baseColor).toBe(
+      '#F3F0EA',
+    )
     expect(
-      useEditorStore.getState().episode.compositionGroupVisibility,
-    ).toEqual({
-      background: true,
-      content: true,
-      foreground: true,
-    })
+      getLayerPlaneById(
+        state.episode,
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      )?.visible,
+    ).toBe(true)
+    expect(state.episode.compositionGroupVisibility.background).toBe(true)
+    expect(state.activeCompositionGroup).toBe('content')
+    expect(state.activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+    )
   })
 })

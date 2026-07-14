@@ -1,12 +1,23 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildWeekEpisode } from '../app/fixtures/buildWeekEpisode'
 import {
+  BUILD_WEEK_LAYER_PLANE_IDS,
+  buildWeekEpisode,
+} from '../app/fixtures/buildWeekEpisode'
+import {
+  createLayerPlane,
   moveElement,
+  setBaseColor,
   setCompositionGroupVisibility,
   setElementVisibility,
+  setLayerPlaneVisibility,
 } from './commands'
-import { isElementEffectivelyVisible } from './episode'
+import {
+  getBackgroundBaseLayerPlane,
+  getEffectiveEpisodeBaseColor,
+  getLayerPlanesForGroup,
+  isElementEffectivelyVisible,
+} from './episode'
 
 describe('moveElement', () => {
   const movableElement = buildWeekEpisode.elements.find(
@@ -167,5 +178,149 @@ describe('setCompositionGroupVisibility', () => {
     expect(
       setCompositionGroupVisibility(buildWeekEpisode, 'content', true),
     ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('createLayerPlane', () => {
+  it('appends a visible ordinary plane with a stable ID and order', () => {
+    const nextDocument = createLayerPlane(buildWeekEpisode, 'content')
+    const contentLayerPlanes = getLayerPlanesForGroup(nextDocument, 'content')
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(nextDocument.elements).toBe(buildWeekEpisode.elements)
+    expect(contentLayerPlanes).toEqual([
+      ...getLayerPlanesForGroup(buildWeekEpisode, 'content'),
+      {
+        id: 'content-plane-3',
+        kind: 'ordinary',
+        compositionGroup: 'content',
+        order: 3,
+        visible: true,
+      },
+    ])
+
+    const twiceCreated = createLayerPlane(nextDocument, 'content')
+    expect(getLayerPlanesForGroup(twiceCreated, 'content').at(-1)).toEqual({
+      id: 'content-plane-4',
+      kind: 'ordinary',
+      compositionGroup: 'content',
+      order: 4,
+      visible: true,
+    })
+  })
+
+  it('keeps Background plane 1 pinned while appending a free plane', () => {
+    const nextDocument = createLayerPlane(buildWeekEpisode, 'background')
+    const backgroundLayerPlanes = getLayerPlanesForGroup(
+      nextDocument,
+      'background',
+    )
+
+    expect(backgroundLayerPlanes[0]).toBe(
+      getBackgroundBaseLayerPlane(buildWeekEpisode),
+    )
+    expect(backgroundLayerPlanes.at(-1)).toEqual({
+      id: 'background-plane-3',
+      kind: 'ordinary',
+      compositionGroup: 'background',
+      order: 3,
+      visible: true,
+    })
+  })
+})
+
+describe('setLayerPlaneVisibility', () => {
+  it('changes only one plane and participates in effective visibility', () => {
+    const title = buildWeekEpisode.elements.find(
+      ({ id }) => id === 'beat-01-stillness-title',
+    )
+    const panel = buildWeekEpisode.elements.find(
+      ({ id }) => id === 'beat-01-stillness-background',
+    )
+    const nextDocument = setLayerPlaneVisibility(
+      buildWeekEpisode,
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      false,
+    )
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(nextDocument.elements).toBe(buildWeekEpisode.elements)
+    expect(
+      getLayerPlanesForGroup(nextDocument, 'content').find(
+        ({ id }) => id === BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      )?.visible,
+    ).toBe(false)
+    expect(title && isElementEffectivelyVisible(nextDocument, title)).toBe(
+      false,
+    )
+    expect(panel && isElementEffectivelyVisible(nextDocument, panel)).toBe(
+      true,
+    )
+  })
+
+  it('returns the original document when no plane eye state changes', () => {
+    expect(
+      setLayerPlaneVisibility(
+        buildWeekEpisode,
+        BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+        true,
+      ),
+    ).toBe(buildWeekEpisode)
+    expect(
+      setLayerPlaneVisibility(buildWeekEpisode, 'missing', false),
+    ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('setBaseColor', () => {
+  it('changes only the full-episode Background base color', () => {
+    const nextDocument = setBaseColor(buildWeekEpisode, '#221133')
+    const originalBase = getBackgroundBaseLayerPlane(buildWeekEpisode)
+    const nextBase = getBackgroundBaseLayerPlane(nextDocument)
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(nextDocument.elements).toBe(buildWeekEpisode.elements)
+    expect(nextBase).toEqual({ ...originalBase, baseColor: '#221133' })
+    expect(
+      nextDocument.layerPlanes.find(
+        ({ id }) => id === BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      ),
+    ).toBe(
+      buildWeekEpisode.layerPlanes.find(
+        ({ id }) => id === BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      ),
+    )
+  })
+
+  it('returns the original document when the color is unchanged', () => {
+    expect(setBaseColor(buildWeekEpisode, '#F3F0EA')).toBe(buildWeekEpisode)
+  })
+})
+
+describe('getEffectiveEpisodeBaseColor', () => {
+  it('returns the initial visible base color', () => {
+    expect(getEffectiveEpisodeBaseColor(buildWeekEpisode)).toBe('#F3F0EA')
+  })
+
+  it('returns the changed visible base color', () => {
+    const nextDocument = setBaseColor(buildWeekEpisode, '#221133')
+
+    expect(getEffectiveEpisodeBaseColor(nextDocument)).toBe('#221133')
+  })
+
+  it('returns undefined when either the base plane or its group is hidden', () => {
+    const baseHidden = setLayerPlaneVisibility(
+      buildWeekEpisode,
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      false,
+    )
+    const backgroundHidden = setCompositionGroupVisibility(
+      buildWeekEpisode,
+      'background',
+      false,
+    )
+
+    expect(getEffectiveEpisodeBaseColor(baseHidden)).toBeUndefined()
+    expect(getEffectiveEpisodeBaseColor(backgroundHidden)).toBeUndefined()
   })
 })
