@@ -14,11 +14,11 @@ All judged implementation work will be committed after the July 13, 2026 9:00 AM
 
 Post-start documentation/compliance work is recorded separately in commit `a567865` at 11:50:26 AM PT on July 13. It adds the rules checklist, scope corrections, WEBTOON discovery, license, and privacy ignores, but still contains no application code.
 
-Implementation began later on July 13 with the locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture. The fixture contains 30 named layers made entirely from code-defined shapes and text; no private comic art is included. Katherine then approved one primary `/goal` through the first complete human-editor MVP and authorized Codex to commit and push each coherent passing checkpoint to `main`.
+Implementation began later on July 13 with the locked application scaffold, framework-independent episode model, and original six-beat **Signal in the Fog** fixture. The fixture contains 30 named elements made entirely from code-defined shapes and text; no private comic art is included. Katherine then approved one primary `/goal` through the first complete human-editor MVP and authorized Codex to commit and push each coherent passing checkpoint to `main`.
 
-That testable editor is complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, wheel and minimap navigation, canvas/layer selection, off-screen layer reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine completed the hands-on product review on July 13 and confirmed that minimap navigation, canvas movement, and the collapsible asset panel work well.
+That testable editor is complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, wheel and minimap navigation, canvas/element-row selection, off-screen element reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine completed the hands-on product review on July 13 and confirmed that minimap navigation, canvas movement, and the collapsible asset panel work well.
 
-The next July 13 checkpoint adds the approved **Background**, **Content**, and **Foreground** composition groups. The right Layers panel now shows the active group's layers, canvas selection follows an element into its group, and independent group/layer eye controls preserve each layer's own setting. Public deployment remains scheduled for the July 19–21 submission runway rather than interrupting the product-building window. Dated, public-safe visual checkpoints are preserved in [Progress Screenshots](docs/progress/README.md).
+The July 13 composition checkpoint in `f02776f` adds the approved **Background**, **Content**, and **Foreground** groups. The right Layers panel follows the active group, canvas selection follows an element into its group, and independent group/element eye controls preserve each element's own setting. Katherine reviewed that checkpoint and clarified its intended next level: each fixed group contains numbered editable layer planes, and only Background plane 1 is a special pinned base. The current colored beat rectangles are interim panel elements, not the episode background, and the current white canvas fill is still hardcoded; the next proposed foundation corrects both. Public deployment remains scheduled for the July 19–21 submission runway. Dated, public-safe visual checkpoints are preserved in [Progress Screenshots](docs/progress/README.md).
 
 ## Product sequence
 
@@ -39,7 +39,9 @@ Import, persistence, undo, resize, ordering, production export, accounts, OAuth,
 
 The full creator-ready milestone adds local asset import, saving and reopening, safe undo, ordering, reader preview, and a validated export pipeline. Most of that work remains after Build Week. The completed composition-groups and visibility foundation does not make the full creator-ready milestone a submission requirement. WEBTOON requirements are discovery inputs for the future exporter, not a reason to enlarge the one-week minimum.
 
-Its workspace model uses three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas. The right Layers panel filters to the active group's individual layers while all visible groups remain composited. The next proposed slice replaces the current Assets control with a compact left **Add** rail and category-based **Asset Library** shell for Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md#next-product-slice-add-rail-and-asset-library-shell).
+Its workspace model uses three fixed full-scroll composition groups—**Background**, **Content**, and **Foreground**—above the story canvas. Inside each group, numbered **layer planes** provide open-ended creative surfaces; assets, text, shapes, color regions, and other placed items are **elements** inside one plane. Only Background plane 1 is pinned as the editable episode-wide base color. Every other plane remains flexible rather than forcing creators into predefined panel, character, or effect boxes.
+
+The next proposed slice establishes those plane records, numbered tabs, plane visibility, active-plane selection, and the real editable backdrop before later controls depend on the wrong model. Per-element opacity, movable background color regions, tab drag reordering, and the category-based **Add** rail then follow as separately reviewed slices. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md#recommended-next-slice-layer-planes-and-episode-backdrop).
 
 ### Autonomous creation — after the human workflow
 
@@ -77,14 +79,16 @@ corepack pnpm dev
 
 Open the local URL printed by Vite in a desktop Chrome-class browser. The editor has been inspected at 1440 × 900, 1280 × 720, and 1024 × 768 and verified through Playwright Chromium.
 
-Suggested review walkthrough:
+Suggested review walkthrough for the currently implemented checkpoint:
+
+> Known interim behavior: hiding an element currently makes its row unavailable for selection, and the element list reflects stacking rather than top-to-bottom canvas position. The proposed layer-plane foundation deliberately corrects both; this README does not claim those changes are already built.
 
 1. Switch among **Background**, **Content**, and **Foreground** and confirm the right Layers list follows the active group without changing the composed episode.
-2. Toggle a group eye and an individual layer eye; restore them and confirm the individual choice is preserved independently.
+2. Toggle a group eye and an individual element eye; restore them and confirm the individual choice is preserved independently.
 3. Scroll over the story canvas to move through the episode.
 4. Click the minimap or drag its cyan viewport frame.
-5. Select a layer from another beat and confirm the canvas centers it.
-6. Select an element on the canvas and confirm its composition group and layer are selected.
+5. Select an element row from another beat and confirm the canvas centers it.
+6. Select an element on the canvas and confirm its composition group and matching row are selected.
 7. Drag the selected element, then choose **Reset demo** and confirm the starting state and visibility return.
 8. Open and close **Assets** to inspect the deliberately limited Build Week placeholder.
 
@@ -107,7 +111,7 @@ Katherine made the controlling product decisions: prove the human editor before 
 - scaffolded and verified the locked React/Konva/Zustand stack in `bcb42dd`
 - implemented and tested the framework-independent coordinate, command, and editor-state core in `c33b491`
 - built the complete workspace and interaction story in `05ac06b`
-- added fixed composition groups, independent group/layer visibility, and the filtered Layers workflow in the July 13 composition checkpoint
+- added fixed composition groups, independent group/element visibility, and the filtered Layers workflow in `f02776f`
 - used unit, static, production-build, browser, accessibility, and visual evidence to find and correct canvas-startup test timing, layer semantics, responsive layout, and reset-panel behavior
 
 The current July 13 validation passes 26 unit tests across four files, strict typecheck, ESLint, the production build, and the expanded Playwright Chromium walkthrough. The composition controls and independently scrolling Layers list were visually inspected at all three documented desktop sizes. The build warning about a JavaScript chunk slightly above 500 kB is non-blocking and comes from the intentionally bundled React/Konva editor stack; code-splitting is not useful for this single-screen MVP.
@@ -141,6 +145,6 @@ The Build Week MVP does not claim production-ready WEBTOON export. A future expo
 
 ## Privacy and licensing
 
-Build Week fixtures, tests, screenshots, and the demo must use original synthetic content or content with documented permission. Root & Table production artwork and other private creative material must not be committed without Katherine's explicit approval.
+Build Week fixtures, tests, screenshots, and the demo must use original synthetic content or content with documented permission. Root & Table production artwork and other private creative material must not be committed without Katherine's explicit approval. Third-party comic screenshots supplied to explain layout, masks, color transitions, or effects are design references only and are not repository or submission assets.
 
 The source code and documentation in this repository are licensed under the [MIT License](LICENSE). That license does not automatically grant rights to third-party artwork, trademarks, or separately identified creative assets.

@@ -222,7 +222,8 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Devpost registration/project draft | Created July 13; form advanced to video and later-evidence stage | Complete |
 | Editor core commit | `c33b491`, coordinates, commands, shared state, and 15 passing unit tests | Complete |
 | Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
-| Composition groups checkpoint | Background, Content, and Foreground filtering plus independent group/layer visibility | Complete July 13 |
+| Composition groups checkpoint | `f02776f`, Background, Content, and Foreground filtering plus independent group/element visibility | Complete July 13 |
+| Creator layer-model clarification | Fixed groups contain numbered planes; only Background plane 1 is pinned; opacity, color regions, overflow, tab dragging, and panel masks are explicitly phased | Documented July 13; implementation pending separate approval |
 | Local validation | Typecheck, lint, 26 unit tests, production build, expanded Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 on July 13 | Complete |
 | Progress screenshot | `docs/progress/2026-07-13-first-testable-editor.png`, captured by Katherine before composition groups | Complete |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |

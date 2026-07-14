@@ -47,9 +47,9 @@ Create a folder only when its active behavior exists. The intended ownership is:
 
 Do not create empty `services`, `adapters`, `auth`, `persistence`, or `export` trees merely to represent future ideas. Their boundaries are documented below and become files only when an approved slice needs them.
 
-## Build Week document model
+## Current Build Week document model
 
-Use a flat element list. Panel groups, nested layers, reusable project records, and schema migration machinery are deferred.
+The implemented format-v2 checkpoint uses a flat element list with a direct composition-group value on each element. It proved the three-group interaction, but Katherine's review established that the creator-ready model needs one explicit layer-plane level between a group and its elements.
 
 The provisional sample document contains:
 
@@ -66,17 +66,32 @@ Selection, hover, active drag, viewport position, panel-collapse state, and rese
 
 Do not put React objects, Konva nodes, browser handles, user IDs, OAuth fields, provider tokens, WEBTOON metadata, or platform upload state in the episode document.
 
-## Approved creator-ready composition extension
+## Approved creator-ready layer-plane extension
 
-The approved organization model keeps the element list flat. It does not introduce a nested layer tree or arbitrary group system.
+The approved organization model remains shallow and predictable rather than becoming an arbitrary nested tree:
 
 - `CompositionGroup` has exactly three values: `background`, `content`, and `foreground`.
-- Every element records one `compositionGroup`.
-- The episode records group visibility separately from each element's existing visibility so hiding a whole group does not erase individual eye settings.
-- Effective visibility is `group visible AND element visible`.
-- Cross-group rendering order is fixed: Background below Content below Foreground. `zIndex` orders elements only within their group.
-- `activeCompositionGroup` is transient editor state. It filters the right Layers list and becomes the destination for later asset placement, but it does not hide the other visible groups.
-- Selecting an element on the canvas activates that element's group so its matching layer row remains discoverable.
+- Each group owns an ordered, open-ended list of numbered `LayerPlane` records with stable IDs, optional names, visibility, and ordinary or base kind.
+- Exactly one plane is special: Background plane 1 is the pinned lowest plane, carries the editable full-scroll base RGB color, and automatically follows episode height. It may be recolored or hidden but cannot be reordered or deleted.
+- Every other plane is an unrestricted creative surface. Examples such as “Fade,” “Characters,” or “Film” are optional names, never enforced content types.
+- Every element references one `layerPlaneId`; its group is derived from that plane rather than duplicated as a second source of truth.
+- A later asset-properties slice adds a required element opacity value from 0–1 in addition to preserving any per-pixel alpha in the source asset. The immediate layer-plane foundation does not add that field or its UI.
+- Ordinary full-width color regions are elements with logical start `y`, height, color, and later optional gradient data. Creating one asks where it should begin, defaults to the current viewport, and leaves its position and extent editable.
+- Effective visibility is `group visible AND plane visible AND element visible`. A hidden element is absent from the canvas and hit testing but may remain selected from the Layers panel.
+- Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents elements by logical `y` from top to bottom and uses local stacking only to resolve equal or overlapping positions.
+- `activeCompositionGroup` and `activeLayerPlaneId` are transient editor state. Canvas selection activates both so the matching row remains discoverable.
+
+The next approved schema slice should bump the fixture format and update it directly rather than adding speculative migration machinery: no saved user documents exist yet. The existing colored beat rectangles represent comic panels and should move into a Content plane; a new Background base plane should own the white starting color that is currently hardcoded in renderers.
+
+### Layer-plane tab behavior
+
+- The right panel shows compact numbered tabs below `Layers · Background`, `Layers · Content`, or `Layers · Foreground`.
+- When Background plane 1 is active, the inspector shows a small **Base color** row with a swatch and the browser's native color picker. This is the foundation's only new property editor. If the base plane is hidden, canvas and minimap show an editor-only checkerboard that is not episode content or export output.
+- The foundation implements stable identity, selection, creation, visibility, overflow arrows, and automatic active-tab reveal before it adds plane reordering.
+- A later layer-management slice gives ordinary tabs a dedicated drag handle and dispatches a pure reorder command inside the active group. Background plane 1 remains pinned.
+- Move Left/Right commands provide a keyboard and non-drag alternative in that same management slice. Small left and right overflow arrows scroll the tab strip without changing plane order, and the active tab scrolls into view from the foundation onward.
+- A `+` creates another ordinary plane in the active group. Plane numbers reflect current order; stable IDs preserve identity when numbers change.
+- Group, plane, and element eye states remain independent and preserve child settings.
 
 The left control remains an application-shell concern: a compact **Add** rail opens an **Asset Library** drawer with Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated. The selected library category and drawer state are transient UI state. Source assets still belong behind `AssetRepository`; category navigation does not justify creating asset persistence before an approved import slice.
 
@@ -85,17 +100,20 @@ The left control remains an application-shell concern: a compact **Add** rail op
 The implemented Build Week command surface is intentionally small:
 
 - `moveElement(elementId, logicalPosition)` returns an updated document.
-- `setElementVisibility(elementId, visible)` changes one layer's eye state.
+- `setElementVisibility(elementId, visible)` changes one element's eye state.
 - `setCompositionGroupVisibility(group, visible)` changes only the group eye state and preserves every element's individual setting.
 - `resetEpisode()` restores the known fixture document through application coordination.
 
 Navigation and selection do not change the document. They update application state.
 
+The approved layer-plane foundation may add only the pure commands it needs: create an ordinary plane, change plane visibility, and change the base color. Reordering, rename/delete, element opacity, moving elements between planes, color regions, and the Add rail belong to later separately approved slices. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence as part of the foundation.
+
 Zustand owns:
 
 - the current episode document
 - the selected element ID
-- the active composition group when that approved slice exists
+- the active composition group
+- the active layer-plane ID when that approved slice exists
 - the logical vertical viewport
 - active transient pointer state
 - the active Asset Library category and drawer state when that later shell exists
@@ -120,14 +138,18 @@ Selecting an off-screen element from the layers list centers that element in the
 
 Coordinate conversion and clamping live in one tested core module. Do not duplicate formulas in canvas and minimap components.
 
+The current movement command clamps every element inside the 800-unit episode width. A later panel/frame slice must replace that blanket rule with explicit overflow behavior: irregular panels, effects, and breakout art may extend into an editor bleed area while final rendering clips to the episode output boundary. Optional snapping is a proximity aid and must never silently resize, crop, straighten, or force those elements back inside.
+
 ## Interaction flows
 
 ### Selection
 
 1. Canvas or layers emits an element ID.
 2. The store updates the single selected ID.
-3. If a layer selected an off-screen element, the store computes a centered, clamped viewport.
-4. Canvas, minimap, and layers render from the resulting state.
+3. Canvas selection is limited to effectively visible elements; Layers-panel selection may target hidden elements so creators can inspect or reveal them.
+4. Selection activates the element's composition group and numbered plane.
+5. If a Layers selection targets an off-screen element, the store computes a centered, clamped viewport.
+6. Canvas, minimap, and layers render from the resulting state.
 
 ### Navigation
 
@@ -144,15 +166,16 @@ Coordinate conversion and clamping live in one tested core module. Do not duplic
 4. The pure command returns the next document.
 5. Canvas, minimap, and layers derive their next view from that document.
 
-### Composition-group selection and visibility
+### Composition-group, plane, and visibility flow
 
 1. A Background, Content, or Foreground control updates the transient active group.
-2. The right Layers panel filters its rows to that group while the canvas continues to render every effectively visible group.
-3. Selecting a canvas element updates both the selected element ID and active group.
-4. A group or layer eye dispatches its pure visibility command.
-5. Canvas, minimap, and Layers panel derive effective visibility from the same episode document.
+2. The numbered tab strip chooses one plane in that group while the canvas continues to render every effectively visible group and plane.
+3. The right element list shows the active plane's contents from top to bottom on the scroll.
+4. Selecting a canvas element updates the selected ID, active group, and active plane.
+5. A group, plane, or element eye dispatches its corresponding pure visibility command.
+6. Canvas, minimap, and Layers panel derive effective visibility from the same episode document.
 
-Hidden elements do not render and cannot capture canvas selection. Hiding a selected element or its group clears selection rather than leaving an invisible active target.
+Hidden elements do not render and cannot capture canvas selection. They remain selectable from the Layers panel; hiding a selected element keeps the selection and removes only its canvas outline until it is shown again.
 
 ## Future application-edge seams
 
@@ -191,7 +214,7 @@ ScrollSplice's project-inspection and editor-action capabilities are application
 `ProjectContextReader` prepares only what an approved run needs:
 
 - project and episode IDs plus safe descriptive metadata
-- the serialized episode elements, logical dimensions, stacking order, and asset references
+- the serialized composition groups, ordered layer planes, episode elements, logical dimensions, opacity, stacking order, masks when supported, and asset references
 - current viewport and selection
 - asset names, dimensions, types, provenance, and approved thumbnails or references
 - a deliberately rendered low-resolution preview of a requested canvas region or the full scroll when visual inspection is needed
@@ -216,7 +239,8 @@ Write tools may later include:
 - `placeElement(assetId, logicalBounds)`
 - `moveElement(elementId, logicalPosition)`
 - `resizeElement(elementId, logicalBounds)`
-- `setLayerOrder(elementId, index)`
+- `reorderLayerPlane(layerPlaneId, index)`
+- `reorderElement(elementId, index)`
 - `removeElement(elementId)`
 
 Every write tool validates its input and dispatches an ordinary document command. The tool registry may expose only commands implemented and tested by the human editor. It must never give the model a raw store setter or a direct canvas mutation escape hatch.
@@ -264,8 +288,8 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, and—when implemented—composition ordering and effective visibility.
-- Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset; extend the same story with group filtering and visibility only when that slice exists.
+- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, and—when implemented—pinned Background plane 1, group/plane/element ordering, three-level effective visibility, hidden-row selection, and opacity bounds.
+- Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset; extend the same story as slices land with group/plane filtering, independent eye states, hidden-row selection, base-color synchronization, and tab overflow navigation.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 
@@ -275,8 +299,8 @@ The public demo uses only original synthetic content or explicitly approved asse
 - Selection and viewport each have one application-state owner.
 - Core model, coordinates, and commands import no React, Konva, Zustand, persistence, export, platform, or authentication code.
 - Canvas, minimap, layers, future preview, and future export agree on geometry and ordering.
-- Fixed composition-group rank and within-group layer order produce one deterministic stack; active-group filtering never changes rendered visibility.
-- Group visibility and individual layer visibility remain separate state.
+- Fixed composition-group rank, ordered layer planes, and local element stacking produce one deterministic stack; active-group or active-plane filtering never changes rendered visibility.
+- Group, plane, and element visibility remain separate state, and hidden elements remain addressable from Layers.
 - The live canvas is viewport-sized, not episode-sized.
 - Source assets are never mutated by placed-element edits.
 - Platform rules, account identity, provider tokens, and upload state never enter the episode document or editor commands.

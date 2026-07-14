@@ -57,11 +57,11 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 ### Assemble an episode
 
 1. Open an episode.
-2. Give the episode an editable name and choose its base background treatment.
+2. Give the episode an editable name and choose the full-scroll base color stored in Background plane 1.
 3. Import images into the Asset Library.
-4. Drag an asset onto the canvas to create an element.
+4. Choose a composition group and numbered layer plane, then drag an asset onto the canvas to create an element there.
 5. Position and resize it within the vertical composition.
-6. Add more panels or elements as the episode grows downward.
+6. Add more panels, effects, color regions, or elements as the episode grows downward.
 
 ### Navigate a long scroll
 
@@ -73,10 +73,11 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 ### Organize the composition
 
 1. Select an element on the canvas or in the layers panel.
-2. The same element becomes selected in both places, and its composition group becomes active.
-3. Use the fixed **Background**, **Content**, and **Foreground** controls above the story canvas to choose which group's layers appear in the right panel.
-4. Toggle a whole composition group or one individual layer without disturbing the other visibility settings.
-5. Drag layers to change their stacking order within the active group.
+2. The same element becomes selected in both places, and its composition group and numbered layer plane become active.
+3. Use the fixed **Background**, **Content**, and **Foreground** controls above the story canvas to choose the full-scroll group shown in the right panel.
+4. Use the numbered tab strip under the Layers heading to choose one layer plane within that group; each plane may hold any creator-chosen mix of elements.
+5. Toggle a whole composition group, one numbered plane, or one element without disturbing the other visibility settings.
+6. Drag ordinary numbered tabs to reorder their planes within the active group. Background plane 1 remains pinned at the bottom because it is the episode-wide base color.
 
 ### Refine and export
 
@@ -98,10 +99,11 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 ### 1. App workspace
 
 - Large main editing canvas on the left.
-- Right sidebar with minimap above the layers panel.
+- Full-height right sidebar reaching the top of the window, with the minimap above the layers panel.
 - Narrow left **Add** rail that opens an **Asset Library** drawer without permanently taking space from the story canvas.
 - Library category buttons for **Uploads**, **Speech Balloons**, **Decorations**, and **Shapes & Frames**; add **AI Generated** only when that future mode actually exists.
-- Fixed **Background**, **Content**, and **Foreground** composition-group controls above the story canvas.
+- Fixed **Background**, **Content**, and **Foreground** composition-group controls centered above the story canvas without persistent instruction copy competing for that bar.
+- Episode title and reset/project controls aligned over the canvas rather than consuming the top of the right inspector.
 - Clear controls for project, episode, import, preview, save, and export.
 - Editable episode names and a **File > New Episode** command.
 - A familiar File, Edit, View, Window, and Help command structure. A browser build may present these as an in-app menu bar; native macOS and Windows menu integration belongs with later desktop packaging.
@@ -111,9 +113,13 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - A tall episode surface inside a pannable and zoomable workspace.
 - Selection, move, resize, and delete for placed elements.
 - Visible selection outline with corner handles for direct resizing.
-- Optional snapping and alignment guides, controlled by a clearly visible magnet toggle.
-- A composable background stack that can use a solid RGB color, an uploaded background image, and an optional decorative edge treatment together.
+- Optional proximity snapping and alignment guides, controlled by a clearly visible magnet toggle. Snapping suggests centers, edges, and guides without forcing an element into a box, resizing it, or preventing intentional asymmetry.
+- A pinned first Background plane that supplies the editable full-scroll base RGB color instead of relying on a hardcoded white canvas. Selecting it exposes a compact **Base color** swatch and native color picker in the inspector; hiding it reveals an editor-only transparency checkerboard rather than changing episode data.
+- Ordinary Background planes that can hold movable and resizable full-width color regions, gradients, photos, textures, splatters, or edge decoration. Adding a color region asks where on the scroll it should begin and defaults sensibly to the current viewport.
+- Quick panel/frame creation with rectangular and angled or polygonal masks so an image can be repositioned inside an irregular panel without destructive cropping.
+- Allow intentional bleed and panel-breakout effects beyond an irregular frame or episode edge while clipping only at the final output boundary.
 - Preserve alpha transparency in imported and placed images rather than flattening them onto white.
+- Give every selected element an independent opacity value from 0–100%, editable through a contextual bottom control with a precise percentage input.
 - Let the creator extend the episode and its background downward as the story grows, without imposing an arbitrary fixed-height project limit. The exact add-space control remains an interaction-design choice.
 - Later story-section or panel-sequence reordering for moving whole beats vertically without confusing those sections with the three composition groups.
 - Drop targets and insertion feedback while dragging.
@@ -129,13 +135,16 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 ### 4. Layers panel
 
-- Organize every placed element into exactly one fixed composition group: **Background**, **Content**, or **Foreground**.
-- Render all visible Background layers below Content and all visible Foreground layers above Content.
-- Use Background for base color and scenery, Content for panels, characters, dialogue, and balloons, and Foreground for borders, edge decoration, overlays, and effects; creators may still choose another group when the desired visual stack calls for it.
-- Show only the active group's individual layers in the right panel, in their visual stacking order; activating a group filters the list but does not hide the other groups from the canvas.
-- Select a layer to select its canvas element, and vice versa. Selecting an element on the canvas also activates its group so the matching layer row is visible.
-- Give each group and each individual layer an eye control. Hiding a group must preserve its layers' individual visibility choices.
-- Drag layers to reorder stacking within the active group. Moving a layer between groups is a separate explicit action rather than an accidental cross-group drag.
+- Organize the episode into exactly three fixed full-scroll composition groups: **Background**, **Content**, and **Foreground**.
+- Let each group contain an open-ended sequence of numbered layer planes. These are creative surfaces, not predefined roles or story sections; only Background plane 1 is special and pinned as the full-scroll base color.
+- Render Background planes below Content and Foreground planes above Content. Within a group, plane 1 is lowest and each increasing number renders above the lower planes; element order resolves overlaps inside one plane.
+- Show the active group's compact numbered tab strip directly below the Layers heading. Tabs may also have optional names such as “Base,” “Fade,” or “Film,” but ScrollSplice must not force those meanings.
+- Let creators drag ordinary tabs by a dedicated handle to reorder planes. Provide a non-drag Move Left/Right alternative, a clear drop marker, and no accidental cross-group movement.
+- Keep an overflowing tab strip on one line with small left and right navigation arrows; activating a tab scrolls it into view. These arrows navigate overflow rather than reorder planes.
+- Show only the active plane's elements below the tabs, ordered from the top of the scroll downward; use local stacking as a tie-breaker for overlapping elements.
+- Select an element row even when its eye or parent plane is hidden. Hidden elements do not render or capture canvas clicks, but Layers selection remains available so the creator can inspect or reveal them.
+- Give each group, numbered plane, and element its own eye state. Hiding a parent preserves every child setting.
+- Later let creators move an element to another plane from its row's context menu and an equivalent visible keyboard-accessible action; right-click is a shortcut, not the only route.
 - Basic names and type icons so similar elements can be distinguished.
 - Keep the list independently scrollable. On narrow displays, allow the right inspector to collapse or open as an overlay rather than squeezing the story canvas past usability.
 - Lock controls may follow after selection, grouping, and visibility are dependable.
@@ -146,8 +155,8 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Use **Uploads** for creator-imported files; use separate categories for built-in speech balloons, decorations, and shapes or frames.
 - Show asset thumbnails and names inside the selected category.
 - Collapse the drawer to preserve canvas space, and prefer overlay behavior when display width is constrained.
-- Drag an asset onto the canvas to create an independently editable layer in the active composition group.
-- Allow a later precise drop onto the Layers panel to choose the group or stacking destination directly.
+- Drag an asset onto the canvas to create an independently editable element in the active numbered plane.
+- Allow a later precise drop onto the Layers panel to choose the group, plane, or stacking destination directly.
 - Reusing an asset must not duplicate the original source file unnecessarily.
 - Include a free starter set of resizable comic speech balloons and let creators add their own reusable balloon or decorative assets.
 - Research common speech-balloon forms and their storytelling conventions before choosing the starter set; do not present stylistic conventions as universal rules.
@@ -155,17 +164,17 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 ### 6. Drag-and-drop interaction system
 
 - One consistent interaction language across the app.
-- Drag assets from the Asset Library onto the canvas, where they become layers in the active composition group.
+- Drag assets from the Asset Library onto the canvas, where they become elements in the active numbered plane.
 - Allow a precise Layers-panel drop later without making it the only way to add an asset.
 - Drag canvas elements to reposition them.
-- Drag layer rows to change stacking within their composition group.
+- Drag numbered plane tabs to change broad stacking within their composition group and use explicit element-order controls for local overlaps.
 - Provide clear previews, valid drop zones, and cancellation behavior.
 - Keep different drag types distinct so one action cannot accidentally trigger another.
 
 ### 7. Local project state
 
 - One local project containing assets and one or more episode documents.
-- Episode data records canvas dimensions, panels, elements, transforms, and ordering.
+- Episode data records canvas dimensions, ordered layer planes, element membership, transforms, visibility, opacity, and ordering.
 - Episode names are editable and remain associated with the correct saved document.
 - Save and reopen without losing layout.
 - Keep imported source assets separate from placed element instances.
@@ -209,16 +218,18 @@ These components follow the creator-ready human workflow and are not Build Week 
 
 - The canvas remains the visual center of gravity.
 - Minimap navigation should feel immediate, with no confusing jump between the viewport box and main canvas.
-- Selection must stay synchronized across canvas and layers.
+- Selection must stay synchronized across canvas, composition group, numbered plane, and element list, including Layers-panel selection of hidden elements.
 - Dragging must always show what will happen before the user drops.
 - The Add rail should remain easy to reach, while its Asset Library drawer must not permanently shrink the working area.
-- The composition-group selector must fit above the story canvas at supported desktop sizes; the right Layers list scrolls independently and can collapse into an overlay on narrower displays.
+- The composition-group selector must stay centered above the story canvas at supported desktop sizes; the full-height right inspector and its element list scroll independently and can collapse into an overlay on narrower displays.
 - Group selection filters organization only. Visibility changes happen through explicit eye controls, not merely by switching groups.
+- Numbered planes are unrestricted creative surfaces. Examples and optional names may guide creators, but ScrollSplice must not force panels, characters, effects, or decorations into particular numbered tabs.
 - Keyboard shortcuts may supplement group and layer visibility, but every action must remain available through visible controls.
 - Empty states should teach the first action: import an image or create a panel.
-- Background color, background imagery, and optional decoration should remain independently editable while composing into one continuous reader view.
+- The pinned base color, movable color regions, fades, background imagery, and optional decoration should remain independently editable while composing into one continuous reader view.
 - Transparent areas should preview accurately against the current background treatment.
-- Snapping must be optional, easy to toggle, and clear about which center, edge, or nearby element is being matched.
+- Element opacity must be adjustable independently of source-image alpha and displayed as a precise percentage for the selected element.
+- Snapping must be optional, easy to toggle or temporarily bypass, and clear about which center, edge, guide, or nearby element is being matched.
 - Long episodes must remain usable; off-screen content should not make basic editing sluggish.
 - The manual editor must remain complete and understandable when OpenAI features are disconnected or unavailable.
 - Autonomous work must show progress, allow cancellation, make generated assets distinguishable, and preserve a clear path back to manual editing.
@@ -226,12 +237,14 @@ These components follow the creator-ready human workflow and are not Build Week 
 ## Examples of Success
 
 - A creator imports six images, drags them into a vertical episode, reorders two panels, adjusts their spacing, and exports the strip without reading instructions.
-- A creator chooses **Content**, opens **Uploads** from the Add rail, and drags an image onto the canvas; its new layer appears in the filtered Content list.
+- A creator chooses a numbered **Content** plane, opens **Uploads** from the Add rail, and drags an image onto the canvas; the new element appears in that plane's list.
+- A creator switches to Background plane 2, adds a long purple color region beginning at the current viewport, adjusts its start and end, and places a separate transparent fade above it.
+- A creator makes an angled panel mask, repositions a photo inside it, and lets a character or sound effect break beyond the frame without snapping forcing it back inside.
 - On a smaller monitor, the creator can scroll or collapse the right inspector without losing the composition-group controls or access to the Asset Library.
 - A creator combines a chosen background color with a transparent uploaded background and optional edge decoration, then extends the episode as new story beats are added.
 - A creator adds a starter speech balloon, resizes it with corner handles, and replaces or supplements the starter library with a personal reusable balloon asset.
 - Dragging the minimap viewport moves the main canvas to the matching portion of the episode.
-- Selecting an image on the canvas highlights its layer; moving that layer changes the visible stacking immediately.
+- Selecting an image on the canvas highlights its element row; reordering that element within its plane changes the visible stacking immediately.
 - Closing and reopening the project restores the same asset list and episode layout.
 - In the later autonomous mode, a creator supplies a short episode brief and approved references; ScrollSplice generates the needed assets, arranges a coherent first-pass scroll, and leaves every result editable in the ordinary canvas and layers.
 
@@ -251,6 +264,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 - Before an OpenAI generation run, make it clear which brief, images, and project context will leave the local app; do not send private creative material without explicit approval.
 - Imported source files must never be destructively edited.
 - Root & Table art and personal creative material must not be committed to the repository without explicit approval; use synthetic fixtures in tests.
+- Third-party comic screenshots used to explain panels, transitions, or effects remain uncommitted design references, not project fixtures or submission assets.
 - The minimap, main canvas, and layers panel must share one authoritative episode state rather than drifting into separate representations.
 - Drag-and-drop behavior must be reversible through undo before the creator-ready MVP is considered production-safe, though undo may follow the Build Week MVP.
 - Platform constraints belong in versioned, data-driven export profiles rather than scattered constants in the editor core.

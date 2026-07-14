@@ -4,7 +4,7 @@
 
 ScrollSplice is a public planning repository at <https://github.com/techinevolution/scroll-splice>. Katherine identified seven documents as July 12 pre-event planning work under the earlier ScrollForge name. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
-Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she could test. The locked scaffold, verified command contracts, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed. After her product review, Katherine approved and Codex completed the bounded composition-groups and visibility checkpoint locally.
+Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she could test. The locked scaffold, verified command contracts, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed. After her product review, Katherine approved and Codex completed the bounded composition-groups and visibility checkpoint in `f02776f`.
 
 Available work time is roughly 26 hours: full workdays July 13–14, about two hours each evening July 15–19, a stabilization buffer July 20, and submission July 21. July 13 covered provenance, rules, discovery, repository setup, the foundation, and the interaction work originally scheduled through July 16. Katherine completed the hands-on review and `/feedback` that day. The review found no blocking defect, leaving the remaining July 13–18 product window available for bounded creator-facing slices without changing the minimum submission contract.
 
@@ -14,7 +14,7 @@ Completed in the July 13 commits `c33b491` and `05ac06b`:
 
 1. Establish the small framework-independent viewport, coordinate, command, and editor-state modules.
 2. Build the desktop workspace and render the shared synthetic episode in a viewport-sized Konva canvas, a lightweight full-episode minimap, and a layers list.
-3. Add clamped wheel/trackpad navigation, minimap click navigation, an accurate viewport box, canvas/layer selection synchronization, and off-screen layer centering.
+3. Add clamped wheel/trackpad navigation, minimap click navigation, an accurate viewport box, canvas/Layers-panel selection synchronization, and off-screen element centering.
 4. Add selected-element movement through a pure document command and a visible reset action.
 5. Add focused unit tests and one complete smoke test, run every documented validation command, and visually inspect representative desktop sizes.
 6. Keep README and compliance evidence accurate, push each coherent passing checkpoint to `main`, then stop for Katherine's hands-on review and `/feedback`.
@@ -40,12 +40,22 @@ These requests refine the intended product but are not authorization to enlarge 
 - add optional center/edge/nearby-element snapping behind a magnet toggle
 - resize images and text directly with corner handles
 - use a compact left **Add** rail that opens a category-based **Asset Library** with Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated
-- use three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas while the right Layers panel shows only the active group's individual layers
+- use three fixed composition groups—**Background**, **Content**, and **Foreground**—above the story canvas while the right Layers panel follows the active group's numbered planes and elements
 - keep group selection separate from visibility, preserve individual eye settings when a whole group is hidden, and let constrained displays collapse or overlay the right inspector rather than crushing the canvas
+- extend the right inspector to the top of the window, align episode/reset controls over the canvas, center the three composition controls, and remove persistent instruction text from that bar
+- treat the three composition groups as full-scroll containers holding numbered, creator-defined layer planes rather than forcing numbered roles or story sections
+- pin only Background plane 1 as the editable full-scroll base RGB color; let every other plane be added, renamed, hidden, reordered, and populated freely
+- let ordinary Background planes hold movable long color regions, fades, photos, textures, splatters, or edge decoration; adding a color region asks where on the scroll it begins
+- preserve source alpha and give every element an independent 0–100% opacity control through a contextual bottom property strip and precise percentage input
+- keep hidden elements selectable from the Layers panel even though they do not render or capture canvas clicks
+- show an active plane's elements from top to bottom on the scroll instead of presenting later beats first solely because of stacking values
+- support compact draggable numbered tabs with a dedicated handle, a non-drag reorder alternative, `+` creation, and left/right overflow navigation that does not change order
+- later provide **Move to plane** from an element-row context menu plus a visible keyboard-accessible action; right-click must not be the only route
+- add Clip Studio-style rectangular and irregular panel masks later, with optional snapping that never prevents intentional asymmetry, bleed, or panel-breakout effects
 
 ## Completed implementation slice: composition groups and visibility
 
-**Status:** implemented and validated July 13; awaiting Katherine's hands-on review. Public deployment and submission work remain reserved for the July 19–21 submission runway rather than interrupting the current product-building window.
+**Status:** implemented, validated, and reviewed July 13. Katherine confirmed that group and element eye controls work, then clarified the next layer-plane model and the hidden-selection, ordering, and workspace corrections below. Public deployment and submission work remain reserved for the July 19–21 submission runway.
 
 **Goal:** establish the simple three-group destination and visibility model that the later Asset Library, backgrounds, and overlays all need.
 
@@ -71,9 +81,46 @@ Excluded: the Add-rail redesign, real uploads, asset drag-in, layer reordering, 
 
 Validation passed: 26 unit tests, strict typecheck, ESLint, production build, and the expanded Playwright Chromium walkthrough. The running interface was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768.
 
-### Next product slice: Add rail and Asset Library shell
+### Recommended next slice: layer planes and episode backdrop
 
-After Katherine reviews and approves the next checkpoint, replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Do not add real import, speech-balloon artwork, or AI-generated content in that shell slice.
+**Status:** proposed for separate implementation approval.
+
+**Goal:** correct the composition foundation before the Add rail begins creating real destinations. Keep the fixed Background, Content, and Foreground controls, but add one ordered numbered-plane level inside each group and make the white episode backdrop real document data.
+
+Must-have work:
+
+- Introduce stable layer-plane records and make elements reference a plane; bump the fixture format directly without adding a migration framework because no saved user documents exist.
+- Seed pinned Background plane 1 with the editable full-scroll base color, expose a compact **Base color** swatch using the browser's native color picker when that plane is active, show an editor-only checkerboard when the base is hidden, and remove the hardcoded white fill from canvas and minimap rendering.
+- Remap the synthetic colored beat rectangles to a Content plane because they represent panels, not the episode backdrop.
+- Add active-plane state and a compact numbered tab strip beneath the Layers heading with `+`, per-plane eye controls, overflow arrows, and automatic active-tab reveal. This foundation appends new planes in a stable order; drag reordering follows only after plane identity and selection are proven.
+- Keep Background plane 1 pinned while allowing ordinary planes in every group to be created and hidden without prescribed content roles.
+- Show the active plane's elements from top to bottom on the scroll; keep local stacking as the tie-breaker for overlap.
+- Permit Layers-panel selection of hidden elements while keeping them absent from canvas rendering and hit testing.
+- Extend the right inspector to the top of the window, align episode/reset controls over the canvas, center the group controls, and remove the instruction copy.
+- Preserve canvas/minimap derivation, navigation, movement, reset, and the current visibility behavior with focused model, command, store, and browser coverage.
+
+Acceptance:
+
+- the white starting backdrop comes from pinned Background plane 1; its inspector swatch opens a native color picker, changing it updates both canvas and minimap, and hiding it reveals only an editor checkerboard
+- each composition group can expose multiple numbered planes without forcing what creators place on them
+- creating a plane appends and selects it without changing another plane's contents; Background plane 1 cannot leave the bottom
+- overflow arrows reveal tabs without reordering them, and the active tab stays visible
+- selecting an element activates its group and plane; hidden elements remain selectable from the right panel
+- the active plane's element rows follow the scroll from top to bottom
+- reset restores the known fixture, plane selection, plane visibility, and base color
+- the revised header and full-height inspector remain usable at 1440 × 900, 1280 × 720, and 1024 × 768
+- unit tests, typecheck, lint, production build, Playwright, and visual inspection pass
+
+Excluded: tab drag reordering, Move Left/Right ordering commands, plane rename/delete, per-element opacity controls, real uploads, the Add rail redesign, movable color-region creation, gradients and blend modes, panel-mask tools, bleed behavior, snapping, resize handles, element moves between planes, undo, persistence, export, deployment, submission media, and AI.
+
+### Following bounded slices
+
+After the layer-plane foundation passes, continue one separately approved checkpoint at a time:
+
+1. **Asset properties and opacity:** add a contextual bottom property strip with a 0–100% slider and exact percentage input. Opacity belongs to each element, remains separate from its eye state and source alpha, and zero-opacity elements remain selectable from Layers.
+2. **Background color regions and fades:** create an ordinary movable color-region element on a Background plane, ask where its vertical span begins, default to the current viewport, and add a simple transparent two-stop fade only if the solid region is stable.
+3. **Layer management:** add dedicated drag grips, a clear insertion marker, accessible Move Left/Right actions, optional names, and safe ordinary-plane deletion. Reorder only inside the active group, renumber labels while retaining stable IDs, and never move or delete Background plane 1.
+4. **Add rail and Asset Library shell:** replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Its later Add-to-canvas action targets the active numbered plane; real import, speech-balloon artwork, and AI-generated content remain outside the shell-only slice.
 
 ### Submission runway: July 19–21
 
@@ -96,7 +143,7 @@ That is the simplest MVP for Build Week. It proves the product's distinctive int
 ### Working product
 
 - A recognizable vertical-comic workspace at representative desktop sizes.
-- One original six-beat sample episode made from code-rendered shapes and text, with clear named layers.
+- One original six-beat sample episode made from code-rendered shapes and text, with clear named elements.
 - One shared episode model rendered by the canvas, minimap, and layers list.
 - Accurate two-way canvas/minimap navigation and viewport clamping.
 - Canvas/layers selection synchronization, including centering an off-screen layer selection.
@@ -125,14 +172,15 @@ The rule-to-evidence checklist is in [BUILD_WEEK_COMPLIANCE.md](BUILD_WEEK_COMPL
 - Complete the first testable editor with canvas, minimap, synchronized layers, movement, reset, validation, and visual inspection.
 - Complete Katherine's hands-on review and `/feedback` evidence.
 - Lock the three composition groups and category-based Asset Library direction in documentation.
-- After separate implementation approval, begin the composition-groups and visibility slice rather than deployment or submission preparation.
+- Complete and review the composition-groups and visibility slice.
+- Clarify the numbered layer-plane, episode-backdrop, opacity, irregular-panel, snapping, and overlay model from Katherine's hands-on review and visual references.
 
 End-of-day target: the current editor remains passing, and the next creator-facing organization model is either testable or cleanly in progress.
 
 ### July 14 — Full product-building day
 
-- Finish and visually review composition groups and visibility if they were not completed July 13.
-- If that slice passes and Katherine approves the next one, build the Add rail and Asset Library shell with public-safe placeholders.
+- If Katherine approves it, build and visually review the layer-planes and episode-backdrop slice before adding the Asset Library.
+- If that foundation passes, choose only one separately approved follow-up from asset opacity, background color regions, layer management, or the Add rail shell.
 - Use remaining time only for one additional bounded creator-facing slice selected from the reviewed backlog; do not begin several partially connected features.
 - Keep every coherent checkpoint tested and independently understandable.
 - Do not spend the full product day on deployment, video, or Devpost assembly.
@@ -174,11 +222,15 @@ End-of-day target: the current editor remains passing, and the next creator-faci
 
 Work through these only in order, with separate approval and a passing checkpoint after each. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
-1. The bounded composition-groups and visibility slice defined above.
-2. The Add rail and Asset Library shell using public-safe placeholders.
-3. A safe **Add to canvas** action.
-4. Asset-to-canvas drag if the fallback is already reliable.
-5. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+1. The bounded composition-groups and visibility slice defined above. **Complete.**
+2. The layer-planes and episode-backdrop foundation defined above.
+3. Asset properties and opacity.
+4. Background color regions and a basic fade.
+5. Layer-tab management and reordering.
+6. The Add rail and Asset Library shell using public-safe placeholders.
+7. A safe **Add to canvas** action targeting the active numbered plane.
+8. Asset-to-canvas drag if the fallback is already reliable.
+9. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
 Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
@@ -197,14 +249,14 @@ The smallest acceptable proof is one request that produces one image candidate, 
 ## Deferred work
 
 - Real asset import and project-folder design.
-- Composable background color, uploaded background imagery, optional edge decoration, and downward episode/background extension.
+- Movable full-width color regions, gradients, blend modes, uploaded background imagery, optional edge decoration, and downward episode/background extension beyond the pinned base-color foundation.
 - Transparency-preserving image import and preview.
 - A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
 - Editable episode naming, new-episode creation, and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging.
-- Optional snapping/alignment guides and direct corner-handle resizing.
+- Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, optional snapping/alignment guides, and direct corner-handle resizing.
 - Persistence, save/reopen, autosave, and recovery.
 - Undo/redo, rotation, crop, masks, and advanced transforms.
-- Layer reordering, moving layers between composition groups, and any user-created or nested group structure.
+- Moving elements between planes or groups, including the later element-row **Move to plane** context action and its visible keyboard-accessible alternative; arbitrary nested groups; and element-order editing beyond the numbered-plane foundation.
 - Production tall-master and WEBTOON slice export.
 - Authenticated WEBTOON upload verification and other platform profiles.
 - Desktop packaging, mobile editing, accounts, OAuth, cloud storage, collaboration, and publishing integrations.
@@ -258,7 +310,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal` and Katherine's hands-on review are complete. The approved product design and documentation push do not silently authorize deployment or either proposed implementation slice.
+- The first-testable-editor `/goal` and Katherine's hands-on review are complete. The approved product design and documentation push do not silently authorize deployment or any proposed implementation slice.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

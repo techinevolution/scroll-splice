@@ -86,10 +86,15 @@ These command contracts were verified against the July 13 foundation scaffold. K
 - Keep coordinate conversion and ordering logic small, centralized, and tested.
 - Treat the Konva stage as a viewport into logical episode coordinates, never as one full-height episode canvas.
 - Derive canvas, minimap, and layers from the same episode document.
-- Use the current Build Week flat element model, provisional `800`-unit logical width, and one fixed fit scale. The implemented creator-ready extension is a flat three-value `compositionGroup` field—Background, Content, or Foreground—not a nested layer tree.
-- Keep active-group filtering in editor state, keep group and layer visibility separate, and use fixed cross-group rendering order plus ordinary ordering within each group.
-- Selecting a canvas element must activate its composition group so the filtered Layers panel can reveal the matching row. Hidden elements must not remain selectable.
-- Use **Add rail**, **Asset Library**, **library category**, **composition group**, and **layer** consistently. Do not create real upload, asset-persistence, speech-balloon, or AI-generated categories merely to render the later library shell.
+- Treat the implemented format-v2 direct `compositionGroup` field as an interim Build Week checkpoint, not the creator-ready layer model. The approved next schema stays shallow: fixed composition group -> ordered `LayerPlane` with a stable ID -> flat element references by `layerPlaneId`.
+- Keep exactly three fixed full-scroll composition groups: Background, Content, and Foreground. Only Background plane 1 is special: it is the pinned editable base color. Every other numbered plane is an unrestricted creator surface; optional names may guide but never enforce content roles.
+- Use fixed group rank, then plane order, then local element stacking for deterministic rendering. Within a group, plane 1 is lowest and higher numbered planes render above lower numbered planes. Show the active plane's element rows by logical `y` from top to bottom, using local stacking only as a tie-breaker.
+- Keep group, plane, and element visibility independent. Effective canvas visibility is all three combined. Hidden elements do not render or capture canvas input, but they remain selectable from Layers so a creator can inspect or reveal them.
+- Selecting a canvas element must activate its composition group and numbered plane so the filtered Layers panel can reveal the matching row.
+- Preserve per-pixel source alpha and keep eventual per-element opacity separate from eye visibility. A zero-opacity element remains a selectable element in Layers.
+- Use **Add rail**, **Asset Library**, **library category**, **composition group**, **layer plane**, and **element** consistently. A numbered tab selects a plane; an asset, text item, shape, or color region placed within it is an element. Do not create real upload, asset-persistence, speech-balloon, or AI-generated categories merely to render the later library shell.
+- When the later layer-management slice adds tab dragging, treat it as layer-plane reordering only. Use a dedicated grip, keep Background plane 1 pinned, reorder only within the active group, retain stable IDs while display numbers change, and provide visible Move Left/Right alternatives. Overflow arrows only navigate the tab strip and never change order.
+- When cross-plane movement is approved later, expose **Move to plane** through both an element-row context menu and a visible keyboard-accessible action; never rely on right-click alone.
 - Keep the minimap a lightweight React/CSS/SVG representation, not a second Konva editor.
 - Center and clamp the viewport when the layers list selects an off-screen element.
 - Keep future persistence, asset, export, and authentication integrations behind application-edge interfaces.
@@ -105,6 +110,7 @@ These command contracts were verified against the July 13 foundation scaffold. K
 - Work locally by default. The approved exceptions for Build Week are the public GitHub repository, an unrestricted static judge-access deployment, and the public submission video. Do not upload private assets to any of them.
 - Never destructively modify imported source images.
 - Do not commit Root & Table art or other personal creative material without Katherine's explicit approval.
+- Treat third-party comic screenshots supplied for product explanation as uncommitted design references unless Katherine separately confirms the rights and explicitly approves their repository use.
 - Do not add AI generation before the human MVP and submission path pass. Afterward, follow the explicit OpenAI stretch gate in `PLAN.md`; full autonomous creation remains a later milestone.
 - Do not put provider tokens, OAuth identity, or user-account fields in the episode document or editor command layer.
 - Do not automate WEBTOON login, upload, or publishing; do not store WEBTOON credentials.
@@ -150,7 +156,7 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 
 - Run and visually inspect the application for any UI slice.
 - Verify the main canvas, minimap, and layers panel at representative desktop sizes; inspect the collapsed asset placeholder only if that approved placeholder exists.
-- For the future composition-group slice, verify group filtering, group and layer eyes, canvas-driven group switching, independent Layers scrolling, and the existing minimap interaction at 1440 × 900, 1280 × 720, and 1024 × 768.
+- For the approved layer-plane foundation, verify group/plane filtering, group/plane/element eyes, canvas-driven group and plane switching, hidden-row selection, top-to-bottom row ordering, pinned-base behavior, overflow navigation, the full-height inspector, and the existing minimap interaction at 1440 × 900, 1280 × 720, and 1024 × 768.
 - Do not claim drag behavior, synchronization, or visual correctness from static checks alone.
 - Use screenshots when they materially help Katherine review a layout or interaction.
 
@@ -173,6 +179,7 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 - On July 13, Katherine explicitly authorized Codex to commit and push the current unpushed work and each later coherent, passing Build Week slice directly to `main` through the first complete human-editor MVP that she can test. This includes the workspace, shared canvas/minimap/layers behavior, navigation, synchronized selection, movement, reset, tests, and status documentation.
 - During that authorized goal, Codex owns routine commit and push mechanics. Push only after the relevant validation passes, never push secrets or private creative content, and report the pushed commit after each coherent checkpoint. Do not interrupt Katherine for routine Git permission while this authorization is active.
 - The product implementation portion of that authorization completed in `05ac06b`; the immediately following status/evidence closeout is the final authorized push. After the handoff, any later feature push—especially deployment, OpenAI integration, OAuth, external services, or post-review changes—requires a new instruction unless separately authorized.
+- Katherine separately authorized the July 13 composition checkpoint and this layer-model documentation clarification to be committed and pushed; that permission does not pre-approve implementation of the proposed next slice.
 - Never rewrite the baseline commit or tag, even during cleanup.
 
 ## Final Report
