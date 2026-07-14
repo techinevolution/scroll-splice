@@ -8,6 +8,46 @@ import {
   type OrdinaryLayerPlane,
 } from './episode'
 
+export const DEFAULT_EPISODE_HEIGHT_INCREMENT = 1280
+export const MAX_EPISODE_NAME_LENGTH = 60
+
+export function setEpisodeName(
+  document: EpisodeDocument,
+  requestedName: string,
+): EpisodeDocument {
+  const name = requestedName.trim()
+
+  if (
+    name.length === 0 ||
+    name.length > MAX_EPISODE_NAME_LENGTH ||
+    name === document.name
+  ) {
+    return document
+  }
+
+  return { ...document, name }
+}
+
+export function extendEpisodeHeight(
+  document: EpisodeDocument,
+  amount: number,
+): EpisodeDocument {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return document
+  }
+
+  const logicalHeight = document.logicalHeight + amount
+
+  if (
+    !Number.isFinite(logicalHeight) ||
+    logicalHeight <= document.logicalHeight
+  ) {
+    return document
+  }
+
+  return { ...document, logicalHeight }
+}
+
 export function moveElement(
   document: EpisodeDocument,
   elementId: string,
@@ -104,6 +144,51 @@ export function createLayerPlane(
   return {
     ...document,
     layerPlanes: [...document.layerPlanes, layerPlane],
+  }
+}
+
+export function deleteEmptyLayerPlane(
+  document: EpisodeDocument,
+  layerPlaneId: string,
+): EpisodeDocument {
+  const layerPlane = getLayerPlaneById(document, layerPlaneId)
+
+  if (
+    !layerPlane ||
+    layerPlane.kind !== 'ordinary' ||
+    document.elements.some(
+      (element) => element.layerPlaneId === layerPlaneId,
+    )
+  ) {
+    return document
+  }
+
+  const groupLayerPlanes = getLayerPlanesForGroup(
+    document,
+    layerPlane.compositionGroup,
+  )
+
+  if (groupLayerPlanes.length <= 1) {
+    return document
+  }
+
+  const compactOrders = new Map(
+    groupLayerPlanes
+      .filter(({ id }) => id !== layerPlaneId)
+      .map(({ id }, index) => [id, index + 1]),
+  )
+
+  return {
+    ...document,
+    layerPlanes: document.layerPlanes
+      .filter(({ id }) => id !== layerPlaneId)
+      .map((candidate) => {
+        const compactOrder = compactOrders.get(candidate.id)
+
+        return compactOrder !== undefined && candidate.order !== compactOrder
+          ? { ...candidate, order: compactOrder }
+          : candidate
+      }),
   }
 }
 

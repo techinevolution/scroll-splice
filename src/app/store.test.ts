@@ -5,6 +5,7 @@ import {
   buildWeekEpisode,
 } from './fixtures/buildWeekEpisode'
 import { useEditorStore } from './store'
+import { DEFAULT_EPISODE_HEIGHT_INCREMENT } from '../core/commands'
 import {
   getBackgroundBaseLayerPlane,
   getElementCompositionGroup,
@@ -162,6 +163,140 @@ describe('editor store', () => {
     })
     expect(state.activeLayerPlaneId).toBe('content-plane-3')
     expect(state.selectedElementId).toBeNull()
+  })
+
+  it('deletes an empty plane and activates the nearest lower survivor', () => {
+    useEditorStore.getState().createLayerPlane()
+    useEditorStore.getState().createLayerPlane()
+
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      'content-plane-4',
+    )
+
+    useEditorStore.getState().deleteLayerPlane('content-plane-3')
+
+    const state = useEditorStore.getState()
+    const layerPlanes = getLayerPlanesForGroup(state.episode, 'content')
+
+    expect(layerPlanes.map(({ id }) => id)).toEqual([
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      'content-plane-4',
+    ])
+    expect(layerPlanes.map(({ order }) => order)).toEqual([1, 2, 3])
+    expect(state.activeCompositionGroup).toBe('content')
+    expect(state.activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    )
+    expect(state.selectedElementId).toBeNull()
+  })
+
+  it('activates the deleted plane group and clears selection after deletion', () => {
+    useEditorStore.getState().setActiveCompositionGroup('background')
+    useEditorStore.getState().createLayerPlane()
+    useEditorStore
+      .getState()
+      .selectElement('beat-01-stillness-title')
+
+    expect(useEditorStore.getState().activeCompositionGroup).toBe('content')
+    expect(useEditorStore.getState().selectedElementId).toBe(
+      'beat-01-stillness-title',
+    )
+
+    useEditorStore.getState().deleteLayerPlane('background-plane-3')
+
+    const state = useEditorStore.getState()
+    expect(state.activeCompositionGroup).toBe('background')
+    expect(state.activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+    )
+    expect(state.selectedElementId).toBeNull()
+  })
+
+  it('preserves editor state when plane deletion is guarded', () => {
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.contentText)
+
+    const textElements = useEditorStore
+      .getState()
+      .episode.elements.filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      )
+
+    for (const element of textElements) {
+      useEditorStore.getState().setElementVisibility(element.id, false)
+    }
+
+    useEditorStore
+      .getState()
+      .selectElement('beat-01-stillness-title')
+
+    const stateBeforePopulatedDeletion = useEditorStore.getState()
+    useEditorStore
+      .getState()
+      .deleteLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.contentText)
+
+    expect(useEditorStore.getState()).toBe(stateBeforePopulatedDeletion)
+    expect(useEditorStore.getState().selectedElementId).toBe(
+      'beat-01-stillness-title',
+    )
+
+    const stateBeforeBaseDeletion = useEditorStore.getState()
+    useEditorStore
+      .getState()
+      .deleteLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase)
+
+    expect(useEditorStore.getState()).toBe(stateBeforeBaseDeletion)
+  })
+
+  it('updates the episode name through the command and rejects blank names', () => {
+    useEditorStore.getState().setEpisodeName('The First Sprout')
+    expect(useEditorStore.getState().episode.name).toBe('The First Sprout')
+
+    const namedEpisode = useEditorStore.getState().episode
+    useEditorStore.getState().setEpisodeName('   ')
+
+    expect(useEditorStore.getState().episode).toBe(namedEpisode)
+    expect(useEditorStore.getState().episode.name).toBe('The First Sprout')
+  })
+
+  it('extends the episode without moving the viewport and resets both', () => {
+    const originalHeight = buildWeekEpisode.logicalHeight
+
+    useEditorStore
+      .getState()
+      .selectElement('beat-01-stillness-title')
+    useEditorStore.getState().setViewportY(1_600)
+    useEditorStore.getState().setEpisodeName('A Longer Episode')
+    useEditorStore.getState().extendEpisodeHeight()
+
+    const extendedState = useEditorStore.getState()
+    expect(extendedState.episode.logicalHeight).toBe(
+      originalHeight + DEFAULT_EPISODE_HEIGHT_INCREMENT,
+    )
+    expect(extendedState.viewportY).toBe(1_600)
+    expect(extendedState.viewportLogicalHeight).toBe(900)
+    expect(extendedState.selectedElementId).toBe(
+      'beat-01-stillness-title',
+    )
+    expect(extendedState.activeCompositionGroup).toBe('content')
+    expect(extendedState.activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    )
+    expect(extendedState.episode.name).toBe('A Longer Episode')
+
+    useEditorStore.getState().resetEpisode()
+
+    expect(useEditorStore.getState().episode).toBe(buildWeekEpisode)
+    expect(useEditorStore.getState().episode.logicalHeight).toBe(
+      originalHeight,
+    )
+    expect(useEditorStore.getState().episode.name).toBe(
+      buildWeekEpisode.name,
+    )
+    expect(useEditorStore.getState().viewportY).toBe(0)
   })
 
   it('moves through the command and resets the known demo state', () => {

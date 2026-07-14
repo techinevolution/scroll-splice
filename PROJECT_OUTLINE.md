@@ -146,6 +146,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Select an element row even when its eye or parent plane is hidden. Hidden elements do not render or capture canvas clicks, but Layers selection remains available so the creator can inspect or reveal them.
 - Give each group, numbered plane, and element its own eye state. Hiding a parent preserves every child setting.
 - In a truly empty ordinary plane, show a centered empty-state **Delete plane** action with a small trash icon and text. Hidden elements still count as contents, Background plane 1 is never deletable, and every composition group retains at least one plane. After deletion, activate the nearest remaining plane and renumber the visible tabs without changing their stable identities.
+- Pair that empty-state action with a same-size paperclip **Attach asset** placeholder, but keep it visibly disabled and labeled as future until the Asset Library can complete the workflow. The numbered-tab `+` creates another plane; it never attaches an asset or adds story height.
 - Later let creators move an element to another plane from its row's context menu and an equivalent visible keyboard-accessible action; right-click is a shortcut, not the only route.
 - Basic names and type icons so similar elements can be distinguished.
 - Keep the list independently scrollable. On narrow displays, allow the right inspector to collapse or open as an overlay rather than squeezing the story canvas past usability.
@@ -226,6 +227,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 - The composition-group selector must stay centered above the story canvas at supported desktop sizes; the full-height right inspector and its element list scroll independently and can collapse into an overlay on narrower displays.
 - Group selection filters organization only. Visibility changes happen through explicit eye controls, not merely by switching groups.
 - Numbered planes are unrestricted creative surfaces. Examples and optional names may guide creators, but ScrollSplice must not force panels, characters, effects, or decorations into particular numbered tabs.
+- Keep the three addition concepts unambiguous: the numbered-tab `+` creates a plane, the disabled paperclip previews a future asset attachment, and the bottom **Add scroll space** control extends the episode.
 - Keyboard shortcuts may supplement group and layer visibility, but every action must remain available through visible controls.
 - Empty states should teach the first action: import an image or create a panel. A genuinely empty ordinary plane may also offer its centered, clearly labeled **Delete plane** action; do not hide this destructive action in the narrow numbered tab.
 - The pinned base color, movable color regions, fades, background imagery, and optional decoration should remain independently editable while composing into one continuous reader view.

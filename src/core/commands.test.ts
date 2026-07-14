@@ -5,11 +5,15 @@ import {
   buildWeekEpisode,
 } from '../app/fixtures/buildWeekEpisode'
 import {
+  DEFAULT_EPISODE_HEIGHT_INCREMENT,
   createLayerPlane,
+  deleteEmptyLayerPlane,
+  extendEpisodeHeight,
   moveElement,
   setBaseColor,
   setCompositionGroupVisibility,
   setElementVisibility,
+  setEpisodeName,
   setLayerPlaneVisibility,
 } from './commands'
 import {
@@ -18,6 +22,94 @@ import {
   getLayerPlanesForGroup,
   isElementEffectivelyVisible,
 } from './episode'
+
+describe('setEpisodeName', () => {
+  it('stores a trimmed nonblank episode name', () => {
+    const nextDocument = setEpisodeName(
+      buildWeekEpisode,
+      '  A Light Below  ',
+    )
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(nextDocument.name).toBe('A Light Below')
+    expect(nextDocument.elements).toBe(buildWeekEpisode.elements)
+    expect(nextDocument.layerPlanes).toBe(buildWeekEpisode.layerPlanes)
+  })
+
+  it('accepts an episode name at the 60-character limit', () => {
+    const requestedName = 'a'.repeat(60)
+
+    expect(setEpisodeName(buildWeekEpisode, requestedName).name).toBe(
+      requestedName,
+    )
+  })
+
+  it.each([
+    { requestedName: '', description: 'blank' },
+    { requestedName: '   ', description: 'whitespace-only' },
+    {
+      requestedName: 'a'.repeat(61),
+      description: 'longer than 60 characters',
+    },
+  ])(
+    'returns the original document for a $description name',
+    ({ requestedName }) => {
+      expect(setEpisodeName(buildWeekEpisode, requestedName)).toBe(
+        buildWeekEpisode,
+      )
+    },
+  )
+
+  it('returns the original document when trimming produces the current name', () => {
+    expect(
+      setEpisodeName(buildWeekEpisode, `  ${buildWeekEpisode.name}  `),
+    ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('extendEpisodeHeight', () => {
+  it('uses a centralized 1280-unit default increment', () => {
+    expect(DEFAULT_EPISODE_HEIGHT_INCREMENT).toBe(1280)
+
+    const nextDocument = extendEpisodeHeight(
+      buildWeekEpisode,
+      DEFAULT_EPISODE_HEIGHT_INCREMENT,
+    )
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(nextDocument.logicalHeight).toBe(
+      buildWeekEpisode.logicalHeight + DEFAULT_EPISODE_HEIGHT_INCREMENT,
+    )
+    expect(nextDocument.elements).toBe(buildWeekEpisode.elements)
+    expect(nextDocument.layerPlanes).toBe(buildWeekEpisode.layerPlanes)
+  })
+
+  it('accepts any finite positive increment', () => {
+    expect(extendEpisodeHeight(buildWeekEpisode, 12.5).logicalHeight).toBe(
+      buildWeekEpisode.logicalHeight + 12.5,
+    )
+  })
+
+  it.each([0, -1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    'returns the original document for invalid amount %s',
+    (amount) => {
+      expect(extendEpisodeHeight(buildWeekEpisode, amount)).toBe(
+        buildWeekEpisode,
+      )
+    },
+  )
+
+  it('returns the original document if the resulting height is not finite', () => {
+    const enormousDocument = {
+      ...buildWeekEpisode,
+      logicalHeight: Number.MAX_VALUE,
+    }
+
+    expect(extendEpisodeHeight(enormousDocument, Number.MAX_VALUE)).toBe(
+      enormousDocument,
+    )
+  })
+})
 
 describe('moveElement', () => {
   const movableElement = buildWeekEpisode.elements.find(
@@ -226,6 +318,118 @@ describe('createLayerPlane', () => {
       order: 3,
       visible: true,
     })
+  })
+})
+
+describe('deleteEmptyLayerPlane', () => {
+  it('deletes an empty ordinary plane and preserves document contents', () => {
+    const withEmptyPlane = createLayerPlane(buildWeekEpisode, 'content')
+    const nextDocument = deleteEmptyLayerPlane(
+      withEmptyPlane,
+      'content-plane-3',
+    )
+
+    expect(nextDocument).not.toBe(withEmptyPlane)
+    expect(nextDocument.elements).toBe(withEmptyPlane.elements)
+    expect(nextDocument.layerPlanes.map(({ id }) => id)).toEqual(
+      buildWeekEpisode.layerPlanes.map(({ id }) => id),
+    )
+    expect(getLayerPlanesForGroup(nextDocument, 'content')).toEqual(
+      getLayerPlanesForGroup(buildWeekEpisode, 'content'),
+    )
+  })
+
+  it('compacts orders within only the deleted plane group', () => {
+    const withTwoEmptyPlanes = createLayerPlane(
+      createLayerPlane(buildWeekEpisode, 'content'),
+      'content',
+    )
+    const originalBackgroundPlanes = getLayerPlanesForGroup(
+      withTwoEmptyPlanes,
+      'background',
+    )
+    const nextDocument = deleteEmptyLayerPlane(
+      withTwoEmptyPlanes,
+      'content-plane-3',
+    )
+
+    expect(
+      getLayerPlanesForGroup(nextDocument, 'content').map(({ id, order }) => ({
+        id,
+        order,
+      })),
+    ).toEqual([
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels, order: 1 },
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentText, order: 2 },
+      { id: 'content-plane-4', order: 3 },
+    ])
+    expect(
+      nextDocument.layerPlanes.find(({ id }) => id === 'content-plane-4')?.id,
+    ).toBe('content-plane-4')
+    expect(getLayerPlanesForGroup(nextDocument, 'background')).toEqual(
+      originalBackgroundPlanes,
+    )
+  })
+
+  it('returns the original document for an unknown plane', () => {
+    expect(deleteEmptyLayerPlane(buildWeekEpisode, 'missing')).toBe(
+      buildWeekEpisode,
+    )
+  })
+
+  it('protects pinned Background plane 1', () => {
+    expect(
+      deleteEmptyLayerPlane(
+        buildWeekEpisode,
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      ),
+    ).toBe(buildWeekEpisode)
+  })
+
+  it('treats a hidden element as content and refuses to delete its plane', () => {
+    const withEmptyPlane = createLayerPlane(buildWeekEpisode, 'content')
+    const sourceElement = buildWeekEpisode.elements[0]
+
+    if (!sourceElement) {
+      throw new Error('The hidden-element fixture source is missing.')
+    }
+
+    const hiddenElementDocument = {
+      ...withEmptyPlane,
+      elements: [
+        ...withEmptyPlane.elements,
+        {
+          ...sourceElement,
+          id: 'hidden-only-plane-element',
+          layerPlaneId: 'content-plane-3',
+          visible: false,
+        },
+      ],
+    }
+
+    expect(
+      deleteEmptyLayerPlane(
+        hiddenElementDocument,
+        'content-plane-3',
+      ),
+    ).toBe(hiddenElementDocument)
+  })
+
+  it("refuses to delete a group's final plane even when it is empty", () => {
+    const emptyForegroundDocument = {
+      ...buildWeekEpisode,
+      elements: buildWeekEpisode.elements.filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId !== BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
+      ),
+    }
+
+    expect(
+      deleteEmptyLayerPlane(
+        emptyForegroundDocument,
+        BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
+      ),
+    ).toBe(emptyForegroundDocument)
   })
 })
 

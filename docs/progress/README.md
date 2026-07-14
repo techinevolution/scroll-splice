@@ -36,3 +36,15 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured in bundled Chromium at a 1440 × 900 viewport.
 - File: 1440 × 900 PNG, 102,815 bytes.
 - SHA-256: `d9688284f870786821a7cdf9c25010a21dac0f5dec1ecdfaf83561bea2da6d76`.
+
+## July 13 — Episode setup and expandable scroll
+
+![ScrollSplice episode setup and expandable scroll checkpoint](2026-07-13-episode-setup-and-expandable-scroll.png)
+
+- Captured by Codex from the running local checkpoint after the Episode Setup and Expandable Scroll slice passed validation.
+- Shows a newly created empty Content plane, its safe **Delete plane** action, the disabled future **Attach asset** paperclip, the direct-edit pencil beside the episode title, the bottom **Add scroll space** control, and the minimap fitted to the full episode.
+- Preserves the interaction distinction: the numbered-tab `+` creates a plane, **Attach asset** is not functional yet, and **Add scroll space** extends the episode by 1,280 logical units.
+- Contains only the public-safe code-rendered **Signal in the Fog** fixture; no Root & Table production artwork or third-party comic reference appears.
+- Captured in bundled Chromium at a 1440 × 900 viewport during supported-size visual QA.
+- File: 1440 × 900 PNG, 97,494 bytes.
+- SHA-256: `007a46bf91815d4f78546d9a8561c6bb456ca4f8b3c7b12389ca3ec9e621bec3`.

@@ -129,12 +129,17 @@ export function EditorCanvas() {
   const panViewport = useEditorStore((state) => state.panViewport)
   const selectElement = useEditorStore((state) => state.selectElement)
   const moveElement = useEditorStore((state) => state.moveElement)
+  const extendEpisodeHeight = useEditorStore(
+    (state) => state.extendEpisodeHeight,
+  )
   const { elementRef, size } = useElementSize<HTMLDivElement>()
 
   const stageWidth = Math.max(size.width, 1)
   const stageHeight = Math.max(size.height, 1)
   const fitScale = getFitScale(stageWidth, episode.logicalWidth)
   const baseColor = getEffectiveEpisodeBaseColor(episode)
+  const isAtEpisodeEnd =
+    viewportY + viewportLogicalHeight >= episode.logicalHeight - 1
 
   useEffect(() => {
     setViewportLogicalHeight(
@@ -186,6 +191,7 @@ export function EditorCanvas() {
         data-testid="editor-canvas"
         data-ready={size.width > 0 && size.height > 0}
         data-base-color={baseColor ?? 'transparent'}
+        data-episode-height={episode.logicalHeight}
         role="region"
         aria-busy={size.width <= 0 || size.height <= 0}
         aria-label="Episode editing canvas. Use the mouse wheel or arrow keys to move through the episode."
@@ -230,6 +236,18 @@ export function EditorCanvas() {
           </Layer>
         </Stage>
       </div>
+
+      {isAtEpisodeEnd ? (
+        <button
+          className="extend-episode-button"
+          type="button"
+          onClick={extendEpisodeHeight}
+        >
+          <span aria-hidden="true">+</span>
+          <span>Add scroll space</span>
+          <small>1,280u</small>
+        </button>
+      ) : null}
 
       <div className="canvas-position" aria-live="polite">
         <span>{Math.round((viewportY / episode.logicalHeight) * 100)}%</span>

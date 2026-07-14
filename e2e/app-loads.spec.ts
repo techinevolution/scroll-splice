@@ -79,6 +79,60 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   ).toBeVisible()
   await expect(selectionStatus).toHaveText('Nothing selected')
 
+  const editEpisodeTitle = page.getByRole('button', {
+    name: 'Edit episode title',
+  })
+  const episodeTitleInput = page.getByRole('textbox', {
+    name: 'Episode title',
+  })
+
+  await editEpisodeTitle.click()
+  await expect(episodeTitleInput).toBeFocused()
+  await episodeTitleInput.fill('  A Light Below  ')
+  await episodeTitleInput.press('Enter')
+  await expect(page.getByText('A Light Below', { exact: true })).toBeVisible()
+
+  await editEpisodeTitle.click()
+  await episodeTitleInput.fill('Committed on blur')
+  await page.getByRole('heading', { level: 1, name: 'ScrollSplice' }).click()
+  await expect(
+    page.getByText('Committed on blur', { exact: true }),
+  ).toBeVisible()
+
+  await editEpisodeTitle.click()
+  await episodeTitleInput.fill('Cancelled title')
+  await episodeTitleInput.press('Escape')
+  await expect(
+    page.getByText('Committed on blur', { exact: true }),
+  ).toBeVisible()
+
+  await editEpisodeTitle.click()
+  await episodeTitleInput.fill('Composing title')
+  await episodeTitleInput.dispatchEvent('keydown', {
+    key: 'Enter',
+    code: 'Enter',
+    isComposing: true,
+  })
+  await expect(episodeTitleInput).toBeVisible()
+  await expect(episodeTitleInput).toHaveValue('Composing title')
+  await episodeTitleInput.press('Escape')
+
+  await editEpisodeTitle.click()
+  await episodeTitleInput.fill('   ')
+  await episodeTitleInput.press('Enter')
+  await expect(
+    page.getByText('Committed on blur', { exact: true }),
+  ).toBeVisible()
+
+  await editEpisodeTitle.click()
+  await episodeTitleInput.fill('')
+  await episodeTitleInput.pressSequentially('x'.repeat(61))
+  await expect(episodeTitleInput).toHaveValue('x'.repeat(60))
+  await episodeTitleInput.fill(`  ${'x'.repeat(60)}  `)
+  await expect(episodeTitleInput).toHaveValue(`  ${'x'.repeat(60)}  `)
+  await episodeTitleInput.press('Enter')
+  await expect(page.getByText('x'.repeat(60), { exact: true })).toBeVisible()
+
   const inspectorBounds = await inspector.boundingBox()
   const canvasBoundsAtStart = await canvas.boundingBox()
   const compositionGroupBounds = await compositionGroups.boundingBox()
@@ -172,6 +226,14 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(
     page.getByRole('button', { name: 'Background plane 1', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.getByRole('button', {
+      name: 'Delete plane unavailable: Background plane 1 is pinned and cannot be deleted.',
+    }),
+  ).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Attach asset, coming later' }),
+  ).toBeDisabled()
   const baseColor = page.getByLabel('Base color')
   await expect(baseColor).toHaveValue('#f3f0ea')
   await expect(minimapBase).toHaveAttribute('fill', '#F3F0EA')
@@ -210,13 +272,26 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   })
   await expect(contentPlane3).toHaveAttribute('aria-pressed', 'true')
   await expect(
-    page.getByText('This plane is empty and ready for elements.'),
+    page.getByText('This plane is empty and can be safely deleted.'),
   ).toBeVisible()
+  const deleteContentPlane3 = page.getByRole('button', {
+    name: 'Delete Content plane 3',
+  })
+  await expect(deleteContentPlane3).toBeEnabled()
+  await expect(
+    page.getByRole('button', { name: 'Attach asset, coming later' }),
+  ).toBeDisabled()
   const contentPlane3Eye = page.getByRole('button', {
     name: 'Content plane 3 visibility',
   })
   await contentPlane3Eye.click()
   await expect(contentPlane3Eye).toHaveAttribute('aria-pressed', 'false')
+  await deleteContentPlane3.click()
+  await expect(contentPlane3).toHaveCount(0)
+  await expect(contentPlane2).toHaveAttribute('aria-pressed', 'true')
+
+  await addContentPlane.click()
+  await expect(contentPlane3).toHaveAttribute('aria-pressed', 'true')
 
   for (let order = 4; order <= 10; order += 1) {
     await addContentPlane.click()
@@ -300,6 +375,9 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await page.getByRole('button', { name: 'Reset demo' }).click()
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.getByText('Signal in the Fog', { exact: true }),
+  ).toBeVisible()
   await expect(selectionStatus).toHaveText('Nothing selected')
   await expect(episodePosition).toHaveAttribute('aria-valuenow', '0')
   await expect(canvas).toHaveAttribute('data-base-color', '#F3F0EA')
@@ -309,6 +387,65 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     'content-plane-1',
     'content-plane-2',
   ])
+
+  const initialEpisodeHeight = Number(
+    await canvas.getAttribute('data-episode-height'),
+  )
+  expect(initialEpisodeHeight).toBeGreaterThan(0)
+  await episodePosition.press('End')
+  const viewportAtOriginalEnd = await episodePosition.getAttribute(
+    'aria-valuenow',
+  )
+  const addScrollSpace = page.getByRole('button', {
+    name: 'Add scroll space 1,280u',
+  })
+  await expect(addScrollSpace).toBeVisible()
+  await addScrollSpace.click()
+
+  const onceExtendedHeight = initialEpisodeHeight + 1_280
+  await expect(canvas).toHaveAttribute(
+    'data-episode-height',
+    String(onceExtendedHeight),
+  )
+  await expect(episodePosition).toHaveAttribute(
+    'aria-valuemax',
+    String(onceExtendedHeight),
+  )
+  await expect(episodePosition).toHaveAttribute(
+    'aria-valuenow',
+    viewportAtOriginalEnd ?? '0',
+  )
+  await expect(minimapBase).toHaveAttribute(
+    'height',
+    String(onceExtendedHeight),
+  )
+  await expect(minimap.locator('svg')).toHaveAttribute(
+    'viewBox',
+    `0 0 800 ${onceExtendedHeight}`,
+  )
+  await expect(addScrollSpace).toBeHidden()
+
+  await episodePosition.press('End')
+  await expect(addScrollSpace).toBeVisible()
+  await expect
+    .poll(() => readLogicalCanvasPixel(sceneCanvas, 10, 20))
+    .toBe('243,240,234')
+  await addScrollSpace.click()
+  await expect(canvas).toHaveAttribute(
+    'data-episode-height',
+    String(initialEpisodeHeight + 2_560),
+  )
+
+  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await expect(canvas).toHaveAttribute(
+    'data-episode-height',
+    String(initialEpisodeHeight),
+  )
+  await expect(episodePosition).toHaveAttribute(
+    'aria-valuemax',
+    String(initialEpisodeHeight),
+  )
+  await expect(episodePosition).toHaveAttribute('aria-valuenow', '0')
 
   const assetToggle = page.getByRole('button', { name: 'Assets' })
   await assetToggle.click()
@@ -383,6 +520,9 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     { width: 1280, height: 720 },
     { width: 1024, height: 768 },
   ]) {
+    await editEpisodeTitle.click()
+    await episodeTitleInput.fill('x'.repeat(60))
+    await episodeTitleInput.press('Enter')
     await page.setViewportSize(viewport)
     await expect(canvas).toHaveAttribute('data-ready', 'true')
     await expect(inspector).toBeVisible()
@@ -398,6 +538,31 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
         ),
       )
       .toBe(true)
+    const headerRegions = await page.evaluate(() => {
+      const brand = document.querySelector('.brand-lockup')?.getBoundingClientRect()
+      const episode = document
+        .querySelector('.episode-heading')
+        ?.getBoundingClientRect()
+      const reset = document.querySelector('.reset-button')?.getBoundingClientRect()
+
+      return brand && episode && reset
+        ? {
+            brandRight: brand.right,
+            episodeLeft: episode.left,
+            episodeRight: episode.right,
+            resetLeft: reset.left,
+          }
+        : null
+    })
+    expect(headerRegions).not.toBeNull()
+    expect(headerRegions?.episodeLeft).toBeGreaterThanOrEqual(
+      headerRegions?.brandRight ?? 0,
+    )
+    expect(headerRegions?.episodeRight).toBeLessThanOrEqual(
+      headerRegions?.resetLeft ?? 0,
+    )
+
+    await page.getByRole('button', { name: 'Reset demo' }).click()
   }
 
   await expect

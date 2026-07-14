@@ -98,7 +98,7 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [x] The original **Signal in the Fog** sample is made from code-defined shapes and text, so judges do not need private assets.
 - [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
 - [x] The running UI has been visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768.
-- [x] An isolated Playwright Chromium context can complete the defining story, including numbered-plane navigation, base-color changes, hidden-row selection, canvas/layers selection, movement, and reset.
+- [x] An isolated Playwright Chromium context can complete the defining story, including title commit/cancel/validation, numbered-plane navigation, safe empty-plane deletion, base-color changes, hidden-row selection, canvas/layers selection, movement, repeated episode extension, minimap refitting, and reset. The paired **Attach asset** paperclip is verified disabled and is not claimed as functionality.
 - [x] The defining human editor story works with every optional OpenAI feature disabled or unavailable.
 
 ## 6. Free and unrestricted judge access
@@ -224,10 +224,13 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
 | Composition groups checkpoint | `f02776f`, Background, Content, and Foreground filtering plus independent group/element visibility | Complete July 13 |
 | Numbered layer-plane checkpoint | `c5f83c5`, format-v3 planes, pinned editable backdrop, three-level visibility, hidden-row selection, top-to-bottom rows, overflow navigation, and full-height inspector | Complete July 13 |
-| Local validation | Typecheck, lint, 38 unit tests, production build, three consecutive isolated Chromium walkthroughs on port `4174`, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 on July 13 | Complete |
+| Layer-plane validation | Typecheck, lint, 38 unit tests, production build, three consecutive isolated Chromium walkthroughs on port `4174`, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 on July 13 | Complete |
+| Episode Setup and Expandable Scroll checkpoint | Editable 60-character title, safe empty-plane deletion, centralized 1280-unit extension, minimap refitting, reset coverage, and disabled future **Attach asset** placeholder | Complete locally July 13; remote publication separately gated |
+| Episode Setup validation | 63 unit tests, strict typecheck, ESLint, production build, one isolated Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 | Complete locally July 13 |
 | Progress screenshot | `docs/progress/2026-07-13-first-testable-editor.png`, captured by Katherine before composition groups | Complete |
 | Composition progress screenshot | `docs/progress/2026-07-13-composition-groups-and-visibility.png`, 1440 × 900, SHA-256 `32ad4cf5dfa38826404703c3dc1bb2e66db2131b2e3085bb6c27db2631c95202` | Complete |
 | Layer-plane progress screenshot | `docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png`, 1440 × 900, SHA-256 `d9688284f870786821a7cdf9c25010a21dac0f5dec1ecdfaf83561bea2da6d76` | Complete |
+| Episode Setup progress screenshot | `docs/progress/2026-07-13-episode-setup-and-expandable-scroll.png`, 1440 × 900, SHA-256 `007a46bf91815d4f78546d9a8561c6bb456ca4f8b3c7b12389ca3ec9e621bec3` | Complete locally; remote publication separately gated |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
 | WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
 | Working project URL | Pending | Pending |

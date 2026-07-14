@@ -6,6 +6,7 @@ import {
   COMPOSITION_GROUP_LABELS,
   compareElementsByCanvasPosition,
   getLayerPlaneById,
+  getLayerPlanesForGroup,
   isElementEffectivelyVisible,
 } from '../core/episode'
 import { LayerPlaneTabs } from './LayerPlaneTabs'
@@ -21,6 +22,7 @@ export function LayersPanel() {
   )
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
   const selectElement = useEditorStore((state) => state.selectElement)
+  const deleteLayerPlane = useEditorStore((state) => state.deleteLayerPlane)
   const setBaseColor = useEditorStore((state) => state.setBaseColor)
   const setElementVisibility = useEditorStore(
     (state) => state.setElementVisibility,
@@ -28,6 +30,10 @@ export function LayersPanel() {
   const selectedLayerRef = useRef<HTMLButtonElement>(null)
   const layersListRef = useRef<HTMLUListElement>(null)
   const activeLayerPlane = getLayerPlaneById(episode, activeLayerPlaneId)
+  const activeGroupLayerPlanes = getLayerPlanesForGroup(
+    episode,
+    activeCompositionGroup,
+  )
 
   const orderedElements = useMemo(
     () =>
@@ -42,6 +48,20 @@ export function LayersPanel() {
   const planeLabel = activeLayerPlane
     ? `${groupLabel} plane ${activeLayerPlane.order}`
     : `${groupLabel} plane`
+  const isEmptyPlane = activeLayerPlane && orderedElements.length === 0
+  const canDeleteEmptyPlane =
+    activeLayerPlane?.kind === 'ordinary' &&
+    orderedElements.length === 0 &&
+    activeGroupLayerPlanes.length > 1
+  const deleteExplanation =
+    activeLayerPlane?.kind === 'base'
+      ? 'Background plane 1 is pinned and cannot be deleted.'
+      : activeGroupLayerPlanes.length <= 1
+        ? `${groupLabel} must keep at least one plane.`
+        : 'This plane is empty and can be safely deleted.'
+  const deleteAccessibleLabel = canDeleteEmptyPlane
+    ? `Delete ${planeLabel}`
+    : `Delete plane unavailable: ${deleteExplanation}`
 
   useEffect(() => {
     if (selectedElementId) {
@@ -90,12 +110,63 @@ export function LayersPanel() {
         </label>
       ) : null}
 
-      {orderedElements.length === 0 ? (
-        <p className="layer-empty-state">
-          {activeLayerPlane?.kind === 'base'
-            ? 'This pinned plane supplies the episode backdrop.'
-            : 'This plane is empty and ready for elements.'}
-        </p>
+      {isEmptyPlane ? (
+        <div className="layer-empty-state">
+          <p id="empty-plane-action-explanation">{deleteExplanation}</p>
+          <div className="layer-empty-actions">
+            <button
+              className="layer-empty-action layer-empty-delete"
+              type="button"
+              disabled={!canDeleteEmptyPlane}
+              aria-label={deleteAccessibleLabel}
+              aria-describedby="empty-plane-action-explanation"
+              title={deleteAccessibleLabel}
+              onClick={() => deleteLayerPlane(activeLayerPlane.id)}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="M4 7h16" />
+                <path d="M9 7V4h6v3" />
+                <path d="m6 7 1 13h10l1-13" />
+                <path d="M10 11v5M14 11v5" />
+              </svg>
+              <span>Delete plane</span>
+            </button>
+            <button
+              className="layer-empty-action layer-empty-attach"
+              type="button"
+              disabled
+              aria-label="Attach asset, coming later"
+              title="Attach asset is coming later"
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path d="m21.4 11.6-8.5 8.5a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 1 1-2.8-2.8l8.5-8.5" />
+              </svg>
+              <span>Attach asset</span>
+            </button>
+          </div>
+        </div>
       ) : null}
 
       <ul

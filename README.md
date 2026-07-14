@@ -20,7 +20,7 @@ That testable editor is complete in commits `c33b491` and `05ac06b`. It includes
 
 The July 13 composition checkpoint in `f02776f` adds the approved **Background**, **Content**, and **Foreground** groups. The completed layer-plane checkpoint in `c5f83c5` then implements the clarified format-v3 model: each fixed group contains numbered editable layer planes, only Background plane 1 is a pinned editable base, colored beat rectangles are Content panels, and canvas/minimap backdrops derive from document data instead of a hardcoded fill. The right inspector now reaches the top of the workspace, hidden elements remain selectable from Layers, and each active plane lists its elements from top to bottom on the scroll. Public deployment remains scheduled for the July 19–21 submission runway. Dated, public-safe visual checkpoints are preserved in [Progress Screenshots](docs/progress/README.md), including the [completed layer-plane checkpoint](docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png).
 
-Katherine reviewed `c5f83c5` positively on July 13 and identified the next creator-facing needs: safely remove an accidentally created empty plane, edit the episode title, add more story space from the bottom of the scroll, keep the minimap fitted to the changing episode, and make the main-canvas view scale adjustable. These are recorded as future work below; they are not implemented in the current checkpoint.
+Katherine reviewed `c5f83c5` positively on July 13 and identified the next creator-facing needs. The resulting **Episode Setup and Expandable Scroll** slice is now implemented locally and validated: creators can safely delete a genuinely empty ordinary plane, edit the current episode title, add 1,280 logical units from the bottom of the story, and keep the full episode and viewport represented accurately in the refitted minimap. The matching paperclip **Attach asset** action is visibly disabled as a future placeholder. The `+` beside the numbered tabs still creates a plane; the separate **Add scroll space** control changes episode height. A public-safe view of this local checkpoint is preserved in the [progress record](docs/progress/2026-07-13-episode-setup-and-expandable-scroll.png).
 
 ## Product sequence
 
@@ -43,9 +43,9 @@ The full creator-ready milestone adds local asset import, saving and reopening, 
 
 Its workspace model uses three fixed full-scroll composition groups—**Background**, **Content**, and **Foreground**—above the story canvas. Inside each group, numbered **layer planes** provide open-ended creative surfaces; assets, text, shapes, color regions, and other placed items are **elements** inside one plane. Only Background plane 1 is pinned as the editable episode-wide base color. Every other plane remains flexible rather than forcing creators into predefined panel, character, or effect boxes.
 
-That numbered-plane and editable-backdrop foundation is now implemented. The recommended next slice is **Episode Setup and Expandable Scroll**: safe deletion of empty ordinary planes, direct episode-title editing, a bottom **Add scroll space** action, and automatic full-episode minimap refitting as the scroll grows. It remains proposed for Katherine's approval and is not part of the running checkpoint.
+The numbered-plane and editable-backdrop foundation and the local **Episode Setup and Expandable Scroll** slice are now implemented. Empty-plane deletion protects Background plane 1, populated planes, and the final plane in each group; title edits enforce the observed 60-character WEBTOON limit; extension leaves existing content and viewport position intact while the base and minimap follow the longer episode. **Attach asset** remains deliberately disabled until the Asset Library workflow exists.
 
-A separate second slice should add proper canvas view scaling with **Fit Width**, a 50–200% range, and horizontal access when the enlarged episode is wider than the viewport. **Asset properties and opacity** moves to third in the proposed sequence. Keeping zoom separate avoids presenting a percentage control before the viewport and minimap can represent the enlarged view accurately. Movable background color regions, tab drag reordering, the category-based **Add** rail, import, resize, persistence, export, deployment, and AI work all remain deferred. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md).
+The recommended next slice is **Canvas Zoom and 2D Viewport**, which is not approved or implemented. It would replace the passive fit readout with **Fit Width**, a 50–200% range, horizontal access when the enlarged episode is wider than the viewport, and an accurate two-dimensional minimap viewport. **Asset properties and opacity** remains third in the proposed sequence. Movable background color regions, tab drag reordering, the category-based **Add** rail, import, resize, persistence, export, deployment, and AI work all remain deferred. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md).
 
 ### Autonomous creation — after the human workflow
 
@@ -81,18 +81,21 @@ corepack pnpm install
 corepack pnpm dev
 ```
 
-Open the local URL printed by Vite in a desktop Chrome-class browser. The current layer-plane checkpoint has been visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768 and verified through isolated Playwright Chromium runs.
+Open the local URL printed by Vite in a desktop Chrome-class browser. The current local Episode Setup and Expandable Scroll checkpoint has been visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768 and verified through isolated Playwright Chromium runs.
 
 Suggested review walkthrough for the currently implemented checkpoint:
 
 1. Switch among **Background**, **Content**, and **Foreground** and confirm the numbered plane tabs and element list follow the active group without changing the composed episode.
 2. Select Background plane 1, change **Base color**, and confirm the canvas and minimap update together; hide the base to reveal the editor-only checkerboard.
-3. Add an ordinary numbered plane, then use the plane and group eyes to confirm their child eye settings remain independent.
-4. Hide an element and confirm its row remains selectable even though it does not render or capture canvas clicks.
-5. Scroll over the story canvas, then click the minimap or drag its cyan viewport frame to move through the episode.
-6. Select an element row from another beat and confirm the canvas centers it; select an element on the canvas and confirm its group, plane, and row synchronize.
-7. Confirm the active plane's rows follow the story from top to bottom, then drag a selected element and choose **Reset demo** to restore the fixture, visibility, planes, base color, and viewport.
-8. Open and close **Assets** to inspect the deliberately limited Build Week placeholder.
+3. Use the `+` beside the numbered tabs to create an ordinary plane. Confirm its empty state offers **Delete plane** and a visibly disabled **Attach asset** placeholder; the paperclip does not attach anything yet.
+4. Delete that empty plane, then confirm Background plane 1, populated planes, and the last remaining plane in a group cannot be deleted.
+5. Use the pencil beside the episode title. Confirm Enter or leaving the field saves, Escape cancels, and an empty edit restores the existing title.
+6. Hide an element and confirm its row remains selectable even though it does not render or capture canvas clicks.
+7. Scroll over the story canvas, then click the minimap or drag its cyan viewport frame to move through the episode.
+8. Reach the current story bottom and choose **Add scroll space**. Confirm the episode grows by 1,280 units, existing content stays put, the base continues downward, and the minimap refits the full longer episode. This is separate from numbered-plane creation.
+9. Select an element row from another beat and confirm the canvas centers it; select an element on the canvas and confirm its group, plane, and row synchronize.
+10. Confirm the active plane's rows follow the story from top to bottom, then drag a selected element and choose **Reset demo** to restore the fixture title, height, visibility, planes, base color, selection, and viewport.
+11. Open and close **Assets** to inspect the deliberately limited Build Week placeholder.
 
 Run the available validation with:
 
@@ -115,9 +118,10 @@ Katherine made the controlling product decisions: prove the human editor before 
 - built the complete workspace and interaction story in `05ac06b`
 - added fixed composition groups, independent group/element visibility, and the filtered Layers workflow in `f02776f`
 - implemented format-v3 numbered planes, the editable episode backdrop, three-level visibility, hidden-row selection, top-to-bottom element organization, and the full-height inspector in `c5f83c5`
+- implemented and validated the local Episode Setup and Expandable Scroll behavior: safe empty-plane deletion, direct episode-title editing, downward 1,280-unit extension, reset coverage, and automatic minimap refitting
 - used unit, static, production-build, browser, accessibility, and visual evidence to find and correct canvas-startup test timing, layer semantics, responsive layout, and reset-panel behavior
 
-The current July 13 validation passes 38 unit tests across four files, strict typecheck, ESLint, and the production build. The expanded Playwright Chromium walkthrough passed three consecutive isolated runs on port `4174`, and the completed layer-plane interface was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. The build warning about a JavaScript chunk slightly above 500 kB is non-blocking and comes from the intentionally bundled React/Konva editor stack; code-splitting is not useful for this single-screen MVP.
+The current local July 13 validation passes 63 tests, strict typecheck, ESLint, the production build, and the expanded Playwright Chromium walkthrough. The Episode Setup and Expandable Scroll interface was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. The build warning about a JavaScript chunk slightly above 500 kB is non-blocking and comes from the intentionally bundled React/Konva editor stack; code-splitting is not useful for this single-screen MVP.
 
 OpenAI-powered image creation is an optional product stretch only after the human-operated editor, validation, public access, and submission evidence are secure. If it is not built during Build Week, the submission remains the human editor. If a proof is built, it must use synthetic inputs, preserve unrestricted judge access to the base editor, and be described only to the extent actually demonstrated.
 

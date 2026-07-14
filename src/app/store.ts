@@ -5,11 +5,15 @@ import {
   buildWeekEpisode,
 } from './fixtures/buildWeekEpisode'
 import {
+  DEFAULT_EPISODE_HEIGHT_INCREMENT,
   createLayerPlane as createLayerPlaneCommand,
+  deleteEmptyLayerPlane as deleteEmptyLayerPlaneCommand,
+  extendEpisodeHeight as extendEpisodeHeightCommand,
   moveElement as moveElementCommand,
   setBaseColor as setBaseColorCommand,
   setCompositionGroupVisibility as setCompositionGroupVisibilityCommand,
   setElementVisibility as setElementVisibilityCommand,
+  setEpisodeName as setEpisodeNameCommand,
   setLayerPlaneVisibility as setLayerPlaneVisibilityCommand,
 } from '../core/commands'
 import {
@@ -37,6 +41,9 @@ interface EditorState {
   readonly setActiveCompositionGroup: (group: CompositionGroup) => void
   readonly setActiveLayerPlane: (layerPlaneId: string) => void
   readonly createLayerPlane: () => void
+  readonly deleteLayerPlane: (layerPlaneId: string) => void
+  readonly setEpisodeName: (name: string) => void
+  readonly extendEpisodeHeight: () => void
   readonly setViewportLogicalHeight: (logicalHeight: number) => void
   readonly setViewportY: (logicalY: number) => void
   readonly panViewport: (logicalDelta: number) => void
@@ -132,6 +139,66 @@ export const useEditorStore = create<EditorState>((set) => ({
           createdLayerPlane?.id ?? state.activeLayerPlaneId,
         selectedElementId: null,
       }
+    })
+  },
+
+  deleteLayerPlane: (layerPlaneId) => {
+    set((state) => {
+      const layerPlane = getLayerPlaneById(state.episode, layerPlaneId)
+      if (!layerPlane) {
+        return state
+      }
+
+      const groupLayerPlanes = getLayerPlanesForGroup(
+        state.episode,
+        layerPlane.compositionGroup,
+      )
+      const deletedIndex = groupLayerPlanes.findIndex(
+        ({ id }) => id === layerPlaneId,
+      )
+      const episode = deleteEmptyLayerPlaneCommand(
+        state.episode,
+        layerPlaneId,
+      )
+
+      if (episode === state.episode || deletedIndex < 0) {
+        return state
+      }
+
+      const previousLayerPlane = groupLayerPlanes[deletedIndex - 1]
+      const nextLayerPlane = groupLayerPlanes[deletedIndex + 1]
+      const survivorId = previousLayerPlane?.id ?? nextLayerPlane?.id
+      const survivor = survivorId
+        ? getLayerPlaneById(episode, survivorId)
+        : undefined
+
+      if (!survivor) {
+        return state
+      }
+
+      return {
+        episode,
+        activeCompositionGroup: layerPlane.compositionGroup,
+        activeLayerPlaneId: survivor.id,
+        selectedElementId: null,
+      }
+    })
+  },
+
+  setEpisodeName: (name) => {
+    set((state) => {
+      const episode = setEpisodeNameCommand(state.episode, name)
+      return episode === state.episode ? state : { episode }
+    })
+  },
+
+  extendEpisodeHeight: () => {
+    set((state) => {
+      const episode = extendEpisodeHeightCommand(
+        state.episode,
+        DEFAULT_EPISODE_HEIGHT_INCREMENT,
+      )
+      return episode === state.episode ? state : { episode }
     })
   },
 
