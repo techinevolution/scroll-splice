@@ -22,9 +22,15 @@ export interface MinimapViewportRect extends MinimapViewportBox {
   readonly width: number
 }
 
+export interface HorizontalSnapResult {
+  readonly x: number
+  readonly snapped: boolean
+}
+
 export const MIN_ZOOM_FACTOR = 0.5
 export const MAX_ZOOM_FACTOR = 2
 export const DEFAULT_ZOOM_FACTOR = 1
+export const CENTER_SNAP_THRESHOLD_PX = 8
 
 export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(Math.max(value, minimum), Math.max(minimum, maximum))
@@ -405,4 +411,33 @@ export function clampElementPosition(
     x: clamp(requestedPosition.x, 0, episodeLogicalWidth - bounds.width),
     y: clamp(requestedPosition.y, 0, episodeLogicalHeight - bounds.height),
   }
+}
+
+export function getEpisodeCenterSnap(
+  requestedX: number,
+  elementWidth: number,
+  episodeWidth: number,
+  viewScale: number,
+  thresholdPixels = CENTER_SNAP_THRESHOLD_PX,
+): HorizontalSnapResult {
+  if (
+    !Number.isFinite(requestedX) ||
+    !Number.isFinite(elementWidth) ||
+    !Number.isFinite(episodeWidth) ||
+    !Number.isFinite(viewScale) ||
+    !Number.isFinite(thresholdPixels) ||
+    elementWidth <= 0 ||
+    episodeWidth <= 0 ||
+    viewScale <= 0 ||
+    thresholdPixels < 0
+  ) {
+    return { x: requestedX, snapped: false }
+  }
+
+  const centeredX = (episodeWidth - elementWidth) / 2
+  const thresholdLogicalUnits = thresholdPixels / viewScale
+
+  return Math.abs(requestedX - centeredX) <= thresholdLogicalUnits
+    ? { x: centeredX, snapped: true }
+    : { x: requestedX, snapped: false }
 }

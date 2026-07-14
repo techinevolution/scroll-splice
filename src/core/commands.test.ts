@@ -7,6 +7,7 @@ import {
 import {
   BACKGROUND_COLOR_REGION_GENERATOR_ID,
   DEFAULT_EPISODE_HEIGHT_INCREMENT,
+  MIN_ELEMENT_SIZE,
   SYNTHETIC_SHAPE_GENERATOR_ID,
   createBackgroundColorRegion,
   createLayerPlane,
@@ -17,6 +18,7 @@ import {
   getEpisodeContentBottom,
   MIN_EPISODE_LOGICAL_HEIGHT,
   moveElement,
+  resizeElement,
   resizeEpisodeHeight,
   setBaseColor,
   setCompositionGroupVisibility,
@@ -256,6 +258,212 @@ describe('moveElement', () => {
     expect(moveElement(buildWeekEpisode, 'missing', { x: 0, y: 0 })).toBe(
       buildWeekEpisode,
     )
+  })
+})
+
+describe('resizeElement', () => {
+  const shapeElement = buildWeekEpisode.elements.find(
+    ({ id }) => id === 'beat-01-stillness-accent-2',
+  )
+  const textElement = buildWeekEpisode.elements.find(
+    ({ id }) => id === 'beat-01-stillness-caption',
+  )
+
+  if (!shapeElement || !textElement || textElement.type !== 'text') {
+    throw new Error('The resize fixture elements are missing.')
+  }
+
+  it('resizes a shape proportionally and preserves unrelated element identity', () => {
+    const unrelatedElement = buildWeekEpisode.elements.find(
+      ({ id }) => id === 'beat-01-stillness-title',
+    )
+    const nextDocument = resizeElement(
+      buildWeekEpisode,
+      shapeElement.id,
+      {
+        x: shapeElement.bounds.x,
+        y: shapeElement.bounds.y,
+        width: shapeElement.bounds.width * 2,
+        height: shapeElement.bounds.height * 2,
+      },
+    )
+    const resizedElement = nextDocument.elements.find(
+      ({ id }) => id === shapeElement.id,
+    )
+
+    expect(nextDocument).not.toBe(buildWeekEpisode)
+    expect(resizedElement?.bounds).toEqual({
+      x: shapeElement.bounds.x,
+      y: shapeElement.bounds.y,
+      width: shapeElement.bounds.width * 2,
+      height: shapeElement.bounds.height * 2,
+    })
+    expect(
+      nextDocument.elements.find(
+        ({ id }) => id === unrelatedElement?.id,
+      ),
+    ).toBe(unrelatedElement)
+  })
+
+  it('uses one scale for mismatched requested dimensions', () => {
+    const nextDocument = resizeElement(
+      buildWeekEpisode,
+      shapeElement.id,
+      {
+        ...shapeElement.bounds,
+        width: shapeElement.bounds.width * 3,
+        height: shapeElement.bounds.height * 2,
+      },
+    )
+    const resizedElement = nextDocument.elements.find(
+      ({ id }) => id === shapeElement.id,
+    )
+
+    expect(resizedElement?.bounds.width).toBe(
+      shapeElement.bounds.width * 2,
+    )
+    expect(resizedElement?.bounds.height).toBe(
+      shapeElement.bounds.height * 2,
+    )
+  })
+
+  it('keeps the opposite corner fixed when minimum size is applied', () => {
+    const currentRight = shapeElement.bounds.x + shapeElement.bounds.width
+    const currentBottom = shapeElement.bounds.y + shapeElement.bounds.height
+    const nextDocument = resizeElement(
+      buildWeekEpisode,
+      shapeElement.id,
+      {
+        x: currentRight - 1,
+        y: currentBottom - 1,
+        width: 1,
+        height: 1,
+      },
+    )
+    const resizedBounds = nextDocument.elements.find(
+      ({ id }) => id === shapeElement.id,
+    )?.bounds
+
+    expect(resizedBounds).toEqual({
+      x: currentRight - MIN_ELEMENT_SIZE,
+      y: currentBottom - MIN_ELEMENT_SIZE,
+      width: MIN_ELEMENT_SIZE,
+      height: MIN_ELEMENT_SIZE,
+    })
+  })
+
+  it('scales text bounds and font size together with an 8-unit font minimum', () => {
+    const smallFontText = {
+      ...textElement,
+      fontSize: 10,
+    }
+    const document = {
+      ...buildWeekEpisode,
+      elements: buildWeekEpisode.elements.map((element) =>
+        element.id === smallFontText.id ? smallFontText : element,
+      ),
+    }
+    const nextDocument = resizeElement(document, smallFontText.id, {
+      ...smallFontText.bounds,
+      width: 1,
+      height: 1,
+    })
+    const resizedElement = nextDocument.elements.find(
+      ({ id }) => id === smallFontText.id,
+    )
+
+    expect(resizedElement?.bounds.width).toBe(
+      smallFontText.bounds.width * 0.8,
+    )
+    expect(resizedElement?.bounds.height).toBe(
+      smallFontText.bounds.height * 0.8,
+    )
+    expect(resizedElement?.type).toBe('text')
+    if (resizedElement?.type !== 'text') {
+      throw new Error('The resized fixture stopped being text.')
+    }
+    expect(resizedElement.fontSize).toBe(8)
+  })
+
+  it('clamps a resized element fully inside the episode', () => {
+    const nextDocument = resizeElement(
+      buildWeekEpisode,
+      shapeElement.id,
+      {
+        x: shapeElement.bounds.x,
+        y: shapeElement.bounds.y,
+        width: 10_000,
+        height: 10_000,
+      },
+    )
+    const resizedBounds = nextDocument.elements.find(
+      ({ id }) => id === shapeElement.id,
+    )?.bounds
+
+    expect(resizedBounds).toBeDefined()
+    if (!resizedBounds) {
+      throw new Error('The resized fixture element is missing.')
+    }
+    expect(resizedBounds.x).toBeGreaterThanOrEqual(0)
+    expect(resizedBounds.y).toBeGreaterThanOrEqual(0)
+    expect(resizedBounds.x + resizedBounds.width).toBeLessThanOrEqual(
+      buildWeekEpisode.logicalWidth,
+    )
+    expect(resizedBounds.y + resizedBounds.height).toBeLessThanOrEqual(
+      buildWeekEpisode.logicalHeight,
+    )
+    expect(resizedBounds.x).toBe(shapeElement.bounds.x)
+    expect(resizedBounds.y).toBe(shapeElement.bounds.y)
+    expect(resizedBounds.width / resizedBounds.height).toBe(
+      shapeElement.bounds.width / shapeElement.bounds.height,
+    )
+  })
+
+  it('rejects unknown, locked, invalid, and Background color-region resizes', () => {
+    const requestedBounds = {
+      ...shapeElement.bounds,
+      width: shapeElement.bounds.width * 2,
+      height: shapeElement.bounds.height * 2,
+    }
+    const lockedDocument = {
+      ...buildWeekEpisode,
+      elements: buildWeekEpisode.elements.map((element) =>
+        element.id === shapeElement.id
+          ? { ...element, locked: true }
+          : element,
+      ),
+    }
+    const withRegion = createBackgroundColorRegion(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      fill: '#332255',
+      startY: 900,
+      height: 600,
+    })
+    const region = withRegion.elements.at(-1)
+
+    expect(resizeElement(buildWeekEpisode, 'missing', requestedBounds)).toBe(
+      buildWeekEpisode,
+    )
+    expect(resizeElement(lockedDocument, shapeElement.id, requestedBounds)).toBe(
+      lockedDocument,
+    )
+    expect(
+      resizeElement(buildWeekEpisode, shapeElement.id, {
+        ...requestedBounds,
+        width: Number.NaN,
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(region).toBeDefined()
+    if (!region) {
+      throw new Error('The Background color region is missing.')
+    }
+    expect(
+      resizeElement(withRegion, region.id, {
+        ...region.bounds,
+        width: region.bounds.width / 2,
+        height: region.bounds.height / 2,
+      }),
+    ).toBe(withRegion)
   })
 })
 

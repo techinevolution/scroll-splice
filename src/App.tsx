@@ -96,13 +96,17 @@ export function App() {
           </div>
         </div>
 
-        <div className="episode-heading">
-          <span>Episode</span>
+        <div className="episode-heading" data-testid="episode-heading">
+          <span data-testid="episode-label">Episode</span>
           {isEditingEpisodeName ? (
             <input
               ref={episodeNameInputRef}
               className="episode-title-input"
               type="text"
+              size={Math.min(
+                Math.max(episodeNameDraft.length, 1),
+                MAX_EPISODE_NAME_LENGTH,
+              )}
               aria-label="Episode title"
               value={episodeNameDraft}
               onChange={(event) =>
@@ -162,7 +166,7 @@ export function App() {
         <span className="status-ready">Editor ready</span>
         <span data-testid="selection-status">
           {selectedElement
-            ? `${selectedElement.name} · x ${Math.round(selectedElement.bounds.x)} · y ${Math.round(selectedElement.bounds.y)}`
+            ? `${selectedElement.name} · x ${Math.round(selectedElement.bounds.x)} · y ${Math.round(selectedElement.bounds.y)} · w ${Math.round(selectedElement.bounds.width)} · h ${Math.round(selectedElement.bounds.height)}`
             : 'Nothing selected'}
         </span>
         <span>800u fixed width · local demo</span>

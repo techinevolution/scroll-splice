@@ -10,17 +10,21 @@ import {
   type CompositionGroup,
   type ElementBounds,
   type EpisodeDocument,
+  type EpisodeElement,
   type OrdinaryLayerPlane,
   type ShapeElement,
 } from './episode'
 
 export const DEFAULT_EPISODE_HEIGHT_INCREMENT = 1280
 export const MIN_EPISODE_LOGICAL_HEIGHT = 1280
+export const MIN_ELEMENT_SIZE = 24
 export const MAX_EPISODE_NAME_LENGTH = 60
 export const SYNTHETIC_SHAPE_GENERATOR_ID =
   'scrollsplice-editor-shape-v1'
 export const BACKGROUND_COLOR_REGION_GENERATOR_ID =
   'scrollsplice-background-color-region-v1'
+
+const MIN_TEXT_FONT_SIZE = 8
 
 export interface CreateSyntheticShapeElementInput {
   readonly layerPlaneId: string
@@ -145,6 +149,124 @@ export function moveElement(
   })
 
   return changed ? { ...document, elements } : document
+}
+
+export function resizeElement(
+  document: EpisodeDocument,
+  elementId: string,
+  requestedBounds: ElementBounds,
+): EpisodeDocument {
+  const element = document.elements.find(({ id }) => id === elementId)
+
+  if (
+    !element ||
+    element.locked ||
+    isBackgroundColorRegion(element) ||
+    !areFinitePositiveBounds(requestedBounds) ||
+    !areFinitePositiveBounds(element.bounds) ||
+    (element.type === 'text' &&
+      (!Number.isFinite(element.fontSize) || element.fontSize <= 0)) ||
+    !Number.isFinite(document.logicalWidth) ||
+    !Number.isFinite(document.logicalHeight) ||
+    document.logicalWidth <= 0 ||
+    document.logicalHeight <= 0
+  ) {
+    return document
+  }
+
+  const widthScale = requestedBounds.width / element.bounds.width
+  const heightScale = requestedBounds.height / element.bounds.height
+  const requestedScale = Math.min(widthScale, heightScale)
+  const requestedRight = requestedBounds.x + requestedBounds.width
+  const requestedBottom = requestedBounds.y + requestedBounds.height
+  const currentRight = element.bounds.x + element.bounds.width
+  const currentBottom = element.bounds.y + element.bounds.height
+  const keepsLeftEdge =
+    Math.abs(requestedBounds.x - element.bounds.x) <=
+    Math.abs(requestedRight - currentRight)
+  const keepsTopEdge =
+    Math.abs(requestedBounds.y - element.bounds.y) <=
+    Math.abs(requestedBottom - currentBottom)
+  const minimumScale = Math.max(
+    MIN_ELEMENT_SIZE / element.bounds.width,
+    MIN_ELEMENT_SIZE / element.bounds.height,
+    element.type === 'text'
+      ? MIN_TEXT_FONT_SIZE / element.fontSize
+      : 0,
+  )
+  const maximumScale = Math.min(
+    (keepsLeftEdge ? document.logicalWidth - element.bounds.x : currentRight) /
+      element.bounds.width,
+    (keepsTopEdge
+      ? document.logicalHeight - element.bounds.y
+      : currentBottom) / element.bounds.height,
+  )
+
+  if (!Number.isFinite(requestedScale) || maximumScale <= 0) {
+    return document
+  }
+
+  const scale = clamp(
+    requestedScale,
+    Math.min(minimumScale, maximumScale),
+    maximumScale,
+  )
+  const width = element.bounds.width * scale
+  const height = element.bounds.height * scale
+  const position = clampElementPosition(
+    {
+      x: keepsLeftEdge ? element.bounds.x : currentRight - width,
+      y: keepsTopEdge ? element.bounds.y : currentBottom - height,
+    },
+    { width, height },
+    document.logicalWidth,
+    document.logicalHeight,
+  )
+  const bounds = { ...position, width, height }
+  const fontSize =
+    element.type === 'text' ? element.fontSize * scale : undefined
+
+  if (
+    bounds.x === element.bounds.x &&
+    bounds.y === element.bounds.y &&
+    bounds.width === element.bounds.width &&
+    bounds.height === element.bounds.height &&
+    (element.type !== 'text' || fontSize === element.fontSize)
+  ) {
+    return document
+  }
+
+  return {
+    ...document,
+    elements: document.elements.map((candidate) =>
+      candidate.id === element.id
+        ? {
+            ...candidate,
+            bounds,
+            ...(candidate.type === 'text' ? { fontSize } : {}),
+          }
+        : candidate,
+    ),
+  }
+}
+
+function areFinitePositiveBounds(bounds: ElementBounds): boolean {
+  return (
+    Number.isFinite(bounds.x) &&
+    Number.isFinite(bounds.y) &&
+    Number.isFinite(bounds.width) &&
+    Number.isFinite(bounds.height) &&
+    bounds.width > 0 &&
+    bounds.height > 0
+  )
+}
+
+export function isBackgroundColorRegion(element: EpisodeElement): boolean {
+  return (
+    element.assetReference.kind === 'synthetic' &&
+    element.assetReference.generatorId ===
+      BACKGROUND_COLOR_REGION_GENERATOR_ID
+  )
 }
 
 export function setElementVisibility(

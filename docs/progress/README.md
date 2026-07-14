@@ -75,3 +75,16 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Katherine reviewed this exact build on July 14 and confirmed that placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary element movement work.
 - The review also identified the title-input header shift and horizontally janky full-width Background-region drag, and requested default-on alignment help plus editor-only WEBTOON candidate-boundary guides. Those are follow-up findings, not features visible or claimed in this screenshot.
 - This validated checkpoint and its documentation were published to `main` through `8a493a2` on July 14. This screenshot does not imply deployment or Devpost submission.
+
+## July 14 — Stable editing, candidate guides, and bounded resize
+
+![ScrollSplice stable editing, candidate guides, and bounded resize checkpoint](2026-07-14-stable-editing-guides-and-resize.png)
+
+- Captured by Codex from the running local corrective checkpoint after Katherine failed the prior manual review on title stability, missing guides/magnet, live Background-region drift, and missing corner resize handles.
+- Shows a selected code-defined **Amber shape** with four proportional corner handles near the dotted 1,280-unit candidate boundary, plus the visible default-on **Magnet** and **Slice guides** controls.
+- The dotted line is explicitly a provisional candidate derived from the `form-observed` WEBTOON profile. It is editor chrome, not a produced slice, export result, compatibility guarantee, minimap element, or document element.
+- The same local checkpoint anchors title editing, constrains full-width Background regions live and structurally to `x = 0`, supports magnet-off and Alt/Option bypass, enforces a 24-logical-unit resize minimum, scales text with its bounds, and excludes Background regions, rotation, and flipping from resize.
+- Contains only the public-safe code-rendered **Signal in the Fog** fixture and a code-defined synthetic Amber rectangle; no Root & Table production artwork, private creative material, or third-party comic reference appears.
+- Captured in bundled Chromium at a 1440 × 900 viewport. Automated regression and supported-size visual validation pass; Katherine's human retest remains pending. The screenshot does not imply that this local checkpoint is pushed, deployed, or submitted.
+- File: 1440 × 900 PNG, 132,504 bytes.
+- SHA-256: `798992900f6a899378d07155a5eeb5f5eadc204e6661d3262ac0435b180489cc`.

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  CENTER_SNAP_THRESHOLD_PX,
   boundsIntersectViewport,
   boundsIntersectVerticalViewport,
   centerBoundsInViewport2D,
@@ -10,6 +11,7 @@ import {
   clampViewportY,
   clampZoomFactor,
   getFitScale,
+  getEpisodeCenterSnap,
   getLogicalViewportDimensions,
   getLogicalViewportHeight,
   getMinimapViewportBox,
@@ -173,5 +175,43 @@ describe('element coordinates', () => {
         4_600,
       ),
     ).toEqual({ x: 660, y: 0 })
+  })
+
+  it.each([
+    { viewScale: 0.5, insideOffset: 16, outsideOffset: 16.01 },
+    { viewScale: 1, insideOffset: 8, outsideOffset: 8.01 },
+    { viewScale: 2, insideOffset: 4, outsideOffset: 4.01 },
+  ])(
+    'snaps to the episode center within $viewScale scale threshold',
+    ({ viewScale, insideOffset, outsideOffset }) => {
+      const centeredX = (800 - 150) / 2
+
+      expect(
+        getEpisodeCenterSnap(
+          centeredX + insideOffset,
+          150,
+          800,
+          viewScale,
+        ),
+      ).toEqual({ x: centeredX, snapped: true })
+      expect(
+        getEpisodeCenterSnap(
+          centeredX + outsideOffset,
+          150,
+          800,
+          viewScale,
+        ),
+      ).toEqual({ x: centeredX + outsideOffset, snapped: false })
+    },
+  )
+
+  it('leaves invalid center-snap requests unsnapped', () => {
+    expect(getEpisodeCenterSnap(10, 0, 800, 1)).toEqual({
+      x: 10,
+      snapped: false,
+    })
+    expect(
+      getEpisodeCenterSnap(10, 100, 800, 1, -CENTER_SNAP_THRESHOLD_PX),
+    ).toEqual({ x: 10, snapped: false })
   })
 })

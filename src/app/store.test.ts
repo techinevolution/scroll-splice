@@ -323,6 +323,51 @@ describe('editor store', () => {
     expect(useEditorStore.getState().viewportY).toBe(0)
   })
 
+  it('resizes through the command and restores the fixture on reset', () => {
+    const elementId = 'beat-01-stillness-accent-2'
+    const before = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === elementId)
+
+    expect(before).toBeDefined()
+    if (!before) {
+      throw new Error('Missing resize fixture element')
+    }
+
+    useEditorStore.getState().resizeElement(elementId, {
+      ...before.bounds,
+      width: before.bounds.width * 1.5,
+      height: before.bounds.height * 1.5,
+    })
+
+    const resized = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === elementId)
+    expect(resized?.bounds.width).toBe(before.bounds.width * 1.5)
+    expect(resized?.bounds.height).toBe(before.bounds.height * 1.5)
+
+    useEditorStore.getState().resetEpisode()
+    expect(useEditorStore.getState().episode).toBe(buildWeekEpisode)
+  })
+
+  it('defaults editor guides on, toggles them without changing the episode, and resets them', () => {
+    const episode = useEditorStore.getState().episode
+
+    expect(useEditorStore.getState().magnetEnabled).toBe(true)
+    expect(useEditorStore.getState().sliceGuidesVisible).toBe(true)
+
+    useEditorStore.getState().toggleMagnet()
+    useEditorStore.getState().toggleSliceGuides()
+
+    expect(useEditorStore.getState().magnetEnabled).toBe(false)
+    expect(useEditorStore.getState().sliceGuidesVisible).toBe(false)
+    expect(useEditorStore.getState().episode).toBe(episode)
+
+    useEditorStore.getState().resetEpisode()
+    expect(useEditorStore.getState().magnetEnabled).toBe(true)
+    expect(useEditorStore.getState().sliceGuidesVisible).toBe(true)
+  })
+
   it('restores planes, base color, and visibility on reset', () => {
     useEditorStore.getState().setActiveCompositionGroup('background')
     useEditorStore.getState().createLayerPlane()

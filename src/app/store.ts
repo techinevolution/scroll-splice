@@ -13,6 +13,7 @@ import {
   deleteEmptyLayerPlane as deleteEmptyLayerPlaneCommand,
   extendEpisodeHeight as extendEpisodeHeightCommand,
   moveElement as moveElementCommand,
+  resizeElement as resizeElementCommand,
   resizeEpisodeHeight as resizeEpisodeHeightCommand,
   setBaseColor as setBaseColorCommand,
   setCompositionGroupVisibility as setCompositionGroupVisibilityCommand,
@@ -35,6 +36,7 @@ import {
   getLayerPlaneById,
   getLayerPlanesForGroup,
   type CompositionGroup,
+  type ElementBounds,
   type EpisodeDocument,
 } from '../core/episode'
 
@@ -50,6 +52,8 @@ interface EditorState {
   readonly fitViewportLogicalHeight: number
   readonly zoomFactor: number
   readonly assetPanelOpen: boolean
+  readonly magnetEnabled: boolean
+  readonly sliceGuidesVisible: boolean
   readonly setActiveCompositionGroup: (group: CompositionGroup) => void
   readonly setActiveLayerPlane: (layerPlaneId: string) => void
   readonly createLayerPlane: () => void
@@ -90,6 +94,12 @@ interface EditorState {
     elementId: string,
     logicalPosition: LogicalPosition,
   ) => void
+  readonly resizeElement: (
+    elementId: string,
+    logicalBounds: ElementBounds,
+  ) => void
+  readonly toggleMagnet: () => void
+  readonly toggleSliceGuides: () => void
   readonly toggleAssetPanel: () => void
   readonly openAssetPanel: () => void
   readonly resetEpisode: () => void
@@ -138,6 +148,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   fitViewportLogicalHeight: INITIAL_VIEWPORT_LOGICAL_HEIGHT,
   zoomFactor: DEFAULT_ZOOM_FACTOR,
   assetPanelOpen: false,
+  magnetEnabled: true,
+  sliceGuidesVisible: true,
 
   setActiveCompositionGroup: (group) => {
     set((state) => {
@@ -571,6 +583,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }))
   },
 
+  resizeElement: (elementId, logicalBounds) => {
+    set((state) => ({
+      episode: resizeElementCommand(state.episode, elementId, logicalBounds),
+    }))
+  },
+
+  toggleMagnet: () => {
+    set((state) => ({ magnetEnabled: !state.magnetEnabled }))
+  },
+
+  toggleSliceGuides: () => {
+    set((state) => ({ sliceGuidesVisible: !state.sliceGuidesVisible }))
+  },
+
   toggleAssetPanel: () => {
     set((state) => ({ assetPanelOpen: !state.assetPanelOpen }))
   },
@@ -598,6 +624,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         viewportLogicalHeight: viewportDimensions.height,
         zoomFactor: DEFAULT_ZOOM_FACTOR,
         assetPanelOpen: false,
+        magnetEnabled: true,
+        sliceGuidesVisible: true,
       }
     })
   },

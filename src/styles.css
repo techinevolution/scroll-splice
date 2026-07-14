@@ -114,7 +114,9 @@ p {
 }
 
 .episode-heading {
-  display: flex;
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  width: min(330px, 32vw);
   min-width: 0;
   align-items: baseline;
   gap: 0.55rem;
@@ -126,10 +128,12 @@ p {
   color: #756d84;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .episode-title-edit {
   display: block;
+  min-width: 0;
   max-width: min(260px, 26vw);
   overflow: hidden;
   padding: 0.22rem 0.3rem;
@@ -142,6 +146,7 @@ p {
   text-align: left;
   text-overflow: ellipsis;
   white-space: nowrap;
+  justify-self: start;
   cursor: pointer;
 }
 
@@ -152,16 +157,19 @@ p {
 }
 
 .episode-title-input {
-  width: min(260px, 30vw);
-  padding: 0.38rem 0.5rem;
+  width: auto;
+  min-width: 4ch;
+  max-width: 100%;
+  padding: 0.22rem 0.3rem;
   border: 1px solid rgb(101 228 255 / 52%);
-  border-radius: 0.48rem;
+  border-radius: 0.35rem;
   outline: 0;
   color: #f6f2ff;
   background: #211a2b;
   box-shadow: 0 0 0 3px rgb(101 228 255 / 8%);
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   font-weight: 750;
+  justify-self: start;
 }
 
 .reset-button {
@@ -420,8 +428,49 @@ p {
   display: block;
 }
 
+.canvas-guide-overlay {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.slice-guide {
+  position: absolute;
+  height: 0;
+  border-top: 3px dotted #77727f;
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 72%));
+  transform: translateY(-1px);
+}
+
+.slice-guide span {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  padding: 0.18rem 0.3rem;
+  border-radius: 0.25rem;
+  color: #d8d4dc;
+  background: rgb(40 36 46 / 88%);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 24%);
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.center-snap-guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 2px dashed rgb(101 228 255 / 88%);
+  filter: drop-shadow(0 0 3px rgb(101 228 255 / 70%));
+  transform: translateX(-1px);
+}
+
 .canvas-view-controls {
   position: absolute;
+  z-index: 3;
   right: 0.75rem;
   bottom: 0.55rem;
   display: flex;
@@ -441,6 +490,12 @@ p {
   border-radius: 0.32rem;
   background: #282132;
   cursor: pointer;
+}
+
+.canvas-view-controls .view-toggle-button[aria-pressed="true"] {
+  border-color: rgb(101 228 255 / 52%);
+  color: #dffaff;
+  background: rgb(101 228 255 / 12%);
 }
 
 .canvas-view-controls input {

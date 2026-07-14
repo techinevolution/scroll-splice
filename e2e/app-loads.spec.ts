@@ -27,6 +27,27 @@ async function readLogicalCanvasPixel(
   )
 }
 
+async function readLocatorX(locator: Locator) {
+  const bounds = await locator.boundingBox()
+
+  if (!bounds) {
+    throw new Error('The requested header anchor did not produce visible bounds.')
+  }
+
+  return bounds.x
+}
+
+async function readNumericAttribute(locator: Locator, name: string) {
+  const rawValue = await locator.getAttribute(name)
+  const value = Number(rawValue)
+
+  if (rawValue === null || rawValue.trim() === '' || !Number.isFinite(value)) {
+    throw new Error(`${name} did not contain a finite number.`)
+  }
+
+  return value
+}
+
 test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   page,
 }) => {
@@ -72,6 +93,11 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const firstTitleLayer = page.locator(
     '[data-layer-id="beat-01-stillness-title"]',
   )
+  const resetDemo = page.getByRole('button', { name: 'Reset demo' })
+  const episodeLabel = page.getByTestId('episode-label')
+  const magnetToggle = page.getByTestId('alignment-magnet-toggle')
+  const sliceGuidesToggle = page.getByTestId('slice-guides-toggle')
+  const assetToggle = page.getByRole('button', { name: 'Assets' })
 
   await expect(canvas).toHaveAttribute('data-ready', 'true')
   await expect(episodePosition).toHaveAttribute(
@@ -96,8 +122,16 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     name: 'Episode title',
   })
 
+  const episodeLabelXBeforeEdit = await readLocatorX(episodeLabel)
+  const resetXBeforeEdit = await readLocatorX(resetDemo)
   await editEpisodeTitle.click()
   await expect(episodeTitleInput).toBeFocused()
+  expect(
+    Math.abs((await readLocatorX(episodeLabel)) - episodeLabelXBeforeEdit),
+  ).toBeLessThan(1)
+  expect(
+    Math.abs((await readLocatorX(resetDemo)) - resetXBeforeEdit),
+  ).toBeLessThan(1)
   await episodeTitleInput.fill('  A Light Below  ')
   await episodeTitleInput.press('Enter')
   await expect(page.getByText('A Light Below', { exact: true })).toBeVisible()
@@ -143,6 +177,32 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await episodeTitleInput.press('Enter')
   await expect(page.getByText('x'.repeat(60), { exact: true })).toBeVisible()
 
+  await expect(sliceGuidesToggle).toHaveAttribute('aria-pressed', 'true')
+  await expect(canvas).toHaveAttribute('data-slice-guide-count', '3')
+  await expect(canvas).toHaveAttribute('data-slice-guides-visible', 'true')
+  await canvas.hover()
+  await page.mouse.wheel(0, 700)
+  const firstSliceGuide = page.locator('[data-slice-guide-y="1280"]')
+  await expect(firstSliceGuide).toBeVisible()
+  const firstSliceGuideBounds = await firstSliceGuide.boundingBox()
+  const guideSceneBounds = await sceneCanvas.boundingBox()
+  if (!firstSliceGuideBounds || !guideSceneBounds) {
+    throw new Error('The first slice guide needs visible canvas bounds.')
+  }
+  expect(Math.abs(firstSliceGuideBounds.x - guideSceneBounds.x)).toBeLessThan(2)
+  expect(
+    Math.abs(firstSliceGuideBounds.width - guideSceneBounds.width),
+  ).toBeLessThan(2)
+  await sliceGuidesToggle.click()
+  await expect(sliceGuidesToggle).toHaveAttribute('aria-pressed', 'false')
+  await expect(canvas).toHaveAttribute('data-slice-guides-visible', 'false')
+  await expect(firstSliceGuide).toHaveCount(0)
+  await sliceGuidesToggle.click()
+  await expect(sliceGuidesToggle).toHaveAttribute('aria-pressed', 'true')
+  await expect(firstSliceGuide).toBeVisible()
+  await resetDemo.click()
+  await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
+
   const inspectorBounds = await inspector.boundingBox()
   const canvasBoundsAtStart = await canvas.boundingBox()
   const compositionGroupBounds = await compositionGroups.boundingBox()
@@ -158,6 +218,149 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
         (compositionGroupBounds.x + compositionGroupBounds.width / 2),
     ),
   ).toBeLessThan(3)
+
+  await expect(magnetToggle).toHaveAttribute('aria-pressed', 'true')
+  await page
+    .getByRole('button', { name: 'Foreground composition group' })
+    .click()
+  const foregroundPlane1 = page.getByRole('button', {
+    name: 'Foreground plane 1',
+    exact: true,
+  })
+  await expect(foregroundPlane1).toHaveAttribute('aria-pressed', 'true')
+  await canvas.hover()
+  await page.mouse.wheel(0, 450)
+  await expect
+    .poll(() => readNumericAttribute(canvas, 'data-viewport-y'))
+    .toBeGreaterThan(400)
+  await assetToggle.click()
+  await page.getByRole('button', { name: 'Add Violet demo shape' }).click()
+  const snapResizeShapeRow = page.locator(
+    '[data-layer-id="synthetic-shape-1"]',
+  )
+  await expect(snapResizeShapeRow).toHaveAttribute('aria-pressed', 'true')
+  await expect(canvas).toHaveAttribute('data-resize-handle-count', '4')
+  await expect(page.locator('.asset-panel')).toHaveCSS('width', '220px')
+
+  const snapSceneBounds = await sceneCanvas.boundingBox()
+  if (!snapSceneBounds) {
+    throw new Error('The snapping canvas did not produce visible bounds.')
+  }
+  const snapScale = snapSceneBounds.width / 800
+  const snapViewportY = await readNumericAttribute(canvas, 'data-viewport-y')
+  const syntheticStartX = await readNumericAttribute(canvas, 'data-selected-x')
+  const syntheticStartY = await readNumericAttribute(canvas, 'data-selected-y')
+  const syntheticStartWidth = await readNumericAttribute(
+    canvas,
+    'data-selected-width',
+  )
+  const syntheticStartHeight = await readNumericAttribute(
+    canvas,
+    'data-selected-height',
+  )
+  const syntheticCenter = {
+    x:
+      snapSceneBounds.x +
+      (syntheticStartX + syntheticStartWidth / 2) * snapScale,
+    y:
+      snapSceneBounds.y +
+      (syntheticStartY - snapViewportY + syntheticStartHeight / 2) * snapScale,
+  }
+
+  await page.keyboard.down('Alt')
+  await page.mouse.move(syntheticCenter.x, syntheticCenter.y)
+  await page.mouse.down()
+  await page.mouse.move(syntheticCenter.x + 260, syntheticCenter.y, {
+    steps: 5,
+  })
+  await page.mouse.up()
+  await page.keyboard.up('Alt')
+  await expect
+    .poll(() => readNumericAttribute(canvas, 'data-selected-x'))
+    .toBeGreaterThan(500)
+
+  const offCenterX = await readNumericAttribute(canvas, 'data-selected-x')
+  const offCenterY = await readNumericAttribute(canvas, 'data-selected-y')
+  const offCenterPoint = {
+    x:
+      snapSceneBounds.x +
+      (offCenterX + syntheticStartWidth / 2) * snapScale,
+    y:
+      snapSceneBounds.y +
+      (offCenterY - snapViewportY + syntheticStartHeight / 2) * snapScale,
+  }
+  const centerSnapGuide = page.getByTestId('center-snap-guide')
+  await page.mouse.move(offCenterPoint.x, offCenterPoint.y)
+  await page.mouse.down()
+  let centerGuideAppeared = false
+  for (let dragDistance = 4; dragDistance <= 380; dragDistance += 4) {
+    await page.mouse.move(
+      offCenterPoint.x - dragDistance,
+      offCenterPoint.y,
+    )
+    if ((await centerSnapGuide.count()) > 0) {
+      centerGuideAppeared = true
+      break
+    }
+  }
+  expect(centerGuideAppeared).toBe(true)
+  await expect(centerSnapGuide).toBeVisible()
+  await page.mouse.up()
+  await expect(canvas).toHaveAttribute('data-selected-x', '325')
+  await expect(centerSnapGuide).toHaveCount(0)
+
+  await page
+    .locator('[data-layer-id="beat-01-stillness-accent-1"]')
+    .click()
+  await snapResizeShapeRow.click()
+  await expect(canvas).toHaveAttribute(
+    'data-selected-element-id',
+    'synthetic-shape-1',
+  )
+
+  const syntheticMinimapElement = minimap.locator(
+    '[data-element-id="synthetic-shape-1"]',
+  )
+  const minimapWidthBeforeResize = await readNumericAttribute(
+    syntheticMinimapElement,
+    'width',
+  )
+  const minimapHeightBeforeResize = await readNumericAttribute(
+    syntheticMinimapElement,
+    'height',
+  )
+  const resizeViewportY = await readNumericAttribute(canvas, 'data-viewport-y')
+  const resizeHandlePoint = {
+    x:
+      snapSceneBounds.x +
+      (325 + syntheticStartWidth) * snapScale,
+    y:
+      snapSceneBounds.y +
+      (offCenterY - resizeViewportY + syntheticStartHeight) * snapScale,
+  }
+  await page.mouse.move(resizeHandlePoint.x, resizeHandlePoint.y)
+  await page.mouse.down()
+  await page.mouse.move(
+    resizeHandlePoint.x + 60 * snapScale,
+    resizeHandlePoint.y + 44 * snapScale,
+    { steps: 6 },
+  )
+  await page.mouse.up()
+  await expect
+    .poll(() => readNumericAttribute(canvas, 'data-selected-width'))
+    .toBeGreaterThan(syntheticStartWidth)
+  await expect
+    .poll(() => readNumericAttribute(canvas, 'data-selected-height'))
+    .toBeGreaterThan(syntheticStartHeight)
+  await expect
+    .poll(() => readNumericAttribute(syntheticMinimapElement, 'width'))
+    .toBeGreaterThan(minimapWidthBeforeResize)
+  await expect
+    .poll(() => readNumericAttribute(syntheticMinimapElement, 'height'))
+    .toBeGreaterThan(minimapHeightBeforeResize)
+  await resetDemo.click()
+  await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
+  await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
 
   const panelList = page.getByRole('list', {
     name: 'Content plane 1 elements',
@@ -179,7 +382,6 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     ])
 
   await page.getByRole('button', { name: 'Add asset', exact: true }).click()
-  const assetToggle = page.getByRole('button', { name: 'Assets' })
   await expect(assetToggle).toHaveAttribute('aria-expanded', 'true')
   await page.getByRole('button', { name: 'Add Violet demo shape' }).click()
   const syntheticShapeRow = page.locator(
@@ -311,10 +513,14 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const colorRegionRow = page.locator(
     '[data-layer-id="background-color-region-1"]',
   )
+  const colorRegionMinimap = minimap.locator(
+    '[data-element-id="background-color-region-1"]',
+  )
   await expect(colorRegionRow).toHaveAttribute('aria-pressed', 'true')
-  await expect(
-    minimap.locator('[data-element-id="background-color-region-1"]'),
-  ).toHaveAttribute('fill', '#334477')
+  await expect(colorRegionMinimap).toHaveAttribute('fill', '#334477')
+  await expect(colorRegionMinimap).toHaveAttribute('x', '0')
+  await expect(canvas).toHaveAttribute('data-selected-x', '0')
+  await expect(canvas).toHaveAttribute('data-resize-handle-count', '0')
   const colorRegionCanvasBounds = await sceneCanvas.boundingBox()
   if (!colorRegionCanvasBounds) {
     throw new Error('The color-region canvas did not produce visible bounds.')
@@ -327,11 +533,16 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await page.mouse.move(colorRegionDragPoint.x, colorRegionDragPoint.y)
   await page.mouse.down()
   await page.mouse.move(
-    colorRegionDragPoint.x,
+    colorRegionDragPoint.x + 110 * colorRegionScale,
     colorRegionDragPoint.y + 40 * colorRegionScale,
     { steps: 4 },
   )
+  await expect
+    .poll(() => readLogicalCanvasPixel(sceneCanvas, 20, 390))
+    .toBe('51,68,119')
   await page.mouse.up()
+  await expect(canvas).toHaveAttribute('data-selected-x', '0')
+  await expect(colorRegionMinimap).toHaveAttribute('x', '0')
   await expect
     .poll(async () => {
       const status = (await selectionStatus.textContent()) ?? ''
@@ -339,6 +550,24 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       return position ? Number(position[1]) : 0
     })
     .toBeGreaterThan(300)
+
+  const movedColorRegionY = await readNumericAttribute(canvas, 'data-selected-y')
+  await canvas.hover()
+  await page.mouse.wheel(0, 1_200)
+  await expect
+    .poll(() => readNumericAttribute(episodePosition, 'data-viewport-y'))
+    .toBeGreaterThan(900)
+  await expect(canvas).toHaveAttribute('data-selected-x', '0')
+  await expect(colorRegionMinimap).toHaveAttribute('x', '0')
+  await page.mouse.wheel(0, -1_200)
+  await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
+  await expect(canvas).toHaveAttribute('data-selected-x', '0')
+  await expect(colorRegionMinimap).toHaveAttribute('x', '0')
+  await expect
+    .poll(() =>
+      readLogicalCanvasPixel(sceneCanvas, 20, movedColorRegionY + 10),
+    )
+    .toBe('51,68,119')
 
   await contentGroup.click()
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
@@ -679,10 +908,21 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     { width: 1280, height: 720 },
     { width: 1024, height: 768 },
   ]) {
+    await page.setViewportSize(viewport)
+    const responsiveEpisodeLabelX = await readLocatorX(episodeLabel)
+    const responsiveResetX = await readLocatorX(resetDemo)
     await editEpisodeTitle.click()
+    await expect(episodeTitleInput).toBeFocused()
+    expect(
+      Math.abs(
+        (await readLocatorX(episodeLabel)) - responsiveEpisodeLabelX,
+      ),
+    ).toBeLessThan(1)
+    expect(
+      Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
+    ).toBeLessThan(1)
     await episodeTitleInput.fill('x'.repeat(60))
     await episodeTitleInput.press('Enter')
-    await page.setViewportSize(viewport)
     await expect(canvas).toHaveAttribute('data-ready', 'true')
     await expect(inspector).toBeVisible()
     await expect(contentGroup).toBeVisible()

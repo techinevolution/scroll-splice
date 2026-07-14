@@ -21,6 +21,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Run the next **HUMAN TEST and direction checkpoint** on the completed A/B/C build; confirm placed-element deletion, the bottom **Add asset** action, minimap behavior, and ordinary movement; record the title-anchor and Background-region drag findings.
 - [x] Approve **Export-aware polish and alpha controls** as the next implementation goal after the documentation/publication checkpoint.
 - [x] Authorize publishing the already passing A/B/C implementation and matching documentation to `main` on July 14.
+- [ ] Re-test the local corrective checkpoint: title anchors, visible 1,280-unit candidate guides, live full-width Background-region constraint, magnet center snap and bypass, and four-corner proportional resize. Do not select another slice until this review passes.
 
 ## Katherine — before submission
 
@@ -43,9 +44,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Record the local A/B/C evidence: 94 unit tests, strict typecheck, ESLint, production build, isolated Playwright Chromium walkthrough, and visual QA at 1440 × 900, 1280 × 720, and 1024 × 768.
 - [x] Document the current creator-controls screenshot as the build Katherine tested on July 14, including what worked and the follow-up findings.
 - [x] Publish the validated Episode Setup and A/B/C implementation stack, screenshot evidence, and export-aware planning documents to `main` through `8a493a2`.
-- [ ] In the next implementation checkpoint, complete D: keep the **EPISODE** label anchored, remove horizontal jitter from full-width Background regions, add a default-on 8-pixel episode-center snap with Alt/Option bypass, and add toggleable profile-derived 1280-unit candidate guides that never enter document or output data.
-- [ ] After D passes, complete E: bump the unsaved fixture to format v4, add selected-element opacity and a basic vertical two-stop alpha fade for solid Background color regions, and keep opacity independent from visibility and source alpha with explicit defaults/reset behavior.
-- [ ] After D and E pass, run the full validation and visual review, capture a new public-safe screenshot, commit and push each coherent passing checkpoint as separately authorized at implementation time, then give Katherine one reconciled list of implemented features and remaining requests from the documents and this task.
+- [x] Implement corrective checkpoint D locally: keep the **EPISODE** label anchored; constrain full-width Background regions live and structurally to `x = 0`; add a default-on 8 CSS-pixel episode-center snap with magnet-off and Alt/Option bypass; add toggleable profile-derived 1,280-unit candidate guides that never enter document or output data; and add the directly requested four proportional corner handles for selected unlocked ordinary elements. The implementation keeps format v3 and is ready for Katherine's human review.
+- [x] Complete the corrective checkpoint's full regression suite and visual inspection, then hand it to Katherine for the human test above. No push has occurred; remote `main` remains at `6d6437e` until a later push is explicitly authorized.
+- [ ] After Katherine's review, decide whether E should proceed. It has not started: format-v4 element opacity and a basic vertical two-stop alpha fade for solid Background color regions remain proposed, not automatic next work.
+- [ ] After the next approved product checkpoint passes, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 
 ## Joint — only if the human MVP finishes early
 
