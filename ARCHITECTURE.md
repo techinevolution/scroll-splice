@@ -64,7 +64,7 @@ The original fixture should contain six visually distinct beats rendered from co
 
 The `800`-unit width is a convenient logical coordinate choice that also maps directly to the 800 px maximum displayed by WEBTOON's authenticated Manage Episode form on July 13, 2026. It remains an editor coordinate choice, not a permanent platform rule. Platform requirements never belong in this core schema.
 
-Selection, hover, active drag, viewport position, panel-collapse state, and reset state are editor state, not episode content. The current implementation uses one predictable fit scale derived from the available viewport width. Adjustable zoom is now approved as checkpoint C but must not be described as implemented until that checkpoint passes.
+Selection, hover, active drag, two-dimensional viewport position, zoom, panel-collapse state, and reset state are editor state, not episode content. The implemented view uses the fitted episode width as 100%, then applies a transient 50–200% factor without changing document geometry.
 
 Do not put React objects, Konva nodes, browser handles, user IDs, OAuth fields, provider tokens, WEBTOON metadata, or platform upload state in the episode document.
 
@@ -78,7 +78,7 @@ The approved organization model remains shallow and predictable rather than beco
 - Every other plane is an unrestricted creative surface. Examples such as “Fade,” “Characters,” or “Film” are optional names, never enforced content types.
 - Every element references one `layerPlaneId`; its group is derived from that plane rather than duplicated as a second source of truth.
 - A later asset-properties slice adds a required element opacity value from 0–1 in addition to preserving any per-pixel alpha in the source asset. The completed layer-plane foundation intentionally does not add that field or its UI.
-- Ordinary full-width color regions are elements with logical start `y`, height, color, and later optional gradient data. Creating one asks where it should begin, defaults to the current viewport, and leaves its position and extent editable.
+- Ordinary full-width color regions are elements with logical start `y`, height, and color. Creating one asks for a start and length, defaults the start to the current viewport, and leaves the region vertically movable. Gradient data and post-creation length editing remain later work.
 - Effective visibility is `group visible AND plane visible AND element visible`. A hidden element is absent from the canvas and hit testing but may remain selected from the Layers panel.
 - Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents elements by logical `y` from top to bottom and uses local stacking only to resolve equal or overlapping positions.
 - `activeCompositionGroup` and `activeLayerPlaneId` are transient editor state. Canvas selection activates both so the matching row remains discoverable.
@@ -88,7 +88,7 @@ Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without specul
 ### Layer-plane tab behavior
 
 - The right panel shows compact numbered tabs below `Layers · Background`, `Layers · Content`, or `Layers · Foreground`.
-- When Background plane 1 is active, the inspector shows a small **Base color** row with a swatch and the browser's native color picker. Approved checkpoint A keeps that control and adds a direct canvas-side swatch backed by the same `setBaseColor` command. Both are editor chrome. If the base plane is hidden, canvas and minimap show an editor-only checkerboard that is not episode content or export output.
+- When Background plane 1 is active, the inspector and canvas each show a compact color control backed by the same `setBaseColor` command. Both are editor chrome. If the base plane is hidden, canvas and minimap show an editor-only checkerboard that is not episode content or export output.
 - The implemented foundation provides stable identity, selection, creation, visibility, overflow arrows, and automatic active-tab reveal before any later plane-reordering slice.
 - A later layer-management slice gives ordinary tabs a dedicated drag handle and dispatches a pure reorder command inside the active group. Background plane 1 remains pinned.
 - Move Left/Right commands provide a keyboard and non-drag alternative in that same management slice. Small left and right overflow arrows scroll the tab strip without changing plane order, and the active tab scrolls into view from the foundation onward.
@@ -96,7 +96,7 @@ Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without specul
 - An ordinary plane may be deleted only when it contains no elements. Hidden elements still count as contents, Background plane 1 is never deletable, and every group retains at least one plane. After deletion, application coordination activates the nearest remaining plane.
 - Group, plane, and element eye states remain independent and preserve child settings.
 
-An empty plane's centered action area pairs the implemented **Delete plane** control with a disabled paperclip **Attach asset** placeholder. Approved checkpoint A keeps that paperclip below the element list even when the ordinary plane is populated. It communicates the intended future manual-placement path only; it does not open a picker, attach data, or imply that asset import or placement exists.
+An empty plane's centered action area pairs the implemented **Delete plane** control with a paperclip **Add asset** action. The same add action remains available when an ordinary plane is populated. It opens the Assets drawer, where the original code-defined swatches can place a synthetic demo rectangle into the active ordinary plane. This is a narrow proof of the plane-targeted add path; it does not open a file picker, import or persist source media, upload data, or claim production asset management.
 
 The left control remains an application-shell concern: a compact **Add** rail opens an **Asset Library** drawer with Uploads, Speech Balloons, Decorations, Shapes & Frames, and eventually AI Generated. The selected library category and drawer state are transient UI state. Source assets still belong behind `AssetRepository`; category navigation does not justify creating asset persistence before an approved import slice.
 
@@ -113,11 +113,15 @@ The implemented Build Week command surface is intentionally small:
 - `setBaseColor(document, color)` changes the pinned episode backdrop.
 - `setEpisodeName(document, name)` validates and changes the episode title.
 - `extendEpisodeHeight(document, amount)` extends the logical scroll without moving existing content.
+- `resizeEpisodeHeight(document, requestedHeight)` safely grows or trims the logical scroll while respecting the centralized 1,280-unit minimum and every element's bottom bound.
+- `deleteElement(document, elementId)` removes one placed episode instance.
+- `createSyntheticShapeElement(document, input)` places one code-defined demo rectangle in an ordinary plane.
+- `createBackgroundColorRegion(document, input)` places one solid full-width region in an ordinary Background plane.
 - `resetEpisode()` restores the known fixture document through application coordination.
 
 Navigation and selection do not change the document. They update application state.
 
-Reordering, plane rename, element opacity, moving elements between planes, real asset attachment, and the Add rail belong to later separately approved slices. Solid Background color regions are approved in checkpoint B. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
+Reordering, plane rename, element opacity, moving elements between planes, real image attachment/import, and the full Add rail belong to later separately approved slices. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
 
 ### Implemented episode-structure command extension
 
@@ -127,21 +131,22 @@ The Episode Setup and Expandable Scroll checkpoint uses fields that already exis
 - `extendEpisodeHeight(document, amount)` increases `logicalHeight` by a positive logical-unit amount and never shrinks or moves existing content. The UI uses exported `DEFAULT_EPISODE_HEIGHT_INCREMENT = 1280` rather than scattering that value through components.
 - `deleteEmptyLayerPlane(document, planeId)` accepts only an ordinary plane with no elements, rejects deletion of the final plane in a group, and always protects the pinned base. Hidden elements count as contents; after deletion, application coordination selects the nearest remaining plane.
 
-Background plane 1 has no independent rectangle height. Its full-scroll coverage derives from `episode.logicalHeight`, so extending the episode automatically extends the base without duplicating data. The bottom-of-story **Add scroll space** control appears only at the logical episode end and dispatches the centralized 1280-unit extension; it is editor chrome, not an episode element, minimap item, or export item. The minimap refits the complete logical episode inside its own available frame whenever height changes, independent of the main editor's fixed-fit scale.
+Background plane 1 has no independent rectangle height. Its full-scroll coverage derives from `episode.logicalHeight`, so extending or trimming the episode automatically updates the base without duplicating data. The bottom-of-story **Add scroll space** control dispatches the centralized 1280-unit extension; the adjacent handle translates pointer drag into logical units and supports 10-unit arrow-key or 100-unit Shift+arrow adjustments. Both are editor chrome, not episode elements, minimap items, or export items. The minimap refits the complete logical episode whenever height changes, independently of main-editor zoom.
 
 Zustand exposes the pure commands through `setEpisodeName`, `extendEpisodeHeight`, and `deleteLayerPlane` application actions. Deletion chooses the previous plane when available and otherwise the next, then clears element selection. Title and height changes preserve unrelated document arrays and transient viewport state. Reset restores the fixture title, original logical height, fixture planes, selection, and viewport.
 
-### Approved post-review command extensions
+### Implemented post-review command extensions
 
-These extensions are authorized in checkpoints A and B but remain pending until their individual validation passes:
+These extensions are implemented and validated locally in checkpoints A and B:
 
-- `removeElement(document, elementId)` removes one placed episode instance and nothing from the future source-asset repository. The trash control sits beside that element's eye in Layers.
-- `setEpisodeHeight(document, requestedHeight)` supports precise growth and shrink requests. It clamps to a centralized minimum and to the greatest logical bottom bound of all elements, including hidden elements and Background color regions, so it never clips or moves content. The existing `extendEpisodeHeight` remains the coarse 1280-unit shortcut.
-- `createColorRegion(document, planeId, bounds, color)` creates a full-width solid element only in an ordinary Background plane. Movement and vertical-extent edits remain ordinary pure commands; fixed group/plane order supplies its compositing position rather than a renderer exception.
+- `deleteElement(document, elementId)` removes one placed episode instance and nothing from a future source-asset repository. The trash control sits beside that element's eye in Layers.
+- `createSyntheticShapeElement(document, input)` creates one code-defined demo rectangle only in an ordinary plane; application coordination detects and selects the appended stable element ID.
+- `resizeEpisodeHeight(document, requestedHeight)` supports precise growth and shrink requests. It clamps to `MIN_EPISODE_LOGICAL_HEIGHT = 1280` and to the greatest logical bottom bound of all elements, including hidden elements and Background color regions, so it never clips or moves content. The existing `extendEpisodeHeight` remains the coarse 1280-unit shortcut.
+- `createBackgroundColorRegion(document, input)` creates a full-width solid element only in an ordinary Background plane from a chosen start, length, and color. The ordinary movement command changes its vertical position; fixed group/plane order supplies its compositing position rather than a renderer exception.
 
 The bottom resize handle converts pointer movement through the shared coordinate module and requests logical height through `setEpisodeHeight`. Background plane 1 derives from the resulting document height and is excluded from the content-floor calculation because it has no independent bounds. Canvas viewport clamping and minimap fitting respond to the same committed height. Gradients, opacity, imported background photos, and blend modes remain deferred.
 
-The title's existing validation does not change in checkpoint A. Only the interaction changes: ordinary title text becomes the click target, and the input is created after activation with no permanent pencil control.
+The title's existing validation does not change in checkpoint A. Only the interaction changes: ordinary title text is the click target, and the input is created after activation with no permanent pencil control.
 
 Zustand owns:
 
@@ -149,9 +154,10 @@ Zustand owns:
 - the selected element ID
 - the active composition group
 - the active layer-plane ID
-- the logical vertical viewport
+- the logical two-dimensional viewport dimensions and position
+- the transient Fit Width-relative zoom factor
 - active transient pointer state
-- the active Asset Library category and drawer state when that later shell exists
+- the current Assets drawer state
 - command dispatch and reset
 
 Canvas, minimap, and layers subscribe to this shared state. They must not keep competing copies of comic content, selection, or viewport position.
@@ -161,13 +167,13 @@ Canvas, minimap, and layers subscribe to this shared state. They must not keep c
 The episode can be much taller than the screen, but the live Konva stage remains viewport-sized.
 
 1. Elements are stored in logical episode coordinates.
-2. The viewport stores logical `y` and logical height; horizontal positioning is fixed for the Build Week MVP.
-3. A fit scale maps the fixed logical episode width into the available editor width.
-4. Coordinate helpers translate between logical episode, stage screen, and minimap coordinates.
+2. The viewport stores logical `x`, `y`, width, and height plus a transient zoom factor.
+3. A fit scale maps the fixed logical episode width into the available editor width; the zoom factor scales relative to that fit from 50% through 200%.
+4. Coordinate helpers translate between logical episode, stage screen, and minimap coordinates on both axes.
 5. The editor renders intersecting elements plus a small buffer.
 6. Every requested viewport position is clamped to the logical episode bounds.
 
-Wheel/trackpad movement updates viewport `y`. The minimap derives its viewport box from the same conversion helpers. Minimap click or box drag requests a new logical `y`; it never mutates comic content.
+Wheel/trackpad and arrow-key movement update the logical viewport position. Shift+wheel and horizontal trackpad input provide horizontal access when zoom creates horizontal overflow. The minimap derives its two-dimensional viewport box from the same conversion helpers. Minimap click or box drag requests a new logical position; it never mutates comic content.
 
 Selecting an off-screen element from the layers list centers that element in the viewport, clamped to episode bounds. This rule removes an otherwise unclear selection state for reviewers.
 
@@ -175,9 +181,9 @@ Coordinate conversion and clamping live in one tested core module. Do not duplic
 
 The current movement command clamps every element inside the 800-unit episode width. A later panel/frame slice must replace that blanket rule with explicit overflow behavior: irregular panels, effects, and breakout art may extend into an editor bleed area while final rendering clips to the episode output boundary. Optional snapping is a proximity aid and must never silently resize, crop, straighten, or force those elements back inside.
 
-### Approved adjustable zoom and two-dimensional viewport
+### Implemented adjustable zoom and two-dimensional viewport
 
-The current editor remains fixed-fit until authorized checkpoint C is implemented and validated. That checkpoint adds transient `zoomFactor`, `viewportX`, and `viewportY` state without changing the episode format. Visible controls replace the passive fit readout with **Fit Width** plus a 50–200% zoom range, and scroll progress is calculated over the navigable range so the episode end reads 100%. Changing zoom preserves the current logical viewport center where possible, then clamps both axes so no portion of the episode becomes permanently unreachable.
+Checkpoint C adds transient `zoomFactor`, `viewportX`, and `viewportY` state without changing the episode format. Visible controls expose **Fit Width** plus a 50–200% zoom range, and scroll progress is calculated over the navigable range so the episode end reads 100%. Changing zoom preserves the current logical viewport center where possible, then clamps both axes so no portion of the episode becomes permanently unreachable.
 
 At adjustable zoom, logical viewport width and height are derived from the stage dimensions and `zoomFactor`. All episode-to-stage conversions, centering, panning, and clamping stay in the shared coordinate module. The minimap always scales the complete episode to its own frame independently of editor zoom and draws an accurate two-dimensional viewport box from the same logical bounds; its interaction hit target may be larger than a very small visible box without falsifying that visible geometry.
 
@@ -330,11 +336,11 @@ The public demo uses only original synthetic content or explicitly approved asse
 ## Validation
 
 - Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, pinned Background plane 1, group/plane/element ordering, three-level effective visibility, hidden-row selection, name validation, guarded empty-plane deletion, safe element deletion, coarse and precise height changes, content-floor clamping, color-region geometry, center-preserving two-dimensional zoom, and minimap viewport geometry at zoom. Opacity bounds remain later work.
-- Playwright: load the sample, click to edit/cancel/reject episode titles, navigate through the minimap, create and safely delete an empty plane, verify the disabled future attachment placeholder in empty and populated planes, select and delete a placed element, edit the base from Layers and canvas, extend and safely trim the episode, create and move a Background color region, exercise Fit Width and bounded zoom, confirm minimap agreement, and reset. Add each story only with its corresponding completed checkpoint.
+- Playwright: load the sample, click to edit/cancel/reject episode titles, navigate through the minimap, create and safely delete an empty plane, open the Assets drawer and place code-defined demo rectangles in empty and populated ordinary planes, select and delete a placed element, edit the base from Layers and canvas, extend and safely trim the episode, create and move a Background color region, exercise Fit Width and bounded zoom, move an element at 200%, confirm minimap agreement, and reset.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 
-The local Episode Setup and Expandable Scroll checkpoint passes 63 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. Remote publication remains separately gated.
+The local post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. Remote publication remains separately gated.
 
 ## Non-negotiable invariants
 

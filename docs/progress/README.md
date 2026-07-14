@@ -60,3 +60,16 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured in bundled Chromium at a 1440 × 900 viewport.
 - File: 1440 × 900 PNG, 103,161 bytes.
 - SHA-256: `3513a6bcaec50ceb3ddeeb60bdbafa4fdd57db9fa503cce1b27c2345fc011820`.
+
+## July 13 — Creator controls, height, and zoom
+
+![ScrollSplice creator controls, height, and zoom checkpoint](2026-07-13-creator-controls-height-and-zoom.png)
+
+- Captured by Codex from the running local build after Direct Creator Controls, Safe Precise Height and Background Color Regions, and Canvas Zoom/2D passed validation.
+- Shows the title as the edit target with no permanent pencil, a populated Content plane with its enabled **Add asset** paperclip, placed-element trash actions beside the eyes, the full-episode minimap, and the **Fit Width**-relative zoom controls.
+- The same validated build also provides synchronized Layers/canvas base-color controls, code-defined synthetic demo placement, pointer/keyboard height fine-tuning, and solid movable Background color regions; those interactions are validated but are not all visible in this single top-of-episode frame.
+- Contains only the public-safe code-rendered **Signal in the Fog** fixture; no Root & Table production artwork or third-party comic reference appears.
+- Captured in bundled Chromium at a 1440 × 900 viewport after supported-size visual QA at 1440 × 900, 1280 × 720, and 1024 × 768.
+- File: 1440 × 900 PNG, 108,387 bytes.
+- SHA-256: `b6dcfc9bd7046a955ba06e19027b14bfae67b29f8bc58e277fe77b293301fe29`.
+- This is local evidence only; it does not imply that the checkpoint has been pushed, deployed, or submitted.

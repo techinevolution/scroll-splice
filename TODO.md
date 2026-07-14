@@ -18,6 +18,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Approve **Episode Setup and Expandable Scroll** in `PLAN.md`.
 - [x] Test **Episode Setup and Expandable Scroll**; confirm empty-plane deletion and minimap behavior after expansion.
 - [x] Approve the ordered A/B/C work request: **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, then **Canvas Zoom and 2D Viewport**.
+- [ ] Run the next **HUMAN TEST and direction checkpoint** on the completed local A/B/C build before approving opacity or another creator-facing slice.
 
 ## Katherine — before submission
 
@@ -34,10 +35,11 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement and validate the approved numbered layer-plane and editable-backdrop foundation in `c5f83c5`.
 - [x] Record Katherine's empty-plane deletion, editable-title, expandable-scroll, minimap-refit, and adjustable-view feedback and map it into separately gated slices.
 - [x] Implement and validate **Episode Setup and Expandable Scroll**, including paired empty-plane actions, safe deletion, editable current-episode title, repeatable 1280-unit downward extension, minimap refitting, reset coverage, and regression validation.
-- [ ] Implement and validate checkpoint A: click-to-edit title without a pencil, synchronized Layers/canvas base controls, placed-element trash beside the eye, and the disabled paperclip in populated ordinary planes.
-- [ ] Implement and validate checkpoint B: safe precise height drag plus solid movable Background color regions, without clipping visible or hidden elements.
-- [ ] Implement and validate checkpoint C: **Canvas Zoom and 2D Viewport** with Fit Width, 50–200%, horizontal access, and accurate minimap geometry.
-- [ ] After A/B/C pass and Katherine separately approves it: implement only **Asset Properties and Opacity**, then stop before fades, tab dragging, the Add rail, real import, persistence, export, deployment, or AI work.
+- [x] Implement and validate checkpoint A: click-to-edit title without a pencil, synchronized Layers/canvas base controls, placed-element trash beside the eye, and a paperclip that opens the Assets drawer and places code-defined synthetic demo rectangles in empty or populated ordinary planes.
+- [x] Implement and validate checkpoint B: safe precise pointer/keyboard height changes plus solid movable Background color regions with chosen start, length, and color, without clipping visible or hidden elements or shrinking below 1280 units.
+- [x] Implement and validate checkpoint C: **Canvas Zoom and 2D Viewport** with Fit Width-relative 50–200%, horizontal access, accurate minimap geometry, and element movement at non-default zoom.
+- [x] Record the local A/B/C evidence: 94 unit tests, strict typecheck, ESLint, production build, isolated Playwright Chromium walkthrough, and visual QA at 1440 × 900, 1280 × 720, and 1024 × 768.
+- [ ] After Katherine completes the human test and separately approves it: implement only the chosen next slice. **Asset Properties and Opacity** is a candidate, not the automatic next action.
 
 ## Joint — only if the human MVP finishes early
 
