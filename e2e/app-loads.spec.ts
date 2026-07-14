@@ -74,6 +74,13 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   )
 
   await expect(canvas).toHaveAttribute('data-ready', 'true')
+  await expect(episodePosition).toHaveAttribute(
+    'aria-describedby',
+    'minimap-navigation-help minimap-position-status',
+  )
+  await expect(page.locator('#minimap-position-status')).toContainText(
+    'Viewport starts at x 0, y 0',
+  )
   await expect(canvas).toHaveAttribute('data-base-color', '#F3F0EA')
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')

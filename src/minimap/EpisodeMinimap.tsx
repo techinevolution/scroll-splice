@@ -205,6 +205,8 @@ export function EpisodeMinimap() {
         role="region"
         tabIndex={0}
         aria-label="Episode position and viewport"
+        aria-roledescription="two-dimensional viewport navigator"
+        aria-describedby="minimap-navigation-help minimap-position-status"
         data-viewport-x={viewportX}
         data-viewport-y={viewportY}
         onKeyDown={handleKeyDown}
@@ -258,9 +260,15 @@ export function EpisodeMinimap() {
           />
         </svg>
       </div>
-      <p className="panel-help">
+      <p id="minimap-navigation-help" className="panel-help">
         Click or drag the cyan frame · x {Math.round(viewportX)} · y{' '}
         {Math.round(viewportY)}
+      </p>
+      <p id="minimap-position-status" className="sr-only" aria-live="polite">
+        Viewport starts at x {Math.round(viewportX)}, y {Math.round(viewportY)};
+        visible size {Math.round(viewportLogicalWidth)} by{' '}
+        {Math.round(viewportLogicalHeight)} logical units within an episode{' '}
+        {episode.logicalWidth} by {episode.logicalHeight} logical units.
       </p>
     </section>
   )
