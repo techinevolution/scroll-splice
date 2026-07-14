@@ -174,39 +174,27 @@ export function LayersPanel() {
         </label>
       ) : null}
 
-      {canHoldElements && (!isEmptyPlane || canAddColorRegion) ? (
+      {canAddColorRegion ? (
         <div className="plane-element-actions" aria-label={`${planeLabel} add actions`}>
-          {!isEmptyPlane ? (
-            <button
-              type="button"
-              onClick={openAssetPanel}
-              title="Open the synthetic Asset Library"
-            >
-              <PaperclipIcon />
-              <span>Add asset</span>
-            </button>
-          ) : null}
-          {canAddColorRegion ? (
-            <button
-              type="button"
-              aria-expanded={showColorRegionForm}
-              onClick={() => {
-                setColorRegionStart(String(Math.round(viewportY)))
-                setColorRegionHeight(
-                  String(
-                    Math.max(
-                      Math.min(1280, episode.logicalHeight - viewportY),
-                      1,
-                    ),
+          <button
+            type="button"
+            aria-expanded={showColorRegionForm}
+            onClick={() => {
+              setColorRegionStart(String(Math.round(viewportY)))
+              setColorRegionHeight(
+                String(
+                  Math.max(
+                    Math.min(1280, episode.logicalHeight - viewportY),
+                    1,
                   ),
-                )
-                setShowColorRegionForm((isOpen) => !isOpen)
-              }}
-            >
-              <span aria-hidden="true">▰</span>
-              <span>Color region</span>
-            </button>
-          ) : null}
+                ),
+              )
+              setShowColorRegionForm((isOpen) => !isOpen)
+            }}
+          >
+            <span aria-hidden="true">▰</span>
+            <span>Color region</span>
+          </button>
         </div>
       ) : null}
 
@@ -228,7 +216,7 @@ export function LayersPanel() {
               aria-label="Color region start"
               min="0"
               max={episode.logicalHeight}
-              step="10"
+              step="1"
               value={colorRegionStart}
               onChange={(event) => setColorRegionStart(event.currentTarget.value)}
             />
@@ -335,6 +323,22 @@ export function LayersPanel() {
           )
         })}
       </ul>
+
+      {canHoldElements && !isEmptyPlane ? (
+        <div
+          className="plane-element-actions plane-element-footer"
+          aria-label={`${planeLabel} element actions`}
+        >
+          <button
+            type="button"
+            onClick={openAssetPanel}
+            title="Open the synthetic Asset Library"
+          >
+            <PaperclipIcon />
+            <span>Add asset</span>
+          </button>
+        </div>
+      ) : null}
     </section>
   )
 }
