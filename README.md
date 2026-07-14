@@ -18,7 +18,7 @@ Implementation began later on July 13 with the locked application scaffold, fram
 
 That testable editor is complete in commits `c33b491` and `05ac06b`. It includes the desktop workspace, viewport-sized Konva canvas, synchronized full-episode minimap, wheel and minimap navigation, canvas/element-row selection, off-screen element reveal, selected-element movement, a collapsible synthetic-asset placeholder, and a full reset. Katherine completed the hands-on product review on July 13 and confirmed that minimap navigation, canvas movement, and the collapsible asset panel work well.
 
-The July 13 composition checkpoint in `f02776f` adds the approved **Background**, **Content**, and **Foreground** groups. The right Layers panel follows the active group, canvas selection follows an element into its group, and independent group/element eye controls preserve each element's own setting. Katherine reviewed that checkpoint and clarified its intended next level: each fixed group contains numbered editable layer planes, and only Background plane 1 is a special pinned base. The current colored beat rectangles are interim panel elements, not the episode background, and the current white canvas fill is still hardcoded; the next proposed foundation corrects both. Public deployment remains scheduled for the July 19–21 submission runway. Dated, public-safe visual checkpoints are preserved in [Progress Screenshots](docs/progress/README.md).
+The July 13 composition checkpoint in `f02776f` adds the approved **Background**, **Content**, and **Foreground** groups. The completed layer-plane checkpoint in `c5f83c5` then implements the clarified format-v3 model: each fixed group contains numbered editable layer planes, only Background plane 1 is a pinned editable base, colored beat rectangles are Content panels, and canvas/minimap backdrops derive from document data instead of a hardcoded fill. The right inspector now reaches the top of the workspace, hidden elements remain selectable from Layers, and each active plane lists its elements from top to bottom on the scroll. Public deployment remains scheduled for the July 19–21 submission runway. Dated, public-safe visual checkpoints are preserved in [Progress Screenshots](docs/progress/README.md), including the [completed layer-plane checkpoint](docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png).
 
 ## Product sequence
 
@@ -33,15 +33,15 @@ The contest submission is the smallest complete, coherent ScrollSplice editor ex
 - one meaningful edit: move the selected element, plus reset
 - public judge access and the required submission evidence
 
-Import, persistence, undo, resize, ordering, production export, accounts, OAuth, OpenAI model access, autonomous generation, and direct publishing are deliberately outside the required milestone. If the human editor and every submission dependency are already stable, a narrowly bounded OpenAI image-generation proof may be attempted as stretch work; the submitted editor must not depend on it.
+Import, persistence, undo, resize, creator-controlled reordering, production export, accounts, OAuth, OpenAI model access, autonomous generation, and direct publishing are deliberately outside the required milestone. If the human editor and every submission dependency are already stable, a narrowly bounded OpenAI image-generation proof may be attempted as stretch work; the submitted editor must not depend on it.
 
 ### Creator-ready MVP — phased beyond the core
 
-The full creator-ready milestone adds local asset import, saving and reopening, safe undo, ordering, reader preview, and a validated export pipeline. Most of that work remains after Build Week. The completed composition-groups and visibility foundation does not make the full creator-ready milestone a submission requirement. WEBTOON requirements are discovery inputs for the future exporter, not a reason to enlarge the one-week minimum.
+The full creator-ready milestone adds local asset import, saving and reopening, safe undo, creator-controlled reordering, reader preview, and a validated export pipeline. Most of that work remains after Build Week. The completed composition-groups and visibility foundation does not make the full creator-ready milestone a submission requirement. WEBTOON requirements are discovery inputs for the future exporter, not a reason to enlarge the one-week minimum.
 
 Its workspace model uses three fixed full-scroll composition groups—**Background**, **Content**, and **Foreground**—above the story canvas. Inside each group, numbered **layer planes** provide open-ended creative surfaces; assets, text, shapes, color regions, and other placed items are **elements** inside one plane. Only Background plane 1 is pinned as the editable episode-wide base color. Every other plane remains flexible rather than forcing creators into predefined panel, character, or effect boxes.
 
-The next proposed slice establishes those plane records, numbered tabs, plane visibility, active-plane selection, and the real editable backdrop before later controls depend on the wrong model. Per-element opacity, movable background color regions, tab drag reordering, and the category-based **Add** rail then follow as separately reviewed slices. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md#recommended-next-slice-layer-planes-and-episode-backdrop).
+That numbered-plane and editable-backdrop foundation is now implemented. The recommended next slice is **asset properties and opacity**, which remains proposed for separate approval. Movable background color regions, tab drag reordering, the category-based **Add** rail, import, resize, persistence, export, deployment, and AI work all remain deferred. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components) and [Plan](PLAN.md#recommended-next-slice-asset-properties-and-opacity).
 
 ### Autonomous creation — after the human workflow
 
@@ -77,19 +77,17 @@ corepack pnpm install
 corepack pnpm dev
 ```
 
-Open the local URL printed by Vite in a desktop Chrome-class browser. The editor has been inspected at 1440 × 900, 1280 × 720, and 1024 × 768 and verified through Playwright Chromium.
+Open the local URL printed by Vite in a desktop Chrome-class browser. The current layer-plane checkpoint has been visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768 and verified through isolated Playwright Chromium runs.
 
 Suggested review walkthrough for the currently implemented checkpoint:
 
-> Known interim behavior: hiding an element currently makes its row unavailable for selection, and the element list reflects stacking rather than top-to-bottom canvas position. The proposed layer-plane foundation deliberately corrects both; this README does not claim those changes are already built.
-
-1. Switch among **Background**, **Content**, and **Foreground** and confirm the right Layers list follows the active group without changing the composed episode.
-2. Toggle a group eye and an individual element eye; restore them and confirm the individual choice is preserved independently.
-3. Scroll over the story canvas to move through the episode.
-4. Click the minimap or drag its cyan viewport frame.
-5. Select an element row from another beat and confirm the canvas centers it.
-6. Select an element on the canvas and confirm its composition group and matching row are selected.
-7. Drag the selected element, then choose **Reset demo** and confirm the starting state and visibility return.
+1. Switch among **Background**, **Content**, and **Foreground** and confirm the numbered plane tabs and element list follow the active group without changing the composed episode.
+2. Select Background plane 1, change **Base color**, and confirm the canvas and minimap update together; hide the base to reveal the editor-only checkerboard.
+3. Add an ordinary numbered plane, then use the plane and group eyes to confirm their child eye settings remain independent.
+4. Hide an element and confirm its row remains selectable even though it does not render or capture canvas clicks.
+5. Scroll over the story canvas, then click the minimap or drag its cyan viewport frame to move through the episode.
+6. Select an element row from another beat and confirm the canvas centers it; select an element on the canvas and confirm its group, plane, and row synchronize.
+7. Confirm the active plane's rows follow the story from top to bottom, then drag a selected element and choose **Reset demo** to restore the fixture, visibility, planes, base color, and viewport.
 8. Open and close **Assets** to inspect the deliberately limited Build Week placeholder.
 
 Run the available validation with:
@@ -112,9 +110,10 @@ Katherine made the controlling product decisions: prove the human editor before 
 - implemented and tested the framework-independent coordinate, command, and editor-state core in `c33b491`
 - built the complete workspace and interaction story in `05ac06b`
 - added fixed composition groups, independent group/element visibility, and the filtered Layers workflow in `f02776f`
+- implemented format-v3 numbered planes, the editable episode backdrop, three-level visibility, hidden-row selection, top-to-bottom element organization, and the full-height inspector in `c5f83c5`
 - used unit, static, production-build, browser, accessibility, and visual evidence to find and correct canvas-startup test timing, layer semantics, responsive layout, and reset-panel behavior
 
-The current July 13 validation passes 26 unit tests across four files, strict typecheck, ESLint, the production build, and the expanded Playwright Chromium walkthrough. The composition controls and independently scrolling Layers list were visually inspected at all three documented desktop sizes. The build warning about a JavaScript chunk slightly above 500 kB is non-blocking and comes from the intentionally bundled React/Konva editor stack; code-splitting is not useful for this single-screen MVP.
+The current July 13 validation passes 38 unit tests across four files, strict typecheck, ESLint, and the production build. The expanded Playwright Chromium walkthrough passed three consecutive isolated runs on port `4174`, and the completed layer-plane interface was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. The build warning about a JavaScript chunk slightly above 500 kB is non-blocking and comes from the intentionally bundled React/Konva editor stack; code-splitting is not useful for this single-screen MVP.
 
 OpenAI-powered image creation is an optional product stretch only after the human-operated editor, validation, public access, and submission evidence are secure. If it is not built during Build Week, the submission remains the human editor. If a proof is built, it must use synthetic inputs, preserve unrestricted judge access to the base editor, and be described only to the extent actually demonstrated.
 

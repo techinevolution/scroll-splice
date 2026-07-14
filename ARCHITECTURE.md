@@ -49,14 +49,15 @@ Do not create empty `services`, `adapters`, `auth`, `persistence`, or `export` t
 
 ## Current Build Week document model
 
-The implemented format-v2 checkpoint uses a flat element list with a direct composition-group value on each element. It proved the three-group interaction, but Katherine's review established that the creator-ready model needs one explicit layer-plane level between a group and its elements.
+The implemented format-v3 document uses one shallow, explicit organization path: fixed composition group -> ordered layer plane -> flat element references by `layerPlaneId`. An element's group is derived from its plane rather than duplicated on the element.
 
-The provisional sample document contains:
+The sample document contains:
 
 - a stable episode ID and format version
 - a fixed logical width of `800` units and flexible logical height
+- ordered `LayerPlane` records with stable IDs, group ownership, visibility, and base or ordinary kind
 - an ordered flat collection of elements
-- for each element: stable ID, readable name, asset reference, logical `x`, `y`, `width`, `height`, visibility, and stacking order
+- for each element: stable ID, readable name, plane reference, asset reference, logical `x`, `y`, `width`, `height`, visibility, and stacking order
 
 The original fixture should contain six visually distinct beats rendered from code-defined shapes and text so that scrolling, minimap navigation, selection, and movement are easy to judge without separate artwork licensing. It may suggest a vertical comic but must not copy or expose private Root & Table work.
 
@@ -66,7 +67,7 @@ Selection, hover, active drag, viewport position, panel-collapse state, and rese
 
 Do not put React objects, Konva nodes, browser handles, user IDs, OAuth fields, provider tokens, WEBTOON metadata, or platform upload state in the episode document.
 
-## Approved creator-ready layer-plane extension
+## Implemented layer-plane foundation
 
 The approved organization model remains shallow and predictable rather than becoming an arbitrary nested tree:
 
@@ -75,19 +76,19 @@ The approved organization model remains shallow and predictable rather than beco
 - Exactly one plane is special: Background plane 1 is the pinned lowest plane, carries the editable full-scroll base RGB color, and automatically follows episode height. It may be recolored or hidden but cannot be reordered or deleted.
 - Every other plane is an unrestricted creative surface. Examples such as “Fade,” “Characters,” or “Film” are optional names, never enforced content types.
 - Every element references one `layerPlaneId`; its group is derived from that plane rather than duplicated as a second source of truth.
-- A later asset-properties slice adds a required element opacity value from 0–1 in addition to preserving any per-pixel alpha in the source asset. The immediate layer-plane foundation does not add that field or its UI.
+- A later asset-properties slice adds a required element opacity value from 0–1 in addition to preserving any per-pixel alpha in the source asset. The completed layer-plane foundation intentionally does not add that field or its UI.
 - Ordinary full-width color regions are elements with logical start `y`, height, color, and later optional gradient data. Creating one asks where it should begin, defaults to the current viewport, and leaves its position and extent editable.
 - Effective visibility is `group visible AND plane visible AND element visible`. A hidden element is absent from the canvas and hit testing but may remain selected from the Layers panel.
 - Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents elements by logical `y` from top to bottom and uses local stacking only to resolve equal or overlapping positions.
 - `activeCompositionGroup` and `activeLayerPlaneId` are transient editor state. Canvas selection activates both so the matching row remains discoverable.
 
-The next approved schema slice should bump the fixture format and update it directly rather than adding speculative migration machinery: no saved user documents exist yet. The existing colored beat rectangles represent comic panels and should move into a Content plane; a new Background base plane should own the white starting color that is currently hardcoded in renderers.
+Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without speculative migration machinery. The colored beat rectangles now live in a Content plane as comic panels, and pinned Background plane 1 owns the starting backdrop color used by both renderers; no hardcoded episode fill remains in the canvas or minimap.
 
 ### Layer-plane tab behavior
 
 - The right panel shows compact numbered tabs below `Layers · Background`, `Layers · Content`, or `Layers · Foreground`.
 - When Background plane 1 is active, the inspector shows a small **Base color** row with a swatch and the browser's native color picker. This is the foundation's only new property editor. If the base plane is hidden, canvas and minimap show an editor-only checkerboard that is not episode content or export output.
-- The foundation implements stable identity, selection, creation, visibility, overflow arrows, and automatic active-tab reveal before it adds plane reordering.
+- The implemented foundation provides stable identity, selection, creation, visibility, overflow arrows, and automatic active-tab reveal before any later plane-reordering slice.
 - A later layer-management slice gives ordinary tabs a dedicated drag handle and dispatches a pure reorder command inside the active group. Background plane 1 remains pinned.
 - Move Left/Right commands provide a keyboard and non-drag alternative in that same management slice. Small left and right overflow arrows scroll the tab strip without changing plane order, and the active tab scrolls into view from the foundation onward.
 - A `+` creates another ordinary plane in the active group. Plane numbers reflect current order; stable IDs preserve identity when numbers change.
@@ -102,18 +103,21 @@ The implemented Build Week command surface is intentionally small:
 - `moveElement(elementId, logicalPosition)` returns an updated document.
 - `setElementVisibility(elementId, visible)` changes one element's eye state.
 - `setCompositionGroupVisibility(group, visible)` changes only the group eye state and preserves every element's individual setting.
+- `createLayerPlane(document, group)` appends an ordinary plane with a stable ID and order.
+- `setLayerPlaneVisibility(document, planeId, visible)` changes only one plane's eye state.
+- `setBaseColor(document, color)` changes the pinned episode backdrop.
 - `resetEpisode()` restores the known fixture document through application coordination.
 
 Navigation and selection do not change the document. They update application state.
 
-The approved layer-plane foundation may add only the pure commands it needs: create an ordinary plane, change plane visibility, and change the base color. Reordering, rename/delete, element opacity, moving elements between planes, color regions, and the Add rail belong to later separately approved slices. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence as part of the foundation.
+The completed layer-plane foundation added only those pure commands. Reordering, rename/delete, element opacity, moving elements between planes, color regions, and the Add rail belong to later separately approved slices. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
 
 Zustand owns:
 
 - the current episode document
 - the selected element ID
 - the active composition group
-- the active layer-plane ID when that approved slice exists
+- the active layer-plane ID
 - the logical vertical viewport
 - active transient pointer state
 - the active Asset Library category and drawer state when that later shell exists
@@ -288,10 +292,12 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, and—when implemented—pinned Background plane 1, group/plane/element ordering, three-level effective visibility, hidden-row selection, and opacity bounds.
+- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, reset behavior, serializable model invariants, pinned Background plane 1, group/plane/element ordering, three-level effective visibility, and hidden-row selection. Opacity bounds belong to the later opacity slice.
 - Playwright: load the sample, navigate through the minimap, select from canvas and layers, move one element, and reset; extend the same story as slices land with group/plane filtering, independent eye states, hidden-row selection, base-color synchronization, and tab overflow navigation.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
+
+The `c5f83c5` checkpoint passes 38 unit tests, strict typecheck, ESLint, production build, and three consecutive isolated Playwright Chromium walkthroughs on port `4174`. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768.
 
 ## Non-negotiable invariants
 

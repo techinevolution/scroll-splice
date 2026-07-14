@@ -14,7 +14,8 @@ Small loose actions only. Product direction and dated implementation work belong
 
 - [x] Approve the composition-groups and visibility slice in `PLAN.md`.
 - [x] Review the implemented composition groups and eye controls in the running app and clarify the numbered layer-plane model.
-- [ ] Approve or revise the proposed **layer planes and episode backdrop** foundation in `PLAN.md`; this is the next implementation gate.
+- [x] Approve the **layer planes and episode backdrop** foundation in `PLAN.md`.
+- [ ] Approve or revise the proposed **asset properties and opacity** slice in `PLAN.md`; no implementation is authorized yet.
 
 ## Katherine — before submission
 
@@ -28,7 +29,8 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] After Katherine runs `/feedback`: record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
 - [x] Implement and validate the approved composition groups and visibility checkpoint.
 - [x] Record Katherine's clarified base-background, unrestricted planes, opacity, movable color-region, tab-overflow, draggable-tab, and Clip Studio-style panel-mask direction in the project documents.
-- [ ] After separate approval: implement only the numbered layer-plane and editable-backdrop foundation, then stop for review before opacity, color regions, tab dragging, or the Add rail.
+- [x] Implement and validate the approved numbered layer-plane and editable-backdrop foundation in `c5f83c5`.
+- [ ] After separate approval: implement only the asset-properties and opacity slice, then stop for review before color regions, tab dragging, the Add rail, import, resize, persistence, export, deployment, or AI work.
 
 ## Joint — only if the human MVP finishes early
 

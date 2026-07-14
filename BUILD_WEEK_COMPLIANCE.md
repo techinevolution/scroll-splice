@@ -97,8 +97,8 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [x] README contains verified setup, run, validation, supported-browser, and sample-data instructions.
 - [x] The original **Signal in the Fog** sample is made from code-defined shapes and text, so judges do not need private assets.
 - [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
-- [x] The running UI has been visually inspected at 1440 × 900 and 1280 × 720.
-- [x] A clean Playwright Chromium context can complete the defining story: navigate, select from canvas/layers, move, and reset.
+- [x] The running UI has been visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768.
+- [x] An isolated Playwright Chromium context can complete the defining story, including numbered-plane navigation, base-color changes, hidden-row selection, canvas/layers selection, movement, and reset.
 - [x] The defining human editor story works with every optional OpenAI feature disabled or unavailable.
 
 ## 6. Free and unrestricted judge access
@@ -223,9 +223,11 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Editor core commit | `c33b491`, coordinates, commands, shared state, and 15 passing unit tests | Complete |
 | Testable editor commit | `05ac06b`, workspace, minimap, layers, navigation, selection, movement, reset, and smoke test | Complete |
 | Composition groups checkpoint | `f02776f`, Background, Content, and Foreground filtering plus independent group/element visibility | Complete July 13 |
-| Creator layer-model clarification | Fixed groups contain numbered planes; only Background plane 1 is pinned; opacity, color regions, overflow, tab dragging, and panel masks are explicitly phased | Documented July 13; implementation pending separate approval |
-| Local validation | Typecheck, lint, 26 unit tests, production build, expanded Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 on July 13 | Complete |
+| Numbered layer-plane checkpoint | `c5f83c5`, format-v3 planes, pinned editable backdrop, three-level visibility, hidden-row selection, top-to-bottom rows, overflow navigation, and full-height inspector | Complete locally July 13; push pending |
+| Local validation | Typecheck, lint, 38 unit tests, production build, three consecutive isolated Chromium walkthroughs on port `4174`, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768 on July 13 | Complete |
 | Progress screenshot | `docs/progress/2026-07-13-first-testable-editor.png`, captured by Katherine before composition groups | Complete |
+| Composition progress screenshot | `docs/progress/2026-07-13-composition-groups-and-visibility.png`, 1440 × 900, SHA-256 `32ad4cf5dfa38826404703c3dc1bb2e66db2131b2e3085bb6c27db2631c95202` | Complete locally; push pending |
+| Layer-plane progress screenshot | `docs/progress/2026-07-13-layer-planes-and-editable-backdrop.png`, 1440 × 900, SHA-256 `d9688284f870786821a7cdf9c25010a21dac0f5dec1ecdfaf83561bea2da6d76` | Complete locally; push pending |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
 | WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
 | Working project URL | Pending | Pending |

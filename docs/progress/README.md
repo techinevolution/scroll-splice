@@ -24,3 +24,15 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured in bundled Chromium at a 1440 × 900 viewport.
 - File: 1440 × 900 PNG, 118,503 bytes.
 - SHA-256: `32ad4cf5dfa38826404703c3dc1bb2e66db2131b2e3085bb6c27db2631c95202`.
+
+## July 13 — Numbered layer planes and editable backdrop
+
+![ScrollSplice numbered layer planes and editable backdrop checkpoint](2026-07-13-layer-planes-and-editable-backdrop.png)
+
+- Captured by Codex from the running `c5f83c5` checkpoint after the layer-plane slice passed validation.
+- Shows the full-height right inspector, numbered Content-plane tabs, centered composition controls, synchronized minimap, viewport-sized canvas, and synthetic **Signal in the Fog** episode.
+- Represents the implemented format-v3 state. Hidden elements remain selectable from Layers, the active plane is ordered from top to bottom on the scroll, and the backdrop is document data rather than a hardcoded renderer fill.
+- Contains only the public-safe code-rendered fixture; no Root & Table production artwork or third-party comic reference appears.
+- Captured in bundled Chromium at a 1440 × 900 viewport.
+- File: 1440 × 900 PNG, 102,815 bytes.
+- SHA-256: `d9688284f870786821a7cdf9c25010a21dac0f5dec1ecdfaf83561bea2da6d76`.

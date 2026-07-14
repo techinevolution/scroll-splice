@@ -86,7 +86,7 @@ These command contracts were verified against the July 13 foundation scaffold. K
 - Keep coordinate conversion and ordering logic small, centralized, and tested.
 - Treat the Konva stage as a viewport into logical episode coordinates, never as one full-height episode canvas.
 - Derive canvas, minimap, and layers from the same episode document.
-- Treat the implemented format-v2 direct `compositionGroup` field as an interim Build Week checkpoint, not the creator-ready layer model. The approved next schema stays shallow: fixed composition group -> ordered `LayerPlane` with a stable ID -> flat element references by `layerPlaneId`.
+- Treat the implemented format-v3 schema as the current Build Week model: fixed composition group -> ordered `LayerPlane` with a stable ID -> flat element references by `layerPlaneId`. Do not reintroduce a duplicated direct group field on elements.
 - Keep exactly three fixed full-scroll composition groups: Background, Content, and Foreground. Only Background plane 1 is special: it is the pinned editable base color. Every other numbered plane is an unrestricted creator surface; optional names may guide but never enforce content roles.
 - Use fixed group rank, then plane order, then local element stacking for deterministic rendering. Within a group, plane 1 is lowest and higher numbered planes render above lower numbered planes. Show the active plane's element rows by logical `y` from top to bottom, using local stacking only as a tie-breaker.
 - Keep group, plane, and element visibility independent. Effective canvas visibility is all three combined. Hidden elements do not render or capture canvas input, but they remain selectable from Layers so a creator can inspect or reveal them.
@@ -128,7 +128,7 @@ The July 21 submission must prove reviewer understanding and UX clarity through:
 - one selected-element move command and a reliable reset action
 - public judge access and all evidence required by BUILD_WEEK_COMPLIANCE.md
 
-Production export, import, persistence, undo, resize, ordering, desktop packaging, OAuth, accounts, cloud storage, autonomous creation, and direct publishing are not required for the submission. A single synthetic OpenAI generate-and-place proof is optional only after the complete human MVP, validation, public access, and submission evidence pass and Katherine approves its additional gate. The editor and judge walkthrough must work without model access. Static deployment is required only as the simplest judge-access path. Follow the dated schedule and fallback rules in `PLAN.md`.
+Production export, import, persistence, undo, resize, tab/element reordering, desktop packaging, OAuth, accounts, cloud storage, autonomous creation, and direct publishing are not required for the submission. A single synthetic OpenAI generate-and-place proof is optional only after the complete human MVP, validation, public access, and submission evidence pass and Katherine approves its additional gate. The editor and judge walkthrough must work without model access. Static deployment is required only as the simplest judge-access path. Follow the dated schedule and fallback rules in `PLAN.md`.
 
 ## Future OpenAI Autonomy Boundary
 
@@ -156,7 +156,7 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 
 - Run and visually inspect the application for any UI slice.
 - Verify the main canvas, minimap, and layers panel at representative desktop sizes; inspect the collapsed asset placeholder only if that approved placeholder exists.
-- For the approved layer-plane foundation, verify group/plane filtering, group/plane/element eyes, canvas-driven group and plane switching, hidden-row selection, top-to-bottom row ordering, pinned-base behavior, overflow navigation, the full-height inspector, and the existing minimap interaction at 1440 × 900, 1280 × 720, and 1024 × 768.
+- When changing the implemented layer-plane foundation, regression-test group/plane filtering, group/plane/element eyes, canvas-driven group and plane switching, hidden-row selection, top-to-bottom row ordering, pinned-base behavior, overflow navigation, the full-height inspector, and the existing minimap interaction at 1440 × 900, 1280 × 720, and 1024 × 768.
 - Do not claim drag behavior, synchronization, or visual correctness from static checks alone.
 - Use screenshots when they materially help Katherine review a layout or interaction.
 
@@ -178,8 +178,8 @@ Production export, import, persistence, undo, resize, ordering, desktop packagin
 - Never push to `main` without Katherine's explicit consent.
 - On July 13, Katherine explicitly authorized Codex to commit and push the current unpushed work and each later coherent, passing Build Week slice directly to `main` through the first complete human-editor MVP that she can test. This includes the workspace, shared canvas/minimap/layers behavior, navigation, synchronized selection, movement, reset, tests, and status documentation.
 - During that authorized goal, Codex owns routine commit and push mechanics. Push only after the relevant validation passes, never push secrets or private creative content, and report the pushed commit after each coherent checkpoint. Do not interrupt Katherine for routine Git permission while this authorization is active.
-- The product implementation portion of that authorization completed in `05ac06b`; the immediately following status/evidence closeout is the final authorized push. After the handoff, any later feature push—especially deployment, OpenAI integration, OAuth, external services, or post-review changes—requires a new instruction unless separately authorized.
-- Katherine separately authorized the July 13 composition checkpoint and this layer-model documentation clarification to be committed and pushed; that permission does not pre-approve implementation of the proposed next slice.
+- The first testable-editor authorization completed in `05ac06b`, and Katherine separately authorized the composition checkpoint pushed in `f02776f`.
+- Katherine approved the numbered layer-plane implementation completed locally in `c5f83c5`, but that implementation instruction does not by itself authorize a push to `main`. No current authorization covers pushing that checkpoint, the proposed asset-properties and opacity slice, deployment, OpenAI integration, OAuth, external services, or other later features. Obtain a new explicit instruction before implementing or pushing them.
 - Never rewrite the baseline commit or tag, even during cleanup.
 
 ## Final Report
