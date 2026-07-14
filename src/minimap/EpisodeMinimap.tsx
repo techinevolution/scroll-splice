@@ -2,8 +2,9 @@ import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 
 import { useEditorStore } from '../app/store'
 import {
-  getMinimapViewportBox,
-  minimapPointerToViewportY,
+  getMinimapViewportBox2D,
+  minimapPointerToViewportPosition,
+  type LogicalPosition,
 } from '../core/coordinates'
 import {
   compareElementsByRenderOrder,
@@ -74,13 +75,19 @@ function MinimapElement({ element, isSelected }: MinimapElementProps) {
 export function EpisodeMinimap() {
   const episode = useEditorStore((state) => state.episode)
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
+  const viewportX = useEditorStore((state) => state.viewportX)
   const viewportY = useEditorStore((state) => state.viewportY)
+  const viewportLogicalWidth = useEditorStore(
+    (state) => state.viewportLogicalWidth,
+  )
   const viewportLogicalHeight = useEditorStore(
     (state) => state.viewportLogicalHeight,
   )
-  const setViewportY = useEditorStore((state) => state.setViewportY)
+  const setViewportPosition = useEditorStore(
+    (state) => state.setViewportPosition,
+  )
   const panViewport = useEditorStore((state) => state.panViewport)
-  const dragOffset = useRef<number | null>(null)
+  const dragOffset = useRef<LogicalPosition | null>(null)
   const baseColor = getEffectiveEpisodeBaseColor(episode)
   const orderedElements = useMemo(
     () =>
@@ -97,57 +104,53 @@ export function EpisodeMinimap() {
     beginDrag: boolean,
   ) => {
     const bounds = event.currentTarget.getBoundingClientRect()
+    const pointerX = event.clientX - bounds.left
     const pointerY = event.clientY - bounds.top
-    const viewportBox = getMinimapViewportBox(
-      viewportY,
-      viewportLogicalHeight,
-      episode.logicalHeight,
-      bounds.height,
+    const minimapDimensions = { width: bounds.width, height: bounds.height }
+    const episodeDimensions = {
+      width: episode.logicalWidth,
+      height: episode.logicalHeight,
+    }
+    const viewportDimensions = {
+      width: viewportLogicalWidth,
+      height: viewportLogicalHeight,
+    }
+    const viewportBox = getMinimapViewportBox2D(
+      {
+        x: viewportX,
+        y: viewportY,
+        ...viewportDimensions,
+      },
+      episodeDimensions,
+      minimapDimensions,
     )
 
     if (beginDrag) {
       event.currentTarget.setPointerCapture(event.pointerId)
       const hitViewport =
+        pointerX >= viewportBox.x &&
+        pointerX <= viewportBox.x + viewportBox.width &&
         pointerY >= viewportBox.y &&
         pointerY <= viewportBox.y + viewportBox.height
 
       dragOffset.current = hitViewport
-        ? pointerY - viewportBox.y
-        : viewportBox.height / 2
+        ? { x: pointerX - viewportBox.x, y: pointerY - viewportBox.y }
+        : { x: viewportBox.width / 2, y: viewportBox.height / 2 }
     }
 
     if (dragOffset.current === null) {
       return
     }
 
-    const requestedTop =
-      ((pointerY - dragOffset.current) / bounds.height) * episode.logicalHeight
-
-    if (beginDrag && pointerY < viewportBox.y) {
-      setViewportY(
-        minimapPointerToViewportY(
-          pointerY,
-          bounds.height,
-          episode.logicalHeight,
-          viewportLogicalHeight,
-        ),
-      )
-      return
-    }
-
-    if (beginDrag && pointerY > viewportBox.y + viewportBox.height) {
-      setViewportY(
-        minimapPointerToViewportY(
-          pointerY,
-          bounds.height,
-          episode.logicalHeight,
-          viewportLogicalHeight,
-        ),
-      )
-      return
-    }
-
-    setViewportY(requestedTop)
+    setViewportPosition(
+      minimapPointerToViewportPosition(
+        { x: pointerX, y: pointerY },
+        minimapDimensions,
+        episodeDimensions,
+        viewportDimensions,
+        dragOffset.current,
+      ),
+    )
   }
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -156,13 +159,31 @@ export function EpisodeMinimap() {
 
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault()
-      panViewport(event.key === 'ArrowDown' ? smallStep : -smallStep)
+      panViewport({
+        x: 0,
+        y: event.key === 'ArrowDown' ? smallStep : -smallStep,
+      })
     } else if (event.key === 'PageDown' || event.key === 'PageUp') {
       event.preventDefault()
-      panViewport(event.key === 'PageDown' ? largeStep : -largeStep)
+      panViewport({
+        x: 0,
+        y: event.key === 'PageDown' ? largeStep : -largeStep,
+      })
+    } else if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+      event.preventDefault()
+      panViewport({
+        x:
+          (event.key === 'ArrowRight' ? 1 : -1) *
+          viewportLogicalWidth *
+          0.12,
+        y: 0,
+      })
     } else if (event.key === 'Home' || event.key === 'End') {
       event.preventDefault()
-      setViewportY(event.key === 'Home' ? 0 : episode.logicalHeight)
+      setViewportPosition({
+        x: viewportX,
+        y: event.key === 'Home' ? 0 : episode.logicalHeight,
+      })
     }
   }
 
@@ -181,13 +202,11 @@ export function EpisodeMinimap() {
       <div
         className="minimap-surface"
         data-testid="minimap"
-        role="slider"
+        role="region"
         tabIndex={0}
-        aria-label="Episode position"
-        aria-valuemin={0}
-        aria-valuemax={episode.logicalHeight}
-        aria-valuenow={Math.round(viewportY)}
-        aria-orientation="vertical"
+        aria-label="Episode position and viewport"
+        data-viewport-x={viewportX}
+        data-viewport-y={viewportY}
         onKeyDown={handleKeyDown}
         onPointerDown={(event) => navigateFromPointer(event, true)}
         onPointerMove={(event) => {
@@ -227,9 +246,9 @@ export function EpisodeMinimap() {
           ))}
           <rect
             data-testid="minimap-viewport"
-            x="4"
+            x={viewportX}
             y={viewportY}
-            width={episode.logicalWidth - 8}
+            width={viewportLogicalWidth}
             height={viewportLogicalHeight}
             rx="18"
             fill="rgb(101 228 255 / 0.08)"
@@ -239,7 +258,10 @@ export function EpisodeMinimap() {
           />
         </svg>
       </div>
-      <p className="panel-help">Click anywhere or drag the cyan frame.</p>
+      <p className="panel-help">
+        Click or drag the cyan frame · x {Math.round(viewportX)} · y{' '}
+        {Math.round(viewportY)}
+      </p>
     </section>
   )
 }

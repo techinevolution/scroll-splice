@@ -114,18 +114,15 @@ export function App() {
               onKeyDown={handleEpisodeNameKeyDown}
             />
           ) : (
-            <>
-              <strong>{episodeName}</strong>
-              <button
-                className="episode-title-edit"
-                type="button"
-                aria-label="Edit episode title"
-                title="Edit episode title"
-                onClick={beginEpisodeNameEdit}
-              >
-                <span aria-hidden="true">✎</span>
-              </button>
-            </>
+            <button
+              className="episode-title-edit"
+              type="button"
+              aria-label={`Edit episode title: ${episodeName}`}
+              title="Click the episode title to edit"
+              onClick={beginEpisodeNameEdit}
+            >
+              {episodeName}
+            </button>
           )}
         </div>
 

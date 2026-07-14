@@ -52,8 +52,8 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const selectionStatus = page.getByTestId('selection-status')
   const minimap = page.getByTestId('minimap')
   const minimapBase = page.getByTestId('minimap-base')
-  const episodePosition = page.getByRole('slider', {
-    name: 'Episode position',
+  const episodePosition = page.getByRole('region', {
+    name: 'Episode position and viewport',
   })
   const backgroundGroup = page.getByRole('button', {
     name: 'Background composition group',
@@ -69,6 +69,9 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     name: 'Content plane 2',
     exact: true,
   })
+  const firstTitleLayer = page.locator(
+    '[data-layer-id="beat-01-stillness-title"]',
+  )
 
   await expect(canvas).toHaveAttribute('data-ready', 'true')
   await expect(canvas).toHaveAttribute('data-base-color', '#F3F0EA')
@@ -80,7 +83,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(selectionStatus).toHaveText('Nothing selected')
 
   const editEpisodeTitle = page.getByRole('button', {
-    name: 'Edit episode title',
+    name: /Edit episode title:/,
   })
   const episodeTitleInput = page.getByRole('textbox', {
     name: 'Episode title',
@@ -168,6 +171,23 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       'beat-06-dawn-background',
     ])
 
+  await page.getByRole('button', { name: 'Add asset', exact: true }).click()
+  const assetToggle = page.getByRole('button', { name: 'Assets' })
+  await expect(assetToggle).toHaveAttribute('aria-expanded', 'true')
+  await page.getByRole('button', { name: 'Add Violet demo shape' }).click()
+  const syntheticShapeRow = page.locator(
+    '[data-layer-id="synthetic-shape-1"]',
+  )
+  await expect(syntheticShapeRow).toHaveAttribute('aria-pressed', 'true')
+  await expect(panelList.getByRole('listitem')).toHaveCount(7)
+  await page
+    .getByRole('button', { name: 'Delete Violet demo shape' })
+    .click()
+  await expect(syntheticShapeRow).toHaveCount(0)
+  await expect(panelList.getByRole('listitem')).toHaveCount(6)
+  await assetToggle.click()
+  await expect(assetToggle).toHaveAttribute('aria-expanded', 'false')
+
   await contentPlane2.click()
   const textList = page.getByRole('list', {
     name: 'Content plane 2 elements',
@@ -231,11 +251,10 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       name: 'Delete plane unavailable: Background plane 1 is pinned and cannot be deleted.',
     }),
   ).toBeDisabled()
-  await expect(
-    page.getByRole('button', { name: 'Attach asset, coming later' }),
-  ).toBeDisabled()
-  const baseColor = page.getByLabel('Base color')
+  const baseColor = page.getByLabel('Base color', { exact: true })
+  const canvasBaseColor = page.getByLabel('Canvas base color', { exact: true })
   await expect(baseColor).toHaveValue('#f3f0ea')
+  await expect(canvasBaseColor).toHaveValue('#f3f0ea')
   await expect(minimapBase).toHaveAttribute('fill', '#F3F0EA')
   await expect
     .poll(() => readLogicalCanvasPixel(sceneCanvas, 10, 20))
@@ -248,6 +267,11 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     .poll(() => readLogicalCanvasPixel(sceneCanvas, 10, 20))
     .toBe('18,52,86')
 
+  await canvasBaseColor.fill('#654321')
+  await expect(baseColor).toHaveValue('#654321')
+  await expect(canvas).toHaveAttribute('data-base-color', '#654321')
+  await expect(minimapBase).toHaveAttribute('fill', '#654321')
+
   const backgroundBaseEye = page.getByRole('button', {
     name: 'Background plane 1 visibility',
   })
@@ -256,8 +280,26 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(canvas).toHaveAttribute('data-base-color', 'transparent')
   await expect(minimapBase).toHaveCount(0)
   await backgroundBaseEye.click()
-  await expect(canvas).toHaveAttribute('data-base-color', '#123456')
-  await expect(minimapBase).toHaveAttribute('fill', '#123456')
+  await expect(canvas).toHaveAttribute('data-base-color', '#654321')
+  await expect(minimapBase).toHaveAttribute('fill', '#654321')
+
+  const backgroundPlane2 = page.getByRole('button', {
+    name: 'Background plane 2',
+    exact: true,
+  })
+  await backgroundPlane2.click()
+  await page.getByRole('button', { name: 'Color region' }).click()
+  await page.getByLabel('Color region color').fill('#334477')
+  await page.getByLabel('Color region start').fill('300')
+  await page.getByLabel('Color region length').fill('600')
+  await page.getByRole('button', { name: 'Add', exact: true }).click()
+  const colorRegionRow = page.locator(
+    '[data-layer-id="background-color-region-1"]',
+  )
+  await expect(colorRegionRow).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    minimap.locator('[data-element-id="background-color-region-1"]'),
+  ).toHaveAttribute('fill', '#334477')
 
   await contentGroup.click()
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
@@ -279,8 +321,8 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   })
   await expect(deleteContentPlane3).toBeEnabled()
   await expect(
-    page.getByRole('button', { name: 'Attach asset, coming later' }),
-  ).toBeDisabled()
+    page.getByRole('button', { name: 'Add asset to Content plane 3' }),
+  ).toBeEnabled()
   const contentPlane3Eye = page.getByRole('button', {
     name: 'Content plane 3 visibility',
   })
@@ -379,7 +421,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     page.getByText('Signal in the Fog', { exact: true }),
   ).toBeVisible()
   await expect(selectionStatus).toHaveText('Nothing selected')
-  await expect(episodePosition).toHaveAttribute('aria-valuenow', '0')
+  await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
   await expect(canvas).toHaveAttribute('data-base-color', '#F3F0EA')
   await expect(minimapBase).toHaveAttribute('fill', '#F3F0EA')
   await expect(minimapFirstPanel).toHaveCount(1)
@@ -393,8 +435,35 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   )
   expect(initialEpisodeHeight).toBeGreaterThan(0)
   await episodePosition.press('End')
+  const fineTuneHeight = page.getByRole('button', {
+    name: /Fine tune episode height/,
+  })
+  await expect(fineTuneHeight).toBeVisible()
+  const fineTuneBounds = await fineTuneHeight.boundingBox()
+  if (!fineTuneBounds) {
+    throw new Error('The fine height handle did not produce visible bounds.')
+  }
+  await page.mouse.move(
+    fineTuneBounds.x + fineTuneBounds.width / 2,
+    fineTuneBounds.y + fineTuneBounds.height / 2,
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    fineTuneBounds.x + fineTuneBounds.width / 2,
+    fineTuneBounds.y + fineTuneBounds.height / 2 - 24,
+    { steps: 4 },
+  )
+  await page.mouse.up()
+  const finelyTrimmedHeight = Number(
+    await canvas.getAttribute('data-episode-height'),
+  )
+  expect(finelyTrimmedHeight).toBeLessThan(initialEpisodeHeight)
+  expect(initialEpisodeHeight - finelyTrimmedHeight).toBeLessThan(1_280)
+
+  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await episodePosition.press('End')
   const viewportAtOriginalEnd = await episodePosition.getAttribute(
-    'aria-valuenow',
+    'data-viewport-y',
   )
   const addScrollSpace = page.getByRole('button', {
     name: 'Add scroll space 1,280u',
@@ -408,11 +477,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     String(onceExtendedHeight),
   )
   await expect(episodePosition).toHaveAttribute(
-    'aria-valuemax',
-    String(onceExtendedHeight),
-  )
-  await expect(episodePosition).toHaveAttribute(
-    'aria-valuenow',
+    'data-viewport-y',
     viewportAtOriginalEnd ?? '0',
   )
   await expect(minimapBase).toHaveAttribute(
@@ -441,13 +506,8 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     'data-episode-height',
     String(initialEpisodeHeight),
   )
-  await expect(episodePosition).toHaveAttribute(
-    'aria-valuemax',
-    String(initialEpisodeHeight),
-  )
-  await expect(episodePosition).toHaveAttribute('aria-valuenow', '0')
+  await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
 
-  const assetToggle = page.getByRole('button', { name: 'Assets' })
   await assetToggle.click()
   await expect(assetToggle).toHaveAttribute('aria-expanded', 'true')
   await expect(
@@ -455,6 +515,70 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   ).toBeVisible()
   await assetToggle.click()
   await expect(assetToggle).toHaveAttribute('aria-expanded', 'false')
+
+  const zoomSlider = page.getByRole('slider', { name: 'Canvas zoom' })
+  const minimapViewport = page.getByTestId('minimap-viewport')
+  await expect(zoomSlider).toHaveValue('100')
+  await zoomSlider.fill('200')
+  await expect(canvas).toHaveAttribute('data-zoom-percent', '200')
+  await expect(canvas).toHaveAttribute('data-viewport-width', '400')
+  await expect(minimapViewport).toHaveAttribute('width', '400')
+
+  await contentPlane2.click()
+  await firstTitleLayer.click()
+  const zoomedSceneBounds = await sceneCanvas.boundingBox()
+  if (!zoomedSceneBounds) {
+    throw new Error('The zoomed editing surface did not produce visible bounds.')
+  }
+  const zoomedViewportX = Number(await canvas.getAttribute('data-viewport-x'))
+  const zoomedViewportY = Number(await canvas.getAttribute('data-viewport-y'))
+  const zoomedScale = (zoomedSceneBounds.width / 800) * 2
+  const zoomedTitlePoint = {
+    x: zoomedSceneBounds.x + (400 - zoomedViewportX) * zoomedScale,
+    y: zoomedSceneBounds.y + (210 - zoomedViewportY) * zoomedScale,
+  }
+  await page.mouse.move(zoomedTitlePoint.x, zoomedTitlePoint.y)
+  await page.mouse.down()
+  await page.mouse.move(
+    zoomedTitlePoint.x + 20,
+    zoomedTitlePoint.y + 20,
+    { steps: 4 },
+  )
+  await page.mouse.up()
+  await expect
+    .poll(async () => {
+      const status = (await selectionStatus.textContent()) ?? ''
+      const position = status.match(/x (\d+) · y (\d+)/)
+
+      return Boolean(
+        position && Number(position[1]) > 80 && Number(position[2]) > 176,
+      )
+    })
+    .toBe(true)
+
+  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await zoomSlider.fill('200')
+
+  const zoomedMinimapBounds = await minimap.boundingBox()
+  if (!zoomedMinimapBounds) {
+    throw new Error('The zoomed minimap did not produce visible bounds.')
+  }
+  await page.mouse.click(
+    zoomedMinimapBounds.x + zoomedMinimapBounds.width * 0.9,
+    zoomedMinimapBounds.y + zoomedMinimapBounds.height * 0.1,
+  )
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-viewport-x')))
+    .toBeGreaterThan(200)
+
+  await zoomSlider.fill('50')
+  await expect(canvas).toHaveAttribute('data-zoom-percent', '50')
+  await expect(canvas).toHaveAttribute('data-viewport-x', '0')
+  await expect(canvas).toHaveAttribute('data-viewport-width', '800')
+
+  await page.getByRole('button', { name: 'Fit Width' }).click()
+  await expect(zoomSlider).toHaveValue('100')
+  await expect(canvas).toHaveAttribute('data-viewport-x', '0')
 
   const minimapBounds = await minimap.boundingBox()
   if (!minimapBounds) {
@@ -465,7 +589,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     minimapBounds.y + minimapBounds.height * 0.8,
   )
   await expect
-    .poll(async () => Number(await episodePosition.getAttribute('aria-valuenow')))
+    .poll(async () => Number(await episodePosition.getAttribute('data-viewport-y')))
     .toBeGreaterThan(2_500)
 
   await contentPlane2.click()
@@ -477,7 +601,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(selectionStatus).toContainText('Beat 6 · Dawn · Caption')
 
   await page.getByRole('button', { name: 'Reset demo' }).click()
-  await expect(episodePosition).toHaveAttribute('aria-valuenow', '0')
+  await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
   await expect
     .poll(() => readLogicalCanvasPixel(sceneCanvas, 100, 210))
     .toBe('33,25,52')
@@ -490,10 +614,6 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     x: sceneCanvasBounds.x + 400 * fitScale,
     y: sceneCanvasBounds.y + 210 * fitScale,
   }
-  const firstTitleLayer = page.locator(
-    '[data-layer-id="beat-01-stillness-title"]',
-  )
-
   await page.mouse.click(titlePoint.x, titlePoint.y)
   await expect(selectionStatus).toContainText('x 80 · y 176')
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')

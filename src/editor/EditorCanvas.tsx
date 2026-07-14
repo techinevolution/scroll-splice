@@ -3,9 +3,10 @@ import { Ellipse, Group, Layer, Rect, Stage, Text } from 'react-konva'
 
 import { useEditorStore } from '../app/store'
 import {
-  boundsIntersectVerticalViewport,
+  boundsIntersectViewport,
   getFitScale,
-  getLogicalViewportHeight,
+  getVerticalScrollProgress,
+  getViewportScale,
 } from '../core/coordinates'
 import {
   compareElementsByRenderOrder,
@@ -14,6 +15,8 @@ import {
   type EpisodeElement,
 } from '../core/episode'
 import { useElementSize } from './useElementSize'
+import { CanvasBaseColorControl } from './CanvasBaseColorControl'
+import { EpisodeHeightControls } from './EpisodeHeightControls'
 
 const RENDER_BUFFER = 160
 
@@ -109,6 +112,7 @@ function ElementNode({
           cornerRadius={8}
           shadowColor="#65E4FF"
           shadowBlur={10}
+          strokeScaleEnabled={false}
           listening={false}
         />
       ) : null}
@@ -119,36 +123,49 @@ function ElementNode({
 export function EditorCanvas() {
   const episode = useEditorStore((state) => state.episode)
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
+  const viewportX = useEditorStore((state) => state.viewportX)
   const viewportY = useEditorStore((state) => state.viewportY)
+  const viewportLogicalWidth = useEditorStore(
+    (state) => state.viewportLogicalWidth,
+  )
   const viewportLogicalHeight = useEditorStore(
     (state) => state.viewportLogicalHeight,
   )
-  const setViewportLogicalHeight = useEditorStore(
-    (state) => state.setViewportLogicalHeight,
+  const zoomFactor = useEditorStore((state) => state.zoomFactor)
+  const setFitViewportLogicalHeight = useEditorStore(
+    (state) => state.setFitViewportLogicalHeight,
   )
+  const setZoomFactor = useEditorStore((state) => state.setZoomFactor)
   const panViewport = useEditorStore((state) => state.panViewport)
   const selectElement = useEditorStore((state) => state.selectElement)
   const moveElement = useEditorStore((state) => state.moveElement)
-  const extendEpisodeHeight = useEditorStore(
-    (state) => state.extendEpisodeHeight,
-  )
   const { elementRef, size } = useElementSize<HTMLDivElement>()
 
   const stageWidth = Math.max(size.width, 1)
   const stageHeight = Math.max(size.height, 1)
   const fitScale = getFitScale(stageWidth, episode.logicalWidth)
+  const viewScale = getViewportScale(
+    stageWidth,
+    episode.logicalWidth,
+    zoomFactor,
+  )
+  const groupX =
+    Math.max((stageWidth - episode.logicalWidth * viewScale) / 2, 0) -
+    viewportX * viewScale
   const baseColor = getEffectiveEpisodeBaseColor(episode)
   const isAtEpisodeEnd =
     viewportY + viewportLogicalHeight >= episode.logicalHeight - 1
+  const scrollProgress = getVerticalScrollProgress(
+    viewportY,
+    viewportLogicalHeight,
+    episode.logicalHeight,
+  )
 
   useEffect(() => {
-    setViewportLogicalHeight(
-      getLogicalViewportHeight(stageHeight, fitScale, episode.logicalHeight),
-    )
+    setFitViewportLogicalHeight(stageHeight / fitScale)
   }, [
-    episode.logicalHeight,
     fitScale,
-    setViewportLogicalHeight,
+    setFitViewportLogicalHeight,
     stageHeight,
   ])
 
@@ -158,29 +175,44 @@ export function EditorCanvas() {
         .filter(
           (element) =>
             isElementEffectivelyVisible(episode, element) &&
-            boundsIntersectVerticalViewport(
+            boundsIntersectViewport(
               element.bounds,
-              viewportY - RENDER_BUFFER,
-              viewportLogicalHeight + RENDER_BUFFER * 2,
+              {
+                x: viewportX - RENDER_BUFFER,
+                y: viewportY - RENDER_BUFFER,
+                width: viewportLogicalWidth + RENDER_BUFFER * 2,
+                height: viewportLogicalHeight + RENDER_BUFFER * 2,
+              },
             ),
         )
         .sort((first, second) =>
           compareElementsByRenderOrder(episode, first, second),
         ),
-    [episode, viewportLogicalHeight, viewportY],
+    [
+      episode,
+      viewportLogicalHeight,
+      viewportLogicalWidth,
+      viewportX,
+      viewportY,
+    ],
   )
 
   const handleKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') {
+    if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
       return
     }
 
     event.preventDefault()
-    const direction = event.key === 'ArrowDown' ? 1 : -1
-    const distance = event.shiftKey
-      ? viewportLogicalHeight * 0.8
-      : viewportLogicalHeight * 0.12
-    panViewport(direction * distance)
+    const isHorizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight'
+    const direction = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1
+    const distance = isHorizontal
+      ? viewportLogicalWidth * (event.shiftKey ? 0.8 : 0.12)
+      : viewportLogicalHeight * (event.shiftKey ? 0.8 : 0.12)
+
+    panViewport({
+      x: isHorizontal ? direction * distance : 0,
+      y: isHorizontal ? 0 : direction * distance,
+    })
   }
 
   return (
@@ -192,9 +224,14 @@ export function EditorCanvas() {
         data-ready={size.width > 0 && size.height > 0}
         data-base-color={baseColor ?? 'transparent'}
         data-episode-height={episode.logicalHeight}
+        data-zoom-percent={Math.round(zoomFactor * 100)}
+        data-viewport-x={viewportX}
+        data-viewport-y={viewportY}
+        data-viewport-width={viewportLogicalWidth}
+        data-viewport-height={viewportLogicalHeight}
         role="region"
         aria-busy={size.width <= 0 || size.height <= 0}
-        aria-label="Episode editing canvas. Use the mouse wheel or arrow keys to move through the episode."
+        aria-label="Episode editing canvas. Use the mouse wheel, trackpad, or arrow keys to move through the episode."
         tabIndex={0}
         onKeyDown={handleKeyboardNavigation}
       >
@@ -203,7 +240,16 @@ export function EditorCanvas() {
           height={stageHeight}
           onWheel={(event) => {
             event.evt.preventDefault()
-            panViewport(event.evt.deltaY / fitScale)
+            const horizontalDelta =
+              event.evt.shiftKey && event.evt.deltaX === 0
+                ? event.evt.deltaY
+                : event.evt.deltaX
+            const verticalDelta = event.evt.shiftKey ? 0 : event.evt.deltaY
+
+            panViewport({
+              x: horizontalDelta / viewScale,
+              y: verticalDelta / viewScale,
+            })
           }}
           onMouseDown={(event) => {
             if (event.target === event.target.getStage()) {
@@ -212,7 +258,12 @@ export function EditorCanvas() {
           }}
         >
           <Layer>
-            <Group scaleX={fitScale} scaleY={fitScale} y={-viewportY * fitScale}>
+            <Group
+              scaleX={viewScale}
+              scaleY={viewScale}
+              x={groupX}
+              y={-viewportY * viewScale}
+            >
               {baseColor ? (
                 <Rect
                   width={episode.logicalWidth}
@@ -237,22 +288,29 @@ export function EditorCanvas() {
         </Stage>
       </div>
 
-      {isAtEpisodeEnd ? (
-        <button
-          className="extend-episode-button"
-          type="button"
-          onClick={extendEpisodeHeight}
-        >
-          <span aria-hidden="true">+</span>
-          <span>Add scroll space</span>
-          <small>1,280u</small>
-        </button>
-      ) : null}
+      <CanvasBaseColorControl />
 
-      <div className="canvas-position" aria-live="polite">
-        <span>{Math.round((viewportY / episode.logicalHeight) * 100)}%</span>
-        <span aria-hidden="true">·</span>
-        <span>{Math.round(fitScale * 100)}% fit</span>
+      {isAtEpisodeEnd ? <EpisodeHeightControls viewScale={viewScale} /> : null}
+
+      <div className="canvas-view-controls" aria-label="Canvas view controls">
+        <button type="button" onClick={() => setZoomFactor(1)}>
+          Fit Width
+        </button>
+        <input
+          type="range"
+          aria-label="Canvas zoom"
+          min="50"
+          max="200"
+          step="10"
+          value={Math.round(zoomFactor * 100)}
+          onChange={(event) =>
+            setZoomFactor(Number(event.currentTarget.value) / 100)
+          }
+        />
+        <output>{Math.round(zoomFactor * 100)}%</output>
+        <span aria-live="polite">
+          {Math.round(scrollProgress * 100)}% down
+        </span>
       </div>
     </div>
   )

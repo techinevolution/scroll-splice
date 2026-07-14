@@ -5,7 +5,10 @@ import {
   buildWeekEpisode,
 } from './fixtures/buildWeekEpisode'
 import { useEditorStore } from './store'
-import { DEFAULT_EPISODE_HEIGHT_INCREMENT } from '../core/commands'
+import {
+  DEFAULT_EPISODE_HEIGHT_INCREMENT,
+  getEpisodeContentBottom,
+} from '../core/commands'
 import {
   getBackgroundBaseLayerPlane,
   getElementCompositionGroup,
@@ -31,7 +34,7 @@ function fixtureElementInGroup(group: CompositionGroup): EpisodeElement {
 describe('editor store', () => {
   beforeEach(() => {
     useEditorStore.getState().resetEpisode()
-    useEditorStore.getState().setViewportLogicalHeight(900)
+    useEditorStore.getState().setFitViewportLogicalHeight(900)
   })
 
   it('starts on a valid Content plane and reveals off-screen selections', () => {
@@ -358,6 +361,129 @@ describe('editor store', () => {
     expect(state.activeCompositionGroup).toBe('content')
     expect(state.activeLayerPlaneId).toBe(
       BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+    )
+  })
+
+  it('deletes only the requested placed element and clears its selection', () => {
+    const deletedId = 'beat-01-stillness-background'
+    const unrelatedId = 'beat-02-spark-background'
+
+    useEditorStore.getState().selectElement(deletedId)
+    useEditorStore.getState().deleteElement(deletedId)
+
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === deletedId),
+    ).toBe(false)
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === unrelatedId),
+    ).toBe(true)
+    expect(useEditorStore.getState().selectedElementId).toBeNull()
+  })
+
+  it('places a synthetic asset into a populated ordinary plane', () => {
+    const beforeCount = useEditorStore.getState().episode.elements.length
+
+    useEditorStore.getState().placeSyntheticAsset({
+      name: 'Violet demo shape',
+      fill: '#7050B8',
+    })
+
+    const state = useEditorStore.getState()
+    const placed = state.episode.elements.at(-1)
+    expect(state.episode.elements).toHaveLength(beforeCount + 1)
+    expect(placed).toMatchObject({
+      id: 'synthetic-shape-1',
+      name: 'Violet demo shape',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      fill: '#7050B8',
+    })
+    expect(state.selectedElementId).toBe(placed?.id)
+  })
+
+  it('creates and selects a full-width region on an ordinary Background plane', () => {
+    useEditorStore.getState().setActiveCompositionGroup('background')
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree)
+    useEditorStore.getState().createBackgroundColorRegion({
+      fill: '#123456',
+      startY: 1200,
+      height: 600,
+    })
+
+    const state = useEditorStore.getState()
+    const region = state.episode.elements.at(-1)
+    expect(region).toMatchObject({
+      id: 'background-color-region-1',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      fill: '#123456',
+      bounds: { x: 0, y: 1200, width: 800, height: 600 },
+    })
+    expect(state.selectedElementId).toBe(region?.id)
+  })
+
+  it('safely trims unused tail space and clamps the viewport', () => {
+    const contentBottom = getEpisodeContentBottom(buildWeekEpisode)
+    useEditorStore.getState().setViewportY(99_000)
+
+    useEditorStore.getState().resizeEpisodeHeight(1)
+
+    const state = useEditorStore.getState()
+    expect(state.episode.logicalHeight).toBe(contentBottom)
+    expect(state.viewportY).toBe(
+      contentBottom - state.viewportLogicalHeight,
+    )
+  })
+
+  it('keeps zoom transient, preserves center, and restores Fit Width', () => {
+    const episode = useEditorStore.getState().episode
+    useEditorStore.getState().setViewportPosition({ x: 0, y: 1800 })
+
+    useEditorStore.getState().setZoomFactor(2)
+
+    const zoomed = useEditorStore.getState()
+    expect(zoomed.episode).toBe(episode)
+    expect(zoomed.zoomFactor).toBe(2)
+    expect(zoomed.viewportLogicalWidth).toBe(400)
+    expect(zoomed.viewportLogicalHeight).toBe(450)
+    expect(zoomed.viewportX).toBe(200)
+    expect(zoomed.viewportY).toBe(2025)
+
+    zoomed.panViewport({ x: 99_000, y: 99_000 })
+    expect(useEditorStore.getState().viewportX).toBe(400)
+    expect(useEditorStore.getState().viewportY).toBe(
+      buildWeekEpisode.logicalHeight - 450,
+    )
+
+    useEditorStore.getState().setZoomFactor(1)
+    expect(useEditorStore.getState().viewportLogicalWidth).toBe(800)
+    expect(useEditorStore.getState().viewportX).toBe(0)
+    expect(useEditorStore.getState().episode).toBe(episode)
+  })
+
+  it('resets zoom, viewport, created elements, and resized height', () => {
+    useEditorStore.getState().placeSyntheticAsset({
+      name: 'Mint demo shape',
+      fill: '#8BE0C9',
+    })
+    useEditorStore.getState().resizeEpisodeHeight(8_000)
+    useEditorStore.getState().setZoomFactor(2)
+    useEditorStore.getState().setViewportPosition({ x: 300, y: 2_000 })
+
+    useEditorStore.getState().resetEpisode()
+
+    const state = useEditorStore.getState()
+    expect(state.episode).toBe(buildWeekEpisode)
+    expect(state.zoomFactor).toBe(1)
+    expect(state.viewportX).toBe(0)
+    expect(state.viewportY).toBe(0)
+    expect(state.viewportLogicalWidth).toBe(800)
+    expect(state.episode.elements).not.toContainEqual(
+      expect.objectContaining({ id: 'synthetic-shape-1' }),
     )
   })
 })
