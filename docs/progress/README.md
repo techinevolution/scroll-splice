@@ -74,4 +74,4 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - SHA-256: `b6dcfc9bd7046a955ba06e19027b14bfae67b29f8bc58e277fe77b293301fe29`.
 - Katherine reviewed this exact build on July 14 and confirmed that placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary element movement work.
 - The review also identified the title-input header shift and horizontally janky full-width Background-region drag, and requested default-on alignment help plus editor-only WEBTOON candidate-boundary guides. Those are follow-up findings, not features visible or claimed in this screenshot.
-- Katherine authorized publishing this validated checkpoint and its documentation to `main` on July 14. This screenshot does not imply deployment or Devpost submission.
+- This validated checkpoint and its documentation were published to `main` through `8a493a2` on July 14. This screenshot does not imply deployment or Devpost submission.

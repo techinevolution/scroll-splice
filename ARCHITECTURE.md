@@ -354,7 +354,7 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 Checkpoint D validation covers the stable title anchor, vertical-only full-width region movement, default-on magnet state, the 8-pixel center snap and Alt/Option bypass, profile-to-logical interval calculation, the observed 1280-unit candidate boundaries, guide toggle state, alignment at every supported zoom and viewport position, and absence from document serialization, minimap, and rendered output. Checkpoint E adds format-v4 defaults/reset, opacity clamping, visibility independence, zero-opacity hit testing, source-alpha multiplication, color-region-only fade guards, and canvas/minimap agreement. The separate export checkpoint adds deterministic boundary planning, creator-adjustment validation, encoded dimension/byte/count preflight, stale-profile handling, and comparison with the authenticated unpublished upload results.
 
-The local post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. Katherine authorized publication of that passing checkpoint and its documentation on July 14; the evidence record is updated after the push completes.
+The post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. That passing checkpoint and its documentation were published to `main` through `8a493a2` on July 14.
 
 ## Non-negotiable invariants
 

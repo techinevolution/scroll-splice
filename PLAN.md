@@ -133,7 +133,7 @@ Validation passed: 38 unit tests, strict typecheck, ESLint, production build, an
 
 ## Completed implementation slice: Episode Setup and Expandable Scroll
 
-**Status:** approved, implemented, validated, and visually inspected locally July 13. Katherine authorized publication of this checkpoint with the post-review stack on July 14.
+**Status:** approved, implemented, validated, and visually inspected locally July 13; published with the post-review stack on July 14 through `8a493a2`.
 
 **Goal:** make the current episode easier to set up and extend without introducing persistence, arbitrary resizing, or a new document format.
 
@@ -348,7 +348,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 ### July 14 — Full product-building day
 
 - Complete Katherine's hands-on test of **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. **Complete.**
-- Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Documentation and publication checkpoint in progress.**
+- Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Complete through `8a493a2`.**
 - Follow only the approved **Export-aware polish and alpha controls** goal after that handoff: checkpoint D first, then checkpoint E if D is stable.
 - Keep deterministic WEBTOON file export separate until the harmless authenticated upload verification and a later explicit export checkpoint.
 - Keep every coherent checkpoint tested and independently understandable.
@@ -486,7 +486,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, both hands-on review checkpoints, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete. Publish the already passing stack and this documentation as Katherine authorized, then begin only the approved **Export-aware polish and alpha controls** goal in a later implementation checkpoint. Real uploads, production export, deployment, and other later slices remain unauthorized.
+- The first-testable-editor `/goal`, both hands-on review checkpoints, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Begin only the approved **Export-aware polish and alpha controls** goal in the next implementation checkpoint. Real uploads, production export, deployment, and other later slices remain unauthorized.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

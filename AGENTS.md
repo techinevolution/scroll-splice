@@ -192,7 +192,7 @@ Production export, import, persistence, undo, resize, tab/element reordering, de
 - On July 13, Katherine explicitly authorized Codex to commit and push the current unpushed work and each later coherent, passing Build Week slice directly to `main` through the first complete human-editor MVP that she can test. This includes the workspace, shared canvas/minimap/layers behavior, navigation, synchronized selection, movement, reset, tests, and status documentation.
 - During that authorized goal, Codex owns routine commit and push mechanics. Push only after the relevant validation passes, never push secrets or private creative content, and report the pushed commit after each coherent checkpoint. Do not interrupt Katherine for routine Git permission while this authorization is active.
 - The first testable-editor authorization completed in `05ac06b`, and Katherine separately authorized the composition checkpoint pushed in `f02776f`.
-- Katherine's July 14 human test completed the local A/B/C checkpoint. She explicitly authorized Codex to commit and push the current validated Episode Setup and A/B/C checkpoints, their tests/screenshots, and the accompanying status and feedback documentation to `main`. She also approved **Export-aware polish and alpha controls** as the next code goal, but no code from that goal belongs in this documentation/publication checkpoint. Production export, import, persistence, deployment, OpenAI, OAuth, external-service work, and any later push remain separately gated.
+- Katherine's July 14 human test completed the A/B/C checkpoint. The validated Episode Setup and A/B/C checkpoints, tests/screenshots, and accompanying status and feedback documentation were published to `main` through `8a493a2`. She also approved **Export-aware polish and alpha controls** as the next code goal, but no code from that goal belongs in the completed documentation/publication checkpoint. Production export, import, persistence, deployment, OpenAI, OAuth, external-service work, and any later push remain separately gated.
 - Never rewrite the baseline commit or tag, even during cleanup.
 
 ## Final Report
@@ -205,4 +205,4 @@ Explain in plain language:
 - what remains deferred or blocked
 - what decision, if any, Katherine needs to make next
 
-Include files changed and the recommended next action. The current action is the authorized publication of the validated checkpoints and documentation; the approved next code goal begins only after this docs-only checkpoint is handed back. Do not bury the outcome in raw technical detail.
+Include files changed and the recommended next action. The documentation/publication checkpoint is complete; the approved next code goal is checkpoint D followed by E, with production export still separate. Do not bury the outcome in raw technical detail.
