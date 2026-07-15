@@ -85,7 +85,7 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - The dotted line is explicitly a provisional candidate derived from the `form-observed` WEBTOON profile. It is editor chrome, not a produced slice, export result, compatibility guarantee, minimap element, or document element.
 - This image records the now-historical fixed-width corrective checkpoint. Its `x = 0`, no-Background-resize behavior was later superseded by free Background-region movement and eight independent handles; the screenshot remains useful evidence for the stable title, guides, magnet, and ordinary four-corner resize stage.
 - Contains only the public-safe code-rendered **Signal in the Fog** fixture and a code-defined synthetic Amber rectangle; no Root & Table production artwork, private creative material, or third-party comic reference appears.
-- Captured in bundled Chromium at a 1440 × 900 viewport. The later superseding corrective build passed its automated regression, supported-size visual validation, and Katherine's human retest with minimap aspect distortion logged as polish. This screenshot does not imply that either local checkpoint is pushed, deployed, or submitted.
+- Captured in bundled Chromium at a 1440 × 900 viewport. The later superseding corrective build passed its automated regression, supported-size visual validation, and Katherine's human retest with minimap aspect distortion logged as polish. This screenshot did not imply publication at capture time; the checkpoint was later incorporated into the July 15 stack published in `fdd4ead`. It still does not imply deployment or submission.
 - File: 1440 × 900 PNG, 132,504 bytes.
 - SHA-256: `798992900f6a899378d07155a5eeb5f5eadc204e6661d3262ac0435b180489cc`.
 

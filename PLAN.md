@@ -12,7 +12,7 @@ Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed 
 
 Katherine completed the required hands-on test of that combined build on July 14. She confirmed placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary canvas movement. She then failed the first proposed polish review because title editing still shifted the fixed **EPISODE** label, the 1,280-unit dotted guides were not present, full-width Background regions could drift sideways in the live Konva node while the document and minimap stayed at `x = 0`, no visible magnet existed, and selected assets had no corner resize handles.
 
-Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized this bounded Asset Library slice and publication of the resulting passing build to `main`. Element opacity and Background fades have not started and are not automatically next. Remote `main` remains at `6d6437e` until this newly authorized passing stack is pushed.
+Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized this bounded Asset Library slice and publication of the resulting passing build to `main`. The complete stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. Element opacity and Background fades have not started and are not automatically next.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -247,7 +247,7 @@ Excluded: opacity, general element resize handles, snapping, canvas rotation, pl
 
 ## Completed corrective checkpoint: stable editing, guides, and bounded corner resize
 
-**Status:** the original fixed-width D checkpoint passed 120 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. Katherine then superseded its Background-region contract. The free-transform extension passes 123 unit tests, strict typecheck, ESLint, production build, the expanded Chromium walkthrough, and supported-size visual inspection. Katherine's July 14 retest is **PASS WITH NOTES**: live coordinates, live minimap sync, eight handles, snap override, and Option-drag passed; minimap aspect distortion remains later polish. No push is implied. Remote `main` remains at `6d6437e`.
+**Status:** the original fixed-width D checkpoint passed 120 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. Katherine then superseded its Background-region contract. The free-transform extension passes 123 unit tests, strict typecheck, ESLint, production build, the expanded Chromium walkthrough, and supported-size visual inspection. Katherine's July 14 retest is **PASS WITH NOTES**: live coordinates, live minimap sync, eight handles, snap override, and Option-drag passed; minimap aspect distortion remains later polish. These were local-only at that checkpoint and were later incorporated into the July 15 stack published in `fdd4ead`.
 
 This checkpoint repairs the failed manual-review findings without folding in the later alpha system:
 
@@ -273,7 +273,7 @@ Acceptance:
 
 ## Current approved optional slice: local history, save, and minimal menus
 
-**Status:** approved July 14, implemented and validated locally, then passed Katherine's hands-on review July 15. Evidence: 154 unit tests, strict typecheck, ESLint, production build, two isolated Playwright Chromium tests (the complete editor walkthrough plus save/reload/reopen/New Episode), visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768, and one indexed public-safe screenshot. Publication is authorized with the next passing stack. This is optional creator-workflow progress, not an expansion of the required contest MVP.
+**Status:** approved July 14, implemented and validated locally, then passed Katherine's hands-on review July 15 and was published with the Asset Library stack in `fdd4ead`. Evidence: 154 unit tests, strict typecheck, ESLint, production build, two isolated Playwright Chromium tests (the complete editor walkthrough plus save/reload/reopen/New Episode), visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768, and one indexed public-safe screenshot. This is optional creator-workflow progress, not an expansion of the required contest MVP.
 
 ### Contract
 
@@ -298,7 +298,7 @@ Explicitly excluded: autosave, crash recovery, file picker or downloadable proje
 
 ## Completed creator slice: simple persistent Asset Library
 
-**Status:** implemented and validated July 15; publication is pending only the final repository/private-file check under Katherine's explicit authorization. Evidence: 214 unit tests across 11 files, strict typecheck, ESLint, production build, four Playwright Chromium stories, overlay checks at 1440 × 900, 1280 × 720, and 1024 × 768, plus the indexed public-safe Asset Library screenshot.
+**Status:** implemented, validated, and published July 15 in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; local and remote `main` matched immediately after the push. Evidence: 214 unit tests across 11 files, strict typecheck, ESLint, production build, four Playwright Chromium stories, overlay checks at 1440 × 900, 1280 × 720, and 1024 × 768, plus the indexed public-safe Asset Library screenshot.
 
 ### Contract
 
@@ -412,7 +412,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 - Complete Katherine's hands-on test of **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. **Complete.**
 - Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Complete through `8a493a2`.**
 - Repair the failed polish review as checkpoint D: stable title anchors, visible profile-derived candidate guides, default-on center magnet with bypass, proportional ordinary-element resize, and live status/minimap bounds. The first fixed-width Background implementation was superseded; free Background-region movement and eight-handle independent resize passed validation and Katherine's retest with minimap aspect distortion logged as polish. **Complete with notes.**
-- Implement and validate the separately approved optional local history/save/menu slice, including explicit Save, reload/reopen, blank New Episode, bounded undo/redo, and the exact File/Edit surface. **Complete locally and passed Katherine's July 15 review; publication is bundled with the authorized Asset Library stack and is not yet claimed.**
+- Implement and validate the separately approved optional local history/save/menu slice, including explicit Save, reload/reopen, blank New Episode, bounded undo/redo, and the exact File/Edit surface. **Complete, passed Katherine's July 15 review, and published with the Asset Library stack in `fdd4ead`.**
 - Keep deterministic WEBTOON file export separate until the harmless authenticated upload verification and a later explicit export checkpoint.
 - Keep every coherent checkpoint tested and independently understandable.
 - Do not spend the full product day on deployment, video, or Devpost assembly.
@@ -452,7 +452,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 
 ## Optional Build Week product slices
 
-Treat these as bounded options rather than a mandatory queue, and begin only the item Katherine explicitly selects; every completed item still needs its own passing checkpoint. Items 4–6 were authorized together by Katherine's follow-up review and are complete. Item 7 passed human review with notes. Item 8 passed Katherine's July 15 review. Katherine then selected item 12; it is complete and validated locally with publication authorized but not yet claimed. Every later item remains separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
+Treat these as bounded options rather than a mandatory queue, and begin only the item Katherine explicitly selects; every completed item still needs its own passing checkpoint. Items 4–6 were authorized together by Katherine's follow-up review and are complete. Item 7 passed human review with notes. Item 8 passed Katherine's July 15 review. Katherine then selected item 12; it is complete, validated, and published in `fdd4ead`. Every later item remains separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above. **Complete.**
 2. The layer-planes and episode-backdrop foundation defined above. **Complete.**
@@ -460,12 +460,12 @@ Treat these as bounded options rather than a mandatory queue, and begin only the
 4. Direct Creator Controls. **Complete and human-tested.**
 5. Safe Precise Height and solid Background Color Regions. **Complete and human-tested.**
 6. Canvas Zoom and 2D Viewport. **Complete and human-tested.**
-7. Stable editing chrome, candidate slice guides, proportional ordinary-element resize, and free eight-handle Background-region transforms with live status/minimap preview. **Complete locally; human review pass with notes.**
+7. Stable editing chrome, candidate slice guides, proportional ordinary-element resize, and free eight-handle Background-region transforms with live status/minimap preview. **Complete; human review pass with notes; later published in `fdd4ead`.**
 8. Local history, one explicit save/reopen slot, blank New Episode, and minimal File/Edit menus. **Complete, validated, and human-tested.**
 9. Asset Properties and Opacity plus basic Background fades. **Not started; reconsider only after a new choice.**
 10. Deterministic WEBTOON slice planning and export after upload verification.
 11. Layer-tab naming and reordering.
-12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete and validated locally July 15; publication authorized and pending final repository checks.**
+12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete, validated, and published July 15 in `fdd4ead`.**
 13. Asset-to-canvas drag if the click-to-place fallback remains reliable.
 14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
@@ -490,7 +490,7 @@ The smallest acceptable proof is one request that produces one image candidate, 
 - Additional import formats, source replacement, crop, recolor, rotation, flip, and other asset-specific editing beyond the implemented transparency-preserving PNG/JPEG/WebP preview.
 - Editable balloon text, tails, styles, semantic guidance, and creator-authored reusable balloon templates beyond the implemented original starter visuals and creator categories.
 - Commands beyond the implemented **File > New Episode / Save / Reopen** and **Edit > Undo / Redo** surface. View, Window, Help, open/import, Save As, multiple recent projects, and native OS menus remain deferred until their own workflow or desktop-packaging slice.
-- Canvas Zoom and 2D Viewport is complete locally; its state is transient and does not alter episode or export geometry.
+- Canvas Zoom and 2D Viewport is complete and published in the earlier A/B/C stack; its state is transient and does not alter episode or export geometry.
 - Asset Properties and Opacity plus a basic vertical Background fade remain proposed checkpoint E; they have not started and require a new explicit go/no-go.
 - Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, advanced edge/nearby-element snapping beyond checkpoint D's single centerline rule, and resize behavior beyond the implemented four proportional corner handles.
 - Persistence beyond the implemented explicit episode slot and separate IndexedDB source library: autosave, crash recovery, portable file-system project files, multiple projects, account/cloud sync, and additional format migrations.
@@ -549,7 +549,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library now passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; its publication is authorized but not yet claimed. Production export, deployment, opacity/fades, advanced asset editing, and other later slices remain unstarted or separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. Production export, deployment, opacity/fades, advanced asset editing, and other later slices remain unstarted or separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.
