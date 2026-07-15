@@ -98,36 +98,43 @@ export function App() {
 
         <div className="episode-heading" data-testid="episode-heading">
           <span data-testid="episode-label">Episode</span>
-          {isEditingEpisodeName ? (
-            <input
-              ref={episodeNameInputRef}
-              className="episode-title-input"
-              type="text"
-              size={Math.min(
-                Math.max(episodeNameDraft.length, 1),
-                MAX_EPISODE_NAME_LENGTH,
-              )}
-              aria-label="Episode title"
-              value={episodeNameDraft}
-              onChange={(event) =>
-                setEpisodeNameDraft(
-                  constrainEpisodeNameDraft(event.currentTarget.value),
-                )
-              }
-              onBlur={commitEpisodeNameEdit}
-              onKeyDown={handleEpisodeNameKeyDown}
-            />
-          ) : (
-            <button
-              className="episode-title-edit"
-              type="button"
-              aria-label={`Edit episode title: ${episodeName}`}
-              title="Click the episode title to edit"
-              onClick={beginEpisodeNameEdit}
-            >
-              {episodeName}
-            </button>
-          )}
+          <div className="episode-title-slot">
+            {isEditingEpisodeName ? (
+              <>
+                <span className="episode-title-anchor" aria-hidden="true">
+                  {episodeName}
+                </span>
+                <input
+                  ref={episodeNameInputRef}
+                  className="episode-title-input"
+                  type="text"
+                  size={Math.min(
+                    Math.max(episodeNameDraft.length, 1),
+                    MAX_EPISODE_NAME_LENGTH,
+                  )}
+                  aria-label="Episode title"
+                  value={episodeNameDraft}
+                  onChange={(event) =>
+                    setEpisodeNameDraft(
+                      constrainEpisodeNameDraft(event.currentTarget.value),
+                    )
+                  }
+                  onBlur={commitEpisodeNameEdit}
+                  onKeyDown={handleEpisodeNameKeyDown}
+                />
+              </>
+            ) : (
+              <button
+                className="episode-title-edit"
+                type="button"
+                aria-label={`Edit episode title: ${episodeName}`}
+                title="Click the episode title to edit"
+                onClick={beginEpisodeNameEdit}
+              >
+                {episodeName}
+              </button>
+            )}
+          </div>
         </div>
 
         <button

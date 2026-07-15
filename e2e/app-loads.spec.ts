@@ -37,6 +37,16 @@ async function readLocatorX(locator: Locator) {
   return bounds.x
 }
 
+async function readLocatorBounds(locator: Locator) {
+  const bounds = await locator.boundingBox()
+
+  if (!bounds) {
+    throw new Error('The requested control did not produce visible bounds.')
+  }
+
+  return bounds
+}
+
 async function expectHorizontalCentersToMatch(
   subject: Locator,
   container: Locator,
@@ -149,15 +159,43 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const episodeLabelXBeforeEdit = await readLocatorX(episodeLabel)
   const resetXBeforeEdit = await readLocatorX(resetDemo)
   await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
+  const episodeTitleBoundsBeforeEdit = await readLocatorBounds(editEpisodeTitle)
   await editEpisodeTitle.click()
   await expect(episodeTitleInput).toBeFocused()
-  await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
+  const episodeTitleInputBoundsAtStart = await readLocatorBounds(
+    episodeTitleInput,
+  )
+  expect(
+    Math.abs(episodeTitleInputBoundsAtStart.x - episodeTitleBoundsBeforeEdit.x),
+  ).toBeLessThan(1)
   expect(
     Math.abs((await readLocatorX(episodeLabel)) - episodeLabelXBeforeEdit),
   ).toBeLessThan(1)
   expect(
     Math.abs((await readLocatorX(resetDemo)) - resetXBeforeEdit),
   ).toBeLessThan(1)
+  await episodeTitleInput.fill('A')
+  const shortEpisodeTitleWidth = (await episodeTitleInput.boundingBox())?.width
+  await episodeTitleInput.fill('A Light Below the Garden Wall')
+  const mediumEpisodeTitleWidth = (await episodeTitleInput.boundingBox())?.width
+  await episodeTitleInput.fill('x'.repeat(60))
+  const longEpisodeTitleBounds = await readLocatorBounds(episodeTitleInput)
+  const longEpisodeTitleWidth = longEpisodeTitleBounds.width
+  if (
+    shortEpisodeTitleWidth === undefined ||
+    mediumEpisodeTitleWidth === undefined
+  ) {
+    throw new Error('The dynamic episode title field needs visible bounds.')
+  }
+  expect(mediumEpisodeTitleWidth).toBeGreaterThan(shortEpisodeTitleWidth)
+  expect(longEpisodeTitleWidth).toBeGreaterThan(mediumEpisodeTitleWidth)
+  expect(longEpisodeTitleWidth).toBeLessThanOrEqual(380)
+  expect(
+    Math.abs(longEpisodeTitleBounds.x - episodeTitleInputBoundsAtStart.x),
+  ).toBeLessThan(1)
+  expect(longEpisodeTitleBounds.x + longEpisodeTitleBounds.width).toBeLessThan(
+    resetXBeforeEdit,
+  )
   await episodeTitleInput.fill('  A Light Below  ')
   await episodeTitleInput.press('Enter')
   await expect(page.getByText('A Light Below', { exact: true })).toBeVisible()
@@ -198,7 +236,6 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await episodeTitleInput.fill('')
   await episodeTitleInput.pressSequentially('x'.repeat(61))
   await expect(episodeTitleInput).toHaveValue('x'.repeat(60))
-  await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
   await episodeTitleInput.fill(`  ${'x'.repeat(60)}  `)
   await expect(episodeTitleInput).toHaveValue(`  ${'x'.repeat(60)}  `)
   await episodeTitleInput.press('Enter')
@@ -962,9 +999,13 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     const responsiveEpisodeLabelX = await readLocatorX(episodeLabel)
     const responsiveResetX = await readLocatorX(resetDemo)
     await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
+    const responsiveTitleBounds = await readLocatorBounds(editEpisodeTitle)
     await editEpisodeTitle.click()
     await expect(episodeTitleInput).toBeFocused()
-    await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
+    const responsiveInputBounds = await readLocatorBounds(episodeTitleInput)
+    expect(
+      Math.abs(responsiveInputBounds.x - responsiveTitleBounds.x),
+    ).toBeLessThan(1)
     expect(
       Math.abs(
         (await readLocatorX(episodeLabel)) - responsiveEpisodeLabelX,
@@ -974,7 +1015,13 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
     ).toBeLessThan(1)
     await episodeTitleInput.fill('x'.repeat(60))
-    await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
+    const responsiveLongInputBounds = await readLocatorBounds(episodeTitleInput)
+    expect(
+      Math.abs(responsiveLongInputBounds.x - responsiveInputBounds.x),
+    ).toBeLessThan(1)
+    expect(
+      responsiveLongInputBounds.x + responsiveLongInputBounds.width,
+    ).toBeLessThan(responsiveResetX)
     expect(
       Math.abs(
         (await readLocatorX(episodeLabel)) - responsiveEpisodeLabelX,
