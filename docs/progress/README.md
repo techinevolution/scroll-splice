@@ -139,4 +139,4 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Balloon-outline seam cleanup and minimap aspect distortion remain deferred polish.
 - File: 1440 × 900 RGB PNG, 124,384 bytes.
 - SHA-256: `c0b9bc5a359d23035cd965001b5f1e51056ee08cd87a0a36093771096ab7e4e3`.
-- This checkpoint is local only: its implementation, documentation, and screenshot have not yet been committed, pushed, or published. It does not imply deployment or Devpost submission.
+- The implementation, documentation, and screenshot were published in feature commit `7768daa0617b66c696f769d97dd531f9029272c8`. This checkpoint does not imply deployment or Devpost submission.

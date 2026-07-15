@@ -62,7 +62,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement and validate single/tile image presentation using unchanged imported sources, freeform texture-coverage bounds, and fixed automatic tile scale capped at a 160-logical-unit tile edge.
 - [x] Implement and pixel-test exactly Normal, Multiply, Screen, Overlay, and Soft Light; carry all appearance data through undo/redo, Save, reload, Reopen, and reset.
 - [x] After all five checkpoints pass: run 255 unit tests across 13 files, typecheck, lint, production build, focused drag/appearance Chromium coverage, and the full 6-of-6 Playwright Chromium suite; visually inspect and index the public-safe screenshot and update completion evidence.
-- [ ] Before publication: review the complete local diff and private-file status, commit the coherent passing slice, push only under Katherine's active authorization, and verify local/remote equality. No commit or push is recorded yet.
+- [x] Review the complete diff and private-file status, commit the coherent passing slice, and publish feature commit `7768daa0617b66c696f769d97dd531f9029272c8` to `main` under Katherine's active authorization.
 - [ ] Later built-in artwork polish: replace or repair the visible white seam in the original Oval and Rounded balloon outlines; do not block current creator work on it.
 - [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
