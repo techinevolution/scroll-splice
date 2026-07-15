@@ -12,7 +12,7 @@ Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed 
 
 Katherine completed the required hands-on test of that combined build on July 14. She confirmed placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary canvas movement. She then failed the first proposed polish review because title editing still shifted the fixed **EPISODE** label, the 1,280-unit dotted guides were not present, full-width Background regions could drift sideways in the live Konva node while the document and minimap stayed at `x = 0`, no visible magnet existed, and selected assets had no corner resize handles.
 
-The corrective checkpoint below is implemented and validated locally and is pending Katherine's human retest. It includes the previously scoped D corrections and, at Katherine's direct request, one bounded proportional corner-resize interaction. It keeps the episode at format v3. Element opacity and Background fades have not started; do not assume they are next until the corrective checkpoint passes human review. No push has occurred; remote `main` remains at `6d6437e`, which includes the earlier implementation published through `8a493a2`.
+Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. Its implementation is local; final automated/browser validation, screenshot indexing, Katherine's review, and any push remain separate gates. Element opacity and Background fades have not started and are not automatically next. Remote `main` remains at `6d6437e`, which includes the earlier implementation published through `8a493a2`.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -35,7 +35,7 @@ The associated Codex Feedback Session ID is **`019f5921-6190-7520-ba51-f5e0897c5
 
 ## Creator-ready feedback recorded July 13–14
 
-These requests refine the intended product without enlarging the required contest MVP. July 13 items were product direction unless a later checkpoint explicitly approved them. The July 14 corrections are now captured in implemented local checkpoint D plus the separately gated export checkpoint; proposed checkpoint E remains unstarted pending D's human review.
+These requests refine the intended product without enlarging the required contest MVP. July 13 items were product direction unless a later checkpoint explicitly approved them. The July 14 corrections are captured in the reviewed checkpoint D, the approved local history/save/menu slice below, and the separately gated export checkpoint; proposed checkpoint E remains unstarted.
 
 - combine a solid RGB base, an uploaded background image, and optional decorative edges in one independently editable background treatment
 - let the episode and background extend downward through an editor-only **+ Add scroll space** control at the logical bottom of the story canvas; each activation uses one centralized default increment of 1280 logical units
@@ -70,6 +70,7 @@ These requests refine the intended product without enlarging the required contes
 - keep planning guides as editor chrome that follows pan and zoom but never enters the episode document, minimap, tall master, or exported images
 - create Background color regions full width by default, then let creators freely edit `x`, `y`, `width`, and `height`; apply the default-on center magnet with the same off/Alt/Option bypass used for intentional asymmetry
 - add deterministic creator-reviewed self-slicing later so ScrollSplice can control cut positions and preflight output before manual WEBTOON upload, while making no promise that WEBTOON will avoid recompression or optimization
+- provide bounded undo/redo for every currently implemented episode-document mutation, one explicit local-browser save slot, page-reload restoration of the last explicit save, confirmed-discard Reopen and New Episode actions, and only the requested File/Edit commands and shortcuts
 
 ## Completed implementation slice: composition groups and visibility
 
@@ -244,9 +245,9 @@ Acceptance:
 
 Excluded: opacity, general element resize handles, snapping, canvas rotation, plane renaming/reordering, real imports, persistence, export, deployment, submission media, OAuth, and AI.
 
-## Current corrective checkpoint: stable editing, guides, and bounded corner resize
+## Completed corrective checkpoint: stable editing, guides, and bounded corner resize
 
-**Status:** the original fixed-width D checkpoint passed 120 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. Katherine then superseded its Background-region contract. The free-transform extension now passes 123 unit tests, strict typecheck, ESLint, production build, the expanded Chromium walkthrough, and supported-size visual inspection; human review still precedes any later product slice or push. Remote `main` remains at `6d6437e`.
+**Status:** the original fixed-width D checkpoint passed 120 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. Katherine then superseded its Background-region contract. The free-transform extension passes 123 unit tests, strict typecheck, ESLint, production build, the expanded Chromium walkthrough, and supported-size visual inspection. Katherine's July 14 retest is **PASS WITH NOTES**: live coordinates, live minimap sync, eight handles, snap override, and Option-drag passed; minimap aspect distortion remains later polish. No push is implied. Remote `main` remains at `6d6437e`.
 
 This checkpoint repairs the failed manual-review findings without folding in the later alpha system:
 
@@ -270,15 +271,40 @@ Acceptance:
 - status `x/y/w/h` and minimap geometry follow transient bounds during drag/resize, then agree with the one command committed at gesture end
 - title, movement, deletion, height, zoom, minimap, selection, placement, visibility, and reset regressions remain passing
 
+## Current approved optional slice: local history, save, and minimal menus
+
+**Status:** approved July 14, implemented, and validated in the local working tree. Evidence: 154 unit tests, strict typecheck, ESLint, production build, two isolated Playwright Chromium tests (the complete editor walkthrough plus save/reload/reopen/New Episode), visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768, and one indexed public-safe screenshot. Katherine's hands-on review and any push remain pending. This is optional creator-workflow progress, not an expansion of the required contest MVP.
+
+### Contract
+
+- Keep one application-owned history of at most 100 checkpoints. Undo/redo covers every currently implemented episode-document mutation: element and plane creation/deletion, element move/resize, element/plane/group visibility, base color, title, coarse extension, and precise height changes. A bottom-edge pointer drag is one history step even though its live preview emits many updates.
+- A new document edit after Undo clears Redo. Selection, viewport, zoom, drawer state, magnet/guide visibility, and live pointer previews do not create history entries.
+- Save only the validated format-v3 episode document in one versioned local-browser slot. **Save** is explicit; there is no autosave. On startup, a valid last save opens automatically after a page reload. The slot is tied to one browser profile and site origin; clearing site data or changing profile, browser, or origin loses access to it.
+- **Reopen** restores the last explicit save and clears history/transient editing context. Ask before discarding unsaved changes.
+- **New Episode** creates an unsaved **Untitled Episode** with a stable ID, 800 × 1,280 logical geometry, a pinned white Background base, one ordinary Background plane, one Content plane, one Foreground plane, and no elements. Ask before discarding unsaved changes, clear history, and retain the previous saved slot so Reopen can still recover it.
+- Show only **File > New Episode / Save / Reopen** and **Edit > Undo / Redo**. These are accessible in-app browser menus, not native operating-system menus.
+- Support `Mod+S`, `Mod+Z`, `Mod+Shift+Z`, and `Ctrl+Y`; title/input fields keep their native undo/redo behavior. Show clear dirty, saved, reopened, new-document, and storage-error status.
+- Reject corrupt or unsupported saved data without crashing, deleting it, or silently coercing it. Fall back to the public-safe fixture when startup cannot open a valid save.
+
+### Acceptance
+
+- focused unit tests prove each required history category, the 100-checkpoint cap, redo invalidation, saved-revision dirty tracking, one-step height drag, blank-document invariants, save round-trip, and corrupt/unsupported/unavailable storage behavior
+- the File and Edit menus expose exactly the requested commands, disabled states are accurate, keyboard and pointer navigation work, and destructive lifecycle actions ask only when unsaved work exists
+- one isolated browser story saves a changed episode, reloads the page into that exact save, makes a later edit, reopens and restores the save, creates a blank episode, then reopens the retained save again
+- existing canvas, minimap, layers, title, movement, resize, height, visibility, placement, snapping, guide, and reset regressions remain passing
+- typecheck, lint, unit tests, production build, Playwright, a public-safe screenshot, and supported-size visual inspection are recorded before handoff
+
+Explicitly excluded: autosave, crash recovery, file picker or downloadable project files, a multi-project library, imported binary-asset persistence, native macOS/Windows menus, cloud/account sync, migration infrastructure, production export, OAuth, OpenAI runtime work, and AI.
+
 ### E. Proposed after review: Asset Properties and Opacity plus basic Background fades
 
-**Status:** not started. Katherine's earlier approval keeps this as an available proposal, but the failed review inserted a stop point. Proceed only after checkpoint D passes validation and Katherine explicitly chooses the next slice.
+**Status:** not started. Katherine's earlier approval keeps this as an available proposal, but it was not chosen after checkpoint D. Reconsider it only after the current history/save/menu slice passes and Katherine explicitly selects another slice.
 
 - Add one focused bottom property strip for the selected element with a 0–100% opacity slider and exact percentage input.
 - Keep element opacity independent from eye visibility and source-image alpha. A 0%-opacity element remains selectable from Layers and does not intercept canvas input.
 - Add only a simple vertical two-stop alpha fade to solid Background color regions, with top and bottom percentages. Do not add a multi-stop editor, arbitrary angle, blend mode, image mask, or general gradient-color system.
 - Make canvas and minimap agree on the resulting element compositing while keeping candidate guides out of the minimap.
-- Because this adds document fields before persistence exists, bump the in-memory fixture directly from format v3 to v4 without migration machinery. Give every existing and newly created element `opacity = 1`; give a color region no fade by default. Store an optional color-region-only vertical fade with normalized top and bottom alpha values. Rendering multiplies source alpha by element opacity and, when present, the interpolated fade alpha. **Reset demo** restores fixture opacity `1` and no-fade defaults.
+- Because local format-v3 persistence now exists, do not directly bump the fixture to format v4. First make a separate compatibility decision: either keep backward-compatible optional fields in v3 or implement one explicit v3-to-v4 load path. Do not add a general migration framework without a concrete need. Existing and newly created elements would default to `opacity = 1`, and a color region would default to no fade.
 
 Acceptance:
 
@@ -287,7 +313,7 @@ Acceptance:
 - a solid Background color region can transition vertically between two alpha endpoints in canvas and minimap
 - focused model/command/store/render tests, strict typecheck, lint, production build, Playwright, and visual inspection pass
 
-Explicitly excluded from the current corrective checkpoint and proposed E: production file export, real import, persistence, undo/redo, general gradients, arbitrary fade angles, blend modes, masks, rotation, flipping, crop, perspective, tab reordering, deployment, OAuth, OpenAI runtime work, and AI. In scope are four proportional corner handles for ordinary shapes/text and eight independent handles for Background color regions. After the next Katherine-approved checkpoint passes, stop and produce the requested reconciled inventory of implemented features versus remaining documented/chat requests before proposing more product work.
+Explicitly excluded from proposed E: production file export, real import, additional persistence beyond the implemented single local slot, general gradients, arbitrary fade angles, blend modes, masks, rotation, flipping, crop, perspective, tab reordering, deployment, OAuth, OpenAI runtime work, and AI. The requested reconciled feature inventory was supplied before Katherine chose the current local history/save/menu slice.
 
 ### Later bounded slices
 
@@ -309,7 +335,7 @@ Submit a small, complete, reliable **human-operated** editor MVP in the **Apps f
 4. select the same element from the canvas or layers list
 5. move the selected element and reset the demo
 
-That is the simplest MVP for Build Week. It proves the product's distinctive interaction without pretending that import, persistence, undo, production export, or autonomous creation is complete. The editor must work without an OpenAI connection.
+That is the simplest MVP for Build Week. The optional local history/save/menu slice strengthens the creator workflow without becoming a new contest requirement. The submission still does not pretend that real import, multi-project persistence/recovery, production export, or autonomous creation is complete. The editor must work without an OpenAI connection.
 
 ## Build Week must-haves
 
@@ -357,8 +383,8 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 
 - Complete Katherine's hands-on test of **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. **Complete.**
 - Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Complete through `8a493a2`.**
-- Repair the failed polish review as checkpoint D: stable title anchors, visible profile-derived candidate guides, default-on center magnet with bypass, proportional ordinary-element resize, and live status/minimap bounds. The first fixed-width Background implementation passed locally but was superseded; free Background-region movement and eight-handle independent resize are now implemented and pending validation/human review.
-- Stop after checkpoint D passes validation and hand it to Katherine. Do not begin opacity/fades or assume they are the next slice before that review.
+- Repair the failed polish review as checkpoint D: stable title anchors, visible profile-derived candidate guides, default-on center magnet with bypass, proportional ordinary-element resize, and live status/minimap bounds. The first fixed-width Background implementation was superseded; free Background-region movement and eight-handle independent resize passed validation and Katherine's retest with minimap aspect distortion logged as polish. **Complete with notes.**
+- Implement and validate the separately approved optional local history/save/menu slice, including explicit Save, reload/reopen, blank New Episode, bounded undo/redo, and the exact File/Edit surface. **Complete locally; human review and push pending.**
 - Keep deterministic WEBTOON file export separate until the harmless authenticated upload verification and a later explicit export checkpoint.
 - Keep every coherent checkpoint tested and independently understandable.
 - Do not spend the full product day on deployment, video, or Devpost assembly.
@@ -398,7 +424,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 
 ## Optional Build Week product slices
 
-Work through these only in order, with a passing checkpoint after each. Items 4–6 were authorized together by Katherine's follow-up review and are complete. Item 7 is implemented and validated locally as a corrective checkpoint and must still pass human review. Item 8 remains a proposal after that review rather than automatic next work; item 9 onward remains separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
+Work through these only in order, with a passing checkpoint after each. Items 4–6 were authorized together by Katherine's follow-up review and are complete. Item 7 passed human review with notes. Katherine selected item 8 instead of the earlier opacity proposal; it is complete locally and awaits her hands-on review. Every later item remains separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above. **Complete.**
 2. The layer-planes and episode-backdrop foundation defined above. **Complete.**
@@ -406,14 +432,15 @@ Work through these only in order, with a passing checkpoint after each. Items 4�
 4. Direct Creator Controls. **Complete and human-tested.**
 5. Safe Precise Height and solid Background Color Regions. **Complete and human-tested.**
 6. Canvas Zoom and 2D Viewport. **Complete and human-tested.**
-7. Stable editing chrome, candidate slice guides, proportional ordinary-element resize, and free eight-handle Background-region transforms with live status/minimap preview. **Latest extension implemented locally; validation and Katherine review pending.**
-8. Asset Properties and Opacity plus basic Background fades. **Not started; reconsider after review.**
-9. Deterministic WEBTOON slice planning and export after upload verification.
-10. Layer-tab naming and reordering.
-11. The Add rail and Asset Library shell using public-safe placeholders.
-12. A safe **Add to canvas** action targeting the active numbered plane.
-13. Asset-to-canvas drag if the fallback is already reliable.
-14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+7. Stable editing chrome, candidate slice guides, proportional ordinary-element resize, and free eight-handle Background-region transforms with live status/minimap preview. **Complete locally; human review pass with notes.**
+8. Local history, one explicit save/reopen slot, blank New Episode, and minimal File/Edit menus. **Implemented and validated locally; Katherine review and push pending.**
+9. Asset Properties and Opacity plus basic Background fades. **Not started; reconsider only after a new choice.**
+10. Deterministic WEBTOON slice planning and export after upload verification.
+11. Layer-tab naming and reordering.
+12. The Add rail and Asset Library shell using public-safe placeholders.
+13. A safe **Add to canvas** action targeting the active numbered plane.
+14. Asset-to-canvas drag if the fallback is already reliable.
+15. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
 Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
@@ -435,12 +462,12 @@ The smallest acceptable proof is one request that produces one image candidate, 
 - General gradients, arbitrary fade angles, blend modes, uploaded background imagery, and optional edge decoration. Solid Background color regions now start full width and support free movement and independent resize; a basic vertical alpha fade is only an unstarted post-review proposal.
 - Transparency-preserving image import and preview.
 - A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
-- New-episode creation and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging. Title editing and its stable anchored footprint are implemented locally in checkpoint D.
+- Commands beyond the implemented **File > New Episode / Save / Reopen** and **Edit > Undo / Redo** surface. View, Window, Help, open/import, Save As, multiple recent projects, and native OS menus remain deferred until their own workflow or desktop-packaging slice.
 - Canvas Zoom and 2D Viewport is complete locally; its state is transient and does not alter episode or export geometry.
 - Asset Properties and Opacity plus a basic vertical Background fade remain proposed checkpoint E; they have not started and require a new go/no-go after Katherine reviews D.
 - Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, advanced edge/nearby-element snapping beyond checkpoint D's single centerline rule, and resize behavior beyond the implemented four proportional corner handles.
-- Persistence, save/reopen, autosave, and recovery.
-- Undo/redo, rotation, crop, masks, and advanced transforms.
+- Persistence beyond the implemented one explicit versioned local-browser slot: autosave, crash recovery, file-system project files, imported binary assets, multiple projects, account/cloud sync, and format migration.
+- History beyond the implemented 100-checkpoint document undo/redo: named history, persisted history, branching, collaborative history, rotation, crop, masks, and advanced transforms.
 - Moving elements between planes or groups, including the later element-row **Move to plane** context action and its visible keyboard-accessible alternative; arbitrary nested groups; and element-order editing beyond the numbered-plane foundation.
 - Production tall-master and WEBTOON slice export.
 - Authenticated WEBTOON upload verification and other platform profiles.
@@ -495,7 +522,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D's original fixed-width version passed local validation; its superseding free Background-region transform extension is implemented locally and must pass its own validation plus Katherine's review before any later slice is chosen or pushed. Real uploads, production export, deployment, opacity/fades, and other later slices remain unstarted or separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes. The optional local history/save/menu slice passes 154 unit tests, static/build checks, two Chromium stories, supported-size visual inspection, and screenshot capture; it still requires Katherine's hands-on review and separate push authority. Real uploads, production export, deployment, opacity/fades, and other later slices remain unstarted or separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

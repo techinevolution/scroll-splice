@@ -21,6 +21,7 @@ This is modularity by separation of responsibility, not by speculative infrastru
 - React 19 and plain CSS own the static application shell and panels.
 - React-Konva/Konva renders only the interactive editing viewport.
 - Zustand coordinates the current document, selection, viewport, command dispatch, and transient UI state.
+- A small application-edge `ProjectRepository` validates and stores one explicit format-v3 episode save in browser local storage; no durable data enters React or Konva objects.
 - A lightweight React/CSS/SVG minimap derives from the episode document; it is not a second Konva editor.
 - Strict TypeScript defines the core contracts.
 - Vite 8 serves the local app and produces a static deployment build.
@@ -36,17 +37,19 @@ A single generate-and-place proof is permitted only as late stretch work under t
 Create a folder only when its active behavior exists. The intended ownership is:
 
 - `src/core/episode.ts`: plain episode and element types.
+- `src/core/createBlankEpisode.ts`: pure construction of the minimal 800 × 1,280 format-v3 episode used by **New Episode**.
 - `src/core/coordinates.ts`: episode, viewport, screen, and minimap conversion plus clamping.
 - `src/core/commands.ts`: pure document edits used by the Build Week MVP.
-- `src/app/store.ts`: Zustand application coordination and command dispatch.
+- `src/app/store.ts`: Zustand application coordination, bounded history, document status, and command dispatch.
 - `src/app/fixtures/`: original public-safe Build Week sample data.
 - `src/editor/`: Konva viewport rendering and element interaction.
 - `src/minimap/`: simplified full-episode representation and navigation requests.
 - `src/layers/`: ordered layer presentation and selection requests.
 - `src/components/`: shell and small ordinary React controls.
+- `src/persistence/projectRepository.ts`: one versioned local-browser save adapter plus defensive format-v3 validation.
 - `src/export/profiles.ts`: provisional versioned output-profile data and pure candidate-boundary math only; it does not render or write export files.
 
-Do not create empty `services`, `adapters`, `auth`, or `persistence` trees merely to represent future ideas. Their boundaries are documented below and become files only when an approved slice needs them. The small implemented `src/export/` seam exists only because the candidate-guide slice needs one versioned `ExportProfile`; it is not an exporter.
+Do not create empty `services`, `adapters`, or `auth` trees merely to represent future ideas. Their boundaries are documented below and become files only when an approved slice needs them. The implemented `src/persistence/` tree exists only for the approved single-slot browser adapter; it is not a project library, file-system layer, cloud service, or account sync system. The small implemented `src/export/` seam exists only because the candidate-guide slice needs one versioned `ExportProfile`; it is not an exporter.
 
 ## Current Build Week document model
 
@@ -78,7 +81,7 @@ The approved organization model remains shallow and predictable rather than beco
 - Exactly one plane is special: Background plane 1 is the pinned lowest plane, carries the editable full-scroll base RGB color, and automatically follows episode height. It may be recolored or hidden but cannot be reordered or deleted.
 - Every other plane is an unrestricted creative surface. Examples such as “Fade,” “Characters,” or “Film” are optional names, never enforced content types.
 - Every element references one `layerPlaneId`; its group is derived from that plane rather than duplicated as a second source of truth.
-- Proposed checkpoint E would bump the unsaved fixture directly from format v3 to v4 and add required element `opacity` from 0–1 while preserving per-pixel source alpha. It has not started and is not automatic next work after the corrective checkpoint. If later approved, existing fixture elements and every creation command default to `opacity = 1`; eye visibility remains independent, and a zero-opacity element remains addressable through Layers. No migration layer is needed before persistence exists; any future loader must handle versions explicitly.
+- Proposed checkpoint E would add element opacity and optional Background fades, but it has not started and is not automatic next work. Because the format-v3 document can now be saved, any future format-v4 change requires a separate compatibility decision and explicit loader behavior before implementation. Do not silently reinterpret or overwrite a saved v3 document, and do not create a broad migration framework before a concrete supported transition exists.
 - Ordinary color regions are elements with normal logical `x`, `y`, `width`, and `height` bounds plus color. Creation starts them at `x = 0` and 800 units wide for convenience, but that is not an invariant: subsequent moves and eight-handle transforms freely edit both axes and dimensions. A later format v4 may add an optional color-region-only `verticalAlphaFade` with normalized `top` and `bottom` values; absence means no fade. General gradients remain later work.
 - Effective visibility is `group visible AND plane visible AND element visible`. A hidden element is absent from the canvas and hit testing but may remain selected from the Layers panel.
 - Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents elements by logical `y` from top to bottom and uses local stacking only to resolve equal or overlapping positions.
@@ -123,9 +126,9 @@ The implemented Build Week command surface is intentionally small:
 
 Navigation and selection do not change the document. They update application state.
 
-Reordering, plane rename, moving elements between planes, real image attachment/import, and the full Add rail belong to later separately approved slices. Element opacity and a basic vertical Background alpha fade remain an unstarted post-review proposal. Do not add arbitrary nesting, folders, migrations, blend-mode infrastructure, or persistence without an approved slice.
+Reordering, plane rename, moving elements between planes, real image attachment/import, and the full Add rail belong to later separately approved slices. Element opacity and a basic vertical Background alpha fade remain an unstarted post-review proposal. Do not add arbitrary nesting, folders, speculative migrations, blend-mode infrastructure, additional save slots, autosave, file-system access, or cloud storage without another approved slice.
 
-If Katherine later approves checkpoint E, it adds pure `setElementOpacity(document, elementId, opacity)` and `setBackgroundRegionFade(document, elementId, fade)` commands. They clamp normalized alpha to 0–1; the fade command rejects non-color-region elements and accepts `undefined` to restore a uniform region. Reset would replace the document with the format-v4 fixture, where every element has opacity `1` and every color region has no fade.
+If Katherine later approves checkpoint E, it would add pure `setElementOpacity(document, elementId, opacity)` and `setBackgroundRegionFade(document, elementId, fade)` commands. They would clamp normalized alpha to 0–1; the fade command would reject non-color-region elements and accept `undefined` to restore a uniform region. The slice must first decide whether to preserve format v3 through optional fields or support an explicit v3-to-v4 load path.
 
 ### Implemented episode-structure command extension
 
@@ -173,9 +176,29 @@ Zustand owns:
 - the selected element's transient live bounds preview
 - the current Assets drawer state
 - default-on transient magnet and candidate-guide visibility
-- command dispatch and reset
+- up to 100 document-history checkpoints, redo state, and the current saved revision
+- dirty/saved status and command dispatch
+- reset and document lifecycle actions
 
 Canvas, minimap, and layers subscribe to this shared state. They must not keep competing copies of comic content, selection, or viewport position.
+
+## Local history and project persistence
+
+The approved July 14 creator-workflow slice adds a deliberately small local boundary without changing the episode format:
+
+- `ProjectRepository` owns one browser key, `scrollsplice.project.last.v1`. Its versioned envelope contains a save timestamp and one validated format-v3 `EpisodeDocument`.
+- **Save** is explicit. It writes the current episode only; selection, viewport, zoom, open panels, live pointer bounds, history stacks, and provider/account data are never persisted.
+- On app startup, a valid last save opens automatically. Missing or unavailable storage falls back to the public-safe demo. Corrupt or unsupported records are reported and left untouched rather than being silently deleted or coerced.
+- **Reopen** reads the last explicit save and resets selection, viewport, zoom, transient controls, and undo/redo. If the current document is dirty, the application asks before discarding it.
+- **New Episode** creates an unsaved **Untitled Episode** with a stable ID, 800-unit width, 1,280-unit height, a pinned white Background base, one ordinary Background plane, one Content plane, one Foreground plane, and no elements. It does not delete the existing saved slot, so **Reopen** can still recover that last save.
+- The in-app menu surface is intentionally limited to **File > New Episode / Save / Reopen** and **Edit > Undo / Redo**. It is browser UI, not a native macOS or Windows menu.
+- Shortcuts are `Mod+S`, `Mod+Z`, `Mod+Shift+Z`, and `Ctrl+Y`. Undo/redo shortcuts do not replace native text-field history while an editable field has focus.
+
+The Zustand coordinator keeps a maximum of 100 history checkpoints. Every successful episode-document mutation goes through one commit helper, clears redo after a new branch, and records the prior document plus enough selection/group/plane context to restore a coherent editor. This includes element and layer-plane creation/deletion, movement, resize, title, coarse extension, precise height, element/plane/group visibility, and base color. A bottom-edge pointer gesture may publish many live height previews, but its start and final height form one undo step. Navigation, zoom, selection-only changes, drawer state, magnet state, guide visibility, and live bounds are transient and not undoable document edits.
+
+Undo and redo restore the episode document, clear stale live previews, clamp the viewport, preserve a still-valid selection, and otherwise choose a valid group/plane context. Save marks the current revision clean without deleting history. Reaching that saved revision again through undo/redo clears the dirty indicator; leaving it marks the document unsaved. Reopen and New Episode are lifecycle boundaries that clear both history stacks.
+
+This is not autosave, crash recovery, a file picker, a multi-project library, imported binary-asset persistence, native desktop storage, cloud/account sync, or a migration framework. Those require separate product and storage decisions.
 
 ## Viewport and coordinate model
 
@@ -257,11 +280,11 @@ This interaction includes independent side-handle stretching for Background colo
 
 Hidden elements do not render and cannot capture canvas selection. They remain selectable from the Layers panel; hiding a selected element keeps the selection and removes only its canvas outline until it is shown again.
 
-## Future application-edge seams
+## Application-edge seams
 
-These are contracts to preserve, not Build Week infrastructure to implement:
+The local form of `ProjectRepository` is implemented. The remaining contracts are future boundaries, not Build Week infrastructure to scaffold:
 
-- `ProjectRepository`: save and load local or account-backed project data.
+- `ProjectRepository`: currently saves and loads one local format-v3 episode; a future adapter may support a real project library or account-backed data without changing core commands.
 - `AssetRepository`: import, identify, and resolve source assets without destructive edits.
 - `ExportService`: render masters and platform slices without editor chrome.
 - `AuthSessionProvider`: expose a neutral ScrollSplice user/workspace session at the application edge.
@@ -371,20 +394,22 @@ The public demo uses only original synthetic content or explicitly approved asse
 ## Validation
 
 - Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, center-snap thresholds at zoom, proportional ordinary-element resize, independent Background-region resize, transient bounds preview/reset, serializable model invariants, pinned Background plane 1, ordering/visibility, title/plane/element deletion, episode-height safety, profile candidates, zoom, and minimap geometry. Opacity bounds remain later work.
-- Playwright: load the sample; prove stable title anchors; navigate through the minimap; create/delete planes and elements; place synthetic assets; edit the base; resize the episode; create, freely move, center-snap/bypass, and independently resize a Background color region while status `x/y/w/h` and minimap preview update live; exercise Fit Width and bounded zoom; verify proportional ordinary-element resize; and reset.
+- Vitest for the current local slice: format-v3 save-envelope validation and failure handling; blank-document invariants; history coverage for create, delete, move, resize, visibility, base color, title, and height; one-step pointer height history; redo invalidation; lifecycle clearing; dirty/saved revision behavior; and the 100-checkpoint bound.
+- Playwright: load the sample; prove stable title anchors; navigate through the minimap; create/delete planes and elements; place synthetic assets; edit the base; resize the episode; create, freely move, center-snap/bypass, and independently resize a Background color region while status `x/y/w/h` and minimap preview update live; exercise Fit Width and bounded zoom; verify proportional ordinary-element resize; and reset. The current slice additionally must save, reload into the saved episode, make an unsaved edit, reopen the saved episode, create a blank episode, recover the prior save, and exercise the File/Edit menus and shortcuts.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 
-Corrective checkpoint D validation covers stable title anchors, default-on magnet state and bypass, profile-derived candidates, four proportional ordinary-element handles, eight independent Background-region handles, free two-axis Background movement, transient status/minimap bounds during move and resize, one final command commit, and reset. The original fixed-width validation remains historical and is superseded by this passing extension. If later approved, checkpoint E adds opacity and fade coverage. The separate export checkpoint adds deterministic boundary planning and encoded preflight.
+Corrective checkpoint D validation covers stable title anchors, default-on magnet state and bypass, profile-derived candidates, four proportional ordinary-element handles, eight independent Background-region handles, free two-axis Background movement, transient status/minimap bounds during move and resize, one final command commit, and reset. The original fixed-width validation remains historical and is superseded by this passing extension. Katherine accepted the superseding checkpoint with notes; minimap aspect distortion remains polish. The local history/save/menu slice adds 154 passing unit tests, static/build validation, and a second isolated Chromium story for save/reload/reopen/New Episode. If later approved, checkpoint E adds opacity and fade coverage. The separate export checkpoint adds deterministic boundary planning and encoded preflight.
 
 The post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. That passing checkpoint and its documentation were published to `main` through `8a493a2` on July 14.
 
-The historical fixed-width corrective checkpoint passed 120 unit tests. Its superseding free-transform build passes 123 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. The existing public-safe 1440 × 900 progress record documents the preceding fixed-width UI and remains labeled as historical evidence. Katherine's human retest remains pending, and the latest checkpoint is not published.
+The historical fixed-width corrective checkpoint passed 120 unit tests. Its superseding free-transform build passed 123 unit tests before the newer history/save/menu work. The current local build passes 154 unit tests, strict typecheck, ESLint, production build, the expanded editor walkthrough plus the focused save/reload/reopen/New Episode Chromium story, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. The earlier public-safe 1440 × 900 record remains labeled as historical evidence; the new local save/history record is indexed separately. Katherine's human retest passed checkpoint D with the notes listed above; the newer slice remains unpublished pending her hands-on review.
 
 ## Non-negotiable invariants
 
 - Comic content has one authoritative episode document.
 - Selection and viewport each have one application-state owner.
+- Document history and dirty/saved state each have one application-state owner; neither enters the episode document.
 - Core model, coordinates, and commands import no React, Konva, Zustand, persistence, export, platform, or authentication code.
 - Canvas, minimap, layers, future preview, and future export agree on geometry and ordering.
 - Fixed composition-group rank, ordered layer planes, and local element stacking produce one deterministic stack; active-group or active-plane filtering never changes rendered visibility.
@@ -392,6 +417,7 @@ The historical fixed-width corrective checkpoint passed 120 unit tests. Its supe
 - The live canvas is viewport-sized, not episode-sized.
 - Source assets are never mutated by placed-element edits.
 - Platform rules, account identity, provider tokens, and upload state never enter the episode document or editor commands.
+- Local saving validates a versioned format-v3 document and never persists transient editor state or imported binary content.
 - The complete human editor works when model services, OAuth, skills, and connectors are absent.
 - Model context is explicit, bounded, serializable, and approved before private material leaves the app.
 - Model write tools call the same tested commands available to humans and cannot mutate UI framework state directly.

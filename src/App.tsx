@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
 
 import { useEditorStore } from './app/store'
+import { AppMenuBar } from './components/AppMenuBar'
 import { AssetPanel } from './components/AssetPanel'
 import { CompositionGroupControls } from './components/CompositionGroupControls'
 import { MAX_EPISODE_NAME_LENGTH } from './core/commands'
@@ -54,7 +55,18 @@ function SelectionStatus() {
 
 export function App() {
   const episodeName = useEditorStore((state) => state.episode.name)
+  const canUndo = useEditorStore((state) => state.canUndo)
+  const canRedo = useEditorStore((state) => state.canRedo)
+  const canReopen = useEditorStore((state) => state.hasSavedEpisode)
+  const hasUnsavedChanges = useEditorStore(
+    (state) => state.hasUnsavedChanges,
+  )
+  const documentStatus = useEditorStore((state) => state.documentStatus)
   const setEpisodeName = useEditorStore((state) => state.setEpisodeName)
+  const undo = useEditorStore((state) => state.undo)
+  const redo = useEditorStore((state) => state.redo)
+  const reopenEpisode = useEditorStore((state) => state.reopenEpisode)
+  const newEpisode = useEditorStore((state) => state.newEpisode)
   const resetEpisode = useEditorStore((state) => state.resetEpisode)
   const [isEditingEpisodeName, setIsEditingEpisodeName] = useState(false)
   const [episodeNameDraft, setEpisodeNameDraft] = useState(episodeName)
@@ -105,9 +117,89 @@ export function App() {
     }
   }
 
+  const saveFromUi = () => {
+    if (isEditingEpisodeName) {
+      commitEpisodeNameEdit()
+    }
+
+    useEditorStore.getState().saveEpisode()
+  }
+
+  const confirmDiscard = (message: string) =>
+    !useEditorStore.getState().hasUnsavedChanges || window.confirm(message)
+
+  const startNewEpisode = () => {
+    if (!confirmDiscard('Discard unsaved changes and start a new episode?')) {
+      return
+    }
+
+    cancelEpisodeNameEdit()
+    newEpisode()
+  }
+
+  const reopenSavedEpisode = () => {
+    if (!confirmDiscard('Discard unsaved changes and reopen the last save?')) {
+      return
+    }
+
+    cancelEpisodeNameEdit()
+    reopenEpisode()
+  }
+
+  useEffect(() => {
+    const handleApplicationShortcut = (event: globalThis.KeyboardEvent) => {
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) {
+        return
+      }
+
+      const target = event.target
+      const isEditable =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+      const key = event.key.toLowerCase()
+
+      if (key === 's') {
+        event.preventDefault()
+        saveFromUi()
+        return
+      }
+
+      if (isEditable) {
+        return
+      }
+
+      if (key === 'z') {
+        event.preventDefault()
+        if (event.shiftKey) {
+          redo()
+        } else {
+          undo()
+        }
+      } else if (key === 'y' && event.ctrlKey && !event.metaKey) {
+        event.preventDefault()
+        redo()
+      }
+    }
+
+    window.addEventListener('keydown', handleApplicationShortcut)
+    return () => window.removeEventListener('keydown', handleApplicationShortcut)
+  })
+
   return (
     <main className="app-shell">
       <header className="app-header">
+        <AppMenuBar
+          canUndo={canUndo}
+          canRedo={canRedo}
+          canReopen={canReopen}
+          onNewEpisode={startNewEpisode}
+          onSave={saveFromUi}
+          onReopen={reopenSavedEpisode}
+          onUndo={undo}
+          onRedo={redo}
+        />
+
         <div className="brand-lockup">
           <span className="brand-mark" aria-hidden="true">
             S
@@ -118,7 +210,11 @@ export function App() {
           </div>
         </div>
 
-        <div className="episode-heading" data-testid="episode-heading">
+        <div
+          className="episode-heading"
+          data-testid="episode-heading"
+          data-dirty={hasUnsavedChanges ? 'true' : 'false'}
+        >
           <span data-testid="episode-label">Episode</span>
           <div className="episode-title-slot">
             {isEditingEpisodeName ? (
@@ -192,9 +288,15 @@ export function App() {
       </div>
 
       <footer className="status-bar">
-        <span className="status-ready">Editor ready</span>
+        <span
+          className={hasUnsavedChanges ? 'status-unsaved' : 'status-ready'}
+          data-testid="document-status"
+          aria-live="polite"
+        >
+          {documentStatus}
+        </span>
         <SelectionStatus />
-        <span>800u fixed width · local demo</span>
+        <span>800u fixed width · local browser project</span>
       </footer>
     </main>
   )

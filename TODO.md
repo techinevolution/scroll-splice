@@ -21,7 +21,9 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Run the next **HUMAN TEST and direction checkpoint** on the completed A/B/C build; confirm placed-element deletion, the bottom **Add asset** action, minimap behavior, and ordinary movement; record the title-anchor and Background-region drag findings.
 - [x] Approve **Export-aware polish and alpha controls** as the next implementation goal after the documentation/publication checkpoint.
 - [x] Authorize publishing the already passing A/B/C implementation and matching documentation to `main` on July 14.
-- [ ] Re-test the local corrective checkpoint: centered title with stable anchors; the square canvas and upper-left Canvas base control; visible unlabeled 1,280-unit dotted guides; freely movable/eight-handle Background regions with center snap and bypass; live status `x/y/w/h` plus minimap previews during move/resize; four-corner proportional ordinary-asset resize; and safe episode resizing from the bottom canvas edge. Do not select another slice until this review passes.
+- [x] Re-test corrective checkpoint D and mark it **PASS WITH NOTES**: live coordinates, minimap sync, eight Background-region handles, snap override, and Option-drag pass; minimap aspect distortion remains polish.
+- [x] Approve the optional local history/save/menu slice: bounded undo/redo, one explicit local save, reload/reopen, blank New Episode, and only the requested File/Edit commands.
+- [ ] Test the completed local history/save/menu slice: undo/redo representative edits, Save, page reload, later unsaved edit, confirmed Reopen, New Episode, and recovery of the retained save. No push is implied by implementation completion.
 
 ## Katherine — before submission
 
@@ -47,7 +49,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement and validate the original corrective checkpoint D locally. Its fixed-width `x = 0`, vertical-only, no-Background-resize rule is preserved only as historical evidence and superseded by the next item.
 - [x] Implement and browser-validate freely editable Background-region `x/y/width/height`, eight independent handles, center magnet/bypass, transient live status/minimap bounds, and one pure command commit at gesture end. Format remains v3.
 - [x] Complete the corrective checkpoint's 123-test regression suite, static/build checks, expanded Chromium walkthrough, and supported-size visual inspection, then hand it to Katherine for the human test above. No push has occurred; remote `main` remains at `6d6437e` until a later push is explicitly authorized.
-- [ ] After Katherine's review, decide whether E should proceed. It has not started: format-v4 element opacity and a basic vertical two-stop alpha fade for solid Background color regions remain proposed, not automatic next work.
+- [x] Implement and validate the optional local history/save/menu slice: 100-checkpoint document history, one-step height drag, one explicit versioned browser save, reload/Reopen/New Episode, minimal File/Edit menus, shortcuts, validation/error handling, and visible document status.
+- [x] Record the slice's 154 unit tests, strict typecheck, ESLint, production build, two isolated Chromium tests, supported-size visual inspection, and public-safe screenshot. Keep it local until Katherine reviews it and separately authorizes any push.
+- [ ] After Katherine tests the current slice, decide whether proposed checkpoint E or another bounded slice should proceed. Opacity and a basic vertical Background fade remain unstarted; local persistence means any format change now needs an explicit compatibility decision.
+- [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 
 ## Joint — only if the human MVP finishes early

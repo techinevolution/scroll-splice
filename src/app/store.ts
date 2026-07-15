@@ -4,6 +4,7 @@ import {
   BUILD_WEEK_LAYER_PLANE_IDS,
   buildWeekEpisode,
 } from './fixtures/buildWeekEpisode'
+import { createBlankEpisode } from '../core/createBlankEpisode'
 import {
   DEFAULT_EPISODE_HEIGHT_INCREMENT,
   createBackgroundColorRegion as createBackgroundColorRegionCommand,
@@ -39,9 +40,24 @@ import {
   type ElementBounds,
   type EpisodeDocument,
 } from '../core/episode'
+import {
+  createLocalStorageProjectRepository,
+  getBrowserLocalStorage,
+} from '../persistence/projectRepository'
 
 interface EditorState {
   readonly episode: EpisodeDocument
+  readonly historyPast: readonly HistoryCheckpoint[]
+  readonly historyFuture: readonly HistoryCheckpoint[]
+  readonly episodeHeightResizeStart: HistoryCheckpoint | null
+  readonly currentRevision: number
+  readonly nextRevision: number
+  readonly savedRevision: number | null
+  readonly canUndo: boolean
+  readonly canRedo: boolean
+  readonly hasUnsavedChanges: boolean
+  readonly hasSavedEpisode: boolean
+  readonly documentStatus: string
   readonly selectedElementId: string | null
   readonly liveElementBounds: {
     readonly elementId: string
@@ -68,6 +84,9 @@ interface EditorState {
     logicalHeight: number,
     pinViewportToEnd?: boolean,
   ) => void
+  readonly beginEpisodeHeightResize: () => void
+  readonly endEpisodeHeightResize: () => void
+  readonly cancelEpisodeHeightResize: () => void
   readonly setFitViewportLogicalHeight: (logicalHeight: number) => void
   readonly setZoomFactor: (zoomFactor: number) => void
   readonly setViewportPosition: (position: LogicalPosition) => void
@@ -111,12 +130,197 @@ interface EditorState {
   readonly toggleSliceGuides: () => void
   readonly toggleAssetPanel: () => void
   readonly openAssetPanel: () => void
+  readonly undo: () => void
+  readonly redo: () => void
+  readonly saveEpisode: () => void
+  readonly reopenEpisode: () => boolean
+  readonly newEpisode: () => void
   readonly resetEpisode: () => void
+}
+
+interface HistoryCheckpoint {
+  readonly episode: EpisodeDocument
+  readonly selectedElementId: string | null
+  readonly activeCompositionGroup: CompositionGroup
+  readonly activeLayerPlaneId: string
+  readonly revision: number
 }
 
 const INITIAL_VIEWPORT_LOGICAL_HEIGHT = 900
 const INITIAL_COMPOSITION_GROUP = 'content' as const
 const INITIAL_LAYER_PLANE_ID = BUILD_WEEK_LAYER_PLANE_IDS.contentPanels
+const HISTORY_LIMIT = 100
+
+type EditorStatePatch = Partial<EditorState>
+
+function createHistoryCheckpoint(state: EditorState): HistoryCheckpoint {
+  return {
+    episode: state.episode,
+    selectedElementId: state.selectedElementId,
+    activeCompositionGroup: state.activeCompositionGroup,
+    activeLayerPlaneId: state.activeLayerPlaneId,
+    revision: state.currentRevision,
+  }
+}
+
+function isDirtyAtRevision(
+  revision: number,
+  savedRevision: number | null,
+): boolean {
+  return savedRevision === null || revision !== savedRevision
+}
+
+function appendHistoryCheckpoint(
+  checkpoints: readonly HistoryCheckpoint[],
+  checkpoint: HistoryCheckpoint,
+): readonly HistoryCheckpoint[] {
+  return [...checkpoints, checkpoint].slice(-HISTORY_LIMIT)
+}
+
+function commitEpisodeChange(
+  state: EditorState,
+  episode: EpisodeDocument,
+  patch: EditorStatePatch = {},
+): EditorState | EditorStatePatch {
+  if (episode === state.episode) {
+    return Object.keys(patch).length > 0 ? patch : state
+  }
+
+  const revision = state.nextRevision
+
+  return {
+    ...patch,
+    episode,
+    historyPast: appendHistoryCheckpoint(
+      state.historyPast,
+      createHistoryCheckpoint(state),
+    ),
+    historyFuture: [],
+    episodeHeightResizeStart: null,
+    currentRevision: revision,
+    nextRevision: revision + 1,
+    canUndo: true,
+    canRedo: false,
+    hasUnsavedChanges: isDirtyAtRevision(revision, state.savedRevision),
+    documentStatus: 'Unsaved changes',
+  }
+}
+
+function getDefaultEditorContext(episode: EpisodeDocument): {
+  readonly activeCompositionGroup: CompositionGroup
+  readonly activeLayerPlaneId: string
+} {
+  const contentPlane = getLayerPlanesForGroup(episode, 'content')[0]
+  const fallbackPlane = episode.layerPlanes[0]
+  const layerPlane = contentPlane ?? fallbackPlane
+
+  return {
+    activeCompositionGroup: layerPlane?.compositionGroup ?? 'content',
+    activeLayerPlaneId: layerPlane?.id ?? '',
+  }
+}
+
+function reconcileCheckpointContext(
+  episode: EpisodeDocument,
+  checkpoint: HistoryCheckpoint,
+) {
+  const selectedElement = checkpoint.selectedElementId
+    ? episode.elements.find(({ id }) => id === checkpoint.selectedElementId)
+    : undefined
+  const selectedGroup = selectedElement
+    ? getElementCompositionGroup(episode, selectedElement)
+    : undefined
+
+  if (selectedElement && selectedGroup) {
+    return {
+      selectedElementId: selectedElement.id,
+      activeCompositionGroup: selectedGroup,
+      activeLayerPlaneId: selectedElement.layerPlaneId,
+    }
+  }
+
+  const requestedPlane = getLayerPlaneById(
+    episode,
+    checkpoint.activeLayerPlaneId,
+  )
+
+  if (requestedPlane) {
+    return {
+      selectedElementId: null,
+      activeCompositionGroup: requestedPlane.compositionGroup,
+      activeLayerPlaneId: requestedPlane.id,
+    }
+  }
+
+  const requestedGroupPlane = getLayerPlanesForGroup(
+    episode,
+    checkpoint.activeCompositionGroup,
+  )[0]
+  const fallback = getDefaultEditorContext(episode)
+
+  return {
+    selectedElementId: null,
+    activeCompositionGroup:
+      requestedGroupPlane?.compositionGroup ?? fallback.activeCompositionGroup,
+    activeLayerPlaneId: requestedGroupPlane?.id ?? fallback.activeLayerPlaneId,
+  }
+}
+
+function restoreHistoryCheckpoint(
+  state: EditorState,
+  checkpoint: HistoryCheckpoint,
+): EditorStatePatch {
+  const viewportDimensions = getViewportLogicalDimensions(
+    checkpoint.episode,
+    state.fitViewportLogicalHeight,
+    state.zoomFactor,
+  )
+  const viewportPosition = clampViewportPosition(
+    { x: state.viewportX, y: state.viewportY },
+    getEpisodeLogicalDimensions(checkpoint.episode),
+    viewportDimensions,
+  )
+
+  return {
+    episode: checkpoint.episode,
+    ...reconcileCheckpointContext(checkpoint.episode, checkpoint),
+    liveElementBounds: null,
+    episodeHeightResizeStart: null,
+    currentRevision: checkpoint.revision,
+    hasUnsavedChanges: isDirtyAtRevision(
+      checkpoint.revision,
+      state.savedRevision,
+    ),
+    viewportX: viewportPosition.x,
+    viewportY: viewportPosition.y,
+    viewportLogicalWidth: viewportDimensions.width,
+    viewportLogicalHeight: viewportDimensions.height,
+  }
+}
+
+function createEpisodeId(): string {
+  const randomUUID = globalThis.crypto?.randomUUID
+
+  return randomUUID
+    ? randomUUID.call(globalThis.crypto)
+    : `episode-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+function getProjectRepository() {
+  return createLocalStorageProjectRepository(getBrowserLocalStorage())
+}
+
+const initialLoadResult = getProjectRepository().loadLast()
+const initialEpisode = initialLoadResult.ok
+  ? initialLoadResult.episode
+  : buildWeekEpisode
+const initialEditorContext = getDefaultEditorContext(initialEpisode)
+const initialDocumentStatus = initialLoadResult.ok
+  ? 'Opened saved episode'
+  : initialLoadResult.reason === 'not-found' ||
+      initialLoadResult.reason === 'storage-unavailable'
+    ? 'Demo ready · not saved'
+    : `${initialLoadResult.message} Demo loaded instead.`
 
 function getViewportLogicalDimensions(
   episode: EpisodeDocument,
@@ -146,15 +350,29 @@ function getLogicalViewport(state: EditorState): LogicalViewport {
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
-  episode: buildWeekEpisode,
+  episode: initialEpisode,
+  historyPast: [],
+  historyFuture: [],
+  episodeHeightResizeStart: null,
+  currentRevision: 0,
+  nextRevision: 1,
+  savedRevision: 0,
+  canUndo: false,
+  canRedo: false,
+  hasUnsavedChanges: false,
+  hasSavedEpisode: initialLoadResult.ok,
+  documentStatus: initialDocumentStatus,
   selectedElementId: null,
   liveElementBounds: null,
-  activeCompositionGroup: INITIAL_COMPOSITION_GROUP,
-  activeLayerPlaneId: INITIAL_LAYER_PLANE_ID,
+  activeCompositionGroup: initialEditorContext.activeCompositionGroup,
+  activeLayerPlaneId: initialEditorContext.activeLayerPlaneId,
   viewportX: 0,
   viewportY: 0,
-  viewportLogicalWidth: buildWeekEpisode.logicalWidth,
-  viewportLogicalHeight: INITIAL_VIEWPORT_LOGICAL_HEIGHT,
+  viewportLogicalWidth: initialEpisode.logicalWidth,
+  viewportLogicalHeight: Math.min(
+    INITIAL_VIEWPORT_LOGICAL_HEIGHT,
+    initialEpisode.logicalHeight,
+  ),
   fitViewportLogicalHeight: INITIAL_VIEWPORT_LOGICAL_HEIGHT,
   zoomFactor: DEFAULT_ZOOM_FACTOR,
   assetPanelOpen: false,
@@ -217,13 +435,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       )
       const createdLayerPlane = layerPlanes[layerPlanes.length - 1]
 
-      return {
-        episode,
+      return commitEpisodeChange(state, episode, {
         activeLayerPlaneId:
           createdLayerPlane?.id ?? state.activeLayerPlaneId,
         selectedElementId: null,
         liveElementBounds: null,
-      }
+      })
     })
   },
 
@@ -261,20 +478,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         return state
       }
 
-      return {
-        episode,
+      return commitEpisodeChange(state, episode, {
         activeCompositionGroup: layerPlane.compositionGroup,
         activeLayerPlaneId: survivor.id,
         selectedElementId: null,
         liveElementBounds: null,
-      }
+      })
     })
   },
 
   setEpisodeName: (name) => {
     set((state) => {
       const episode = setEpisodeNameCommand(state.episode, name)
-      return episode === state.episode ? state : { episode }
+      return commitEpisodeChange(state, episode)
     })
   },
 
@@ -295,11 +511,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         state.zoomFactor,
       )
 
-      return {
-        episode,
+      return commitEpisodeChange(state, episode, {
         viewportLogicalWidth: viewportDimensions.width,
         viewportLogicalHeight: viewportDimensions.height,
-      }
+      })
     })
   },
 
@@ -331,12 +546,97 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             viewportDimensions,
           )
 
-      return {
-        episode,
+      const patch = {
         viewportX: viewportPosition.x,
         viewportY: viewportPosition.y,
         viewportLogicalWidth: viewportDimensions.width,
         viewportLogicalHeight: viewportDimensions.height,
+      }
+
+      if (state.episodeHeightResizeStart) {
+        return {
+          ...patch,
+          episode,
+          hasUnsavedChanges: true,
+          documentStatus: 'Unsaved changes',
+        }
+      }
+
+      return commitEpisodeChange(state, episode, patch)
+    })
+  },
+
+  beginEpisodeHeightResize: () => {
+    set((state) =>
+      state.episodeHeightResizeStart
+        ? state
+        : { episodeHeightResizeStart: createHistoryCheckpoint(state) },
+    )
+  },
+
+  endEpisodeHeightResize: () => {
+    set((state) => {
+      const start = state.episodeHeightResizeStart
+
+      if (!start) {
+        return state
+      }
+
+      if (start.episode.logicalHeight === state.episode.logicalHeight) {
+        const restored = restoreHistoryCheckpoint(state, start)
+
+        return {
+          ...restored,
+          episodeHeightResizeStart: null,
+          historyPast: state.historyPast,
+          historyFuture: state.historyFuture,
+          canUndo: state.historyPast.length > 0,
+          canRedo: state.historyFuture.length > 0,
+          documentStatus: restored.hasUnsavedChanges
+            ? 'Unsaved changes'
+            : state.hasSavedEpisode
+              ? 'Saved locally'
+              : 'Demo ready · not saved',
+        }
+      }
+
+      const revision = state.nextRevision
+
+      return {
+        episodeHeightResizeStart: null,
+        historyPast: appendHistoryCheckpoint(state.historyPast, start),
+        historyFuture: [],
+        currentRevision: revision,
+        nextRevision: revision + 1,
+        canUndo: true,
+        canRedo: false,
+        hasUnsavedChanges: isDirtyAtRevision(revision, state.savedRevision),
+        documentStatus: 'Unsaved changes',
+      }
+    })
+  },
+
+  cancelEpisodeHeightResize: () => {
+    set((state) => {
+      const start = state.episodeHeightResizeStart
+
+      if (!start) {
+        return state
+      }
+
+      const restored = restoreHistoryCheckpoint(state, start)
+
+      return {
+        ...restored,
+        historyPast: state.historyPast,
+        historyFuture: state.historyFuture,
+        canUndo: state.historyPast.length > 0,
+        canRedo: state.historyFuture.length > 0,
+        documentStatus: restored.hasUnsavedChanges
+          ? 'Unsaved changes'
+          : state.hasSavedEpisode
+            ? 'Saved locally'
+            : 'Demo ready · not saved',
       }
     })
   },
@@ -488,39 +788,51 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   setElementVisibility: (elementId, visible) => {
-    set((state) => ({
-      episode: setElementVisibilityCommand(
-        state.episode,
-        elementId,
-        visible,
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setElementVisibilityCommand(
+          state.episode,
+          elementId,
+          visible,
+        ),
       ),
-    }))
+    )
   },
 
   setLayerPlaneVisibility: (layerPlaneId, visible) => {
-    set((state) => ({
-      episode: setLayerPlaneVisibilityCommand(
-        state.episode,
-        layerPlaneId,
-        visible,
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setLayerPlaneVisibilityCommand(
+          state.episode,
+          layerPlaneId,
+          visible,
+        ),
       ),
-    }))
+    )
   },
 
   setCompositionGroupVisibility: (group, visible) => {
-    set((state) => ({
-      episode: setCompositionGroupVisibilityCommand(
-        state.episode,
-        group,
-        visible,
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setCompositionGroupVisibilityCommand(
+          state.episode,
+          group,
+          visible,
+        ),
       ),
-    }))
+    )
   },
 
   setBaseColor: (color) => {
-    set((state) => ({
-      episode: setBaseColorCommand(state.episode, color),
-    }))
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setBaseColorCommand(state.episode, color),
+      ),
+    )
   },
 
   deleteElement: (elementId) => {
@@ -531,8 +843,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         return state
       }
 
-      return {
-        episode,
+      return commitEpisodeChange(state, episode, {
         selectedElementId:
           state.selectedElementId === elementId
             ? null
@@ -541,7 +852,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           state.liveElementBounds?.elementId === elementId
             ? null
             : state.liveElementBounds,
-      }
+      })
     })
   },
 
@@ -567,11 +878,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
       const createdElement = episode.elements.at(-1)
 
-      return {
-        episode,
+      return commitEpisodeChange(state, episode, {
         selectedElementId: createdElement?.id ?? state.selectedElementId,
         liveElementBounds: null,
-      }
+      })
     })
   },
 
@@ -589,33 +899,44 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }
 
     const createdElement = episode.elements.at(-1)
-    set({
-      episode,
-      selectedElementId: createdElement?.id ?? state.selectedElementId,
-      liveElementBounds: null,
-    })
+    set(
+      commitEpisodeChange(state, episode, {
+        selectedElementId: createdElement?.id ?? state.selectedElementId,
+        liveElementBounds: null,
+      }),
+    )
 
     return true
   },
 
   moveElement: (elementId, logicalPosition) => {
-    set((state) => ({
-      episode: moveElementCommand(state.episode, elementId, logicalPosition),
-      liveElementBounds:
-        state.liveElementBounds?.elementId === elementId
-          ? null
-          : state.liveElementBounds,
-    }))
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        moveElementCommand(state.episode, elementId, logicalPosition),
+        {
+          liveElementBounds:
+            state.liveElementBounds?.elementId === elementId
+              ? null
+              : state.liveElementBounds,
+        },
+      ),
+    )
   },
 
   resizeElement: (elementId, logicalBounds) => {
-    set((state) => ({
-      episode: resizeElementCommand(state.episode, elementId, logicalBounds),
-      liveElementBounds:
-        state.liveElementBounds?.elementId === elementId
-          ? null
-          : state.liveElementBounds,
-    }))
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        resizeElementCommand(state.episode, elementId, logicalBounds),
+        {
+          liveElementBounds:
+            state.liveElementBounds?.elementId === elementId
+              ? null
+              : state.liveElementBounds,
+        },
+      ),
+    )
   },
 
   previewElementBounds: (elementId, logicalBounds) => {
@@ -687,6 +1008,157 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({ assetPanelOpen: true })
   },
 
+  undo: () => {
+    set((state) => {
+      const checkpoint = state.historyPast.at(-1)
+
+      if (!checkpoint) {
+        return state
+      }
+
+      const historyPast = state.historyPast.slice(0, -1)
+      const historyFuture = [
+        createHistoryCheckpoint(state),
+        ...state.historyFuture,
+      ].slice(0, HISTORY_LIMIT)
+
+      return {
+        ...restoreHistoryCheckpoint(state, checkpoint),
+        historyPast,
+        historyFuture,
+        canUndo: historyPast.length > 0,
+        canRedo: true,
+        documentStatus: 'Undid last change',
+      }
+    })
+  },
+
+  redo: () => {
+    set((state) => {
+      const [checkpoint, ...historyFuture] = state.historyFuture
+
+      if (!checkpoint) {
+        return state
+      }
+
+      const historyPast = appendHistoryCheckpoint(
+        state.historyPast,
+        createHistoryCheckpoint(state),
+      )
+
+      return {
+        ...restoreHistoryCheckpoint(state, checkpoint),
+        historyPast,
+        historyFuture,
+        canUndo: true,
+        canRedo: historyFuture.length > 0,
+        documentStatus: 'Redid last change',
+      }
+    })
+  },
+
+  saveEpisode: () => {
+    const state = get()
+    const result = getProjectRepository().save(state.episode)
+
+    if (!result.ok) {
+      set({ documentStatus: result.message })
+      return
+    }
+
+    set({
+      savedRevision: state.currentRevision,
+      hasSavedEpisode: true,
+      hasUnsavedChanges: false,
+      documentStatus: 'Saved locally',
+    })
+  },
+
+  reopenEpisode: () => {
+    const result = getProjectRepository().loadLast()
+
+    if (!result.ok) {
+      set({ documentStatus: result.message })
+      return false
+    }
+
+    set((state) => {
+      const context = getDefaultEditorContext(result.episode)
+      const viewportDimensions = getViewportLogicalDimensions(
+        result.episode,
+        state.fitViewportLogicalHeight,
+        DEFAULT_ZOOM_FACTOR,
+      )
+      const revision = state.nextRevision
+
+      return {
+        episode: result.episode,
+        historyPast: [],
+        historyFuture: [],
+        episodeHeightResizeStart: null,
+        currentRevision: revision,
+        nextRevision: revision + 1,
+        savedRevision: revision,
+        canUndo: false,
+        canRedo: false,
+        hasUnsavedChanges: false,
+        hasSavedEpisode: true,
+        documentStatus: 'Reopened saved episode',
+        selectedElementId: null,
+        liveElementBounds: null,
+        ...context,
+        viewportX: 0,
+        viewportY: 0,
+        viewportLogicalWidth: viewportDimensions.width,
+        viewportLogicalHeight: viewportDimensions.height,
+        zoomFactor: DEFAULT_ZOOM_FACTOR,
+        assetPanelOpen: false,
+        magnetEnabled: true,
+        sliceGuidesVisible: true,
+      }
+    })
+
+    return true
+  },
+
+  newEpisode: () => {
+    set((state) => {
+      const episode = createBlankEpisode(createEpisodeId())
+      const context = getDefaultEditorContext(episode)
+      const viewportDimensions = getViewportLogicalDimensions(
+        episode,
+        state.fitViewportLogicalHeight,
+        DEFAULT_ZOOM_FACTOR,
+      )
+      const revision = state.nextRevision
+
+      return {
+        episode,
+        historyPast: [],
+        historyFuture: [],
+        episodeHeightResizeStart: null,
+        currentRevision: revision,
+        nextRevision: revision + 1,
+        savedRevision: null,
+        canUndo: false,
+        canRedo: false,
+        hasUnsavedChanges: true,
+        documentStatus: 'New episode · not saved',
+        selectedElementId: null,
+        liveElementBounds: null,
+        ...context,
+        viewportX: 0,
+        viewportY: 0,
+        viewportLogicalWidth: viewportDimensions.width,
+        viewportLogicalHeight: viewportDimensions.height,
+        zoomFactor: DEFAULT_ZOOM_FACTOR,
+        assetPanelOpen: false,
+        magnetEnabled: true,
+        sliceGuidesVisible: true,
+      }
+    })
+  },
+
   resetEpisode: () => {
     set((state) => {
       const viewportDimensions = getViewportLogicalDimensions(
@@ -695,8 +1167,25 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         DEFAULT_ZOOM_FACTOR,
       )
 
+      const revision = state.nextRevision
+      const isSavedEpisodeAvailable = state.hasSavedEpisode
+
       return {
         episode: buildWeekEpisode,
+        historyPast: [],
+        historyFuture: [],
+        episodeHeightResizeStart: null,
+        currentRevision: revision,
+        nextRevision: revision + 1,
+        savedRevision: isSavedEpisodeAvailable
+          ? state.savedRevision
+          : revision,
+        canUndo: false,
+        canRedo: false,
+        hasUnsavedChanges: isSavedEpisodeAvailable,
+        documentStatus: isSavedEpisodeAvailable
+          ? 'Demo reset · unsaved changes'
+          : 'Demo reset · not saved',
         selectedElementId: null,
         liveElementBounds: null,
         activeCompositionGroup: INITIAL_COMPOSITION_GROUP,

@@ -30,6 +30,15 @@ export function EpisodeHeightControls({
   const resizeEpisodeHeight = useEditorStore(
     (state) => state.resizeEpisodeHeight,
   )
+  const beginEpisodeHeightResize = useEditorStore(
+    (state) => state.beginEpisodeHeightResize,
+  )
+  const endEpisodeHeightResize = useEditorStore(
+    (state) => state.endEpisodeHeightResize,
+  )
+  const cancelEpisodeHeightResize = useEditorStore(
+    (state) => state.cancelEpisodeHeightResize,
+  )
   const resizeSession = useRef<ResizeSession | null>(null)
 
   const resizeFromPointer = (event: PointerEvent<HTMLButtonElement>) => {
@@ -66,6 +75,7 @@ export function EpisodeHeightControls({
         onPointerDown={(event) => {
           event.preventDefault()
           event.currentTarget.setPointerCapture(event.pointerId)
+          beginEpisodeHeightResize()
           resizeSession.current = {
             pointerId: event.pointerId,
             startClientY: event.clientY,
@@ -79,11 +89,16 @@ export function EpisodeHeightControls({
             event.currentTarget.releasePointerCapture(event.pointerId)
           }
           resizeSession.current = null
+          endEpisodeHeightResize()
         }}
         onPointerCancel={() => {
           resizeSession.current = null
+          cancelEpisodeHeightResize()
         }}
         onLostPointerCapture={() => {
+          if (resizeSession.current) {
+            cancelEpisodeHeightResize()
+          }
           resizeSession.current = null
         }}
       />

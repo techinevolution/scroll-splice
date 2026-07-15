@@ -83,8 +83,21 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured by Codex from the running local corrective checkpoint after Katherine failed the prior manual review on title stability, missing guides/magnet, live Background-region drift, and missing corner resize handles.
 - Shows a selected code-defined **Amber shape** with four proportional corner handles near the dotted 1,280-unit candidate boundary, plus the visible default-on **Magnet** and **Slice guides** controls.
 - The dotted line is explicitly a provisional candidate derived from the `form-observed` WEBTOON profile. It is editor chrome, not a produced slice, export result, compatibility guarantee, minimap element, or document element.
-- The same local checkpoint anchors title editing, constrains full-width Background regions live and structurally to `x = 0`, supports magnet-off and Alt/Option bypass, enforces a 24-logical-unit resize minimum, scales text with its bounds, and excludes Background regions, rotation, and flipping from resize.
+- This image records the now-historical fixed-width corrective checkpoint. Its `x = 0`, no-Background-resize behavior was later superseded by free Background-region movement and eight independent handles; the screenshot remains useful evidence for the stable title, guides, magnet, and ordinary four-corner resize stage.
 - Contains only the public-safe code-rendered **Signal in the Fog** fixture and a code-defined synthetic Amber rectangle; no Root & Table production artwork, private creative material, or third-party comic reference appears.
-- Captured in bundled Chromium at a 1440 × 900 viewport. Automated regression and supported-size visual validation pass; Katherine's human retest remains pending. The screenshot does not imply that this local checkpoint is pushed, deployed, or submitted.
+- Captured in bundled Chromium at a 1440 × 900 viewport. The later superseding corrective build passed its automated regression, supported-size visual validation, and Katherine's human retest with minimap aspect distortion logged as polish. This screenshot does not imply that either local checkpoint is pushed, deployed, or submitted.
 - File: 1440 × 900 PNG, 132,504 bytes.
 - SHA-256: `798992900f6a899378d07155a5eeb5f5eadc204e6661d3262ac0435b180489cc`.
+
+## July 14 — Local save, history, and minimal menus
+
+![ScrollSplice local save, history, and minimal menus checkpoint](2026-07-14-local-save-and-history.png)
+
+- Captured by Codex from the running local build after the optional history/save/menu slice passed automated and supported-size visual validation.
+- Shows the exact **File** menu—**New Episode**, **Save**, and **Reopen**—with the selected public-safe synthetic fixture, transform handles, Layers panel, full-episode minimap, and bottom **Saved locally** status.
+- The same validated slice provides **Edit > Undo / Redo**, bounded document history, one explicit versioned local-browser save, page-reload restoration, confirmed Reopen, and a blank New Episode. Those state transitions are proved by the two Playwright Chromium tests, not by this single still image.
+- Contains only the public-safe code-rendered **Signal in the Fog** fixture; no Root & Table production artwork, private creative material, or third-party comic reference appears.
+- Captured in bundled Chromium at a 1440 × 900 viewport after visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768.
+- File: 1440 × 900 PNG, 126,756 bytes.
+- SHA-256: `53a443469634c0b24c510bfc35cb7a2b14809d444fa678bb5a8ff16f69e49125`.
+- This slice remains local and awaits Katherine's hands-on review. The screenshot does not imply a push, deployment, submission, portable project file, or crash-recovery guarantee.

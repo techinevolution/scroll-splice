@@ -35,6 +35,14 @@ describe('editor store', () => {
   beforeEach(() => {
     useEditorStore.getState().resetEpisode()
     useEditorStore.getState().setFitViewportLogicalHeight(900)
+
+    const state = useEditorStore.getState()
+    useEditorStore.setState({
+      hasSavedEpisode: false,
+      savedRevision: state.currentRevision,
+      hasUnsavedChanges: false,
+      documentStatus: 'Demo ready · not saved',
+    })
   })
 
   it('starts on a valid Content plane and reveals off-screen selections', () => {
@@ -615,5 +623,421 @@ describe('editor store', () => {
     expect(state.episode.elements).not.toContainEqual(
       expect.objectContaining({ id: 'synthetic-shape-1' }),
     )
+  })
+
+  it('undoes and redoes synthetic creation with its stable ID and selection', () => {
+    const beforeCount = useEditorStore.getState().episode.elements.length
+    const beforeHistoryCount = useEditorStore.getState().historyPast.length
+
+    useEditorStore.getState().placeSyntheticAsset({
+      name: 'History demo shape',
+      fill: '#7050B8',
+    })
+
+    const created = useEditorStore.getState().episode.elements.at(-1)
+    expect(created?.id).toBe('synthetic-shape-1')
+    expect(useEditorStore.getState().selectedElementId).toBe(created?.id)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeHistoryCount + 1,
+    )
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().episode.elements).toHaveLength(beforeCount)
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === created?.id),
+    ).toBe(false)
+    expect(useEditorStore.getState().selectedElementId).toBeNull()
+
+    useEditorStore.getState().redo()
+    expect(useEditorStore.getState().episode.elements.at(-1)?.id).toBe(
+      'synthetic-shape-1',
+    )
+    expect(useEditorStore.getState().selectedElementId).toBe(
+      'synthetic-shape-1',
+    )
+  })
+
+  it('restores and removes a selected element across delete undo and redo', () => {
+    const elementId = 'beat-01-stillness-background'
+
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore.getState().deleteElement(elementId)
+
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === elementId),
+    ).toBe(false)
+    expect(useEditorStore.getState().selectedElementId).toBeNull()
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === elementId),
+    ).toBe(true)
+    expect(useEditorStore.getState().selectedElementId).toBe(elementId)
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+    )
+
+    useEditorStore.getState().redo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === elementId),
+    ).toBe(false)
+    expect(useEditorStore.getState().selectedElementId).toBeNull()
+  })
+
+  it('records one history entry per committed move and resize, excluding live previews', () => {
+    const elementId = 'beat-01-stillness-accent-2'
+    const original = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === elementId)
+
+    expect(original).toBeDefined()
+    if (!original) {
+      throw new Error('Missing move and resize fixture element')
+    }
+
+    useEditorStore.getState().selectElement(elementId)
+    const initialHistoryCount = useEditorStore.getState().historyPast.length
+    const movedBounds = { ...original.bounds, x: 500, y: 600 }
+
+    useEditorStore
+      .getState()
+      .previewElementBounds(elementId, movedBounds)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      initialHistoryCount,
+    )
+
+    useEditorStore.getState().moveElement(elementId, movedBounds)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      initialHistoryCount + 1,
+    )
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.bounds,
+    ).toEqual(original.bounds)
+    useEditorStore.getState().redo()
+
+    const moved = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === elementId)
+    expect(moved).toBeDefined()
+    if (!moved) {
+      throw new Error('Missing moved fixture element')
+    }
+
+    const beforeResizeHistoryCount = useEditorStore.getState().historyPast.length
+    const resizedBounds = {
+      ...moved.bounds,
+      width: moved.bounds.width * 1.5,
+      height: moved.bounds.height * 1.5,
+    }
+
+    useEditorStore
+      .getState()
+      .previewElementBounds(elementId, resizedBounds)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeResizeHistoryCount,
+    )
+
+    useEditorStore.getState().resizeElement(elementId, resizedBounds)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeResizeHistoryCount + 1,
+    )
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.bounds,
+    ).toEqual(moved.bounds)
+  })
+
+  it('undoes and redoes plane creation and deletion with stable IDs, order, and active plane', () => {
+    const originalPlaneIds = getLayerPlanesForGroup(
+      useEditorStore.getState().episode,
+      'content',
+    ).map(({ id }) => id)
+
+    useEditorStore.getState().createLayerPlane()
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe('content-plane-3')
+    expect(
+      getLayerPlanesForGroup(useEditorStore.getState().episode, 'content').map(
+        ({ id }) => id,
+      ),
+    ).toEqual([...originalPlaneIds, 'content-plane-3'])
+
+    useEditorStore.getState().undo()
+    expect(
+      getLayerPlanesForGroup(useEditorStore.getState().episode, 'content').map(
+        ({ id }) => id,
+      ),
+    ).toEqual(originalPlaneIds)
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+    )
+
+    useEditorStore.getState().redo()
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe('content-plane-3')
+
+    useEditorStore.getState().deleteLayerPlane('content-plane-3')
+    expect(
+      getLayerPlanesForGroup(useEditorStore.getState().episode, 'content').map(
+        ({ id }) => id,
+      ),
+    ).toEqual(originalPlaneIds)
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    )
+
+    useEditorStore.getState().undo()
+    const restoredPlanes = getLayerPlanesForGroup(
+      useEditorStore.getState().episode,
+      'content',
+    )
+    expect(restoredPlanes.map(({ id }) => id)).toEqual([
+      ...originalPlaneIds,
+      'content-plane-3',
+    ])
+    expect(restoredPlanes.map(({ order }) => order)).toEqual([1, 2, 3])
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe('content-plane-3')
+
+    useEditorStore.getState().redo()
+    expect(
+      getLayerPlanesForGroup(useEditorStore.getState().episode, 'content').map(
+        ({ id }) => id,
+      ),
+    ).toEqual(originalPlaneIds)
+    expect(useEditorStore.getState().activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    )
+  })
+
+  it('tracks element, plane, group, and base-color layer changes through history', () => {
+    const elementId = 'beat-01-stillness-title'
+    const planeId = BUILD_WEEK_LAYER_PLANE_IDS.contentText
+    const originalBaseColor = getBackgroundBaseLayerPlane(
+      useEditorStore.getState().episode,
+    )?.baseColor
+
+    useEditorStore.getState().setElementVisibility(elementId, false)
+    useEditorStore.getState().setLayerPlaneVisibility(planeId, false)
+    useEditorStore
+      .getState()
+      .setCompositionGroupVisibility('content', false)
+    useEditorStore.getState().setBaseColor('#123456')
+
+    expect(useEditorStore.getState().historyPast).toHaveLength(4)
+    expect(
+      getBackgroundBaseLayerPlane(useEditorStore.getState().episode)?.baseColor,
+    ).toBe('#123456')
+
+    useEditorStore.getState().undo()
+    expect(
+      getBackgroundBaseLayerPlane(useEditorStore.getState().episode)?.baseColor,
+    ).toBe(originalBaseColor)
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore.getState().episode.compositionGroupVisibility.content,
+    ).toBe(true)
+    useEditorStore.getState().undo()
+    expect(
+      getLayerPlaneById(useEditorStore.getState().episode, planeId)?.visible,
+    ).toBe(true)
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.visible,
+    ).toBe(true)
+
+    useEditorStore.getState().redo()
+    useEditorStore.getState().redo()
+    useEditorStore.getState().redo()
+    useEditorStore.getState().redo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.visible,
+    ).toBe(false)
+    expect(getLayerPlaneById(useEditorStore.getState().episode, planeId)?.visible).toBe(
+      false,
+    )
+    expect(
+      useEditorStore.getState().episode.compositionGroupVisibility.content,
+    ).toBe(false)
+    expect(
+      getBackgroundBaseLayerPlane(useEditorStore.getState().episode)?.baseColor,
+    ).toBe('#123456')
+  })
+
+  it('does not record no-ops or clear redo until a real branch edit occurs', () => {
+    useEditorStore.getState().setEpisodeName('First history branch')
+    useEditorStore.getState().undo()
+
+    const beforeNoOp = useEditorStore.getState()
+    useEditorStore
+      .getState()
+      .setElementVisibility('beat-01-stillness-title', true)
+
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeNoOp.historyPast.length,
+    )
+    expect(useEditorStore.getState().historyFuture).toHaveLength(
+      beforeNoOp.historyFuture.length,
+    )
+    expect(useEditorStore.getState().canRedo).toBe(true)
+
+    useEditorStore.getState().setEpisodeName('Second history branch')
+    expect(useEditorStore.getState().historyFuture).toHaveLength(0)
+    expect(useEditorStore.getState().canRedo).toBe(false)
+    expect(useEditorStore.getState().episode.name).toBe('Second history branch')
+  })
+
+  it('bounds document history to the latest one hundred changes', () => {
+    for (let index = 0; index < 105; index += 1) {
+      useEditorStore.getState().setEpisodeName(`History change ${index}`)
+    }
+
+    expect(useEditorStore.getState().historyPast).toHaveLength(100)
+    expect(useEditorStore.getState().canUndo).toBe(true)
+  })
+
+  it('coalesces a height drag into one undo entry and restores a cancelled drag', () => {
+    const originalHeight = useEditorStore.getState().episode.logicalHeight
+    const originalRevision = useEditorStore.getState().currentRevision
+
+    useEditorStore.getState().beginEpisodeHeightResize()
+    useEditorStore.getState().resizeEpisodeHeight(originalHeight + 100, true)
+    useEditorStore.getState().resizeEpisodeHeight(originalHeight + 200, true)
+    useEditorStore.getState().resizeEpisodeHeight(originalHeight + 300, true)
+
+    expect(useEditorStore.getState().episode.logicalHeight).toBe(
+      originalHeight + 300,
+    )
+    expect(useEditorStore.getState().historyPast).toHaveLength(0)
+    expect(useEditorStore.getState().currentRevision).toBe(originalRevision)
+
+    useEditorStore.getState().endEpisodeHeightResize()
+    expect(useEditorStore.getState().historyPast).toHaveLength(1)
+    expect(useEditorStore.getState().currentRevision).not.toBe(originalRevision)
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().episode.logicalHeight).toBe(originalHeight)
+    useEditorStore.getState().redo()
+    expect(useEditorStore.getState().episode.logicalHeight).toBe(
+      originalHeight + 300,
+    )
+
+    const beforeCancel = useEditorStore.getState()
+    useEditorStore.getState().beginEpisodeHeightResize()
+    useEditorStore.getState().resizeEpisodeHeight(originalHeight + 700, true)
+    useEditorStore.getState().cancelEpisodeHeightResize()
+
+    expect(useEditorStore.getState().episode.logicalHeight).toBe(
+      originalHeight + 300,
+    )
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeCancel.historyPast.length,
+    )
+    expect(useEditorStore.getState().currentRevision).toBe(
+      beforeCancel.currentRevision,
+    )
+  })
+
+  it('treats New Episode and Reset demo as boundaries that clear history', () => {
+    useEditorStore.getState().setEpisodeName('Before new episode')
+    expect(useEditorStore.getState().canUndo).toBe(true)
+
+    useEditorStore.getState().newEpisode()
+    expect(useEditorStore.getState().episode.name).toBe('Untitled Episode')
+    expect(useEditorStore.getState().episode.elements).toHaveLength(0)
+    expect(useEditorStore.getState().historyPast).toHaveLength(0)
+    expect(useEditorStore.getState().historyFuture).toHaveLength(0)
+    expect(useEditorStore.getState().canUndo).toBe(false)
+    expect(useEditorStore.getState().canRedo).toBe(false)
+    expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
+
+    useEditorStore.getState().placeSyntheticAsset({
+      name: 'New episode shape',
+      fill: '#7050B8',
+    })
+    expect(useEditorStore.getState().canUndo).toBe(true)
+
+    useEditorStore.getState().resetEpisode()
+    expect(useEditorStore.getState().episode).toBe(buildWeekEpisode)
+    expect(useEditorStore.getState().historyPast).toHaveLength(0)
+    expect(useEditorStore.getState().historyFuture).toHaveLength(0)
+    expect(useEditorStore.getState().canUndo).toBe(false)
+    expect(useEditorStore.getState().canRedo).toBe(false)
+  })
+
+  it('saves, tracks dirty revisions, and reopens from lazy browser localStorage', () => {
+    const originalWindow = Object.getOwnPropertyDescriptor(globalThis, 'window')
+    const values = new Map<string, string>()
+    const localStorage = {
+      getItem: (key: string) => values.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        values.set(key, value)
+      },
+    }
+
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { localStorage },
+    })
+
+    try {
+      useEditorStore.getState().setEpisodeName('Saved history episode')
+      expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
+
+      useEditorStore.getState().saveEpisode()
+      expect(values.size).toBe(1)
+      expect(useEditorStore.getState().hasSavedEpisode).toBe(true)
+      expect(useEditorStore.getState().hasUnsavedChanges).toBe(false)
+      expect(useEditorStore.getState().documentStatus).toBe('Saved locally')
+
+      useEditorStore.getState().setEpisodeName('Unsaved branch')
+      expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
+      useEditorStore.getState().undo()
+      expect(useEditorStore.getState().episode.name).toBe(
+        'Saved history episode',
+      )
+      expect(useEditorStore.getState().hasUnsavedChanges).toBe(false)
+      useEditorStore.getState().redo()
+      expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
+
+      useEditorStore.getState().newEpisode()
+      expect(useEditorStore.getState().historyPast).toHaveLength(0)
+      expect(useEditorStore.getState().reopenEpisode()).toBe(true)
+
+      const reopened = useEditorStore.getState()
+      expect(reopened.episode.name).toBe('Saved history episode')
+      expect(reopened.hasUnsavedChanges).toBe(false)
+      expect(reopened.hasSavedEpisode).toBe(true)
+      expect(reopened.historyPast).toHaveLength(0)
+      expect(reopened.historyFuture).toHaveLength(0)
+      expect(reopened.canUndo).toBe(false)
+      expect(reopened.canRedo).toBe(false)
+    } finally {
+      if (originalWindow) {
+        Object.defineProperty(globalThis, 'window', originalWindow)
+      } else {
+        Reflect.deleteProperty(globalThis, 'window')
+      }
+
+      useEditorStore.setState({ hasSavedEpisode: false })
+    }
   })
 })
