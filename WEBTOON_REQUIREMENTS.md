@@ -90,6 +90,8 @@ No current official requirement was found for DPI, bit depth, ICC profile or col
 
 For now, an export profile may record 800 px width, 1280 px maximum slice height, a 2 MB displayed image threshold, 100 files, and 50 MB total as **authenticated-form-observed on July 13, 2026**. It must not be labeled upload-verified until representative boundary files have actually been tested without publication. These values remain export data rather than permanent editor constants.
 
+ScrollSplice's authoring Asset Library accepts PNG, JPEG, and WebP sources because current browsers can preserve and display those files locally. That does not make WebP a WEBTOON output format: the observed Manage Episode form lists JPG/JPEG/PNG only. A future exporter must render or convert every source into a profile-accepted output format and preflight the encoded result rather than copying WebP source bytes into an upload package.
+
 ## Required authenticated discovery test
 
 Complete the remaining behavior checks before approving production WEBTOON export. Use harmless original synthetic files, keep the episode unpublished, and never automate the login or upload.

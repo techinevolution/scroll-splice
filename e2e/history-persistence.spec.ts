@@ -142,15 +142,18 @@ test('preserves a saved episode and keeps history inside one document', async ({
   await page.keyboard.press('Control+Shift+z')
   await expect(contentPlane3).toHaveAttribute('aria-pressed', 'true')
 
-  await page.getByRole('button', { name: 'Assets' }).click()
   await page
-    .getByRole('button', { name: 'Add Violet demo shape' })
+    .getByRole('button', { name: 'Decorations', exact: true })
+    .click()
+  await page
+    .getByRole('button', { name: 'Add Radiance accent' })
     .click()
 
   const syntheticShapeRow = page.locator(
-    '[data-layer-id="synthetic-shape-1"]',
+    '[data-layer-id="image-element-1"]',
   )
   await expect(syntheticShapeRow).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Close Asset Library' }).click()
 
   const savedTitle = 'History and Persistence Proof'
   await editEpisodeTitle(page, savedTitle)

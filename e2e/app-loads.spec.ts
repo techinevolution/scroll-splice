@@ -133,7 +133,10 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const appHeader = page.locator('.app-header')
   const magnetToggle = page.getByTestId('alignment-magnet-toggle')
   const sliceGuidesToggle = page.getByTestId('slice-guides-toggle')
-  const assetToggle = page.getByRole('button', { name: 'Assets' })
+  const decorationsCategory = page.getByRole('button', {
+    name: 'Decorations',
+    exact: true,
+  })
 
   await expect(canvas).toHaveAttribute('data-ready', 'true')
   await expect(episodePosition).toHaveAttribute(
@@ -309,14 +312,29 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect
     .poll(() => readNumericAttribute(canvas, 'data-viewport-y'))
     .toBeGreaterThan(400)
-  await assetToggle.click()
-  await page.getByRole('button', { name: 'Add Violet demo shape' }).click()
+  const canvasBoundsBeforeAssetDrawer = await canvas.boundingBox()
+  await decorationsCategory.click()
+  await page.getByRole('button', { name: 'Add Radiance accent' }).click()
   const snapResizeShapeRow = page.locator(
-    '[data-layer-id="synthetic-shape-1"]',
+    '[data-layer-id="image-element-1"]',
   )
   await expect(snapResizeShapeRow).toHaveAttribute('aria-pressed', 'true')
   await expect(canvas).toHaveAttribute('data-resize-handle-count', '4')
-  await expect(page.locator('.asset-panel')).toHaveCSS('width', '220px')
+  await expect(page.locator('.asset-panel')).toHaveCSS('width', '58px')
+  await expect(page.locator('.asset-rail')).toHaveCSS('width', '58px')
+  const canvasBoundsWithAssetDrawer = await canvas.boundingBox()
+  if (!canvasBoundsBeforeAssetDrawer || !canvasBoundsWithAssetDrawer) {
+    throw new Error('The asset drawer needs a visible editing canvas.')
+  }
+  expect(
+    Math.abs(canvasBoundsWithAssetDrawer.x - canvasBoundsBeforeAssetDrawer.x),
+  ).toBeLessThan(1)
+  expect(
+    Math.abs(
+      canvasBoundsWithAssetDrawer.width - canvasBoundsBeforeAssetDrawer.width,
+    ),
+  ).toBeLessThan(1)
+  await page.getByRole('button', { name: 'Close Asset Library' }).click()
 
   const snapSceneBounds = await sceneCanvas.boundingBox()
   if (!snapSceneBounds) {
@@ -334,6 +352,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     canvas,
     'data-selected-height',
   )
+  const centeredSyntheticX = (800 - syntheticStartWidth) / 2
   const syntheticCenter = {
     x:
       snapSceneBounds.x +
@@ -343,10 +362,11 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       (syntheticStartY - snapViewportY + syntheticStartHeight / 2) * snapScale,
   }
   const syntheticMinimapElement = minimap.locator(
-    '[data-element-id="synthetic-shape-1"]',
+    '[data-element-id="image-element-1"]',
   )
+  const syntheticMinimapBounds = syntheticMinimapElement.locator('rect').last()
   const syntheticMinimapStartX = await readNumericAttribute(
-    syntheticMinimapElement,
+    syntheticMinimapBounds,
     'x',
   )
 
@@ -360,7 +380,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     .poll(() => readNumericAttribute(selectionStatus, 'data-x'))
     .toBeGreaterThan(syntheticStartX + 200)
   await expect
-    .poll(() => readNumericAttribute(syntheticMinimapElement, 'x'))
+    .poll(() => readNumericAttribute(syntheticMinimapBounds, 'x'))
     .toBeGreaterThan(syntheticMinimapStartX + 200)
   await expect(canvas).toHaveAttribute(
     'data-selected-x',
@@ -370,7 +390,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await page.keyboard.up('Alt')
   await expect
     .poll(() => readNumericAttribute(canvas, 'data-selected-x'))
-    .toBeGreaterThan(500)
+    .toBeGreaterThan(centeredSyntheticX + 200)
 
   const offCenterX = await readNumericAttribute(canvas, 'data-selected-x')
   const offCenterY = await readNumericAttribute(canvas, 'data-selected-y')
@@ -399,7 +419,10 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   expect(centerGuideAppeared).toBe(true)
   await expect(centerSnapGuide).toBeVisible()
   await page.mouse.up()
-  await expect(canvas).toHaveAttribute('data-selected-x', '325')
+  await expect(canvas).toHaveAttribute(
+    'data-selected-x',
+    String(centeredSyntheticX),
+  )
   await expect(centerSnapGuide).toHaveCount(0)
 
   await page
@@ -408,22 +431,22 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await snapResizeShapeRow.click()
   await expect(canvas).toHaveAttribute(
     'data-selected-element-id',
-    'synthetic-shape-1',
+    'image-element-1',
   )
 
   const minimapWidthBeforeResize = await readNumericAttribute(
-    syntheticMinimapElement,
+    syntheticMinimapBounds,
     'width',
   )
   const minimapHeightBeforeResize = await readNumericAttribute(
-    syntheticMinimapElement,
+    syntheticMinimapBounds,
     'height',
   )
   const resizeViewportY = await readNumericAttribute(canvas, 'data-viewport-y')
   const resizeHandlePoint = {
     x:
       snapSceneBounds.x +
-      (325 + syntheticStartWidth) * snapScale,
+      (centeredSyntheticX + syntheticStartWidth) * snapScale,
     y:
       snapSceneBounds.y +
       (offCenterY - resizeViewportY + syntheticStartHeight) * snapScale,
@@ -439,7 +462,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     .poll(() => readNumericAttribute(selectionStatus, 'data-width'))
     .toBeGreaterThan(syntheticStartWidth)
   await expect
-    .poll(() => readNumericAttribute(syntheticMinimapElement, 'width'))
+    .poll(() => readNumericAttribute(syntheticMinimapBounds, 'width'))
     .toBeGreaterThan(minimapWidthBeforeResize)
   await expect(canvas).toHaveAttribute(
     'data-selected-width',
@@ -453,10 +476,10 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     .poll(() => readNumericAttribute(canvas, 'data-selected-height'))
     .toBeGreaterThan(syntheticStartHeight)
   await expect
-    .poll(() => readNumericAttribute(syntheticMinimapElement, 'width'))
+    .poll(() => readNumericAttribute(syntheticMinimapBounds, 'width'))
     .toBeGreaterThan(minimapWidthBeforeResize)
   await expect
-    .poll(() => readNumericAttribute(syntheticMinimapElement, 'height'))
+    .poll(() => readNumericAttribute(syntheticMinimapBounds, 'height'))
     .toBeGreaterThan(minimapHeightBeforeResize)
   await resetDemo.click()
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
@@ -482,20 +505,20 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     ])
 
   await page.getByRole('button', { name: 'Add asset', exact: true }).click()
-  await expect(assetToggle).toHaveAttribute('aria-expanded', 'true')
-  await page.getByRole('button', { name: 'Add Violet demo shape' }).click()
+  await expect(decorationsCategory).toHaveAttribute('aria-expanded', 'true')
+  await page.getByRole('button', { name: 'Add Radiance accent' }).click()
   const syntheticShapeRow = page.locator(
-    '[data-layer-id="synthetic-shape-1"]',
+    '[data-layer-id="image-element-1"]',
   )
   await expect(syntheticShapeRow).toHaveAttribute('aria-pressed', 'true')
   await expect(panelList.getByRole('listitem')).toHaveCount(7)
   await page
-    .getByRole('button', { name: 'Delete Violet demo shape' })
+    .getByRole('button', { name: 'Delete Radiance accent' })
     .click()
   await expect(syntheticShapeRow).toHaveCount(0)
   await expect(panelList.getByRole('listitem')).toHaveCount(6)
-  await assetToggle.click()
-  await expect(assetToggle).toHaveAttribute('aria-expanded', 'false')
+  await page.getByRole('button', { name: 'Close Asset Library' }).click()
+  await expect(decorationsCategory).toHaveAttribute('aria-expanded', 'false')
 
   await contentPlane2.click()
   const textList = page.getByRole('list', {
@@ -990,13 +1013,13 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   )
   await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
 
-  await assetToggle.click()
-  await expect(assetToggle).toHaveAttribute('aria-expanded', 'true')
+  await decorationsCategory.click()
+  await expect(decorationsCategory).toHaveAttribute('aria-expanded', 'true')
   await expect(
-    page.getByRole('heading', { level: 2, name: 'Synthetic assets' }),
+    page.getByRole('heading', { level: 2, name: 'Decorations' }),
   ).toBeVisible()
-  await assetToggle.click()
-  await expect(assetToggle).toHaveAttribute('aria-expanded', 'false')
+  await page.getByRole('button', { name: 'Close Asset Library' }).click()
+  await expect(decorationsCategory).toHaveAttribute('aria-expanded', 'false')
 
   const zoomSlider = page.getByRole('slider', { name: 'Canvas zoom' })
   const minimapViewport = page.getByTestId('minimap-viewport')

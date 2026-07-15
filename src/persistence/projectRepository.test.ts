@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 
 import { buildWeekEpisode } from '../app/fixtures/buildWeekEpisode'
 import { createBlankEpisode } from '../core/createBlankEpisode'
-import type { EpisodeDocument } from '../core/episode'
+import {
+  EPISODE_FORMAT_VERSION,
+  LEGACY_EPISODE_FORMAT_VERSION,
+  type EpisodeDocument,
+} from '../core/episode'
 import {
   PROJECT_STORAGE_FORMAT_VERSION,
   PROJECT_STORAGE_KEY,
@@ -27,6 +31,13 @@ type MutableRecord = Record<string, unknown>
 
 function cloneEpisode(): MutableRecord {
   return JSON.parse(JSON.stringify(buildWeekEpisode)) as MutableRecord
+}
+
+function cloneLegacyEpisode(): MutableRecord {
+  return {
+    ...cloneEpisode(),
+    formatVersion: LEGACY_EPISODE_FORMAT_VERSION,
+  }
 }
 
 function readRecord(value: unknown): MutableRecord {
@@ -58,8 +69,41 @@ function storedEnvelope(episode: unknown, storageFormatVersion = 1) {
   })
 }
 
+function appendImageElement(
+  episode: MutableRecord,
+  assetReference: MutableRecord,
+): void {
+  const ordinaryPlane = readRecordArray(episode, 'layerPlanes').find(
+    (layerPlane) => layerPlane.kind === 'ordinary',
+  )
+  const elements = episode.elements
+
+  if (!ordinaryPlane || typeof ordinaryPlane.id !== 'string') {
+    throw new Error('Missing an ordinary plane in the persistence fixture.')
+  }
+
+  if (!Array.isArray(elements)) {
+    throw new Error('Missing elements in the persistence fixture.')
+  }
+
+  episode.elements = [
+    ...elements,
+    {
+      id: 'fixture-image-1',
+      name: 'Fixture image',
+      layerPlaneId: ordinaryPlane.id,
+      type: 'image',
+      bounds: { x: 40, y: 60, width: 200, height: 100 },
+      visible: true,
+      locked: false,
+      zIndex: 100,
+      assetReference,
+    },
+  ]
+}
+
 describe('local project repository', () => {
-  it('round-trips the current v3 episode through one versioned slot', () => {
+  it('round-trips the current v4 episode through one versioned slot', () => {
     const storage = new MemoryStorage()
     const repository = createLocalStorageProjectRepository(
       storage,
@@ -74,7 +118,10 @@ describe('local project repository', () => {
       {
         storageFormatVersion: PROJECT_STORAGE_FORMAT_VERSION,
         savedAt: '2026-07-14T19:00:00.000Z',
-        episode: { id: buildWeekEpisode.id, formatVersion: 3 },
+        episode: {
+          id: buildWeekEpisode.id,
+          formatVersion: EPISODE_FORMAT_VERSION,
+        },
       },
     )
     expect(repository.loadLast()).toEqual({
@@ -198,6 +245,30 @@ describe('local project repository', () => {
     })
     expect(storage.getItem(PROJECT_STORAGE_KEY)).toBe(previousSave)
   })
+
+  it('upgrades a legacy v3 episode before writing it to storage', () => {
+    const storage = new MemoryStorage()
+    const repository = createLocalStorageProjectRepository(
+      storage,
+      () => new Date('2026-07-14T19:00:00.000Z'),
+    )
+    const legacyEpisode = cloneLegacyEpisode()
+
+    expect(
+      repository.save(legacyEpisode as unknown as EpisodeDocument),
+    ).toMatchObject({ ok: true })
+
+    const stored = readRecord(
+      JSON.parse(storage.getItem(PROJECT_STORAGE_KEY) ?? '') as unknown,
+    )
+    const storedEpisode = readRecord(stored.episode)
+
+    expect(storedEpisode.formatVersion).toBe(EPISODE_FORMAT_VERSION)
+    expect(repository.loadLast()).toMatchObject({
+      ok: true,
+      episode: { formatVersion: EPISODE_FORMAT_VERSION },
+    })
+  })
 })
 
 describe('parseEpisodeDocument', () => {
@@ -212,7 +283,65 @@ describe('parseEpisodeDocument', () => {
 
     expect(parseEpisodeDocument(episode)).toMatchObject({
       ok: true,
-      episode: { formatVersion: 3 },
+      episode: { formatVersion: EPISODE_FORMAT_VERSION },
+    })
+  })
+
+  it('accepts a legacy v3 shape-and-text document and upgrades it to v4', () => {
+    const result = parseEpisodeDocument(cloneLegacyEpisode())
+
+    expect(result).toMatchObject({
+      ok: true,
+      episode: { formatVersion: EPISODE_FORMAT_VERSION },
+    })
+  })
+
+  it.each([
+    [{ kind: 'built-in', assetId: 'speech-bubble-rounded' }],
+    [{ kind: 'imported', assetId: 'upload-1' }],
+  ])('accepts a v4 image with a supported asset reference', (assetReference) => {
+    const episode = cloneEpisode()
+    appendImageElement(episode, assetReference)
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: true,
+      episode: {
+        formatVersion: EPISODE_FORMAT_VERSION,
+        elements: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'fixture-image-1',
+            type: 'image',
+            assetReference,
+          }),
+        ]),
+      },
+    })
+  })
+
+  it('rejects an image element tagged as a legacy v3 document', () => {
+    const episode = cloneLegacyEpisode()
+    appendImageElement(episode, {
+      kind: 'imported',
+      assetId: 'upload-1',
+    })
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: false,
+      reason: 'corrupt',
+    })
+  })
+
+  it.each([
+    [{ kind: 'synthetic', generatorId: 'fixture-image' }],
+    [{ kind: 'built-in', assetId: '   ' }],
+    [{ kind: 'unknown', assetId: 'fixture-image' }],
+  ])('rejects a v4 image with an unsupported asset reference', (assetReference) => {
+    const episode = cloneEpisode()
+    appendImageElement(episode, assetReference)
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: false,
+      reason: 'corrupt',
     })
   })
 

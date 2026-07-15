@@ -35,9 +35,9 @@ describe('buildWeekEpisode', () => {
     }
   })
 
-  it('uses format v3 and assigns every element to a stable layer plane', () => {
-    expect(EPISODE_FORMAT_VERSION).toBe(3)
-    expect(buildWeekEpisode.formatVersion).toBe(3)
+  it('uses format v4 and assigns every element to a stable layer plane', () => {
+    expect(EPISODE_FORMAT_VERSION).toBe(4)
+    expect(buildWeekEpisode.formatVersion).toBe(4)
     expect(buildWeekEpisode.compositionGroupVisibility).toEqual({
       background: true,
       content: true,

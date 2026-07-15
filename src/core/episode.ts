@@ -1,4 +1,5 @@
-export const EPISODE_FORMAT_VERSION = 3 as const
+export const LEGACY_EPISODE_FORMAT_VERSION = 3 as const
+export const EPISODE_FORMAT_VERSION = 4 as const
 export const EPISODE_LOGICAL_WIDTH = 800 as const
 
 export const COMPOSITION_GROUPS = [
@@ -56,9 +57,18 @@ export interface ImportedAssetReference {
   readonly assetId: string
 }
 
+export interface BuiltInAssetReference {
+  readonly kind: 'built-in'
+  readonly assetId: string
+}
+
+export type ImageAssetReference =
+  | BuiltInAssetReference
+  | ImportedAssetReference
+
 export type AssetReference =
   | SyntheticAssetReference
-  | ImportedAssetReference
+  | ImageAssetReference
 
 interface EpisodeElementBase {
   readonly id: string
@@ -92,7 +102,12 @@ export interface TextElement extends EpisodeElementBase {
   readonly align: 'left' | 'center' | 'right'
 }
 
-export type EpisodeElement = ShapeElement | TextElement
+export interface ImageElement extends EpisodeElementBase {
+  readonly type: 'image'
+  readonly assetReference: ImageAssetReference
+}
+
+export type EpisodeElement = ShapeElement | TextElement | ImageElement
 
 export interface EpisodeDocument {
   readonly id: string

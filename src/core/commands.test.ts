@@ -10,6 +10,7 @@ import {
   MIN_ELEMENT_SIZE,
   SYNTHETIC_SHAPE_GENERATOR_ID,
   createBackgroundColorRegion,
+  createImageElement,
   createLayerPlane,
   createSyntheticShapeElement,
   deleteElement,
@@ -694,6 +695,142 @@ describe('createSyntheticShapeElement', () => {
         name: '   ',
       }),
     ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('createImageElement', () => {
+  it('adds a built-in image to an ordinary plane with clamped bounds', () => {
+    const nextDocument = createImageElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: '  Rounded speech bubble  ',
+      assetReference: {
+        kind: 'built-in',
+        assetId: '  speech-bubble-rounded  ',
+      },
+      bounds: {
+        x: buildWeekEpisode.logicalWidth - 20,
+        y: buildWeekEpisode.logicalHeight - 10,
+        width: 160,
+        height: 80,
+      },
+    })
+    const created = nextDocument.elements.at(-1)
+    const planeZIndexes = buildWeekEpisode.elements
+      .filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      )
+      .map(({ zIndex }) => zIndex)
+
+    expect(created).toEqual({
+      id: 'image-element-1',
+      name: 'Rounded speech bubble',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      type: 'image',
+      bounds: {
+        x: buildWeekEpisode.logicalWidth - 160,
+        y: buildWeekEpisode.logicalHeight - 80,
+        width: 160,
+        height: 80,
+      },
+      visible: true,
+      locked: false,
+      zIndex: Math.max(...planeZIndexes) + 1,
+      assetReference: {
+        kind: 'built-in',
+        assetId: 'speech-bubble-rounded',
+      },
+    })
+  })
+
+  it('uses collision-safe IDs and plane-local z-indexes for imported images', () => {
+    const first = createImageElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      name: 'Imported texture',
+      assetReference: { kind: 'imported', assetId: 'upload-1' },
+      bounds: { x: 10, y: 20, width: 100, height: 50 },
+    })
+    const second = createImageElement(first, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      name: 'Imported texture',
+      assetReference: { kind: 'imported', assetId: 'upload-1' },
+      bounds: { x: 20, y: 30, width: 100, height: 50 },
+    })
+
+    expect(first.elements.at(-1)?.id).toBe('image-element-1')
+    expect(first.elements.at(-1)?.zIndex).toBe(0)
+    expect(second.elements.at(-1)?.id).toBe('image-element-2')
+    expect(second.elements.at(-1)?.zIndex).toBe(1)
+  })
+
+  it('rejects base or missing planes and invalid image data', () => {
+    const validInput = {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      name: 'Imported texture',
+      assetReference: { kind: 'imported' as const, assetId: 'upload-1' },
+      bounds: { x: 0, y: 0, width: 100, height: 50 },
+    }
+
+    expect(createImageElement(buildWeekEpisode, validInput)).toBe(
+      buildWeekEpisode,
+    )
+    expect(
+      createImageElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: 'missing',
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createImageElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        name: '   ',
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createImageElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        assetReference: { kind: 'imported', assetId: '   ' },
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createImageElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        bounds: { ...validInput.bounds, height: Number.NaN },
+      }),
+    ).toBe(buildWeekEpisode)
+  })
+
+  it('preserves an image aspect ratio when resizing', () => {
+    const withImage = createImageElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Rounded speech bubble',
+      assetReference: {
+        kind: 'built-in',
+        assetId: 'speech-bubble-rounded',
+      },
+      bounds: { x: 100, y: 100, width: 200, height: 100 },
+    })
+    const image = withImage.elements.at(-1)
+
+    if (!image || image.type !== 'image') {
+      throw new Error('The image fixture was not created.')
+    }
+
+    const resized = resizeElement(withImage, image.id, {
+      ...image.bounds,
+      width: 300,
+      height: 300,
+    }).elements.at(-1)
+
+    expect(resized?.bounds).toEqual({
+      x: 100,
+      y: 100,
+      width: 300,
+      height: 150,
+    })
   })
 })
 

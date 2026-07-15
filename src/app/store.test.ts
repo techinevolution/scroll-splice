@@ -1,10 +1,25 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   BUILD_WEEK_LAYER_PLANE_IDS,
   buildWeekEpisode,
 } from './fixtures/buildWeekEpisode'
-import { useEditorStore } from './store'
+import {
+  setAssetRepositoryForTesting,
+  useEditorStore,
+} from './store'
+import {
+  ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
+  parseAssetLibrarySnapshot,
+  revokeRuntimeImportedImages,
+  type AssetLibrarySnapshot,
+  type AssetLibrarySnapshotTransform,
+  type AssetRepository,
+  type BrowserImageFile,
+  type LoadAssetLibraryResult,
+  type SaveAssetLibraryResult,
+  type UpdateAssetLibraryResult,
+} from '../assets'
 import {
   DEFAULT_EPISODE_HEIGHT_INCREMENT,
   getEpisodeContentBottom,
@@ -31,8 +46,119 @@ function fixtureElementInGroup(group: CompositionGroup): EpisodeElement {
   return element
 }
 
+class MemoryAssetRepository implements AssetRepository {
+  snapshot: AssetLibrarySnapshot | undefined
+  loadCount = 0
+  saveCount = 0
+
+  constructor(snapshot?: AssetLibrarySnapshot) {
+    this.snapshot = snapshot
+  }
+
+  async load(): Promise<LoadAssetLibraryResult> {
+    this.loadCount += 1
+
+    return this.snapshot
+      ? { ok: true, snapshot: this.snapshot }
+      : {
+          ok: false,
+          reason: 'not-found',
+          message: 'No locally saved asset library was found.',
+        }
+  }
+
+  async save(value: unknown): Promise<SaveAssetLibraryResult> {
+    this.saveCount += 1
+    const parsed = parseAssetLibrarySnapshot(value)
+
+    if (!parsed.ok) {
+      return {
+        ok: false,
+        reason:
+          parsed.reason === 'unsupported-version'
+            ? 'unsupported-version'
+            : 'invalid-snapshot',
+        message: parsed.message,
+      }
+    }
+
+    this.snapshot = parsed.snapshot
+    return { ok: true, savedAt: parsed.snapshot.savedAt }
+  }
+
+  async update(
+    transform: AssetLibrarySnapshotTransform,
+  ): Promise<UpdateAssetLibraryResult> {
+    let transformed: unknown
+
+    try {
+      transformed = transform(this.snapshot)
+    } catch {
+      return {
+        ok: false,
+        reason: 'transform-failed',
+        message: 'The asset-library update could not be prepared.',
+      }
+    }
+
+    const parsed = parseAssetLibrarySnapshot(transformed)
+
+    if (!parsed.ok) {
+      return {
+        ok: false,
+        reason:
+          parsed.reason === 'unsupported-version'
+            ? 'unsupported-version'
+            : 'invalid-snapshot',
+        message: parsed.message,
+      }
+    }
+
+    this.saveCount += 1
+    this.snapshot = parsed.snapshot
+    return { ok: true, snapshot: parsed.snapshot }
+  }
+}
+
+function createNamedPngFile(
+  name = 'transparent-overlay.png',
+  width = 320,
+  height = 180,
+): BrowserImageFile {
+  const header = new Uint8Array(24)
+  header.set([137, 80, 78, 71, 13, 10, 26, 10])
+  header.set([0, 0, 0, 13, 73, 72, 68, 82], 8)
+  new DataView(header.buffer).setUint32(16, width)
+  new DataView(header.buffer).setUint32(20, height)
+  const file = new Blob([header], { type: 'image/png' }) as BrowserImageFile
+
+  Object.defineProperty(file, 'name', { value: name })
+  return file
+}
+
+function stubImageRuntime(width: number, height: number): void {
+  vi.stubGlobal(
+    'createImageBitmap',
+    vi.fn(async () => ({ width, height, close: vi.fn() })),
+  )
+  vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:scrollsplice-test')
+  vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
+}
+
 describe('editor store', () => {
   beforeEach(() => {
+    revokeRuntimeImportedImages(
+      useEditorStore.getState().importedImageAssets,
+    )
+    setAssetRepositoryForTesting(undefined)
+    useEditorStore.setState({
+      assetLibraryStatus: 'idle',
+      assetLibraryBusy: false,
+      assetLibraryMessage: null,
+      assetLibraryMessageKind: 'info',
+      creatorAssetCategories: [],
+      importedImageAssets: [],
+    })
     useEditorStore.getState().resetEpisode()
     useEditorStore.getState().setFitViewportLogicalHeight(900)
 
@@ -43,6 +169,23 @@ describe('editor store', () => {
       hasUnsavedChanges: false,
       documentStatus: 'Demo ready · not saved',
     })
+  })
+
+  afterEach(() => {
+    revokeRuntimeImportedImages(
+      useEditorStore.getState().importedImageAssets,
+    )
+    useEditorStore.setState({
+      assetLibraryStatus: 'idle',
+      assetLibraryBusy: false,
+      assetLibraryMessage: null,
+      assetLibraryMessageKind: 'info',
+      creatorAssetCategories: [],
+      importedImageAssets: [],
+    })
+    setAssetRepositoryForTesting(undefined)
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
   })
 
   it('starts on a valid Content plane and reveals off-screen selections', () => {
@@ -542,6 +685,327 @@ describe('editor store', () => {
     expect(state.selectedElementId).toBe(placed?.id)
   })
 
+  it('hydrates the persistent asset library once and creates runtime previews', async () => {
+    stubImageRuntime(320, 180)
+    const sourceBlob = createNamedPngFile()
+    const repository = new MemoryAssetRepository({
+      formatVersion: ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
+      savedAt: '2026-07-15T17:00:00.000Z',
+      creatorCategories: [
+        {
+          id: 'creator-category-effects',
+          name: 'Effects',
+          createdAt: '2026-07-15T16:00:00.000Z',
+        },
+      ],
+      importedImages: [
+        {
+          id: 'imported-overlay',
+          displayName: 'transparent-overlay.png',
+          mediaType: 'image/png',
+          byteSize: sourceBlob.size,
+          intrinsicWidth: 320,
+          intrinsicHeight: 180,
+          sourceBlob,
+          creatorCategoryId: 'creator-category-effects',
+          importedAt: '2026-07-15T16:30:00.000Z',
+        },
+      ],
+    })
+    setAssetRepositoryForTesting(repository)
+
+    await expect(
+      useEditorStore.getState().initializeAssetLibrary(),
+    ).resolves.toBe(true)
+    await expect(
+      useEditorStore.getState().initializeAssetLibrary(),
+    ).resolves.toBe(true)
+
+    const state = useEditorStore.getState()
+    expect(repository.loadCount).toBe(1)
+    expect(state.assetLibraryStatus).toBe('ready')
+    expect(state.creatorAssetCategories).toHaveLength(1)
+    expect(state.importedImageAssets).toEqual([
+      expect.objectContaining({
+        id: 'imported-overlay',
+        sourceBlob,
+        sourceUrl: 'blob:scrollsplice-test',
+      }),
+    ])
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1)
+  })
+
+  it('blocks library mutations when saved sources fail to hydrate', async () => {
+    let saveCount = 0
+    const repository: AssetRepository = {
+      async load() {
+        return {
+          ok: false,
+          reason: 'read-failed',
+          message: 'The saved asset library could not be read.',
+        }
+      },
+      async save() {
+        saveCount += 1
+        return { ok: true, savedAt: '2026-07-15T18:00:00.000Z' }
+      },
+      async update() {
+        saveCount += 1
+        return {
+          ok: false,
+          reason: 'read-failed',
+          message: 'The saved asset library could not be read.',
+        }
+      },
+    }
+    setAssetRepositoryForTesting(repository)
+
+    await expect(
+      useEditorStore.getState().initializeAssetLibrary(),
+    ).resolves.toBe(false)
+    expect(useEditorStore.getState().assetLibraryStatus).toBe('error')
+
+    await expect(
+      useEditorStore.getState().createCreatorAssetCategory('Effects'),
+    ).resolves.toBeNull()
+    await expect(
+      useEditorStore
+        .getState()
+        .importImageAsset(createNamedPngFile()),
+    ).resolves.toBe(false)
+    expect(saveCount).toBe(0)
+    expect(useEditorStore.getState().creatorAssetCategories).toHaveLength(0)
+    expect(useEditorStore.getState().importedImageAssets).toHaveLength(0)
+  })
+
+  it('persists creator categories outside episode history and keeps them across document boundaries', async () => {
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    const episode = useEditorStore.getState().episode
+    const historyCount = useEditorStore.getState().historyPast.length
+
+    const categoryId = await useEditorStore
+      .getState()
+      .createCreatorAssetCategory('  Effects  ')
+
+    expect(categoryId).toMatch(/^creator-category-/)
+    expect(repository.snapshot?.creatorCategories).toEqual([
+      expect.objectContaining({ id: categoryId, name: 'Effects' }),
+    ])
+    expect(useEditorStore.getState().episode).toBe(episode)
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+    expect(
+      await useEditorStore
+        .getState()
+        .createCreatorAssetCategory('effects'),
+    ).toBeNull()
+    expect(repository.saveCount).toBe(1)
+
+    const categories = useEditorStore.getState().creatorAssetCategories
+    useEditorStore.getState().newEpisode()
+    expect(useEditorStore.getState().creatorAssetCategories).toBe(categories)
+    useEditorStore.getState().resetEpisode()
+    expect(useEditorStore.getState().creatorAssetCategories).toBe(categories)
+  })
+
+  it('merges asset-library updates committed by another tab into the current view', async () => {
+    stubImageRuntime(320, 180)
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    const sourceBlob = createNamedPngFile('remote-overlay.png')
+
+    repository.snapshot = {
+      formatVersion: ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
+      savedAt: '2026-07-15T18:00:00.000Z',
+      creatorCategories: [
+        {
+          id: 'creator-category-remote',
+          name: 'Remote effects',
+          createdAt: '2026-07-15T17:50:00.000Z',
+        },
+      ],
+      importedImages: [
+        {
+          id: 'imported-remote-overlay',
+          displayName: 'remote-overlay.png',
+          mediaType: 'image/png',
+          byteSize: sourceBlob.size,
+          intrinsicWidth: 320,
+          intrinsicHeight: 180,
+          sourceBlob,
+          creatorCategoryId: 'creator-category-remote',
+          importedAt: '2026-07-15T17:55:00.000Z',
+        },
+      ],
+    }
+
+    await expect(
+      useEditorStore.getState().createCreatorAssetCategory('Local effects'),
+    ).resolves.toMatch(/^creator-category-/)
+
+    expect(
+      useEditorStore
+        .getState()
+        .creatorAssetCategories.map(({ name }) => name),
+    ).toEqual(['Remote effects', 'Local effects'])
+    expect(useEditorStore.getState().importedImageAssets).toEqual([
+      expect.objectContaining({
+        id: 'imported-remote-overlay',
+        sourceBlob,
+        sourceUrl: 'blob:scrollsplice-test',
+      }),
+    ])
+  })
+
+  it('imports an unchanged image source without adding episode history', async () => {
+    stubImageRuntime(1_200, 600)
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    const categoryId = await useEditorStore
+      .getState()
+      .createCreatorAssetCategory('Panels')
+
+    if (!categoryId) {
+      throw new Error('The creator-category fixture was not created.')
+    }
+
+    const file = createNamedPngFile('  alpha-panel.png  ', 1_200, 600)
+    const episode = useEditorStore.getState().episode
+    const historyCount = useEditorStore.getState().historyPast.length
+
+    await expect(
+      useEditorStore.getState().importImageAsset(file, categoryId),
+    ).resolves.toBe(true)
+
+    const imported = useEditorStore.getState().importedImageAssets[0]
+    expect(imported).toMatchObject({
+      displayName: 'alpha-panel.png',
+      intrinsicWidth: 1_200,
+      intrinsicHeight: 600,
+      sourceBlob: file,
+      creatorCategoryId: categoryId,
+      sourceUrl: 'blob:scrollsplice-test',
+    })
+    expect(repository.snapshot?.importedImages[0]?.sourceBlob).toBe(file)
+    expect(useEditorStore.getState().episode).toBe(episode)
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+    await expect(
+      useEditorStore.getState().importImageAsset(file, 'missing-category'),
+    ).resolves.toBe(false)
+    expect(repository.snapshot?.importedImages).toHaveLength(1)
+  })
+
+  it('places built-in images proportionally at viewport center through history', () => {
+    useEditorStore.getState().setViewportY(1_000)
+    const beforeCount = useEditorStore.getState().episode.elements.length
+    const beforeHistoryCount = useEditorStore.getState().historyPast.length
+
+    expect(
+      useEditorStore
+        .getState()
+        .placeBuiltInAsset('builtin-speech-balloon-oval-v1'),
+    ).toBe(true)
+
+    const placed = useEditorStore.getState().episode.elements.at(-1)
+    expect(placed).toMatchObject({
+      id: 'image-element-1',
+      type: 'image',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      bounds: { x: 220, y: 1_325, width: 360, height: 250 },
+      assetReference: {
+        kind: 'built-in',
+        assetId: 'builtin-speech-balloon-oval-v1',
+      },
+    })
+    expect(useEditorStore.getState().selectedElementId).toBe(placed?.id)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeHistoryCount + 1,
+    )
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().episode.elements).toHaveLength(beforeCount)
+    useEditorStore.getState().redo()
+    expect(useEditorStore.getState().episode.elements.at(-1)).toEqual(placed)
+  })
+
+  it('places one imported source repeatedly without duplicating it and guards the base plane', async () => {
+    stubImageRuntime(1_200, 600)
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    await useEditorStore
+      .getState()
+      .importImageAsset(createNamedPngFile('transparent-overlay.png', 1_200, 600))
+    const imported = useEditorStore.getState().importedImageAssets[0]
+
+    if (!imported) {
+      throw new Error('The imported-image fixture was not created.')
+    }
+
+    expect(useEditorStore.getState().placeImportedAsset(imported.id)).toBe(true)
+    expect(useEditorStore.getState().placeImportedAsset(imported.id)).toBe(true)
+
+    const placed = useEditorStore
+      .getState()
+      .episode.elements.filter(({ type }) => type === 'image')
+    expect(placed.map(({ id }) => id)).toEqual([
+      'image-element-1',
+      'image-element-2',
+    ])
+    expect(placed[0]?.bounds).toEqual({
+      x: 160,
+      y: 330,
+      width: 480,
+      height: 240,
+    })
+    expect(useEditorStore.getState().importedImageAssets).toHaveLength(1)
+
+    useEditorStore.getState().setActiveCompositionGroup('background')
+    const historyCount = useEditorStore.getState().historyPast.length
+    expect(useEditorStore.getState().placeImportedAsset(imported.id)).toBe(false)
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+    expect(useEditorStore.getState().importedImageAssets).toHaveLength(1)
+  })
+
+  it('refuses image proportions that cannot fit at the minimum usable size', async () => {
+    stubImageRuntime(10_000, 1)
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    await useEditorStore
+      .getState()
+      .importImageAsset(createNamedPngFile('extreme-strip.png', 10_000, 1))
+    const imported = useEditorStore.getState().importedImageAssets[0]
+
+    if (!imported) {
+      throw new Error('The extreme-ratio image fixture was not imported.')
+    }
+
+    const historyCount = useEditorStore.getState().historyPast.length
+    expect(useEditorStore.getState().placeImportedAsset(imported.id)).toBe(false)
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+    expect(useEditorStore.getState().assetLibraryMessage).toBe(
+      'This image cannot fit inside the episode at a usable size.',
+    )
+  })
+
+  it('closes the asset panel idempotently without changing document state', () => {
+    const episode = useEditorStore.getState().episode
+    const history = useEditorStore.getState().historyPast
+
+    useEditorStore.getState().openAssetPanel()
+    expect(useEditorStore.getState().assetPanelOpen).toBe(true)
+    useEditorStore.getState().closeAssetPanel()
+    useEditorStore.getState().closeAssetPanel()
+
+    expect(useEditorStore.getState().assetPanelOpen).toBe(false)
+    expect(useEditorStore.getState().episode).toBe(episode)
+    expect(useEditorStore.getState().historyPast).toBe(history)
+  })
+
   it('creates and selects a full-width region on an ordinary Background plane', () => {
     useEditorStore.getState().setActiveCompositionGroup('background')
     useEditorStore
@@ -999,6 +1463,19 @@ describe('editor store', () => {
     })
 
     try {
+      const creatorAssetCategories = [
+        {
+          id: 'creator-category-persistent',
+          name: 'Persistent assets',
+          createdAt: '2026-07-15T17:00:00.000Z',
+        },
+      ] as const
+      const importedImageAssets = useEditorStore.getState().importedImageAssets
+      useEditorStore.setState({
+        assetLibraryStatus: 'ready',
+        creatorAssetCategories,
+      })
+
       useEditorStore.getState().setEpisodeName('Saved history episode')
       expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
 
@@ -1020,6 +1497,9 @@ describe('editor store', () => {
 
       useEditorStore.getState().newEpisode()
       expect(useEditorStore.getState().historyPast).toHaveLength(0)
+      expect(useEditorStore.getState().creatorAssetCategories).toBe(
+        creatorAssetCategories,
+      )
       expect(useEditorStore.getState().reopenEpisode()).toBe(true)
 
       const reopened = useEditorStore.getState()
@@ -1030,6 +1510,8 @@ describe('editor store', () => {
       expect(reopened.historyFuture).toHaveLength(0)
       expect(reopened.canUndo).toBe(false)
       expect(reopened.canRedo).toBe(false)
+      expect(reopened.creatorAssetCategories).toBe(creatorAssetCategories)
+      expect(reopened.importedImageAssets).toBe(importedImageAssets)
     } finally {
       if (originalWindow) {
         Object.defineProperty(globalThis, 'window', originalWindow)

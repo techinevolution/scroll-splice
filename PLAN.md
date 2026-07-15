@@ -12,7 +12,7 @@ Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed 
 
 Katherine completed the required hands-on test of that combined build on July 14. She confirmed placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary canvas movement. She then failed the first proposed polish review because title editing still shifted the fixed **EPISODE** label, the 1,280-unit dotted guides were not present, full-width Background regions could drift sideways in the live Konva node while the document and minimap stayed at `x = 0`, no visible magnet existed, and selected assets had no corner resize handles.
 
-Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. Its implementation is local; final automated/browser validation, screenshot indexing, Katherine's review, and any push remain separate gates. Element opacity and Background fades have not started and are not automatically next. Remote `main` remains at `6d6437e`, which includes the earlier implementation published through `8a493a2`.
+Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized this bounded Asset Library slice and publication of the resulting passing build to `main`. Element opacity and Background fades have not started and are not automatically next. Remote `main` remains at `6d6437e` until this newly authorized passing stack is pushed.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -273,13 +273,13 @@ Acceptance:
 
 ## Current approved optional slice: local history, save, and minimal menus
 
-**Status:** approved July 14, implemented, and validated in the local working tree. Evidence: 154 unit tests, strict typecheck, ESLint, production build, two isolated Playwright Chromium tests (the complete editor walkthrough plus save/reload/reopen/New Episode), visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768, and one indexed public-safe screenshot. Katherine's hands-on review and any push remain pending. This is optional creator-workflow progress, not an expansion of the required contest MVP.
+**Status:** approved July 14, implemented and validated locally, then passed Katherine's hands-on review July 15. Evidence: 154 unit tests, strict typecheck, ESLint, production build, two isolated Playwright Chromium tests (the complete editor walkthrough plus save/reload/reopen/New Episode), visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768, and one indexed public-safe screenshot. Publication is authorized with the next passing stack. This is optional creator-workflow progress, not an expansion of the required contest MVP.
 
 ### Contract
 
 - Keep one application-owned history of at most 100 checkpoints. Undo/redo covers every currently implemented episode-document mutation: element and plane creation/deletion, element move/resize, element/plane/group visibility, base color, title, coarse extension, and precise height changes. A bottom-edge pointer drag is one history step even though its live preview emits many updates.
 - A new document edit after Undo clears Redo. Selection, viewport, zoom, drawer state, magnet/guide visibility, and live pointer previews do not create history entries.
-- Save only the validated format-v3 episode document in one versioned local-browser slot. **Save** is explicit; there is no autosave. On startup, a valid last save opens automatically after a page reload. The slot is tied to one browser profile and site origin; clearing site data or changing profile, browser, or origin loses access to it.
+- At the July 14 history/save checkpoint, Save wrote the validated format-v3 episode document to one versioned local-browser slot. **Save** remained explicit with no autosave, and startup opened a valid last save after reload. The later Asset Library slice upgraded current writes to format v4 while preserving supported v3 opening. The slot remains tied to one browser profile and site origin; clearing site data or changing profile, browser, or origin loses access to it.
 - **Reopen** restores the last explicit save and clears history/transient editing context. Ask before discarding unsaved changes.
 - **New Episode** creates an unsaved **Untitled Episode** with a stable ID, 800 × 1,280 logical geometry, a pinned white Background base, one ordinary Background plane, one Content plane, one Foreground plane, and no elements. Ask before discarding unsaved changes, clear history, and retain the previous saved slot so Reopen can still recover it.
 - Show only **File > New Episode / Save / Reopen** and **Edit > Undo / Redo**. These are accessible in-app browser menus, not native operating-system menus.
@@ -296,6 +296,34 @@ Acceptance:
 
 Explicitly excluded: autosave, crash recovery, file picker or downloadable project files, a multi-project library, imported binary-asset persistence, native macOS/Windows menus, cloud/account sync, migration infrastructure, production export, OAuth, OpenAI runtime work, and AI.
 
+## Completed creator slice: simple persistent Asset Library
+
+**Status:** implemented and validated July 15; publication is pending only the final repository/private-file check under Katherine's explicit authorization. Evidence: 214 unit tests across 11 files, strict typecheck, ESLint, production build, four Playwright Chromium stories, overlay checks at 1440 × 900, 1280 × 720, and 1024 × 768, plus the indexed public-safe Asset Library screenshot.
+
+### Contract
+
+- Replace the one-button synthetic drawer with a fixed Add rail for **Uploads**, **Speech Balloons**, **Decorations**, **Splatters**, and **My Library**. Keep creator-named categories inside My Library so an unbounded list cannot overwhelm the rail.
+- Use an overlay drawer with an honest current-plane target, loading/error/empty states, a close action, and a compact thumbnail grid. Opening it must not permanently reduce the canvas width.
+- Supply a small original starter set of neutral, transparent code-rendered SVG speech balloons, decorations, and splatters. The balloon set is visual artwork only; meanings are conventions rather than universal rules, and text/tail/style editing remains deferred.
+- Import PNG, JPEG, and WebP files into a local browser asset repository without modifying the source bytes. Preserve source alpha. Reject unsupported or undecodable files clearly and keep the Build Week import safety limits visible. Parse PNG/JPEG/WebP header dimensions and enforce the 40-megapixel limit before full browser decode, then decode and confirm the declaration. Category and import mutations use one atomic IndexedDB read-transform-write transaction so concurrent tabs merge against the latest snapshot; the initiating tab refreshes from the returned saved categories and sources.
+- Let creators create named local categories and import an image into the selected category. **Uploads** remains the all-imports view, while My Library filters the same stable source IDs without duplicating files.
+- Add a real image element with a stable source reference. Clicking an asset places one proportional instance in the active ordinary plane, centered in the current viewport; the existing move, eye, trash, undo/redo, minimap, Layers selection, and proportional four-corner resize behavior applies. If an extreme source ratio cannot fit inside the episode while keeping both axes at least 24 logical units, refuse placement clearly instead of distorting it.
+- Keep the source library in IndexedDB and the explicit episode-layout save in the existing localStorage slot. File Save stores only format-v4 episode data and stable asset IDs. Implement one explicit v3-to-v4 load upgrade so the save Katherine just approved continues to open.
+- Surface an honest missing-source placeholder instead of crashing if site data is partially cleared. Source deletion, category rename/delete/reorder, and drag-to-place remain outside this slice.
+
+### Acceptance
+
+- each built-in category can place an original asset into the active ordinary plane; the element appears in canvas, minimap, Layers, selection, movement, deletion, undo/redo, and proportional resize
+- one synthetic transparent PNG upload preserves alpha, appears in Uploads and its creator category, can be placed more than once without duplicating source bytes, and survives page reload through IndexedDB; the browser story proves alpha by comparing rendered opaque and transparent halves against sampled underlying canvas pixels
+- the uploaded image can be resized proportionally, undone and redone as separate creation/resize history steps, explicitly saved, and restored at the resized geometry after reload and Reopen
+- concurrent category/import updates merge atomically, refresh the initiating tab from the returned saved snapshot, and do not discard a second tab's saved sources
+- File Save plus reload/Reopen restores the placed image element and resolves its stable source; New Episode retains the reusable local library
+- existing format-v3 local saves load as format v4, while corrupt/unknown versions still fail safely
+- the open overlay remains usable at 1440 × 900, 1280 × 720, and 1024 × 768 without hiding the full-height inspector or permanently shrinking the canvas
+- focused model, command, repository, store, and Chromium stories pass alongside typecheck, lint, the complete unit suite, production build, visual inspection, and a public-safe screenshot
+
+Explicitly excluded: text inside balloons, balloon-tail editing, recoloring, opacity, crop, rotation, flip, asset-source deletion, category rename/delete/reorder, drag-to-canvas or Layers drop, Shapes & Frames, imported SVG/GIF/HEIC, autosave, portable project files, production export, cloud/account sync, OAuth, OpenAI runtime work, and AI-generated assets.
+
 ### E. Proposed after review: Asset Properties and Opacity plus basic Background fades
 
 **Status:** not started. Katherine's earlier approval keeps this as an available proposal, but it was not chosen after checkpoint D. Reconsider it only after the current history/save/menu slice passes and Katherine explicitly selects another slice.
@@ -304,7 +332,7 @@ Explicitly excluded: autosave, crash recovery, file picker or downloadable proje
 - Keep element opacity independent from eye visibility and source-image alpha. A 0%-opacity element remains selectable from Layers and does not intercept canvas input.
 - Add only a simple vertical two-stop alpha fade to solid Background color regions, with top and bottom percentages. Do not add a multi-stop editor, arbitrary angle, blend mode, image mask, or general gradient-color system.
 - Make canvas and minimap agree on the resulting element compositing while keeping candidate guides out of the minimap.
-- Because local format-v3 persistence now exists, do not directly bump the fixture to format v4. First make a separate compatibility decision: either keep backward-compatible optional fields in v3 or implement one explicit v3-to-v4 load path. Do not add a general migration framework without a concrete need. Existing and newly created elements would default to `opacity = 1`, and a color region would default to no fade.
+- The current document is format v4 with one explicit supported v3 upgrade. Any opacity/fade fields must start from v4 and make one bounded compatibility decision without adding a general migration framework. Existing and newly created elements would default to `opacity = 1`, and a color region would default to no fade.
 
 Acceptance:
 
@@ -313,7 +341,7 @@ Acceptance:
 - a solid Background color region can transition vertically between two alpha endpoints in canvas and minimap
 - focused model/command/store/render tests, strict typecheck, lint, production build, Playwright, and visual inspection pass
 
-Explicitly excluded from proposed E: production file export, real import, additional persistence beyond the implemented single local slot, general gradients, arbitrary fade angles, blend modes, masks, rotation, flipping, crop, perspective, tab reordering, deployment, OAuth, OpenAI runtime work, and AI. The requested reconciled feature inventory was supplied before Katherine chose the current local history/save/menu slice.
+Explicitly excluded from proposed E: production file export, changes to the implemented import path, additional persistence beyond the explicit episode slot and separate local Asset Library, general gradients, arbitrary fade angles, blend modes, masks, rotation, flipping, crop, perspective, tab reordering, deployment, OAuth, OpenAI runtime work, and AI. The requested reconciled feature inventory was supplied before Katherine chose the history/save/menu slice.
 
 ### Later bounded slices
 
@@ -335,7 +363,7 @@ Submit a small, complete, reliable **human-operated** editor MVP in the **Apps f
 4. select the same element from the canvas or layers list
 5. move the selected element and reset the demo
 
-That is the simplest MVP for Build Week. The optional local history/save/menu slice strengthens the creator workflow without becoming a new contest requirement. The submission still does not pretend that real import, multi-project persistence/recovery, production export, or autonomous creation is complete. The editor must work without an OpenAI connection.
+That is the simplest required MVP for Build Week. The optional history/save/menu and persistent Asset Library slices strengthen the creator workflow without becoming new contest requirements. The current local build includes validated browser-local import, but it does not pretend that portable or multi-project persistence/recovery, production export, or autonomous creation is complete. The editor must work without an OpenAI connection.
 
 ## Build Week must-haves
 
@@ -384,7 +412,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 - Complete Katherine's hands-on test of **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. **Complete.**
 - Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Complete through `8a493a2`.**
 - Repair the failed polish review as checkpoint D: stable title anchors, visible profile-derived candidate guides, default-on center magnet with bypass, proportional ordinary-element resize, and live status/minimap bounds. The first fixed-width Background implementation was superseded; free Background-region movement and eight-handle independent resize passed validation and Katherine's retest with minimap aspect distortion logged as polish. **Complete with notes.**
-- Implement and validate the separately approved optional local history/save/menu slice, including explicit Save, reload/reopen, blank New Episode, bounded undo/redo, and the exact File/Edit surface. **Complete locally; human review and push pending.**
+- Implement and validate the separately approved optional local history/save/menu slice, including explicit Save, reload/reopen, blank New Episode, bounded undo/redo, and the exact File/Edit surface. **Complete locally and passed Katherine's July 15 review; publication is bundled with the authorized Asset Library stack and is not yet claimed.**
 - Keep deterministic WEBTOON file export separate until the harmless authenticated upload verification and a later explicit export checkpoint.
 - Keep every coherent checkpoint tested and independently understandable.
 - Do not spend the full product day on deployment, video, or Devpost assembly.
@@ -424,7 +452,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 
 ## Optional Build Week product slices
 
-Work through these only in order, with a passing checkpoint after each. Items 4–6 were authorized together by Katherine's follow-up review and are complete. Item 7 passed human review with notes. Katherine selected item 8 instead of the earlier opacity proposal; it is complete locally and awaits her hands-on review. Every later item remains separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
+Treat these as bounded options rather than a mandatory queue, and begin only the item Katherine explicitly selects; every completed item still needs its own passing checkpoint. Items 4–6 were authorized together by Katherine's follow-up review and are complete. Item 7 passed human review with notes. Item 8 passed Katherine's July 15 review. Katherine then selected item 12; it is complete and validated locally with publication authorized but not yet claimed. Every later item remains separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above. **Complete.**
 2. The layer-planes and episode-backdrop foundation defined above. **Complete.**
@@ -433,14 +461,13 @@ Work through these only in order, with a passing checkpoint after each. Items 4�
 5. Safe Precise Height and solid Background Color Regions. **Complete and human-tested.**
 6. Canvas Zoom and 2D Viewport. **Complete and human-tested.**
 7. Stable editing chrome, candidate slice guides, proportional ordinary-element resize, and free eight-handle Background-region transforms with live status/minimap preview. **Complete locally; human review pass with notes.**
-8. Local history, one explicit save/reopen slot, blank New Episode, and minimal File/Edit menus. **Implemented and validated locally; Katherine review and push pending.**
+8. Local history, one explicit save/reopen slot, blank New Episode, and minimal File/Edit menus. **Complete, validated, and human-tested.**
 9. Asset Properties and Opacity plus basic Background fades. **Not started; reconsider only after a new choice.**
 10. Deterministic WEBTOON slice planning and export after upload verification.
 11. Layer-tab naming and reordering.
-12. The Add rail and Asset Library shell using public-safe placeholders.
-13. A safe **Add to canvas** action targeting the active numbered plane.
-14. Asset-to-canvas drag if the fallback is already reliable.
-15. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete and validated locally July 15; publication authorized and pending final repository checks.**
+13. Asset-to-canvas drag if the click-to-place fallback remains reliable.
+14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
 
 Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
@@ -458,15 +485,15 @@ The smallest acceptable proof is one request that produces one image candidate, 
 
 ## Deferred work
 
-- Real asset import and project-folder design. The per-plane paperclip currently opens the Asset Library and places only code-defined synthetic demo rectangles; it is not a real import path.
-- General gradients, arbitrary fade angles, blend modes, uploaded background imagery, and optional edge decoration. Solid Background color regions now start full width and support free movement and independent resize; a basic vertical alpha fade is only an unstarted post-review proposal.
-- Transparency-preserving image import and preview.
-- A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
+- Project-folder design, portable source packaging, source deletion, category rename/delete/reorder, and advanced asset management. Real browser-local PNG/JPEG/WebP import is implemented.
+- General gradients, arbitrary fade angles, blend modes, background-specific fit/tile/crop controls, and optional edge decoration. Ordinary imported images may already be placed on Background planes; solid Background color regions start full width and support free movement and independent resize, while a basic vertical alpha fade remains an unstarted proposal.
+- Additional import formats, source replacement, crop, recolor, rotation, flip, and other asset-specific editing beyond the implemented transparency-preserving PNG/JPEG/WebP preview.
+- Editable balloon text, tails, styles, semantic guidance, and creator-authored reusable balloon templates beyond the implemented original starter visuals and creator categories.
 - Commands beyond the implemented **File > New Episode / Save / Reopen** and **Edit > Undo / Redo** surface. View, Window, Help, open/import, Save As, multiple recent projects, and native OS menus remain deferred until their own workflow or desktop-packaging slice.
 - Canvas Zoom and 2D Viewport is complete locally; its state is transient and does not alter episode or export geometry.
-- Asset Properties and Opacity plus a basic vertical Background fade remain proposed checkpoint E; they have not started and require a new go/no-go after Katherine reviews D.
+- Asset Properties and Opacity plus a basic vertical Background fade remain proposed checkpoint E; they have not started and require a new explicit go/no-go.
 - Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, advanced edge/nearby-element snapping beyond checkpoint D's single centerline rule, and resize behavior beyond the implemented four proportional corner handles.
-- Persistence beyond the implemented one explicit versioned local-browser slot: autosave, crash recovery, file-system project files, imported binary assets, multiple projects, account/cloud sync, and format migration.
+- Persistence beyond the implemented explicit episode slot and separate IndexedDB source library: autosave, crash recovery, portable file-system project files, multiple projects, account/cloud sync, and additional format migrations.
 - History beyond the implemented 100-checkpoint document undo/redo: named history, persisted history, branching, collaborative history, rotation, crop, masks, and advanced transforms.
 - Moving elements between planes or groups, including the later element-row **Move to plane** context action and its visible keyboard-accessible alternative; arbitrary nested groups; and element-order editing beyond the numbered-plane foundation.
 - Production tall-master and WEBTOON slice export.
@@ -522,7 +549,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes. The optional local history/save/menu slice passes 154 unit tests, static/build checks, two Chromium stories, supported-size visual inspection, and screenshot capture; it still requires Katherine's hands-on review and separate push authority. Real uploads, production export, deployment, opacity/fades, and other later slices remain unstarted or separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library now passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; its publication is authorized but not yet claimed. Production export, deployment, opacity/fades, advanced asset editing, and other later slices remain unstarted or separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

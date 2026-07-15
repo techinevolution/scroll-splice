@@ -11,6 +11,8 @@ import {
   type ElementBounds,
   type EpisodeDocument,
   type EpisodeElement,
+  type ImageAssetReference,
+  type ImageElement,
   type OrdinaryLayerPlane,
   type ShapeElement,
 } from './episode'
@@ -38,6 +40,13 @@ export interface CreateBackgroundColorRegionInput {
   readonly fill: string
   readonly startY: number
   readonly height: number
+}
+
+export interface CreateImageElementInput {
+  readonly layerPlaneId: string
+  readonly name: string
+  readonly assetReference: ImageAssetReference
+  readonly bounds: ElementBounds
 }
 
 export function setEpisodeName(
@@ -397,6 +406,57 @@ export function createSyntheticShapeElement(
     fill,
     bounds,
   })
+}
+
+export function createImageElement(
+  document: EpisodeDocument,
+  input: CreateImageElementInput,
+): EpisodeDocument {
+  const layerPlane = getLayerPlaneById(document, input.layerPlaneId)
+  const name = input.name.trim()
+  const assetId = input.assetReference.assetId.trim()
+
+  if (
+    !layerPlane ||
+    layerPlane.kind !== 'ordinary' ||
+    name.length === 0 ||
+    assetId.length === 0 ||
+    (input.assetReference.kind !== 'built-in' &&
+      input.assetReference.kind !== 'imported')
+  ) {
+    return document
+  }
+
+  const bounds = clampNewElementBounds(document, input.bounds)
+
+  if (!bounds) {
+    return document
+  }
+
+  const { id } = createElementId(document, 'image-element')
+  const highestZIndex = document.elements.reduce(
+    (highest, element) =>
+      element.layerPlaneId === layerPlane.id
+        ? Math.max(highest, element.zIndex)
+        : highest,
+    -1,
+  )
+  const element: ImageElement = {
+    id,
+    name,
+    layerPlaneId: layerPlane.id,
+    type: 'image',
+    bounds,
+    visible: true,
+    locked: false,
+    zIndex: highestZIndex + 1,
+    assetReference: {
+      kind: input.assetReference.kind,
+      assetId,
+    },
+  }
+
+  return { ...document, elements: [...document.elements, element] }
 }
 
 export function createBackgroundColorRegion(

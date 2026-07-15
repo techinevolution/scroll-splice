@@ -7,7 +7,9 @@ import {
 import { createBlankEpisode } from '../core/createBlankEpisode'
 import {
   DEFAULT_EPISODE_HEIGHT_INCREMENT,
+  MIN_ELEMENT_SIZE,
   createBackgroundColorRegion as createBackgroundColorRegionCommand,
+  createImageElement as createImageElementCommand,
   createLayerPlane as createLayerPlaneCommand,
   createSyntheticShapeElement as createSyntheticShapeElementCommand,
   deleteElement as deleteElementCommand,
@@ -39,11 +41,32 @@ import {
   type CompositionGroup,
   type ElementBounds,
   type EpisodeDocument,
+  type ImageAssetReference,
 } from '../core/episode'
+import {
+  ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
+  BUILT_IN_ASSETS,
+  createIndexedDbAssetRepository,
+  createRuntimeImportedImage,
+  importBrowserImage,
+  revokeRuntimeImportedImages,
+  type AssetLibrarySnapshot,
+  type AssetLibrarySnapshotTransform,
+  type AssetRepository,
+  type BrowserImageFile,
+  type CreatorAssetCategorySnapshot,
+  type ImportedImageSnapshot,
+  type ResolvedImageAsset,
+  type RuntimeImportedImage,
+} from '../assets'
+import { isSafeCreatorCategoryName } from '../assets/validation'
 import {
   createLocalStorageProjectRepository,
   getBrowserLocalStorage,
 } from '../persistence/projectRepository'
+
+export type AssetLibraryStatus = 'idle' | 'loading' | 'ready' | 'error'
+export type AssetLibraryMessageKind = 'info' | 'success' | 'error'
 
 interface EditorState {
   readonly episode: EpisodeDocument
@@ -72,6 +95,12 @@ interface EditorState {
   readonly fitViewportLogicalHeight: number
   readonly zoomFactor: number
   readonly assetPanelOpen: boolean
+  readonly assetLibraryStatus: AssetLibraryStatus
+  readonly assetLibraryBusy: boolean
+  readonly assetLibraryMessage: string | null
+  readonly assetLibraryMessageKind: AssetLibraryMessageKind
+  readonly creatorAssetCategories: readonly CreatorAssetCategorySnapshot[]
+  readonly importedImageAssets: readonly RuntimeImportedImage[]
   readonly magnetEnabled: boolean
   readonly sliceGuidesVisible: boolean
   readonly setActiveCompositionGroup: (group: CompositionGroup) => void
@@ -130,6 +159,17 @@ interface EditorState {
   readonly toggleSliceGuides: () => void
   readonly toggleAssetPanel: () => void
   readonly openAssetPanel: () => void
+  readonly closeAssetPanel: () => void
+  readonly initializeAssetLibrary: () => Promise<boolean>
+  readonly createCreatorAssetCategory: (
+    name: string,
+  ) => Promise<string | null>
+  readonly importImageAsset: (
+    file: BrowserImageFile,
+    creatorCategoryId?: string | null,
+  ) => Promise<boolean>
+  readonly placeBuiltInAsset: (assetId: string) => boolean
+  readonly placeImportedAsset: (assetId: string) => boolean
   readonly undo: () => void
   readonly redo: () => void
   readonly saveEpisode: () => void
@@ -150,8 +190,182 @@ const INITIAL_VIEWPORT_LOGICAL_HEIGHT = 900
 const INITIAL_COMPOSITION_GROUP = 'content' as const
 const INITIAL_LAYER_PLANE_ID = BUILD_WEEK_LAYER_PLANE_IDS.contentPanels
 const HISTORY_LIMIT = 100
+const DEFAULT_IMAGE_VIEWPORT_FRACTION = 0.6
+
+let assetRepositoryOverride: AssetRepository | undefined
+
+export function setAssetRepositoryForTesting(
+  repository: AssetRepository | undefined,
+): void {
+  assetRepositoryOverride = repository
+}
+
+function getAssetRepository(): AssetRepository {
+  return assetRepositoryOverride ?? createIndexedDbAssetRepository()
+}
 
 type EditorStatePatch = Partial<EditorState>
+
+function createImportedImageSnapshot(
+  image: RuntimeImportedImage,
+): ImportedImageSnapshot {
+  return {
+    id: image.id,
+    displayName: image.displayName,
+    mediaType: image.mediaType,
+    byteSize: image.byteSize,
+    intrinsicWidth: image.intrinsicWidth,
+    intrinsicHeight: image.intrinsicHeight,
+    sourceBlob: image.sourceBlob,
+    creatorCategoryId: image.creatorCategoryId,
+    importedAt: image.importedAt,
+  }
+}
+
+function createAssetLibrarySnapshot(
+  state: EditorState,
+  savedAt: string,
+  creatorCategories: readonly CreatorAssetCategorySnapshot[] =
+    state.creatorAssetCategories,
+  importedImages: readonly ImportedImageSnapshot[] =
+    state.importedImageAssets.map(createImportedImageSnapshot),
+): AssetLibrarySnapshot {
+  return {
+    formatVersion: ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
+    savedAt,
+    creatorCategories,
+    importedImages,
+  }
+}
+
+type PersistAssetLibraryResult =
+  | { readonly ok: true; readonly snapshot: AssetLibrarySnapshot }
+  | { readonly ok: false; readonly message: string }
+
+async function persistAssetLibraryUpdate(
+  repository: AssetRepository,
+  transform: AssetLibrarySnapshotTransform,
+): Promise<PersistAssetLibraryResult> {
+  return repository.update(transform)
+}
+
+function synchronizeRuntimeImportedImages(
+  currentImages: readonly RuntimeImportedImage[],
+  persistedImages: readonly ImportedImageSnapshot[],
+): readonly RuntimeImportedImage[] {
+  const currentById = new Map(currentImages.map((image) => [image.id, image]))
+  const createdImages: RuntimeImportedImage[] = []
+
+  try {
+    const synchronized = persistedImages.map((snapshot) => {
+      const current = currentById.get(snapshot.id)
+
+      if (current) return current
+
+      const created = createRuntimeImportedImage(snapshot)
+      createdImages.push(created)
+      return created
+    })
+    const synchronizedIds = new Set(synchronized.map(({ id }) => id))
+
+    revokeRuntimeImportedImages(
+      currentImages.filter(({ id }) => !synchronizedIds.has(id)),
+    )
+    return synchronized
+  } catch (error) {
+    revokeRuntimeImportedImages(createdImages)
+    throw error
+  }
+}
+
+function createCreatorCategoryId(state: EditorState): string {
+  const existingIds = new Set(
+    state.creatorAssetCategories.map(({ id }) => id),
+  )
+  let id: string
+
+  do {
+    const randomUUID = globalThis.crypto?.randomUUID
+    const suffix = randomUUID
+      ? randomUUID.call(globalThis.crypto)
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+    id = `creator-category-${suffix}`
+  } while (existingIds.has(id))
+
+  return id
+}
+
+function getCenteredImageBounds(
+  state: EditorState,
+  intrinsicWidth: number,
+  intrinsicHeight: number,
+): ElementBounds | undefined {
+  if (
+    !Number.isFinite(intrinsicWidth) ||
+    !Number.isFinite(intrinsicHeight) ||
+    intrinsicWidth <= 0 ||
+    intrinsicHeight <= 0
+  ) {
+    return undefined
+  }
+
+  const preferredScale = Math.min(
+    1,
+    (state.viewportLogicalWidth * DEFAULT_IMAGE_VIEWPORT_FRACTION) /
+      intrinsicWidth,
+    (state.viewportLogicalHeight * DEFAULT_IMAGE_VIEWPORT_FRACTION) /
+      intrinsicHeight,
+  )
+  const minimumUsableScale = Math.max(
+    MIN_ELEMENT_SIZE / intrinsicWidth,
+    MIN_ELEMENT_SIZE / intrinsicHeight,
+  )
+  const maximumEpisodeScale = Math.min(
+    state.episode.logicalWidth / intrinsicWidth,
+    state.episode.logicalHeight / intrinsicHeight,
+  )
+
+  if (minimumUsableScale > maximumEpisodeScale) {
+    return undefined
+  }
+
+  const scale = Math.min(
+    Math.max(preferredScale, minimumUsableScale),
+    maximumEpisodeScale,
+  )
+  const width = intrinsicWidth * scale
+  const height = intrinsicHeight * scale
+
+  return {
+    x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
+    y: state.viewportY + (state.viewportLogicalHeight - height) / 2,
+    width,
+    height,
+  }
+}
+
+function placeImageAssetInEpisode(
+  state: EditorState,
+  asset: ResolvedImageAsset,
+  assetReference: ImageAssetReference,
+): EpisodeDocument | undefined {
+  const bounds = getCenteredImageBounds(
+    state,
+    asset.intrinsicWidth,
+    asset.intrinsicHeight,
+  )
+
+  if (!bounds) {
+    return undefined
+  }
+
+  return createImageElementCommand(state.episode, {
+    layerPlaneId: state.activeLayerPlaneId,
+    name: asset.displayName,
+    assetReference,
+    bounds,
+  })
+}
 
 function createHistoryCheckpoint(state: EditorState): HistoryCheckpoint {
   return {
@@ -376,6 +590,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   fitViewportLogicalHeight: INITIAL_VIEWPORT_LOGICAL_HEIGHT,
   zoomFactor: DEFAULT_ZOOM_FACTOR,
   assetPanelOpen: false,
+  assetLibraryStatus: 'idle',
+  assetLibraryBusy: false,
+  assetLibraryMessage: null,
+  assetLibraryMessageKind: 'info',
+  creatorAssetCategories: [],
+  importedImageAssets: [],
   magnetEnabled: true,
   sliceGuidesVisible: true,
 
@@ -1006,6 +1226,569 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   openAssetPanel: () => {
     set({ assetPanelOpen: true })
+  },
+
+  closeAssetPanel: () => {
+    set({ assetPanelOpen: false })
+  },
+
+  initializeAssetLibrary: async () => {
+    const state = get()
+
+    if (
+      state.assetLibraryStatus === 'ready' ||
+      state.assetLibraryStatus === 'loading' ||
+      state.assetLibraryBusy
+    ) {
+      return state.assetLibraryStatus === 'ready'
+    }
+
+    set({
+      assetLibraryStatus: 'loading',
+      assetLibraryBusy: true,
+      assetLibraryMessage: 'Loading local assets…',
+      assetLibraryMessageKind: 'info',
+    })
+
+    let result: Awaited<ReturnType<AssetRepository['load']>>
+
+    try {
+      result = await getAssetRepository().load()
+    } catch {
+      set({
+        assetLibraryStatus: 'error',
+        assetLibraryBusy: false,
+        assetLibraryMessage: 'The local asset library could not be loaded.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (!result.ok) {
+      if (result.reason === 'not-found') {
+        revokeRuntimeImportedImages(state.importedImageAssets)
+        set({
+          assetLibraryStatus: 'ready',
+          assetLibraryBusy: false,
+          assetLibraryMessage: 'Asset Library ready.',
+          assetLibraryMessageKind: 'info',
+          creatorAssetCategories: [],
+          importedImageAssets: [],
+        })
+        return true
+      }
+
+      set({
+        assetLibraryStatus: 'error',
+        assetLibraryBusy: false,
+        assetLibraryMessage: result.message,
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    const importedImages: RuntimeImportedImage[] = []
+
+    try {
+      for (const image of result.snapshot.importedImages) {
+        importedImages.push(createRuntimeImportedImage(image))
+      }
+    } catch {
+      revokeRuntimeImportedImages(importedImages)
+      set({
+        assetLibraryStatus: 'error',
+        assetLibraryBusy: false,
+        assetLibraryMessage:
+          'Saved asset sources were found, but previews could not be created.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    revokeRuntimeImportedImages(state.importedImageAssets)
+    set({
+      assetLibraryStatus: 'ready',
+      assetLibraryBusy: false,
+      assetLibraryMessage:
+        importedImages.length > 0
+          ? `Loaded ${importedImages.length} local ${importedImages.length === 1 ? 'asset' : 'assets'}.`
+          : 'Asset Library ready.',
+      assetLibraryMessageKind: 'success',
+      creatorAssetCategories: result.snapshot.creatorCategories,
+      importedImageAssets: importedImages,
+    })
+    return true
+  },
+
+  createCreatorAssetCategory: async (requestedName) => {
+    const state = get()
+    const name = requestedName.trim()
+
+    if (state.assetLibraryStatus !== 'ready') {
+      set({
+        assetLibraryMessage:
+          'Local asset storage must load successfully before categories can change.',
+        assetLibraryMessageKind: 'error',
+      })
+      return null
+    }
+
+    if (state.assetLibraryBusy) {
+      return null
+    }
+
+    if (!isSafeCreatorCategoryName(name)) {
+      set({
+        assetLibraryMessage:
+          'Enter a category name between 1 and 40 characters.',
+        assetLibraryMessageKind: 'error',
+      })
+      return null
+    }
+
+    if (
+      state.creatorAssetCategories.some(
+        (category) =>
+          category.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+      )
+    ) {
+      set({
+        assetLibraryMessage: 'A category with that name already exists.',
+        assetLibraryMessageKind: 'error',
+      })
+      return null
+    }
+
+    const createdAt = new Date().toISOString()
+    const category: CreatorAssetCategorySnapshot = {
+      id: createCreatorCategoryId(state),
+      name,
+      createdAt,
+    }
+    const currentImportedImages = state.importedImageAssets.map(
+      createImportedImageSnapshot,
+    )
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: 'Saving category…',
+      assetLibraryMessageKind: 'info',
+    })
+
+    let categoryConflict = false
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latestCategories =
+            currentSnapshot?.creatorCategories ??
+            state.creatorAssetCategories
+          const latestImportedImages =
+            currentSnapshot?.importedImages ?? currentImportedImages
+
+          if (
+            latestCategories.some(
+              (candidate) =>
+                candidate.name.toLocaleLowerCase() ===
+                category.name.toLocaleLowerCase(),
+            )
+          ) {
+            categoryConflict = true
+            return (
+              currentSnapshot ??
+              createAssetLibrarySnapshot(
+                state,
+                createdAt,
+                latestCategories,
+                latestImportedImages,
+              )
+            )
+          }
+
+          return createAssetLibrarySnapshot(
+            state,
+            createdAt,
+            [...latestCategories, category],
+            latestImportedImages,
+          )
+        },
+      )
+    } catch {
+      set({
+        assetLibraryStatus:
+          state.assetLibraryStatus === 'ready' ? 'ready' : 'error',
+        assetLibraryBusy: false,
+        assetLibraryMessage: 'The category could not be saved locally.',
+        assetLibraryMessageKind: 'error',
+      })
+      return null
+    }
+
+    if (!result.ok) {
+      set({
+        assetLibraryStatus:
+          state.assetLibraryStatus === 'ready' ? 'ready' : 'error',
+        assetLibraryBusy: false,
+        assetLibraryMessage: result.message,
+        assetLibraryMessageKind: 'error',
+      })
+      return null
+    }
+
+    if (categoryConflict) {
+      let importedImageAssets = state.importedImageAssets
+
+      try {
+        importedImageAssets = synchronizeRuntimeImportedImages(
+          state.importedImageAssets,
+          result.snapshot.importedImages,
+        )
+      } catch {
+        // The category conflict remains authoritative even if a remote preview
+        // cannot be hydrated until the next reload.
+      }
+
+      set({
+        assetLibraryStatus: 'ready',
+        assetLibraryBusy: false,
+        assetLibraryMessage: 'A category with that name already exists.',
+        assetLibraryMessageKind: 'error',
+        creatorAssetCategories: result.snapshot.creatorCategories,
+        importedImageAssets,
+      })
+      return null
+    }
+
+    let importedImageAssets: readonly RuntimeImportedImage[]
+
+    try {
+      importedImageAssets = synchronizeRuntimeImportedImages(
+        state.importedImageAssets,
+        result.snapshot.importedImages,
+      )
+    } catch {
+      set({
+        assetLibraryStatus: 'ready',
+        assetLibraryBusy: false,
+        assetLibraryMessage:
+          'The category was saved, but assets added in another tab need a reload.',
+        assetLibraryMessageKind: 'error',
+        creatorAssetCategories: result.snapshot.creatorCategories,
+      })
+      return category.id
+    }
+
+    set({
+      assetLibraryStatus: 'ready',
+      assetLibraryBusy: false,
+      assetLibraryMessage: `Created “${category.name}”.`,
+      assetLibraryMessageKind: 'success',
+      creatorAssetCategories: result.snapshot.creatorCategories,
+      importedImageAssets,
+    })
+    return category.id
+  },
+
+  importImageAsset: async (file, requestedCreatorCategoryId = null) => {
+    const state = get()
+    const creatorCategoryId = requestedCreatorCategoryId ?? null
+
+    if (state.assetLibraryStatus !== 'ready') {
+      set({
+        assetLibraryMessage:
+          'Local asset storage must load successfully before images can be imported.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (state.assetLibraryBusy) {
+      return false
+    }
+
+    if (
+      creatorCategoryId !== null &&
+      !state.creatorAssetCategories.some(
+        ({ id }) => id === creatorCategoryId,
+      )
+    ) {
+      set({
+        assetLibraryMessage:
+          'Choose an existing My Library category before uploading.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: 'Checking image…',
+      assetLibraryMessageKind: 'info',
+    })
+
+    let imported: Awaited<ReturnType<typeof importBrowserImage>>
+
+    try {
+      imported = await importBrowserImage(file, { creatorCategoryId })
+    } catch {
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage: 'The selected image could not be imported.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (!imported.ok) {
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage: imported.message,
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (
+      state.importedImageAssets.some(({ id }) => id === imported.image.id)
+    ) {
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage: 'That imported image ID is already in use.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    let runtimeImage: RuntimeImportedImage
+
+    try {
+      runtimeImage = createRuntimeImportedImage(imported.image)
+    } catch {
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage:
+          'The image is valid, but this browser could not create its preview.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    let importedIdConflict = false
+    let saveResult: PersistAssetLibraryResult
+
+    try {
+      saveResult = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latestImportedImages =
+            currentSnapshot?.importedImages ??
+            state.importedImageAssets.map(createImportedImageSnapshot)
+
+          if (
+            latestImportedImages.some(({ id }) => id === imported.image.id)
+          ) {
+            importedIdConflict = true
+            return (
+              currentSnapshot ??
+              createAssetLibrarySnapshot(
+                state,
+                new Date().toISOString(),
+                state.creatorAssetCategories,
+                latestImportedImages,
+              )
+            )
+          }
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            currentSnapshot?.creatorCategories ??
+              state.creatorAssetCategories,
+            [...latestImportedImages, imported.image],
+          )
+        },
+      )
+    } catch {
+      revokeRuntimeImportedImages([runtimeImage])
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage: 'The image could not be saved locally.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (!saveResult.ok) {
+      revokeRuntimeImportedImages([runtimeImage])
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage: saveResult.message,
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (importedIdConflict) {
+      revokeRuntimeImportedImages([runtimeImage])
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage: 'That imported image ID is already in use.',
+        assetLibraryMessageKind: 'error',
+        creatorAssetCategories: saveResult.snapshot.creatorCategories,
+      })
+      return false
+    }
+
+    let synchronizedImages: readonly RuntimeImportedImage[]
+
+    try {
+      synchronizedImages = synchronizeRuntimeImportedImages(
+        [...state.importedImageAssets, runtimeImage],
+        saveResult.snapshot.importedImages,
+      )
+    } catch {
+      set({
+        assetLibraryStatus: 'ready',
+        assetLibraryBusy: false,
+        assetLibraryMessage:
+          'The image was saved, but assets added in another tab need a reload.',
+        assetLibraryMessageKind: 'error',
+        creatorAssetCategories: saveResult.snapshot.creatorCategories,
+        importedImageAssets: [...state.importedImageAssets, runtimeImage],
+      })
+      return true
+    }
+
+    set({
+      assetLibraryStatus: 'ready',
+      assetLibraryBusy: false,
+      assetLibraryMessage: `Imported “${runtimeImage.displayName}”.`,
+      assetLibraryMessageKind: 'success',
+      creatorAssetCategories: saveResult.snapshot.creatorCategories,
+      importedImageAssets: synchronizedImages,
+    })
+    return true
+  },
+
+  placeBuiltInAsset: (assetId) => {
+    const state = get()
+    const activeLayerPlane = getLayerPlaneById(
+      state.episode,
+      state.activeLayerPlaneId,
+    )
+    const builtIn = BUILT_IN_ASSETS.find((asset) => asset.id === assetId)
+
+    if (!builtIn) {
+      set({
+        assetLibraryMessage: 'That built-in asset is unavailable.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (activeLayerPlane?.kind !== 'ordinary') {
+      set({
+        assetLibraryMessage:
+          'Select a numbered layer plane before placing an asset.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    const asset: ResolvedImageAsset = {
+      id: builtIn.id,
+      displayName: builtIn.displayName,
+      intrinsicWidth: builtIn.intrinsicWidth,
+      intrinsicHeight: builtIn.intrinsicHeight,
+      sourceUrl: builtIn.source,
+    }
+    const episode = placeImageAssetInEpisode(state, asset, {
+      kind: 'built-in',
+      assetId: builtIn.id,
+    })
+
+    if (!episode) {
+      set({
+        assetLibraryMessage:
+          'This asset cannot fit inside the episode at a usable size.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (episode === state.episode) {
+      return false
+    }
+
+    const createdElement = episode.elements.at(-1)
+    set(
+      commitEpisodeChange(state, episode, {
+        selectedElementId: createdElement?.id ?? state.selectedElementId,
+        liveElementBounds: null,
+        assetLibraryMessage: `Placed “${builtIn.displayName}”.`,
+        assetLibraryMessageKind: 'success',
+      }),
+    )
+    return true
+  },
+
+  placeImportedAsset: (assetId) => {
+    const state = get()
+    const activeLayerPlane = getLayerPlaneById(
+      state.episode,
+      state.activeLayerPlaneId,
+    )
+    const imported = state.importedImageAssets.find(
+      (asset) => asset.id === assetId,
+    )
+
+    if (!imported) {
+      set({
+        assetLibraryMessage: 'That imported asset source is unavailable.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (activeLayerPlane?.kind !== 'ordinary') {
+      set({
+        assetLibraryMessage:
+          'Select a numbered layer plane before placing an asset.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    const episode = placeImageAssetInEpisode(state, imported, {
+      kind: 'imported',
+      assetId: imported.id,
+    })
+
+    if (!episode) {
+      set({
+        assetLibraryMessage:
+          'This image cannot fit inside the episode at a usable size.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (episode === state.episode) {
+      return false
+    }
+
+    const createdElement = episode.elements.at(-1)
+    set(
+      commitEpisodeChange(state, episode, {
+        selectedElementId: createdElement?.id ?? state.selectedElementId,
+        liveElementBounds: null,
+        assetLibraryMessage: `Placed “${imported.displayName}”.`,
+        assetLibraryMessageKind: 'success',
+      }),
+    )
+    return true
   },
 
   undo: () => {

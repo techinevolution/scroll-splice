@@ -100,4 +100,17 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured in bundled Chromium at a 1440 × 900 viewport after visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768.
 - File: 1440 × 900 PNG, 126,756 bytes.
 - SHA-256: `53a443469634c0b24c510bfc35cb7a2b14809d444fa678bb5a8ff16f69e49125`.
-- This slice remains local and awaits Katherine's hands-on review. The screenshot does not imply a push, deployment, submission, portable project file, or crash-recovery guarantee.
+- Katherine completed the hands-on review July 15 and reported that the tested history/save/menu workflow works well. The screenshot itself does not imply deployment, submission, portable project files, or crash recovery.
+
+## July 15 — Persistent Asset Library and image elements
+
+![ScrollSplice persistent Asset Library checkpoint](2026-07-15-persistent-asset-library.png)
+
+- Captured by Codex from the running local build during final persistent Asset Library validation.
+- Shows the fixed five-destination Add rail, overlay **Speech Balloons** library, three original transparent starter balloons, an **Oval balloon** placed on Foreground plane 1, its four proportional corner handles, matching Layers row, and synchronized minimap representation.
+- The same build provides original Decorations and Splatters, creator-named categories inside **My Library**, validated PNG/JPEG/WebP import with alpha preserved, atomic concurrent-tab IndexedDB source updates, current-tab refresh from the returned saved snapshot, clear refusal for unplaceable extreme source ratios, format-v4 image references, and v3-to-v4 episode opening. The focused Chromium story proves alpha against sampled underlying canvas pixels and verifies uploaded-image resize through undo/redo, Save, reload, and Reopen; those state transitions are automated evidence rather than claims derived from this still image.
+- The balloon is intentionally a simple visual asset. Text-in-balloon, tail editing, recoloring, crop, rotation, flip, and opacity controls are not part of this slice.
+- Contains only the original public-safe code-rendered **Signal in the Fog** fixture and ScrollSplice's original built-in balloon; no Root & Table production artwork, private creative material, or third-party comic reference appears.
+- Captured in bundled Chromium at a 1440 × 900 viewport.
+- File: 1440 × 900 PNG, 174,153 bytes.
+- SHA-256: `c350fbc0bfb0d9a14507dc5fe5940584aaa38d3210dcf5bd0efc594647b46fbc`.

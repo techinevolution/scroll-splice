@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 
 import { useEditorStore } from '../app/store'
+import { resolveImageAsset } from '../assets/runtime'
 import { VisibilityIcon } from '../components/VisibilityIcon'
 import {
   COMPOSITION_GROUP_LABELS,
@@ -55,6 +56,9 @@ function PaperclipIcon() {
 export function LayersPanel() {
   const elements = useEditorStore((state) => state.episode.elements)
   const episode = useEditorStore((state) => state.episode)
+  const importedImageAssets = useEditorStore(
+    (state) => state.importedImageAssets,
+  )
   const activeCompositionGroup = useEditorStore(
     (state) => state.activeCompositionGroup,
   )
@@ -283,7 +287,7 @@ export function LayersPanel() {
               }
               title={
                 canHoldElements
-                  ? 'Open the synthetic Asset Library'
+                  ? 'Open the Asset Library'
                   : 'Select an ordinary numbered plane to add an element'
               }
               onClick={openAssetPanel}
@@ -307,11 +311,34 @@ export function LayersPanel() {
             episode,
             element,
           )
+          const resolvedImageAsset =
+            element.type === 'image'
+              ? resolveImageAsset(
+                  element.assetReference,
+                  importedImageAssets,
+                )
+              : undefined
+          const isImageSourceMissing =
+            element.type === 'image' && !resolvedImageAsset
+          const typeIcon =
+            element.type === 'text'
+              ? 'T'
+              : element.type === 'image'
+                ? '▧'
+                : '◆'
 
           return (
             <li
               className={`layer-list-item${isEffectivelyVisible ? '' : ' is-hidden'}`}
               key={element.id}
+              data-element-type={element.type}
+              data-image-source-status={
+                element.type === 'image'
+                  ? isImageSourceMissing
+                    ? 'missing'
+                    : 'resolved'
+                  : undefined
+              }
             >
               <button
                 ref={isSelected ? selectedLayerRef : undefined}
@@ -319,12 +346,25 @@ export function LayersPanel() {
                 type="button"
                 aria-pressed={isSelected}
                 data-layer-id={element.id}
+                title={
+                  isImageSourceMissing
+                    ? `${element.name}: image source is missing`
+                    : undefined
+                }
                 onClick={() => selectElement(element.id, true)}
               >
-                <span className={`layer-type layer-type-${element.type}`}>
-                  {element.type === 'text' ? 'T' : '◆'}
+                <span
+                  className={`layer-type layer-type-${element.type}`}
+                  aria-hidden="true"
+                >
+                  {typeIcon}
                 </span>
-                <span className="layer-name">{element.name}</span>
+                <span className="layer-name">
+                  {element.name}
+                  {isImageSourceMissing ? (
+                    <span className="sr-only">, image source missing</span>
+                  ) : null}
+                </span>
               </button>
               <button
                 className="layer-eye"
@@ -360,7 +400,7 @@ export function LayersPanel() {
           <button
             type="button"
             onClick={openAssetPanel}
-            title="Open the synthetic Asset Library"
+            title="Open the Asset Library"
           >
             <PaperclipIcon />
             <span>Add asset</span>

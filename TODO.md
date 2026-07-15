@@ -23,7 +23,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Authorize publishing the already passing A/B/C implementation and matching documentation to `main` on July 14.
 - [x] Re-test corrective checkpoint D and mark it **PASS WITH NOTES**: live coordinates, minimap sync, eight Background-region handles, snap override, and Option-drag pass; minimap aspect distortion remains polish.
 - [x] Approve the optional local history/save/menu slice: bounded undo/redo, one explicit local save, reload/reopen, blank New Episode, and only the requested File/Edit commands.
-- [ ] Test the completed local history/save/menu slice: undo/redo representative edits, Save, page reload, later unsaved edit, confirmed Reopen, New Episode, and recovery of the retained save. No push is implied by implementation completion.
+- [x] Test the completed local history/save/menu slice: undo/redo representative edits, Save, page reload, later unsaved edit, confirmed Reopen, New Episode, and recovery of the retained save. Katherine reported July 15 that the tests completed and everything works well.
 
 ## Katherine — before submission
 
@@ -51,7 +51,8 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Complete the corrective checkpoint's 123-test regression suite, static/build checks, expanded Chromium walkthrough, and supported-size visual inspection, then hand it to Katherine for the human test above. No push has occurred; remote `main` remains at `6d6437e` until a later push is explicitly authorized.
 - [x] Implement and validate the optional local history/save/menu slice: 100-checkpoint document history, one-step height drag, one explicit versioned browser save, reload/Reopen/New Episode, minimal File/Edit menus, shortcuts, validation/error handling, and visible document status.
 - [x] Record the slice's 154 unit tests, strict typecheck, ESLint, production build, two isolated Chromium tests, supported-size visual inspection, and public-safe screenshot. Keep it local until Katherine reviews it and separately authorizes any push.
-- [ ] After Katherine tests the current slice, decide whether proposed checkpoint E or another bounded slice should proceed. Opacity and a basic vertical Background fade remain unstarted; local persistence means any format change now needs an explicit compatibility decision.
+- [x] After Katherine tests the local history/save/menu slice, choose the simple persistent Asset Library as the next bounded slice and record the explicit v3-to-v4 compatibility decision.
+- [ ] Publish the already implemented, validated, and screenshot-documented Asset Library stack—Uploads, original Speech Balloons, Decorations, Splatters, creator categories, image placement, proportional resize, atomic local source persistence, and v3-to-v4 opening—to `main` under Katherine's July 15 authorization after the final repository/private-file check.
 - [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 
@@ -63,7 +64,7 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Joint — later, not Build Week scope
 
-- [ ] Before the speech-balloon asset slice: research common comic balloon forms, meanings, accessibility concerns, and safe original starter designs.
+- [x] Before the speech-balloon asset slice: review current Clip Studio official balloon guidance and professional lettering conventions; use only a small neutral original set, treat meanings as conventions rather than rules, and keep readable names/controls while text editing remains deferred.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
 - [ ] After that upload verification and a separate export-slice approval: implement creator-reviewed deterministic slicing and preflight against a verified `ExportProfile`; do not promise that WEBTOON will preserve accepted files without optimization.
 - [ ] Before full autonomous creation: define approved project context, reference-image consent, generation budget, cancellation/recovery behavior, provenance fields, and which editor commands may run without per-action approval.

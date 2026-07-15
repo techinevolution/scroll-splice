@@ -3,6 +3,7 @@ import {
   COMPOSITION_GROUPS,
   EPISODE_FORMAT_VERSION,
   EPISODE_LOGICAL_WIDTH,
+  LEGACY_EPISODE_FORMAT_VERSION,
   type AssetReference,
   type CompositionGroup,
   type CompositionGroupVisibility,
@@ -74,6 +75,9 @@ interface StoredProjectEnvelopeV1 {
 }
 
 type RecordValue = Readonly<Record<string, unknown>>
+type SupportedEpisodeFormatVersion =
+  | typeof LEGACY_EPISODE_FORMAT_VERSION
+  | typeof EPISODE_FORMAT_VERSION
 
 /**
  * Reads browser storage only when called, so importing this module is safe in
@@ -187,7 +191,10 @@ export function parseEpisodeDocument(
     return corruptEpisode('The saved episode is not an object.')
   }
 
-  if (value.formatVersion !== EPISODE_FORMAT_VERSION) {
+  if (
+    value.formatVersion !== LEGACY_EPISODE_FORMAT_VERSION &&
+    value.formatVersion !== EPISODE_FORMAT_VERSION
+  ) {
     return typeof value.formatVersion === 'number'
       ? {
           ok: false,
@@ -196,6 +203,8 @@ export function parseEpisodeDocument(
         }
       : corruptEpisode('The saved episode has no valid format version.')
   }
+
+  const sourceFormatVersion = value.formatVersion
 
   const id = readNonEmptyString(value.id)
   const name = readNonEmptyString(value.name)
@@ -238,7 +247,9 @@ export function parseEpisodeDocument(
     )
   }
 
-  const elements = value.elements.map(parseEpisodeElement)
+  const elements = value.elements.map((element) =>
+    parseEpisodeElement(element, sourceFormatVersion),
+  )
 
   if (elements.some((element) => element === undefined)) {
     return corruptEpisode('The saved episode contains an invalid element.')
@@ -414,7 +425,10 @@ function hasValidPlaneStructure(layerPlanes: readonly LayerPlane[]): boolean {
   })
 }
 
-function parseEpisodeElement(value: unknown): EpisodeElement | undefined {
+function parseEpisodeElement(
+  value: unknown,
+  sourceFormatVersion: SupportedEpisodeFormatVersion,
+): EpisodeElement | undefined {
   if (!isRecord(value)) {
     return undefined
   }
@@ -423,7 +437,10 @@ function parseEpisodeElement(value: unknown): EpisodeElement | undefined {
   const name = readNonEmptyString(value.name)
   const layerPlaneId = readNonEmptyString(value.layerPlaneId)
   const bounds = parseElementBounds(value.bounds)
-  const assetReference = parseAssetReference(value.assetReference)
+  const assetReference = parseAssetReference(
+    value.assetReference,
+    sourceFormatVersion,
+  )
   const zIndex = value.zIndex
 
   if (
@@ -455,7 +472,20 @@ function parseEpisodeElement(value: unknown): EpisodeElement | undefined {
     return parseShapeElement(value, common)
   }
 
-  return value.type === 'text' ? parseTextElement(value, common) : undefined
+  if (value.type === 'text') {
+    return parseTextElement(value, common)
+  }
+
+  if (
+    value.type !== 'image' ||
+    sourceFormatVersion === LEGACY_EPISODE_FORMAT_VERSION ||
+    (assetReference.kind !== 'built-in' &&
+      assetReference.kind !== 'imported')
+  ) {
+    return undefined
+  }
+
+  return { ...common, type: 'image', assetReference }
 }
 
 function parseShapeElement(
@@ -561,7 +591,10 @@ function parseElementBounds(value: unknown): ElementBounds | undefined {
     : undefined
 }
 
-function parseAssetReference(value: unknown): AssetReference | undefined {
+function parseAssetReference(
+  value: unknown,
+  sourceFormatVersion: SupportedEpisodeFormatVersion,
+): AssetReference | undefined {
   if (!isRecord(value)) {
     return undefined
   }
@@ -574,6 +607,14 @@ function parseAssetReference(value: unknown): AssetReference | undefined {
   if (value.kind === 'imported') {
     const assetId = readNonEmptyString(value.assetId)
     return assetId ? { kind: 'imported', assetId } : undefined
+  }
+
+  if (
+    value.kind === 'built-in' &&
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+  ) {
+    const assetId = readNonEmptyString(value.assetId)
+    return assetId ? { kind: 'built-in', assetId } : undefined
   }
 
   return undefined

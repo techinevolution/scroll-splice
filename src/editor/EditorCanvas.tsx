@@ -9,6 +9,7 @@ import type Konva from 'konva'
 import {
   Ellipse,
   Group,
+  Image as KonvaImage,
   Layer,
   Rect,
   Stage,
@@ -17,6 +18,7 @@ import {
 } from 'react-konva'
 
 import { useEditorStore } from '../app/store'
+import { resolveImageAsset } from '../assets/runtime'
 import {
   MIN_ELEMENT_SIZE,
   isBackgroundColorRegion,
@@ -42,6 +44,7 @@ import {
 import { useElementSize } from './useElementSize'
 import { CanvasBaseColorControl } from './CanvasBaseColorControl'
 import { EpisodeHeightControls } from './EpisodeHeightControls'
+import { useAssetImage, type AssetImageStatus } from './useAssetImage'
 
 const RENDER_BUFFER = 160
 const PROPORTIONAL_RESIZE_ANCHORS = [
@@ -63,6 +66,7 @@ const FREEFORM_RESIZE_ANCHORS = [
 
 interface ElementNodeProps {
   readonly element: EpisodeElement
+  readonly imageSourceUrl?: string
   readonly isSelected: boolean
   readonly episodeLogicalWidth: number
   readonly episodeLogicalHeight: number
@@ -82,8 +86,69 @@ interface ElementNodeProps {
   readonly onSnapChange: (snapped: boolean) => void
 }
 
+interface ImageElementVisualProps {
+  readonly sourceUrl?: string
+  readonly width: number
+  readonly height: number
+}
+
+const IMAGE_PLACEHOLDER_LABELS = {
+  missing: 'Missing image',
+  loading: 'Loading image',
+  error: 'Image unavailable',
+} as const satisfies Readonly<
+  Record<Exclude<AssetImageStatus, 'ready'>, string>
+>
+
+function ImageElementVisual({
+  sourceUrl,
+  width,
+  height,
+}: ImageElementVisualProps) {
+  const { image, status } = useAssetImage(sourceUrl)
+
+  if (status === 'ready' && image) {
+    return (
+      <KonvaImage
+        image={image}
+        width={width}
+        height={height}
+      />
+    )
+  }
+
+  const placeholderStatus = status === 'ready' ? 'error' : status
+
+  return (
+    <Group
+      name={`image-placeholder image-placeholder-${placeholderStatus}`}
+    >
+      <Rect
+        width={width}
+        height={height}
+        fill="#29233A"
+        stroke="#AFA6C8"
+        strokeWidth={2}
+        dash={[10, 7]}
+      />
+      <Text
+        width={width}
+        height={height}
+        padding={12}
+        text={IMAGE_PLACEHOLDER_LABELS[placeholderStatus]}
+        fill="#D8D2E8"
+        fontSize={Math.min(24, Math.max(12, height / 5))}
+        align="center"
+        verticalAlign="middle"
+        listening={false}
+      />
+    </Group>
+  )
+}
+
 function ElementNode({
   element,
+  imageSourceUrl,
   isSelected,
   episodeLogicalWidth,
   episodeLogicalHeight,
@@ -159,6 +224,8 @@ function ElementNode({
     <>
       <Group
         ref={nodeRef}
+        id={element.id}
+        name={`episode-element episode-element-${element.type}`}
         x={bounds.x}
         y={bounds.y}
         draggable={isSelected && !element.locked}
@@ -250,6 +317,14 @@ function ElementNode({
           />
         ) : null}
 
+        {element.type === 'image' ? (
+          <ImageElementVisual
+            sourceUrl={imageSourceUrl}
+            width={bounds.width}
+            height={bounds.height}
+          />
+        ) : null}
+
         {isSelected && !isResizable ? (
           <Rect
             x={-6}
@@ -301,6 +376,9 @@ function ElementNode({
 
 export function EditorCanvas() {
   const episode = useEditorStore((state) => state.episode)
+  const importedImageAssets = useEditorStore(
+    (state) => state.importedImageAssets,
+  )
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
   const viewportX = useEditorStore((state) => state.viewportX)
   const viewportY = useEditorStore((state) => state.viewportY)
@@ -409,6 +487,31 @@ export function EditorCanvas() {
       viewportY,
     ],
   )
+  const resolvedImageAssets = useMemo(
+    () =>
+      new Map(
+        episode.elements.flatMap((element) => {
+          if (element.type !== 'image') {
+            return []
+          }
+
+          return [
+            [
+              element.id,
+              resolveImageAsset(element.assetReference, importedImageAssets),
+            ] as const,
+          ]
+        }),
+      ),
+    [episode.elements, importedImageAssets],
+  )
+  const imageElementCount = resolvedImageAssets.size
+  const visibleImageElementCount = visibleElements.filter(
+    ({ type }) => type === 'image',
+  ).length
+  const missingImageElementCount = [...resolvedImageAssets.values()].filter(
+    (asset) => asset === undefined,
+  ).length
 
   const handleKeyboardNavigation = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
@@ -451,6 +554,9 @@ export function EditorCanvas() {
         data-selected-y={selectedElement?.bounds.y ?? ''}
         data-selected-width={selectedElement?.bounds.width ?? ''}
         data-selected-height={selectedElement?.bounds.height ?? ''}
+        data-image-element-count={imageElementCount}
+        data-visible-image-element-count={visibleImageElementCount}
+        data-missing-image-element-count={missingImageElementCount}
         data-resize-handle-count={
           selectedElement && !selectedElement.locked
             ? isBackgroundColorRegion(selectedElement)
@@ -505,6 +611,9 @@ export function EditorCanvas() {
                 <ElementNode
                   key={element.id}
                   element={element}
+                  imageSourceUrl={
+                    resolvedImageAssets.get(element.id)?.sourceUrl
+                  }
                   isSelected={element.id === selectedElementId}
                   episodeLogicalWidth={episode.logicalWidth}
                   episodeLogicalHeight={episode.logicalHeight}

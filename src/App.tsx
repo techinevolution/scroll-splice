@@ -62,6 +62,9 @@ export function App() {
     (state) => state.hasUnsavedChanges,
   )
   const documentStatus = useEditorStore((state) => state.documentStatus)
+  const initializeAssetLibrary = useEditorStore(
+    (state) => state.initializeAssetLibrary,
+  )
   const setEpisodeName = useEditorStore((state) => state.setEpisodeName)
   const undo = useEditorStore((state) => state.undo)
   const redo = useEditorStore((state) => state.redo)
@@ -71,6 +74,10 @@ export function App() {
   const [isEditingEpisodeName, setIsEditingEpisodeName] = useState(false)
   const [episodeNameDraft, setEpisodeNameDraft] = useState(episodeName)
   const episodeNameInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    void initializeAssetLibrary()
+  }, [initializeAssetLibrary])
 
   useEffect(() => {
     if (isEditingEpisodeName) {

@@ -1,6 +1,7 @@
 import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 
 import { useEditorStore } from '../app/store'
+import { resolveImageAsset } from '../assets/runtime'
 import {
   getMinimapViewportBox2D,
   minimapPointerToViewportPosition,
@@ -13,14 +14,79 @@ import {
   type ElementBounds,
   type EpisodeElement,
 } from '../core/episode'
+import { useAssetImage } from '../editor/useAssetImage'
 
 interface MinimapElementProps {
   readonly element: EpisodeElement
   readonly bounds: ElementBounds
   readonly isSelected: boolean
+  readonly imageSourceUrl?: string
 }
 
-function MinimapElement({ element, bounds, isSelected }: MinimapElementProps) {
+interface MinimapImageElementProps {
+  readonly elementId: string
+  readonly bounds: ElementBounds
+  readonly sourceUrl?: string
+  readonly isSelected: boolean
+}
+
+function MinimapImageElement({
+  elementId,
+  bounds,
+  sourceUrl,
+  isSelected,
+}: MinimapImageElementProps) {
+  const { image, status } = useAssetImage(sourceUrl)
+  const outline = isSelected ? '#65E4FF' : '#746A8D'
+  const outlineWidth = isSelected ? 12 : 2
+
+  return (
+    <g data-element-id={elementId} data-image-status={status}>
+      {status === 'ready' && image ? (
+        <image
+          href={image.src}
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          preserveAspectRatio="none"
+        />
+      ) : (
+        <>
+          <rect
+            x={bounds.x}
+            y={bounds.y}
+            width={bounds.width}
+            height={bounds.height}
+            fill="#29233A"
+          />
+          <path
+            d={`M ${bounds.x} ${bounds.y} L ${bounds.x + bounds.width} ${bounds.y + bounds.height} M ${bounds.x + bounds.width} ${bounds.y} L ${bounds.x} ${bounds.y + bounds.height}`}
+            fill="none"
+            stroke="#AFA6C8"
+            strokeWidth="6"
+          />
+        </>
+      )}
+      <rect
+        x={bounds.x}
+        y={bounds.y}
+        width={bounds.width}
+        height={bounds.height}
+        fill="none"
+        stroke={outline}
+        strokeWidth={outlineWidth}
+      />
+    </g>
+  )
+}
+
+function MinimapElement({
+  element,
+  bounds,
+  isSelected,
+  imageSourceUrl,
+}: MinimapElementProps) {
   const stroke = isSelected ? '#65E4FF' : undefined
   const strokeWidth = isSelected ? 12 : 0
 
@@ -37,6 +103,17 @@ function MinimapElement({ element, bounds, isSelected }: MinimapElementProps) {
         opacity="0.86"
         stroke={stroke}
         strokeWidth={strokeWidth}
+      />
+    )
+  }
+
+  if (element.type === 'image') {
+    return (
+      <MinimapImageElement
+        elementId={element.id}
+        bounds={bounds}
+        sourceUrl={imageSourceUrl}
+        isSelected={isSelected}
       />
     )
   }
@@ -75,6 +152,9 @@ function MinimapElement({ element, bounds, isSelected }: MinimapElementProps) {
 
 export function EpisodeMinimap() {
   const episode = useEditorStore((state) => state.episode)
+  const importedImageAssets = useEditorStore(
+    (state) => state.importedImageAssets,
+  )
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
   const liveElementBounds = useEditorStore((state) => state.liveElementBounds)
   const viewportX = useEditorStore((state) => state.viewportX)
@@ -100,6 +180,30 @@ export function EpisodeMinimap() {
         ),
     [episode],
   )
+  const resolvedImageAssets = useMemo(
+    () =>
+      new Map(
+        episode.elements.flatMap((element) => {
+          if (element.type !== 'image') {
+            return []
+          }
+
+          return [
+            [
+              element.id,
+              resolveImageAsset(element.assetReference, importedImageAssets),
+            ] as const,
+          ]
+        }),
+      ),
+    [episode.elements, importedImageAssets],
+  )
+  const visibleImageElementCount = orderedElements.filter(
+    ({ type }) => type === 'image',
+  ).length
+  const missingImageElementCount = [...resolvedImageAssets.values()].filter(
+    (asset) => asset === undefined,
+  ).length
 
   const navigateFromPointer = (
     event: PointerEvent<HTMLDivElement>,
@@ -211,6 +315,9 @@ export function EpisodeMinimap() {
         aria-describedby="minimap-navigation-help minimap-position-status"
         data-viewport-x={viewportX}
         data-viewport-y={viewportY}
+        data-image-element-count={resolvedImageAssets.size}
+        data-visible-image-element-count={visibleImageElementCount}
+        data-missing-image-element-count={missingImageElementCount}
         onKeyDown={handleKeyDown}
         onPointerDown={(event) => navigateFromPointer(event, true)}
         onPointerMove={(event) => {
@@ -245,6 +352,9 @@ export function EpisodeMinimap() {
             <MinimapElement
               key={element.id}
               element={element}
+              imageSourceUrl={
+                resolvedImageAssets.get(element.id)?.sourceUrl
+              }
               bounds={
                 liveElementBounds?.elementId === element.id &&
                 selectedElementId === element.id
