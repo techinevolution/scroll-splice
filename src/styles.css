@@ -63,7 +63,7 @@ p {
 }
 
 .app-header {
-  z-index: 2;
+  z-index: 20;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   grid-template-rows: 22px 45px;

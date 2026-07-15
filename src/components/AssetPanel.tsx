@@ -14,14 +14,35 @@ type AssetLibraryCategoryId =
   | 'my-library'
 
 const ASSET_LIBRARY_CATEGORIES = [
-  { id: 'uploads', label: 'Uploads', icon: '⇧' },
-  { id: 'speech-balloons', label: 'Speech Balloons', icon: '◯' },
-  { id: 'decorations', label: 'Decorations', icon: '✦' },
-  { id: 'splatters', label: 'Splatters', icon: '✺' },
-  { id: 'my-library', label: 'My Library', icon: '▦' },
+  { id: 'uploads', label: 'Uploads', accessibleLabel: 'Uploads', icon: '⇧' },
+  {
+    id: 'speech-balloons',
+    label: 'Speech Balloons',
+    accessibleLabel: 'Speech Balloons',
+    icon: '◯',
+  },
+  {
+    id: 'decorations',
+    label: 'Decor',
+    accessibleLabel: 'Decorations',
+    icon: '✦',
+  },
+  {
+    id: 'splatters',
+    label: 'Splatters',
+    accessibleLabel: 'Splatters',
+    icon: '✺',
+  },
+  {
+    id: 'my-library',
+    label: 'My Library',
+    accessibleLabel: 'My Library',
+    icon: '▦',
+  },
 ] as const satisfies readonly {
   readonly id: AssetLibraryCategoryId
   readonly label: string
+  readonly accessibleLabel: string
   readonly icon: string
 }[]
 
@@ -129,6 +150,11 @@ export function AssetPanel() {
   }, [assetPanelOpen, closeAssetPanel])
 
   const selectLibraryCategory = (categoryId: AssetLibraryCategoryId) => {
+    if (assetPanelOpen && activeCategoryId === categoryId) {
+      closeAssetPanel()
+      return
+    }
+
     setActiveCategoryId(categoryId)
     openAssetPanel()
   }
@@ -159,23 +185,26 @@ export function AssetPanel() {
   return (
     <aside className={`asset-panel${assetPanelOpen ? ' is-open' : ''}`}>
       <nav className="asset-rail" aria-label="Asset Library categories">
-        {ASSET_LIBRARY_CATEGORIES.map(({ id, label, icon }) => (
-          <button
-            className="asset-category-button"
-            type="button"
-            key={id}
-            aria-controls="asset-panel-content"
-            aria-expanded={assetPanelOpen && activeCategoryId === id}
-            aria-pressed={assetPanelOpen && activeCategoryId === id}
-            title={label}
-            onClick={() => selectLibraryCategory(id)}
-          >
-            <span className="asset-category-icon" aria-hidden="true">
-              {icon}
-            </span>
-            <span>{label}</span>
-          </button>
-        ))}
+        {ASSET_LIBRARY_CATEGORIES.map(
+          ({ id, label, accessibleLabel, icon }) => (
+            <button
+              className="asset-category-button"
+              type="button"
+              key={id}
+              aria-label={accessibleLabel}
+              aria-controls="asset-panel-content"
+              aria-expanded={assetPanelOpen && activeCategoryId === id}
+              aria-pressed={assetPanelOpen && activeCategoryId === id}
+              title={accessibleLabel}
+              onClick={() => selectLibraryCategory(id)}
+            >
+              <span className="asset-category-icon" aria-hidden="true">
+                {icon}
+              </span>
+              <span>{label}</span>
+            </button>
+          ),
+        )}
       </nav>
 
       {assetPanelOpen ? (

@@ -1015,11 +1015,49 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
 
   await decorationsCategory.click()
   await expect(decorationsCategory).toHaveAttribute('aria-expanded', 'true')
+  const decorRailLabel = decorationsCategory.getByText('Decor', {
+    exact: true,
+  })
+  await expect(decorRailLabel).toBeVisible()
+  const [decorButtonBounds, decorLabelBounds] = await Promise.all([
+    decorationsCategory.boundingBox(),
+    decorRailLabel.boundingBox(),
+  ])
+  if (!decorButtonBounds || !decorLabelBounds) {
+    throw new Error('The Decor rail label did not produce visible bounds.')
+  }
+  expect(decorLabelBounds.x).toBeGreaterThanOrEqual(decorButtonBounds.x - 0.5)
+  expect(
+    decorLabelBounds.x + decorLabelBounds.width,
+  ).toBeLessThanOrEqual(
+    decorButtonBounds.x + decorButtonBounds.width + 0.5,
+  )
   await expect(
     page.getByRole('heading', { level: 2, name: 'Decorations' }),
   ).toBeVisible()
-  await page.getByRole('button', { name: 'Close Asset Library' }).click()
+
+  await page.getByRole('button', { name: 'File', exact: true }).click()
+  const saveMenuItem = page.getByRole('menuitem', {
+    name: 'Save',
+    exact: true,
+  })
+  await expect(saveMenuItem).toBeVisible()
+  expect(
+    await saveMenuItem.evaluate((item) => {
+      const bounds = item.getBoundingClientRect()
+      const topmost = document.elementFromPoint(
+        bounds.left + bounds.width / 2,
+        bounds.top + bounds.height / 2,
+      )
+
+      return topmost === item || item.contains(topmost)
+    }),
+  ).toBe(true)
+  await saveMenuItem.click()
+
+  await decorationsCategory.click()
   await expect(decorationsCategory).toHaveAttribute('aria-expanded', 'false')
+  await expect(page.locator('#asset-panel-content')).toHaveCount(0)
 
   const zoomSlider = page.getByRole('slider', { name: 'Canvas zoom' })
   const minimapViewport = page.getByTestId('minimap-viewport')

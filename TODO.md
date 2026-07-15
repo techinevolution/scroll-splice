@@ -53,6 +53,9 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Record the slice's 154 unit tests, strict typecheck, ESLint, production build, two isolated Chromium tests, supported-size visual inspection, and public-safe screenshot. Katherine reviewed it and it was later published with the Asset Library stack in `fdd4ead`.
 - [x] After Katherine tests the local history/save/menu slice, choose the simple persistent Asset Library as the next bounded slice and record the explicit v3-to-v4 compatibility decision.
 - [x] Publish the implemented, validated, and screenshot-documented Asset Library stack—Uploads, original Speech Balloons, Decorations, Splatters, creator categories, image placement, proportional resize, atomic local source persistence, and v3-to-v4 opening—to `main` in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; local and remote heads matched after the July 15 push.
+- [x] Implement and browser-test the July 15 review corrections: top-level menus above the Asset Library, compact visible **Decor** rail text, and active-category toggle-close.
+- [ ] Publish the validated review corrections and public-safe `2026-07-15-menu-and-asset-rail-polish.png` evidence to `main` under Katherine's explicit authorization.
+- [ ] Later built-in artwork polish: replace or repair the visible white seam in the original Oval and Rounded balloon outlines; do not block current creator work on it.
 - [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 

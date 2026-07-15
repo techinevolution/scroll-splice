@@ -324,6 +324,18 @@ Explicitly excluded: autosave, crash recovery, file picker or downloadable proje
 
 Explicitly excluded: text inside balloons, balloon-tail editing, recoloring, opacity, crop, rotation, flip, asset-source deletion, category rename/delete/reorder, drag-to-canvas or Layers drop, Shapes & Frames, imported SVG/GIF/HEIC, autosave, portable project files, production export, cloud/account sync, OAuth, OpenAI runtime work, and AI-generated assets.
 
+### July 15 post-review UI polish
+
+**Status:** implemented and browser-validated locally; publication is pending the final documentation and repository check.
+
+- Keep File, Edit, and future application menus above the Asset Library and all other workspace overlays.
+- Render **Decor** in the narrow rail while preserving **Decorations** as the accessible name, drawer heading, and category identity.
+- Clicking the currently open category again closes the drawer; clicking another category still switches it.
+- Preserve Katherine's pass on real upload, placement, alpha, and proportional resize.
+- Record the visible white seam in the original Oval and Rounded balloon outline artwork as later built-in replacement/polish; do not expand this correction into asset generation.
+
+Acceptance: a Chromium story hit-tests and clicks **File > Save** over the open drawer, proves the **Decor** label remains within its 58-pixel button, and proves the active category toggles closed. A fresh public-safe 1440 × 900 screenshot shows the corrected layering and compact label without Katherine's uploaded art.
+
 ### E. Proposed after review: Asset Properties and Opacity plus basic Background fades
 
 **Status:** not started. Katherine's earlier approval keeps this as an available proposal, but it was not chosen after checkpoint D. Reconsider it only after the current history/save/menu slice passes and Katherine explicitly selects another slice.

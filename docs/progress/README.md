@@ -114,3 +114,14 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured in bundled Chromium at a 1440 × 900 viewport.
 - File: 1440 × 900 PNG, 174,153 bytes.
 - SHA-256: `c350fbc0bfb0d9a14507dc5fe5940584aaa38d3210dcf5bd0efc594647b46fbc`.
+
+## July 15 — Menu and Asset Library review polish
+
+![ScrollSplice menu and Asset Library review polish](2026-07-15-menu-and-asset-rail-polish.png)
+
+- Captured from a fresh bundled-Chromium context after Katherine's first Asset Library review; it does not contain her uploaded image or browser-profile data.
+- Shows the **File** menu visibly above the open Asset Library, the compact visible **Decor** rail label, the public-safe synthetic **Signal in the Fog** fixture, and ScrollSplice's original Radiance accent with proportional resize handles.
+- The Chromium regression also hit-tests and clicks **Save** where the menu overlaps the open drawer, then clicks the active Decorations category a second time and confirms the drawer closes. Those interactions are automated evidence, not claims inferred from the still image.
+- Katherine's upload, placement, alpha, and resize checks passed. The visible white seam in the original Oval and Rounded balloon outline artwork is separately recorded as later polish.
+- File: 1440 × 900 PNG, 153,678 bytes.
+- SHA-256: `aa160a27ef595f06b8f93261c595851b7f8fca0a70a3224b114d478ba7e1d3d7`.
