@@ -142,6 +142,12 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   )
   await expect(canvas).toHaveAttribute('data-base-color', '#F3F0EA')
   await expect(canvas).toHaveCSS('border-radius', '0px')
+  await expect(canvas).toHaveCSS('border-width', '0px')
+  const [flushCanvasBounds, flushSceneBounds] = await Promise.all([
+    canvas.boundingBox(),
+    sceneCanvas.boundingBox(),
+  ])
+  expect(flushSceneBounds).toEqual(flushCanvasBounds)
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
   await expect(
