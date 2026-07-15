@@ -21,7 +21,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Run the next **HUMAN TEST and direction checkpoint** on the completed A/B/C build; confirm placed-element deletion, the bottom **Add asset** action, minimap behavior, and ordinary movement; record the title-anchor and Background-region drag findings.
 - [x] Approve **Export-aware polish and alpha controls** as the next implementation goal after the documentation/publication checkpoint.
 - [x] Authorize publishing the already passing A/B/C implementation and matching documentation to `main` on July 14.
-- [ ] Re-test the local corrective checkpoint: title anchors, visible 1,280-unit candidate guides, live full-width Background-region constraint, magnet center snap and bypass, and four-corner proportional resize. Do not select another slice until this review passes.
+- [ ] Re-test the local corrective checkpoint: centered title with stable anchors; the square canvas and upper-left Canvas base control; visible unlabeled 1,280-unit dotted guides; live full-width Background-region constraint; magnet center snap and bypass; four-corner proportional asset resize; and safe episode resizing from the bottom canvas edge. Do not select another slice until this review passes.
 
 ## Katherine — before submission
 

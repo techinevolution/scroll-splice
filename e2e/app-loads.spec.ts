@@ -37,6 +37,28 @@ async function readLocatorX(locator: Locator) {
   return bounds.x
 }
 
+async function expectHorizontalCentersToMatch(
+  subject: Locator,
+  container: Locator,
+) {
+  const [subjectBounds, containerBounds] = await Promise.all([
+    subject.boundingBox(),
+    container.boundingBox(),
+  ])
+
+  if (!subjectBounds || !containerBounds) {
+    throw new Error('The centered header controls need visible bounds.')
+  }
+
+  expect(
+    Math.abs(
+      subjectBounds.x +
+        subjectBounds.width / 2 -
+        (containerBounds.x + containerBounds.width / 2),
+    ),
+  ).toBeLessThan(1)
+}
+
 async function readNumericAttribute(locator: Locator, name: string) {
   const rawValue = await locator.getAttribute(name)
   const value = Number(rawValue)
@@ -95,6 +117,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   )
   const resetDemo = page.getByRole('button', { name: 'Reset demo' })
   const episodeLabel = page.getByTestId('episode-label')
+  const appHeader = page.locator('.app-header')
   const magnetToggle = page.getByTestId('alignment-magnet-toggle')
   const sliceGuidesToggle = page.getByTestId('slice-guides-toggle')
   const assetToggle = page.getByRole('button', { name: 'Assets' })
@@ -108,6 +131,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     'Viewport starts at x 0, y 0',
   )
   await expect(canvas).toHaveAttribute('data-base-color', '#F3F0EA')
+  await expect(canvas).toHaveCSS('border-radius', '0px')
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
   await expect(
@@ -124,8 +148,10 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
 
   const episodeLabelXBeforeEdit = await readLocatorX(episodeLabel)
   const resetXBeforeEdit = await readLocatorX(resetDemo)
+  await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
   await editEpisodeTitle.click()
   await expect(episodeTitleInput).toBeFocused()
+  await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
   expect(
     Math.abs((await readLocatorX(episodeLabel)) - episodeLabelXBeforeEdit),
   ).toBeLessThan(1)
@@ -172,10 +198,12 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await episodeTitleInput.fill('')
   await episodeTitleInput.pressSequentially('x'.repeat(61))
   await expect(episodeTitleInput).toHaveValue('x'.repeat(60))
+  await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
   await episodeTitleInput.fill(`  ${'x'.repeat(60)}  `)
   await expect(episodeTitleInput).toHaveValue(`  ${'x'.repeat(60)}  `)
   await episodeTitleInput.press('Enter')
   await expect(page.getByText('x'.repeat(60), { exact: true })).toBeVisible()
+  await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
 
   await expect(sliceGuidesToggle).toHaveAttribute('aria-pressed', 'true')
   await expect(canvas).toHaveAttribute('data-slice-guide-count', '3')
@@ -184,6 +212,8 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await page.mouse.wheel(0, 700)
   const firstSliceGuide = page.locator('[data-slice-guide-y="1280"]')
   await expect(firstSliceGuide).toBeVisible()
+  await expect(firstSliceGuide).toHaveText('')
+  await expect(firstSliceGuide).toHaveCSS('border-top-style', 'dotted')
   const firstSliceGuideBounds = await firstSliceGuide.boundingBox()
   const guideSceneBounds = await sceneCanvas.boundingBox()
   if (!firstSliceGuideBounds || !guideSceneBounds) {
@@ -467,8 +497,28 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   ).toBeDisabled()
   const baseColor = page.getByLabel('Base color', { exact: true })
   const canvasBaseColor = page.getByLabel('Canvas base color', { exact: true })
+  const canvasBaseColorControl = page.locator('.canvas-base-color-control')
   await expect(baseColor).toHaveValue('#f3f0ea')
   await expect(canvasBaseColor).toHaveValue('#f3f0ea')
+  const [baseCanvasBounds, baseControlBounds] = await Promise.all([
+    canvas.boundingBox(),
+    canvasBaseColorControl.boundingBox(),
+  ])
+  if (!baseCanvasBounds || !baseControlBounds) {
+    throw new Error('The canvas base control needs visible canvas bounds.')
+  }
+  const baseControlInsetX = baseControlBounds.x - baseCanvasBounds.x
+  const baseControlInsetY = baseControlBounds.y - baseCanvasBounds.y
+  expect(baseControlInsetX).toBeGreaterThanOrEqual(8)
+  expect(baseControlInsetX).toBeLessThanOrEqual(20)
+  expect(baseControlInsetY).toBeGreaterThanOrEqual(8)
+  expect(baseControlInsetY).toBeLessThanOrEqual(20)
+  expect(baseControlBounds.x + baseControlBounds.width).toBeLessThan(
+    baseCanvasBounds.x + baseCanvasBounds.width,
+  )
+  expect(baseControlBounds.y + baseControlBounds.height).toBeLessThan(
+    baseCanvasBounds.y + baseCanvasBounds.height,
+  )
   await expect(minimapBase).toHaveAttribute('fill', '#F3F0EA')
   await expect
     .poll(() => readLogicalCanvasPixel(sceneCanvas, 10, 20))
@@ -703,22 +753,22 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   )
   expect(initialEpisodeHeight).toBeGreaterThan(0)
   await episodePosition.press('End')
-  const fineTuneHeight = page.getByRole('button', {
-    name: /Fine tune episode height/,
+  const episodeBottomEdge = page.getByRole('button', {
+    name: /Resize episode from bottom edge/,
   })
-  await expect(fineTuneHeight).toBeVisible()
-  const fineTuneBounds = await fineTuneHeight.boundingBox()
-  if (!fineTuneBounds) {
-    throw new Error('The fine height handle did not produce visible bounds.')
+  await expect(episodeBottomEdge).toBeVisible()
+  const episodeBottomEdgeBounds = await episodeBottomEdge.boundingBox()
+  if (!episodeBottomEdgeBounds) {
+    throw new Error('The episode bottom edge did not produce visible bounds.')
   }
   await page.mouse.move(
-    fineTuneBounds.x + fineTuneBounds.width / 2,
-    fineTuneBounds.y + fineTuneBounds.height / 2,
+    episodeBottomEdgeBounds.x + episodeBottomEdgeBounds.width / 2,
+    episodeBottomEdgeBounds.y + episodeBottomEdgeBounds.height / 2,
   )
   await page.mouse.down()
   await page.mouse.move(
-    fineTuneBounds.x + fineTuneBounds.width / 2,
-    fineTuneBounds.y + fineTuneBounds.height / 2 - 24,
+    episodeBottomEdgeBounds.x + episodeBottomEdgeBounds.width / 2,
+    episodeBottomEdgeBounds.y + episodeBottomEdgeBounds.height / 2 - 24,
     { steps: 4 },
   )
   await page.mouse.up()
@@ -734,7 +784,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     'data-viewport-y',
   )
   const addScrollSpace = page.getByRole('button', {
-    name: 'Add scroll space 1,280u',
+    name: /Add scroll space/,
   })
   await expect(addScrollSpace).toBeVisible()
   await addScrollSpace.click()
@@ -911,8 +961,10 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     await page.setViewportSize(viewport)
     const responsiveEpisodeLabelX = await readLocatorX(episodeLabel)
     const responsiveResetX = await readLocatorX(resetDemo)
+    await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
     await editEpisodeTitle.click()
     await expect(episodeTitleInput).toBeFocused()
+    await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
     expect(
       Math.abs(
         (await readLocatorX(episodeLabel)) - responsiveEpisodeLabelX,
@@ -922,7 +974,25 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
     ).toBeLessThan(1)
     await episodeTitleInput.fill('x'.repeat(60))
+    await expectHorizontalCentersToMatch(episodeTitleInput, appHeader)
+    expect(
+      Math.abs(
+        (await readLocatorX(episodeLabel)) - responsiveEpisodeLabelX,
+      ),
+    ).toBeLessThan(1)
+    expect(
+      Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
+    ).toBeLessThan(1)
     await episodeTitleInput.press('Enter')
+    await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
+    expect(
+      Math.abs(
+        (await readLocatorX(episodeLabel)) - responsiveEpisodeLabelX,
+      ),
+    ).toBeLessThan(1)
+    expect(
+      Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
+    ).toBeLessThan(1)
     await expect(canvas).toHaveAttribute('data-ready', 'true')
     await expect(inspector).toBeVisible()
     await expect(contentGroup).toBeVisible()

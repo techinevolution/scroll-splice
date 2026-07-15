@@ -487,11 +487,7 @@ export function EditorCanvas() {
                 top: (boundary - viewportY) * viewScale,
                 width: episode.logicalWidth * viewScale,
               }}
-            >
-              <span>
-                {WEBTOON_CANVAS_OBSERVED_PROFILE.maxSliceHeightPx}px candidate
-              </span>
-            </div>
+            />
           ))}
 
           {centerSnapGuideVisible ? (
@@ -505,11 +501,11 @@ export function EditorCanvas() {
             />
           ) : null}
         </div>
+
+        <CanvasBaseColorControl />
+
+        {isAtEpisodeEnd ? <EpisodeHeightControls viewScale={viewScale} /> : null}
       </div>
-
-      <CanvasBaseColorControl />
-
-      {isAtEpisodeEnd ? <EpisodeHeightControls viewScale={viewScale} /> : null}
 
       <div className="canvas-view-controls" aria-label="Canvas view controls">
         <button

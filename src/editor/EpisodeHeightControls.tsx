@@ -56,22 +56,12 @@ export function EpisodeHeightControls({
   }
 
   return (
-    <div className="episode-end-controls">
+    <>
       <button
-        className="extend-episode-button"
+        className="episode-height-edge"
         type="button"
-        onClick={extendEpisodeHeight}
-      >
-        <span aria-hidden="true">+</span>
-        <span>Add scroll space</span>
-        <small>{DEFAULT_EPISODE_HEIGHT_INCREMENT.toLocaleString()}u</small>
-      </button>
-
-      <button
-        className="episode-height-handle"
-        type="button"
-        aria-label={`Fine tune episode height, currently ${Math.round(episodeHeight).toLocaleString()} units`}
-        title="Drag to fine-tune height. Arrow keys adjust 10u; Shift adjusts 100u."
+        aria-label={`Resize episode from bottom edge, currently ${Math.round(episodeHeight).toLocaleString()} units`}
+        title="Drag the bottom edge to resize. Arrow keys adjust 10u; Shift adjusts 100u."
         onKeyDown={handleResizeKeyDown}
         onPointerDown={(event) => {
           event.preventDefault()
@@ -96,11 +86,19 @@ export function EpisodeHeightControls({
         onLostPointerCapture={() => {
           resizeSession.current = null
         }}
-      >
-        <span aria-hidden="true">↕</span>
-        <span>Drag to fine-tune</span>
-        <small>{Math.round(episodeHeight).toLocaleString()}u</small>
-      </button>
-    </div>
+      />
+
+      <div className="episode-end-controls">
+        <button
+          className="extend-episode-button"
+          type="button"
+          aria-label={`Add scroll space (${DEFAULT_EPISODE_HEIGHT_INCREMENT.toLocaleString()} units)`}
+          onClick={extendEpisodeHeight}
+        >
+          <span aria-hidden="true">+</span>
+          <span>Add scroll space</span>
+        </button>
+      </div>
+    </>
   )
 }
