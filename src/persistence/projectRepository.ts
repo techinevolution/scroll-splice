@@ -1,17 +1,26 @@
-import { MAX_EPISODE_NAME_LENGTH, MIN_EPISODE_LOGICAL_HEIGHT } from '../core/commands'
+import {
+  BACKGROUND_COLOR_REGION_GENERATOR_ID,
+  MAX_EPISODE_NAME_LENGTH,
+  MIN_EPISODE_LOGICAL_HEIGHT,
+} from '../core/commands'
 import {
   COMPOSITION_GROUPS,
+  ELEMENT_BLEND_MODES,
   EPISODE_FORMAT_VERSION,
   EPISODE_LOGICAL_WIDTH,
+  IMAGE_EPISODE_FORMAT_VERSION,
   LEGACY_EPISODE_FORMAT_VERSION,
   type AssetReference,
   type CompositionGroup,
   type CompositionGroupVisibility,
   type ElementBounds,
+  type ElementBlendMode,
   type EpisodeDocument,
   type EpisodeElement,
   type LayerPlane,
   type ShapeElement,
+  type ShapeFill,
+  type ShapeFillStop,
   type TextElement,
 } from '../core/episode'
 
@@ -77,6 +86,7 @@ interface StoredProjectEnvelopeV1 {
 type RecordValue = Readonly<Record<string, unknown>>
 type SupportedEpisodeFormatVersion =
   | typeof LEGACY_EPISODE_FORMAT_VERSION
+  | typeof IMAGE_EPISODE_FORMAT_VERSION
   | typeof EPISODE_FORMAT_VERSION
 
 /**
@@ -193,6 +203,7 @@ export function parseEpisodeDocument(
 
   if (
     value.formatVersion !== LEGACY_EPISODE_FORMAT_VERSION &&
+    value.formatVersion !== IMAGE_EPISODE_FORMAT_VERSION &&
     value.formatVersion !== EPISODE_FORMAT_VERSION
   ) {
     return typeof value.formatVersion === 'number'
@@ -442,6 +453,10 @@ function parseEpisodeElement(
     sourceFormatVersion,
   )
   const zIndex = value.zIndex
+  const appearance =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? parseElementAppearance(value)
+      : { opacity: 1, blendMode: 'normal' as const }
 
   if (
     !id ||
@@ -449,6 +464,7 @@ function parseEpisodeElement(
     !layerPlaneId ||
     !bounds ||
     !assetReference ||
+    !appearance ||
     typeof value.visible !== 'boolean' ||
     typeof value.locked !== 'boolean' ||
     !Number.isInteger(zIndex) ||
@@ -465,11 +481,12 @@ function parseEpisodeElement(
     visible: value.visible,
     locked: value.locked,
     zIndex: zIndex as number,
+    ...appearance,
     assetReference,
   }
 
   if (value.type === 'shape') {
-    return parseShapeElement(value, common)
+    return parseShapeElement(value, common, sourceFormatVersion)
   }
 
   if (value.type === 'text') {
@@ -485,27 +502,55 @@ function parseEpisodeElement(
     return undefined
   }
 
-  return { ...common, type: 'image', assetReference }
+  const presentation =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? value.presentation
+      : 'single'
+
+  return presentation === 'single' || presentation === 'tile'
+    ? { ...common, type: 'image', assetReference, presentation }
+    : undefined
 }
 
 function parseShapeElement(
   value: RecordValue,
-  common: Omit<ShapeElement, 'type' | 'shape' | 'fill'>,
+  common: Omit<
+    ShapeElement,
+    | 'type'
+    | 'shape'
+    | 'fill'
+    | 'stroke'
+    | 'strokeWidth'
+    | 'cornerRadius'
+  >,
+  sourceFormatVersion: SupportedEpisodeFormatVersion,
 ): ShapeElement | undefined {
-  const fill = readNonEmptyString(value.fill)
+  const fill =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? parseShapeFill(value.fill)
+      : parseLegacySolidShapeFill(value.fill)
   const stroke = value.stroke
   const strokeWidth = value.strokeWidth
   const cornerRadius = value.cornerRadius
-  const opacity = value.opacity
+  const legacyOpacity =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? undefined
+      : value.opacity
 
   if (
     (value.shape !== 'rectangle' && value.shape !== 'ellipse') ||
     !fill ||
+    (fill.kind === 'vertical-gradient' &&
+      (common.assetReference.kind !== 'synthetic' ||
+        common.assetReference.generatorId !==
+          BACKGROUND_COLOR_REGION_GENERATOR_ID)) ||
     (stroke !== undefined && typeof stroke !== 'string') ||
     (strokeWidth !== undefined && !isFiniteNonNegativeNumber(strokeWidth)) ||
     (cornerRadius !== undefined && !isFiniteNonNegativeNumber(cornerRadius)) ||
-    (opacity !== undefined &&
-      (!isFiniteNumber(opacity) || opacity < 0 || opacity > 1))
+    (legacyOpacity !== undefined &&
+      (!isFiniteNumber(legacyOpacity) ||
+        legacyOpacity < 0 ||
+        legacyOpacity > 1))
   ) {
     return undefined
   }
@@ -518,8 +563,65 @@ function parseShapeElement(
     ...(typeof stroke === 'string' ? { stroke } : {}),
     ...(typeof strokeWidth === 'number' ? { strokeWidth } : {}),
     ...(typeof cornerRadius === 'number' ? { cornerRadius } : {}),
-    ...(typeof opacity === 'number' ? { opacity } : {}),
+    ...(typeof legacyOpacity === 'number' ? { opacity: legacyOpacity } : {}),
   }
+}
+
+function parseElementAppearance(
+  value: RecordValue,
+): { readonly opacity: number; readonly blendMode: ElementBlendMode } | undefined {
+  const opacity = value.opacity
+  const blendMode = value.blendMode
+
+  return isFiniteNumber(opacity) &&
+    opacity >= 0 &&
+    opacity <= 1 &&
+    ELEMENT_BLEND_MODES.includes(blendMode as ElementBlendMode)
+    ? { opacity, blendMode: blendMode as ElementBlendMode }
+    : undefined
+}
+
+function parseLegacySolidShapeFill(value: unknown): ShapeFill | undefined {
+  const color = readNonEmptyString(value)
+  return color ? { kind: 'solid', color } : undefined
+}
+
+function parseShapeFill(value: unknown): ShapeFill | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  if (value.kind === 'solid') {
+    const color = readNonEmptyString(value.color)
+    return color ? { kind: 'solid', color } : undefined
+  }
+
+  if (value.kind !== 'vertical-gradient') {
+    return undefined
+  }
+
+  const top = parseShapeFillStop(value.top)
+  const bottom = parseShapeFillStop(value.bottom)
+
+  return top && bottom
+    ? { kind: 'vertical-gradient', top, bottom }
+    : undefined
+}
+
+function parseShapeFillStop(value: unknown): ShapeFillStop | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const color = readNonEmptyString(value.color)
+  const opacity = value.opacity
+
+  return color &&
+    isFiniteNumber(opacity) &&
+    opacity >= 0 &&
+    opacity <= 1
+    ? { color, opacity }
+    : undefined
 }
 
 function parseTextElement(
@@ -611,7 +713,7 @@ function parseAssetReference(
 
   if (
     value.kind === 'built-in' &&
-    sourceFormatVersion === EPISODE_FORMAT_VERSION
+    sourceFormatVersion !== LEGACY_EPISODE_FORMAT_VERSION
   ) {
     const assetId = readNonEmptyString(value.assetId)
     return assetId ? { kind: 'built-in', assetId } : undefined

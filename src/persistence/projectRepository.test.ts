@@ -1,9 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { buildWeekEpisode } from '../app/fixtures/buildWeekEpisode'
+import {
+  BUILD_WEEK_LAYER_PLANE_IDS,
+  buildWeekEpisode,
+} from '../app/fixtures/buildWeekEpisode'
+import { BACKGROUND_COLOR_REGION_GENERATOR_ID } from '../core/commands'
 import { createBlankEpisode } from '../core/createBlankEpisode'
 import {
   EPISODE_FORMAT_VERSION,
+  IMAGE_EPISODE_FORMAT_VERSION,
   LEGACY_EPISODE_FORMAT_VERSION,
   type EpisodeDocument,
 } from '../core/episode'
@@ -33,11 +38,37 @@ function cloneEpisode(): MutableRecord {
   return JSON.parse(JSON.stringify(buildWeekEpisode)) as MutableRecord
 }
 
-function cloneLegacyEpisode(): MutableRecord {
-  return {
-    ...cloneEpisode(),
-    formatVersion: LEGACY_EPISODE_FORMAT_VERSION,
+function cloneVersion4Episode(): MutableRecord {
+  const episode = cloneEpisode()
+  episode.formatVersion = IMAGE_EPISODE_FORMAT_VERSION
+
+  for (const element of readRecordArray(episode, 'elements')) {
+    delete element.blendMode
+
+    if (element.type === 'shape') {
+      const fill = readRecord(element.fill)
+
+      if (fill.kind !== 'solid' || typeof fill.color !== 'string') {
+        throw new Error('Expected a solid v5 shape fixture.')
+      }
+
+      element.fill = fill.color
+    } else {
+      delete element.opacity
+    }
+
+    if (element.type === 'image') {
+      delete element.presentation
+    }
   }
+
+  return episode
+}
+
+function cloneLegacyEpisode(): MutableRecord {
+  const episode = cloneVersion4Episode()
+  episode.formatVersion = LEGACY_EPISODE_FORMAT_VERSION
+  return episode
 }
 
 function readRecord(value: unknown): MutableRecord {
@@ -98,12 +129,19 @@ function appendImageElement(
       locked: false,
       zIndex: 100,
       assetReference,
+      ...(episode.formatVersion === EPISODE_FORMAT_VERSION
+        ? {
+            opacity: 1,
+            blendMode: 'normal',
+            presentation: 'single',
+          }
+        : {}),
     },
   ]
 }
 
 describe('local project repository', () => {
-  it('round-trips the current v4 episode through one versioned slot', () => {
+  it('round-trips the current v5 episode through one versioned slot', () => {
     const storage = new MemoryStorage()
     const repository = createLocalStorageProjectRepository(
       storage,
@@ -269,6 +307,35 @@ describe('local project repository', () => {
       episode: { formatVersion: EPISODE_FORMAT_VERSION },
     })
   })
+
+  it('upgrades a v4 image-capable episode before writing it to storage', () => {
+    const storage = new MemoryStorage()
+    const repository = createLocalStorageProjectRepository(storage)
+    const version4Episode = cloneVersion4Episode()
+
+    appendImageElement(version4Episode, {
+      kind: 'built-in',
+      assetId: 'speech-bubble-rounded',
+    })
+
+    expect(
+      repository.save(version4Episode as unknown as EpisodeDocument),
+    ).toMatchObject({ ok: true })
+    expect(repository.loadLast()).toMatchObject({
+      ok: true,
+      episode: {
+        formatVersion: EPISODE_FORMAT_VERSION,
+        elements: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'fixture-image-1',
+            opacity: 1,
+            blendMode: 'normal',
+            presentation: 'single',
+          }),
+        ]),
+      },
+    })
+  })
 })
 
 describe('parseEpisodeDocument', () => {
@@ -287,7 +354,7 @@ describe('parseEpisodeDocument', () => {
     })
   })
 
-  it('accepts a legacy v3 shape-and-text document and upgrades it to v4', () => {
+  it('accepts a legacy v3 shape-and-text document and upgrades it to v5', () => {
     const result = parseEpisodeDocument(cloneLegacyEpisode())
 
     expect(result).toMatchObject({
@@ -296,11 +363,130 @@ describe('parseEpisodeDocument', () => {
     })
   })
 
+  it('preserves legacy shape opacity while defaulting other v3 appearances', () => {
+    const episode = cloneLegacyEpisode()
+    const shape = readRecordArray(episode, 'elements').find(
+      (element) => element.type === 'shape',
+    )
+    const text = readRecordArray(episode, 'elements').find(
+      (element) => element.type === 'text',
+    )
+
+    if (!shape || !text) {
+      throw new Error('Missing legacy appearance fixtures.')
+    }
+
+    shape.opacity = 0.37
+    const result = parseEpisodeDocument(episode)
+
+    expect(result).toMatchObject({
+      ok: true,
+      episode: { formatVersion: EPISODE_FORMAT_VERSION },
+    })
+
+    if (!result.ok) {
+      throw new Error('The legacy appearance fixture did not migrate.')
+    }
+
+    expect(
+      result.episode.elements.find(({ id }) => id === shape.id),
+    ).toMatchObject({
+      fill: { kind: 'solid' },
+      opacity: 0.37,
+      blendMode: 'normal',
+    })
+    expect(
+      result.episode.elements.find(({ id }) => id === text.id),
+    ).toMatchObject({ opacity: 1, blendMode: 'normal' })
+  })
+
+  it('preserves v4 shape opacity while normalizing its appearance fields', () => {
+    const episode = cloneVersion4Episode()
+    const shape = readRecordArray(episode, 'elements').find(
+      (element) => element.type === 'shape',
+    )
+
+    if (!shape) {
+      throw new Error('Missing v4 shape fixture.')
+    }
+
+    shape.opacity = 0.42
+    const result = parseEpisodeDocument(episode)
+
+    if (!result.ok) {
+      throw new Error('The v4 shape fixture did not migrate.')
+    }
+
+    expect(
+      result.episode.elements.find(({ id }) => id === shape.id),
+    ).toMatchObject({
+      fill: { kind: 'solid' },
+      opacity: 0.42,
+      blendMode: 'normal',
+    })
+  })
+
+  it('accepts and preserves a strict v5 vertical two-stop gradient', () => {
+    const episode = cloneEpisode()
+    const shape = readRecordArray(episode, 'elements').find(
+      (element) => element.type === 'shape',
+    )
+
+    if (!shape) {
+      throw new Error('Missing v5 shape fixture.')
+    }
+
+    shape.fill = {
+      kind: 'vertical-gradient',
+      top: { color: '#102030', opacity: 0.2 },
+      bottom: { color: '#A0B0C0', opacity: 0.8 },
+    }
+    shape.layerPlaneId = BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree
+    shape.assetReference = {
+      kind: 'synthetic',
+      generatorId: BACKGROUND_COLOR_REGION_GENERATOR_ID,
+    }
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: true,
+      episode: {
+        elements: expect.arrayContaining([
+          expect.objectContaining({
+            id: shape.id,
+            fill: shape.fill,
+          }),
+        ]),
+      },
+    })
+  })
+
+  it('rejects a v5 gradient on an ordinary non-Background shape', () => {
+    const episode = cloneEpisode()
+    const shape = readRecordArray(episode, 'elements').find(
+      (element) => element.type === 'shape',
+    )
+
+    if (!shape) {
+      throw new Error('Missing v5 shape fixture.')
+    }
+
+    shape.fill = {
+      kind: 'vertical-gradient',
+      top: { color: '#102030', opacity: 0.2 },
+      bottom: { color: '#A0B0C0', opacity: 0.8 },
+    }
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: false,
+      reason: 'corrupt',
+    })
+  })
+
   it.each([
     [{ kind: 'built-in', assetId: 'speech-bubble-rounded' }],
     [{ kind: 'imported', assetId: 'upload-1' }],
   ])('accepts a v4 image with a supported asset reference', (assetReference) => {
-    const episode = cloneEpisode()
+    const episode = cloneVersion4Episode()
     appendImageElement(episode, assetReference)
 
     expect(parseEpisodeDocument(episode)).toMatchObject({
@@ -336,7 +522,7 @@ describe('parseEpisodeDocument', () => {
     [{ kind: 'built-in', assetId: '   ' }],
     [{ kind: 'unknown', assetId: 'fixture-image' }],
   ])('rejects a v4 image with an unsupported asset reference', (assetReference) => {
-    const episode = cloneEpisode()
+    const episode = cloneVersion4Episode()
     appendImageElement(episode, assetReference)
 
     expect(parseEpisodeDocument(episode)).toMatchObject({
@@ -396,6 +582,39 @@ describe('parseEpisodeDocument', () => {
         generatorId: '',
       }
     }],
+    ['missing v5 opacity', (episode: MutableRecord) => {
+      const element = readRecordArray(episode, 'elements')[0]
+      if (!element) throw new Error('Missing fixture element.')
+      delete element.opacity
+    }],
+    ['out-of-range v5 opacity', (episode: MutableRecord) => {
+      const element = readRecordArray(episode, 'elements')[0]
+      if (!element) throw new Error('Missing fixture element.')
+      element.opacity = 1.1
+    }],
+    ['invalid v5 blend mode', (episode: MutableRecord) => {
+      const element = readRecordArray(episode, 'elements')[0]
+      if (!element) throw new Error('Missing fixture element.')
+      element.blendMode = 'difference'
+    }],
+    ['legacy string fill in v5', (episode: MutableRecord) => {
+      const shape = readRecordArray(episode, 'elements').find(
+        (element) => element.type === 'shape',
+      )
+      if (!shape) throw new Error('Missing fixture shape.')
+      shape.fill = '#123456'
+    }],
+    ['invalid v5 gradient stop opacity', (episode: MutableRecord) => {
+      const shape = readRecordArray(episode, 'elements').find(
+        (element) => element.type === 'shape',
+      )
+      if (!shape) throw new Error('Missing fixture shape.')
+      shape.fill = {
+        kind: 'vertical-gradient',
+        top: { color: '#000000', opacity: Number.NaN },
+        bottom: { color: '#FFFFFF', opacity: 1 },
+      }
+    }],
   ])('rejects %s', (_description, mutate) => {
     const episode = cloneEpisode()
     mutate(episode)
@@ -403,6 +622,57 @@ describe('parseEpisodeDocument', () => {
     expect(parseEpisodeDocument(episode)).toMatchObject({
       ok: false,
       reason: 'corrupt',
+    })
+  })
+
+  it('rejects a v5 image without a valid presentation', () => {
+    const episode = cloneEpisode()
+    appendImageElement(episode, {
+      kind: 'imported',
+      assetId: 'upload-1',
+    })
+    const image = readRecordArray(episode, 'elements').at(-1)
+
+    if (!image) {
+      throw new Error('Missing v5 image fixture.')
+    }
+
+    delete image.presentation
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: false,
+      reason: 'corrupt',
+    })
+  })
+
+  it('accepts a tiled v5 image with strict appearance fields', () => {
+    const episode = cloneEpisode()
+    appendImageElement(episode, {
+      kind: 'imported',
+      assetId: 'upload-1',
+    })
+    const image = readRecordArray(episode, 'elements').at(-1)
+
+    if (!image) {
+      throw new Error('Missing tiled v5 image fixture.')
+    }
+
+    image.presentation = 'tile'
+    image.opacity = 0.6
+    image.blendMode = 'multiply'
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: true,
+      episode: {
+        elements: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'fixture-image-1',
+            presentation: 'tile',
+            opacity: 0.6,
+            blendMode: 'multiply',
+          }),
+        ]),
+      },
     })
   })
 })

@@ -126,3 +126,17 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - File: 1440 × 900 PNG, 153,678 bytes.
 - SHA-256: `aa160a27ef595f06b8f93261c595851b7f8fca0a70a3224b114d478ba7e1d3d7`.
 - Published and verified on local and remote `main` in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`.
+
+## July 15 — Direct placement and appearance controls
+
+![ScrollSplice direct placement and appearance controls](2026-07-15-drag-and-appearance-controls.png)
+
+- Captured from the running local build after the direct-placement and foundational-appearance goal passed local validation, then visually inspected.
+- Shows a public-safe synthetic blank episode with ScrollSplice's original built-in **Radiance** asset and its appearance controls. It contains no uploaded user art, Root & Table production artwork, private creative material, or third-party comic reference.
+- The same build supports native drag-to-canvas placement for original built-ins and imported assets, with click placement retained as an accessible fallback. Existing PNG/JPEG/WebP import, source-alpha preservation, and Background plane 2-or-later photo placement remain confirmed; Background plane 1 remains the color-only base.
+- Format v5 adds universal element opacity with one history entry per gesture, vertical two-stop color-and-alpha gradients, single/tile image presentation with a fixed automatic scale capped at a 160-logical-unit tile edge, and exactly Normal, Multiply, Screen, Overlay, and Soft Light blend modes. The canvas, minimap, persistence, and history share that state.
+- Local validation passes 255 unit tests across 13 files, strict typecheck, ESLint, production build, targeted drag/appearance Chromium coverage, and the repaired full Playwright Chromium suite at 6/6. Those interaction and persistence claims come from automated evidence, not from the still image alone.
+- Balloon-outline seam cleanup and minimap aspect distortion remain deferred polish.
+- File: 1440 × 900 RGB PNG, 124,384 bytes.
+- SHA-256: `c0b9bc5a359d23035cd965001b5f1e51056ee08cd87a0a36093771096ab7e4e3`.
+- This checkpoint is local only: its implementation, documentation, and screenshot have not yet been committed, pushed, or published. It does not imply deployment or Devpost submission.

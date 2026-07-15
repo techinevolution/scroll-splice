@@ -23,9 +23,13 @@ import {
   resizeEpisodeHeight,
   setBaseColor,
   setCompositionGroupVisibility,
+  setElementBlendMode,
+  setElementOpacity,
   setElementVisibility,
   setEpisodeName,
+  setImagePresentation,
   setLayerPlaneVisibility,
+  setShapeFill,
 } from './commands'
 import {
   getBackgroundBaseLayerPlane,
@@ -514,6 +518,46 @@ describe('resizeElement', () => {
       height: buildWeekEpisode.logicalHeight - 900,
     })
   })
+
+  it('resizes tiled images independently while single images stay proportional', () => {
+    const withImage = createImageElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Texture',
+      assetReference: { kind: 'imported', assetId: 'texture-1' },
+      bounds: { x: 100, y: 200, width: 200, height: 100 },
+    })
+    const image = withImage.elements.at(-1)
+
+    if (!image || image.type !== 'image') {
+      throw new Error('The image resize fixture is missing.')
+    }
+
+    const singleResize = resizeElement(withImage, image.id, {
+      ...image.bounds,
+      width: 300,
+      height: 300,
+    })
+    expect(singleResize.elements.at(-1)?.bounds).toEqual({
+      x: 100,
+      y: 200,
+      width: 300,
+      height: 150,
+    })
+
+    const tiled = setImagePresentation(withImage, image.id, 'tile')
+    const tileResize = resizeElement(tiled, image.id, {
+      x: 50,
+      y: 150,
+      width: 250,
+      height: 150,
+    })
+    expect(tileResize.elements.at(-1)?.bounds).toEqual({
+      x: 50,
+      y: 150,
+      width: 250,
+      height: 150,
+    })
+  })
 })
 
 describe('setElementVisibility', () => {
@@ -551,6 +595,197 @@ describe('setElementVisibility', () => {
     expect(setElementVisibility(buildWeekEpisode, 'missing', false)).toBe(
       buildWeekEpisode,
     )
+  })
+})
+
+describe('element appearance commands', () => {
+  const shapeId = 'beat-01-stillness-accent-2'
+  const textId = 'beat-01-stillness-caption'
+
+  it('sets universal opacity and clamps finite values into the document range', () => {
+    const halfVisible = setElementOpacity(buildWeekEpisode, textId, 0.5)
+    const transparent = setElementOpacity(halfVisible, textId, -20)
+    const opaque = setElementOpacity(transparent, textId, 20)
+
+    expect(
+      halfVisible.elements.find(({ id }) => id === textId)?.opacity,
+    ).toBe(0.5)
+    expect(
+      transparent.elements.find(({ id }) => id === textId)?.opacity,
+    ).toBe(0)
+    expect(opaque.elements.find(({ id }) => id === textId)?.opacity).toBe(1)
+  })
+
+  it('sets each supported blend mode without replacing unrelated elements', () => {
+    const unrelated = buildWeekEpisode.elements.find(
+      ({ id }) => id === textId,
+    )
+    let episode = buildWeekEpisode
+
+    for (const blendMode of [
+      'multiply',
+      'screen',
+      'overlay',
+      'soft-light',
+      'normal',
+    ] as const) {
+      episode = setElementBlendMode(episode, shapeId, blendMode)
+      expect(
+        episode.elements.find(({ id }) => id === shapeId)?.blendMode,
+      ).toBe(blendMode)
+    }
+
+    expect(episode.elements.find(({ id }) => id === textId)).toBe(unrelated)
+  })
+
+  it('sets normalized solid and vertical two-stop shape fills', () => {
+    const withRegion = createBackgroundColorRegion(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      fill: '#7050B8',
+      startY: 100,
+      height: 600,
+    })
+    const region = withRegion.elements.at(-1)
+
+    if (!region) {
+      throw new Error('The Background region appearance fixture is missing.')
+    }
+
+    const solid = setShapeFill(withRegion, region.id, {
+      kind: 'solid',
+      color: '  #123456  ',
+    })
+    const gradient = setShapeFill(solid, region.id, {
+      kind: 'vertical-gradient',
+      top: { color: '  #112233 ', opacity: 0.25 },
+      bottom: { color: '#AABBCC  ', opacity: 0.75 },
+    })
+
+    expect(solid.elements.find(({ id }) => id === region.id)).toMatchObject({
+      fill: { kind: 'solid', color: '#123456' },
+    })
+    expect(gradient.elements.find(({ id }) => id === region.id)).toMatchObject({
+      fill: {
+        kind: 'vertical-gradient',
+        top: { color: '#112233', opacity: 0.25 },
+        bottom: { color: '#AABBCC', opacity: 0.75 },
+      },
+    })
+    expect(
+      setShapeFill(buildWeekEpisode, shapeId, {
+        kind: 'vertical-gradient',
+        top: { color: '#000000', opacity: 1 },
+        bottom: { color: '#FFFFFF', opacity: 0 },
+      }),
+    ).toBe(buildWeekEpisode)
+  })
+
+  it('changes image presentation only for an image element', () => {
+    const withImage = createImageElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Texture',
+      assetReference: { kind: 'imported', assetId: 'upload-1' },
+      bounds: { x: 0, y: 0, width: 100, height: 100 },
+    })
+    const image = withImage.elements.at(-1)
+
+    if (!image) {
+      throw new Error('The image appearance fixture is missing.')
+    }
+
+    const tiled = setImagePresentation(withImage, image.id, 'tile')
+
+    expect(tiled.elements.at(-1)).toMatchObject({ presentation: 'tile' })
+    expect(setImagePresentation(tiled, image.id, 'tile')).toBe(tiled)
+    expect(setImagePresentation(tiled, shapeId, 'tile')).toBe(tiled)
+
+    const resizedTile = resizeElement(tiled, image.id, {
+      x: 10,
+      y: 20,
+      width: 200,
+      height: 200,
+    })
+    expect(setImagePresentation(resizedTile, image.id, 'single')).toBe(
+      resizedTile,
+    )
+
+    const restoredSingle = setImagePresentation(
+      resizedTile,
+      image.id,
+      'single',
+      { sourceAspectRatio: 2 },
+    )
+    const resizedTileElement = resizedTile.elements.at(-1)
+    const restoredSingleElement = restoredSingle.elements.at(-1)
+    expect(restoredSingleElement).toMatchObject({
+      presentation: 'single',
+      bounds: { width: 200, height: 100 },
+    })
+    expect(
+      (restoredSingleElement?.bounds.x ?? 0) +
+        (restoredSingleElement?.bounds.width ?? 0) / 2,
+    ).toBeCloseTo(
+      (resizedTileElement?.bounds.x ?? 0) +
+        (resizedTileElement?.bounds.width ?? 0) / 2,
+    )
+    expect(
+      (restoredSingleElement?.bounds.y ?? 0) +
+        (restoredSingleElement?.bounds.height ?? 0) / 2,
+    ).toBeCloseTo(
+      (resizedTileElement?.bounds.y ?? 0) +
+        (resizedTileElement?.bounds.height ?? 0) / 2,
+    )
+  })
+
+  it('returns the original document for missing, unchanged, or invalid appearance', () => {
+    const shape = buildWeekEpisode.elements.find(({ id }) => id === shapeId)
+
+    if (!shape || shape.type !== 'shape') {
+      throw new Error('The shape appearance fixture is missing.')
+    }
+
+    expect(setElementOpacity(buildWeekEpisode, 'missing', 0.5)).toBe(
+      buildWeekEpisode,
+    )
+    expect(setElementOpacity(buildWeekEpisode, shapeId, shape.opacity)).toBe(
+      buildWeekEpisode,
+    )
+    expect(setElementOpacity(buildWeekEpisode, shapeId, Number.NaN)).toBe(
+      buildWeekEpisode,
+    )
+    expect(
+      setElementBlendMode(
+        buildWeekEpisode,
+        shapeId,
+        'difference' as never,
+      ),
+    ).toBe(buildWeekEpisode)
+    expect(setElementBlendMode(buildWeekEpisode, shapeId, 'normal')).toBe(
+      buildWeekEpisode,
+    )
+    expect(setShapeFill(buildWeekEpisode, shapeId, shape.fill)).toBe(
+      buildWeekEpisode,
+    )
+    expect(
+      setShapeFill(buildWeekEpisode, textId, {
+        kind: 'solid',
+        color: '#000000',
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      setShapeFill(buildWeekEpisode, shapeId, {
+        kind: 'vertical-gradient',
+        top: { color: '#000000', opacity: -1 },
+        bottom: { color: '#FFFFFF', opacity: 1 },
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      setImagePresentation(
+        buildWeekEpisode,
+        shapeId,
+        'stretch' as never,
+      ),
+    ).toBe(buildWeekEpisode)
   })
 })
 
@@ -615,8 +850,9 @@ describe('createSyntheticShapeElement', () => {
         width: 100,
         height: 100,
       },
-      fill: '#7048B8',
+      fill: { kind: 'solid', color: '#7048B8' },
       opacity: 1,
+      blendMode: 'normal',
       visible: true,
       locked: false,
       zIndex: Math.max(...planeZIndexes) + 1,
@@ -736,10 +972,13 @@ describe('createImageElement', () => {
       visible: true,
       locked: false,
       zIndex: Math.max(...planeZIndexes) + 1,
+      opacity: 1,
+      blendMode: 'normal',
       assetReference: {
         kind: 'built-in',
         assetId: 'speech-bubble-rounded',
       },
+      presentation: 'single',
     })
   })
 
@@ -856,8 +1095,9 @@ describe('createBackgroundColorRegion', () => {
         width: buildWeekEpisode.logicalWidth,
         height: 1600,
       },
-      fill: '#332255',
+      fill: { kind: 'solid', color: '#332255' },
       opacity: 1,
+      blendMode: 'normal',
       visible: true,
       locked: false,
       zIndex: 0,

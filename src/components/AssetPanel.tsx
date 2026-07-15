@@ -1,9 +1,21 @@
-import { useEffect, useId, useMemo, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent as ReactDragEvent,
+  type FormEvent,
+  type MouseEvent as ReactMouseEvent,
+} from 'react'
 
 import { useEditorStore } from '../app/store'
 import {
   MAX_CREATOR_CATEGORY_NAME_LENGTH,
+  ASSET_DRAG_MIME_TYPE,
   getBuiltInAssetsByCategory,
+  serializeAssetDragPayload,
+  type AssetDragPayload,
   type BuiltInAssetCategoryId,
 } from '../assets'
 import { getLayerPlaneById } from '../core/episode'
@@ -111,6 +123,8 @@ export function AssetPanel() {
   const [categoryNameDraft, setCategoryNameDraft] = useState('')
   const uploadInputId = useId()
   const categoryNameInputId = useId()
+  const suppressClickAfterDragRef = useRef(false)
+  const dragClickResetTimerRef = useRef<number | null>(null)
   const activeLayerPlane = getLayerPlaneById(episode, activeLayerPlaneId)
   const canPlaceAsset = activeLayerPlane?.kind === 'ordinary'
   const isTargetHidden =
@@ -149,6 +163,15 @@ export function AssetPanel() {
     return () => window.removeEventListener('keydown', handleEscape)
   }, [assetPanelOpen, closeAssetPanel])
 
+  useEffect(
+    () => () => {
+      if (dragClickResetTimerRef.current !== null) {
+        window.clearTimeout(dragClickResetTimerRef.current)
+      }
+    },
+    [],
+  )
+
   const selectLibraryCategory = (categoryId: AssetLibraryCategoryId) => {
     if (assetPanelOpen && activeCategoryId === categoryId) {
       closeAssetPanel()
@@ -176,6 +199,49 @@ export function AssetPanel() {
       file,
       activeCategoryId === 'my-library' ? selectedCreatorCategoryId : null,
     )
+  }
+
+  const startAssetDrag = (
+    event: ReactDragEvent<HTMLButtonElement>,
+    payload: AssetDragPayload,
+  ) => {
+    const serialized = serializeAssetDragPayload(payload)
+
+    if (!serialized) {
+      event.preventDefault()
+      return
+    }
+
+    if (dragClickResetTimerRef.current !== null) {
+      window.clearTimeout(dragClickResetTimerRef.current)
+      dragClickResetTimerRef.current = null
+    }
+
+    suppressClickAfterDragRef.current = true
+    event.dataTransfer.clearData()
+    event.dataTransfer.effectAllowed = 'copy'
+    event.dataTransfer.setData(ASSET_DRAG_MIME_TYPE, serialized)
+  }
+
+  const finishAssetDrag = () => {
+    dragClickResetTimerRef.current = window.setTimeout(() => {
+      suppressClickAfterDragRef.current = false
+      dragClickResetTimerRef.current = null
+    }, 0)
+  }
+
+  const activateAssetCard = (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    action: () => void,
+  ) => {
+    if (event.detail > 0 && suppressClickAfterDragRef.current) {
+      event.preventDefault()
+      event.stopPropagation()
+      suppressClickAfterDragRef.current = false
+      return
+    }
+
+    action()
   }
 
   const targetLabel = activeLayerPlane
@@ -327,10 +393,20 @@ export function AssetPanel() {
                   key={asset.id}
                   aria-label={`Add ${asset.displayName}`}
                   disabled={!canPlaceAsset}
-                  onClick={() => placeBuiltInAsset(asset.id)}
+                  draggable={canPlaceAsset}
+                  onClick={(event) =>
+                    activateAssetCard(event, () => placeBuiltInAsset(asset.id))
+                  }
+                  onDragStart={(event) =>
+                    startAssetDrag(event, {
+                      kind: 'built-in',
+                      assetId: asset.id,
+                    })
+                  }
+                  onDragEnd={finishAssetDrag}
                 >
                   <span className="asset-card-preview">
-                    <img src={asset.source} alt="" />
+                    <img src={asset.source} alt="" draggable={false} />
                   </span>
                   <strong>{asset.displayName}</strong>
                   <small>
@@ -354,10 +430,20 @@ export function AssetPanel() {
                   key={asset.id}
                   aria-label={`Add ${asset.displayName}`}
                   disabled={!canPlaceAsset}
-                  onClick={() => placeImportedAsset(asset.id)}
+                  draggable={canPlaceAsset}
+                  onClick={(event) =>
+                    activateAssetCard(event, () => placeImportedAsset(asset.id))
+                  }
+                  onDragStart={(event) =>
+                    startAssetDrag(event, {
+                      kind: 'imported',
+                      assetId: asset.id,
+                    })
+                  }
+                  onDragEnd={finishAssetDrag}
                 >
                   <span className="asset-card-preview">
-                    <img src={asset.sourceUrl} alt="" />
+                    <img src={asset.sourceUrl} alt="" draggable={false} />
                   </span>
                   <strong>{asset.displayName}</strong>
                   <small>

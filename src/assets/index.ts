@@ -1,5 +1,6 @@
 export * from './assetRepository'
 export * from './builtInCatalog'
+export * from './dragPayload'
 export * from './importImage'
 export * from './runtime'
 export * from './snapshot'

@@ -6,6 +6,7 @@ import {
   type EpisodeDocument,
   type EpisodeElement,
   type LayerPlane,
+  type ShapeFill,
   type ShapeElement,
   type TextElement,
 } from '../../core/episode'
@@ -224,6 +225,10 @@ function offsetBounds(bounds: ElementBounds, yOffset: number): ElementBounds {
   }
 }
 
+function solidFill(color: string): ShapeFill {
+  return { kind: 'solid', color }
+}
+
 function createBeatElements(
   beat: FixtureBeat,
   beatIndex: number,
@@ -244,11 +249,12 @@ function createBeatElements(
       width: BEAT_WIDTH,
       height: BEAT_HEIGHT,
     },
-    fill: beat.panelColor,
+    fill: solidFill(beat.panelColor),
     stroke: '#FFFFFF',
     strokeWidth: 2,
     cornerRadius: 32,
     opacity: 1,
+    blendMode: 'normal',
     visible: true,
     locked: false,
     zIndex: baseZIndex,
@@ -262,8 +268,9 @@ function createBeatElements(
     type: 'shape',
     shape: accent.shape,
     bounds: offsetBounds(accent.bounds, yOffset),
-    fill: accent.fill,
+    fill: solidFill(accent.fill),
     opacity: accent.opacity ?? 1,
+    blendMode: 'normal',
     cornerRadius: accent.cornerRadius,
     visible: true,
     locked: false,
@@ -289,6 +296,8 @@ function createBeatElements(
     fontWeight: 700,
     lineHeight: 1.1,
     align: 'center',
+    opacity: 1,
+    blendMode: 'normal',
     visible: true,
     locked: false,
     zIndex: baseZIndex + 3,
@@ -313,6 +322,8 @@ function createBeatElements(
     fontWeight: 600,
     lineHeight: 1.35,
     align: 'center',
+    opacity: 1,
+    blendMode: 'normal',
     visible: true,
     locked: false,
     zIndex: baseZIndex + 4,

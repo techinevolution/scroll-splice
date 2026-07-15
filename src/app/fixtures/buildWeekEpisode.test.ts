@@ -35,9 +35,9 @@ describe('buildWeekEpisode', () => {
     }
   })
 
-  it('uses format v4 and assigns every element to a stable layer plane', () => {
-    expect(EPISODE_FORMAT_VERSION).toBe(4)
-    expect(buildWeekEpisode.formatVersion).toBe(4)
+  it('uses format v5 and assigns every element to a stable layer plane', () => {
+    expect(EPISODE_FORMAT_VERSION).toBe(5)
+    expect(buildWeekEpisode.formatVersion).toBe(5)
     expect(buildWeekEpisode.compositionGroupVisibility).toEqual({
       background: true,
       content: true,
@@ -68,6 +68,17 @@ describe('buildWeekEpisode', () => {
       buildWeekEpisode.elements.every(({ layerPlaneId }) =>
         Boolean(getLayerPlaneById(buildWeekEpisode, layerPlaneId)),
       ),
+    ).toBe(true)
+    expect(
+      buildWeekEpisode.elements.every(
+        ({ opacity, blendMode }) =>
+          opacity >= 0 && opacity <= 1 && blendMode === 'normal',
+      ),
+    ).toBe(true)
+    expect(
+      buildWeekEpisode.elements
+        .filter((element) => element.type === 'shape')
+        .every(({ fill }) => fill.kind === 'solid'),
     ).toBe(true)
   })
 

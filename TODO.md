@@ -24,6 +24,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Re-test corrective checkpoint D and mark it **PASS WITH NOTES**: live coordinates, minimap sync, eight Background-region handles, snap override, and Option-drag pass; minimap aspect distortion remains polish.
 - [x] Approve the optional local history/save/menu slice: bounded undo/redo, one explicit local save, reload/reopen, blank New Episode, and only the requested File/Edit commands.
 - [x] Test the completed local history/save/menu slice: undo/redo representative edits, Save, page reload, later unsaved edit, confirmed Reopen, New Episode, and recovery of the retained save. Katherine reported July 15 that the tests completed and everything works well.
+- [x] Approve the next five-slice `/goal`: Asset Library drag-to-canvas placement, format-v5 opacity, vertical two-stop gradient/fade, tiled texture presentation, and five restrained blend modes. Existing real upload, source alpha, and ordinary Background-photo placement stay intact.
 
 ## Katherine — before submission
 
@@ -55,6 +56,13 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Publish the implemented, validated, and screenshot-documented Asset Library stack—Uploads, original Speech Balloons, Decorations, Splatters, creator categories, image placement, proportional resize, atomic local source persistence, and v3-to-v4 opening—to `main` in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; local and remote heads matched after the July 15 push.
 - [x] Implement and browser-test the July 15 review corrections: top-level menus above the Asset Library, compact visible **Decor** rail text, and active-category toggle-close.
 - [x] Publish the validated review corrections and public-safe `2026-07-15-menu-and-asset-rail-polish.png` evidence to `main` in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`; local and remote heads matched after the push.
+- [x] Implement and validate native Asset Library drag-to-canvas placement through the shared pan/zoom coordinate seam while preserving click-to-place as the accessible fallback.
+- [x] Implement and validate the bounded v3/v4-to-v5 appearance transition plus universal element opacity, one-step slider history, zero-opacity Layers recovery, and multiplicative source alpha.
+- [x] Implement and validate a Background color region's vertical two-stop color/alpha fill for both gradients and fades, with matching canvas and minimap output.
+- [x] Implement and validate single/tile image presentation using unchanged imported sources, freeform texture-coverage bounds, and fixed automatic tile scale capped at a 160-logical-unit tile edge.
+- [x] Implement and pixel-test exactly Normal, Multiply, Screen, Overlay, and Soft Light; carry all appearance data through undo/redo, Save, reload, Reopen, and reset.
+- [x] After all five checkpoints pass: run 255 unit tests across 13 files, typecheck, lint, production build, focused drag/appearance Chromium coverage, and the full 6-of-6 Playwright Chromium suite; visually inspect and index the public-safe screenshot and update completion evidence.
+- [ ] Before publication: review the complete local diff and private-file status, commit the coherent passing slice, push only under Katherine's active authorization, and verify local/remote equality. No commit or push is recorded yet.
 - [ ] Later built-in artwork polish: replace or repair the visible white seam in the original Oval and Rounded balloon outlines; do not block current creator work on it.
 - [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.

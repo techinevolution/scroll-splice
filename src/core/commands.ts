@@ -4,16 +4,20 @@ import {
   type LogicalPosition,
 } from './coordinates'
 import {
+  ELEMENT_BLEND_MODES,
   getBackgroundBaseLayerPlane,
   getLayerPlaneById,
   getLayerPlanesForGroup,
   type CompositionGroup,
   type ElementBounds,
+  type ElementBlendMode,
   type EpisodeDocument,
   type EpisodeElement,
   type ImageAssetReference,
   type ImageElement,
   type OrdinaryLayerPlane,
+  type ShapeFill,
+  type ShapeFillStop,
   type ShapeElement,
 } from './episode'
 
@@ -182,7 +186,7 @@ export function resizeElement(
     return document
   }
 
-  if (isBackgroundColorRegion(element)) {
+  if (isElementFreeformResizable(element)) {
     const horizontal = resizeFreeformAxis(
       element.bounds.x,
       element.bounds.width,
@@ -343,6 +347,15 @@ export function isBackgroundColorRegion(element: EpisodeElement): boolean {
   )
 }
 
+export function isElementFreeformResizable(
+  element: EpisodeElement,
+): boolean {
+  return (
+    isBackgroundColorRegion(element) ||
+    (element.type === 'image' && element.presentation === 'tile')
+  )
+}
+
 export function setElementVisibility(
   document: EpisodeDocument,
   elementId: string,
@@ -360,6 +373,136 @@ export function setElementVisibility(
   })
 
   return changed ? { ...document, elements } : document
+}
+
+export function setElementOpacity(
+  document: EpisodeDocument,
+  elementId: string,
+  requestedOpacity: number,
+): EpisodeDocument {
+  if (!Number.isFinite(requestedOpacity)) {
+    return document
+  }
+
+  const opacity = clamp(requestedOpacity, 0, 1)
+
+  return replaceElement(document, elementId, (element) =>
+    element.opacity === opacity ? element : { ...element, opacity },
+  )
+}
+
+export function setElementBlendMode(
+  document: EpisodeDocument,
+  elementId: string,
+  blendMode: ElementBlendMode,
+): EpisodeDocument {
+  if (!ELEMENT_BLEND_MODES.includes(blendMode)) {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) =>
+    element.blendMode === blendMode ? element : { ...element, blendMode },
+  )
+}
+
+export function setShapeFill(
+  document: EpisodeDocument,
+  elementId: string,
+  requestedFill: ShapeFill,
+): EpisodeDocument {
+  const fill = normalizeShapeFill(requestedFill)
+
+  if (!fill) {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) => {
+    if (
+      element.type !== 'shape' ||
+      (fill.kind === 'vertical-gradient' &&
+        !isBackgroundColorRegion(element)) ||
+      areShapeFillsEqual(element.fill, fill)
+    ) {
+      return element
+    }
+
+    return { ...element, fill }
+  })
+}
+
+export function setImagePresentation(
+  document: EpisodeDocument,
+  elementId: string,
+  presentation: ImageElement['presentation'],
+  options: {
+    readonly sourceAspectRatio?: number
+  } = {},
+): EpisodeDocument {
+  if (presentation !== 'single' && presentation !== 'tile') {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) => {
+    if (element.type !== 'image' || element.presentation === presentation) {
+      return element
+    }
+
+    if (presentation === 'tile') {
+      return { ...element, presentation }
+    }
+
+    const sourceAspectRatio = options.sourceAspectRatio
+
+    if (
+      sourceAspectRatio === undefined ||
+      !Number.isFinite(sourceAspectRatio) ||
+      sourceAspectRatio <= 0
+    ) {
+      return element
+    }
+
+    const sourceWidth = sourceAspectRatio >= 1 ? sourceAspectRatio : 1
+    const sourceHeight = sourceAspectRatio >= 1 ? 1 : 1 / sourceAspectRatio
+    const preferredScale = Math.min(
+      element.bounds.width / sourceWidth,
+      element.bounds.height / sourceHeight,
+    )
+    const minimumUsableScale = Math.max(
+      MIN_ELEMENT_SIZE / sourceWidth,
+      MIN_ELEMENT_SIZE / sourceHeight,
+    )
+    const maximumEpisodeScale = Math.min(
+      document.logicalWidth / sourceWidth,
+      document.logicalHeight / sourceHeight,
+    )
+
+    if (minimumUsableScale > maximumEpisodeScale) {
+      return element
+    }
+
+    const scale = clamp(
+      preferredScale,
+      minimumUsableScale,
+      maximumEpisodeScale,
+    )
+    const width = sourceWidth * scale
+    const height = sourceHeight * scale
+    const position = clampElementPosition(
+      {
+        x: element.bounds.x + (element.bounds.width - width) / 2,
+        y: element.bounds.y + (element.bounds.height - height) / 2,
+      },
+      { width, height },
+      document.logicalWidth,
+      document.logicalHeight,
+    )
+
+    return {
+      ...element,
+      presentation,
+      bounds: { ...position, width, height },
+    }
+  })
 }
 
 export function deleteElement(
@@ -450,10 +593,13 @@ export function createImageElement(
     visible: true,
     locked: false,
     zIndex: highestZIndex + 1,
+    opacity: 1,
+    blendMode: 'normal',
     assetReference: {
       kind: input.assetReference.kind,
       assetId,
     },
+    presentation: 'single',
   }
 
   return { ...document, elements: [...document.elements, element] }
@@ -675,8 +821,9 @@ function appendSyntheticRectangle(
     type: 'shape',
     shape: 'rectangle',
     bounds: input.bounds,
-    fill: input.fill,
+    fill: { kind: 'solid', color: input.fill },
     opacity: 1,
+    blendMode: 'normal',
     visible: true,
     locked: false,
     zIndex: highestZIndex + 1,
@@ -687,6 +834,97 @@ function appendSyntheticRectangle(
   }
 
   return { ...document, elements: [...document.elements, element] }
+}
+
+function replaceElement(
+  document: EpisodeDocument,
+  elementId: string,
+  replace: (element: EpisodeElement) => EpisodeElement,
+): EpisodeDocument {
+  let changed = false
+
+  const elements = document.elements.map((element) => {
+    if (element.id !== elementId) {
+      return element
+    }
+
+    const replacement = replace(element)
+    changed = replacement !== element
+    return replacement
+  })
+
+  return changed ? { ...document, elements } : document
+}
+
+function normalizeShapeFill(value: unknown): ShapeFill | undefined {
+  if (!isUnknownRecord(value)) {
+    return undefined
+  }
+
+  if (value.kind === 'solid') {
+    const color = normalizeColor(value.color)
+    return color ? { kind: 'solid', color } : undefined
+  }
+
+  if (value.kind !== 'vertical-gradient') {
+    return undefined
+  }
+
+  const top = normalizeShapeFillStop(value.top)
+  const bottom = normalizeShapeFillStop(value.bottom)
+
+  return top && bottom
+    ? { kind: 'vertical-gradient', top, bottom }
+    : undefined
+}
+
+function normalizeShapeFillStop(value: unknown): ShapeFillStop | undefined {
+  if (!isUnknownRecord(value)) {
+    return undefined
+  }
+
+  const color = normalizeColor(value.color)
+  const opacity = value.opacity
+
+  return color &&
+    typeof opacity === 'number' &&
+    Number.isFinite(opacity) &&
+    opacity >= 0 &&
+    opacity <= 1
+    ? { color, opacity }
+    : undefined
+}
+
+function normalizeColor(value: unknown): string | undefined {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  const color = value.trim()
+  return color.length > 0 ? color : undefined
+}
+
+function areShapeFillsEqual(first: ShapeFill, second: ShapeFill): boolean {
+  if (first.kind !== second.kind) {
+    return false
+  }
+
+  if (first.kind === 'solid' && second.kind === 'solid') {
+    return first.color === second.color
+  }
+
+  return (
+    first.kind === 'vertical-gradient' &&
+    second.kind === 'vertical-gradient' &&
+    first.top.color === second.top.color &&
+    first.top.opacity === second.top.opacity &&
+    first.bottom.color === second.bottom.color &&
+    first.bottom.opacity === second.bottom.opacity
+  )
+}
+
+function isUnknownRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
 function clampNewElementBounds(

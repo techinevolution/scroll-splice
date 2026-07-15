@@ -680,7 +680,7 @@ describe('editor store', () => {
       id: 'synthetic-shape-1',
       name: 'Violet demo shape',
       layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
-      fill: '#7050B8',
+      fill: { kind: 'solid', color: '#7050B8' },
     })
     expect(state.selectedElementId).toBe(placed?.id)
   })
@@ -931,6 +931,47 @@ describe('editor store', () => {
     expect(useEditorStore.getState().episode.elements.at(-1)).toEqual(placed)
   })
 
+  it('places a dragged built-in at an explicit center and clamps it to the episode', () => {
+    const beforeCount = useEditorStore.getState().episode.elements.length
+    const beforeHistoryCount = useEditorStore.getState().historyPast.length
+
+    expect(
+      useEditorStore.getState().placeDraggedAsset(
+        {
+          kind: 'built-in',
+          assetId: 'builtin-speech-balloon-oval-v1',
+        },
+        { x: 799, y: buildWeekEpisode.logicalHeight - 1 },
+      ),
+    ).toBe(true)
+
+    const placed = useEditorStore.getState().episode.elements.at(-1)
+    expect(placed).toMatchObject({
+      type: 'image',
+      bounds: {
+        x: buildWeekEpisode.logicalWidth - 360,
+        y: buildWeekEpisode.logicalHeight - 250,
+        width: 360,
+        height: 250,
+      },
+      assetReference: {
+        kind: 'built-in',
+        assetId: 'builtin-speech-balloon-oval-v1',
+      },
+    })
+    expect(useEditorStore.getState().episode.elements).toHaveLength(
+      beforeCount + 1,
+    )
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeHistoryCount + 1,
+    )
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().episode.elements).toHaveLength(beforeCount)
+    useEditorStore.getState().redo()
+    expect(useEditorStore.getState().episode.elements.at(-1)).toEqual(placed)
+  })
+
   it('places one imported source repeatedly without duplicating it and guards the base plane', async () => {
     stubImageRuntime(1_200, 600)
     const repository = new MemoryAssetRepository()
@@ -968,6 +1009,65 @@ describe('editor store', () => {
     expect(useEditorStore.getState().placeImportedAsset(imported.id)).toBe(false)
     expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
     expect(useEditorStore.getState().importedImageAssets).toHaveLength(1)
+  })
+
+  it('places a dragged imported source at its explicit logical center', async () => {
+    stubImageRuntime(1_200, 600)
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    await useEditorStore
+      .getState()
+      .importImageAsset(createNamedPngFile('dragged-overlay.png', 1_200, 600))
+    const imported = useEditorStore.getState().importedImageAssets[0]
+
+    if (!imported) {
+      throw new Error('The dragged imported-image fixture was not created.')
+    }
+
+    expect(
+      useEditorStore.getState().placeDraggedAsset(
+        { kind: 'imported', assetId: imported.id },
+        { x: 100, y: 200 },
+      ),
+    ).toBe(true)
+
+    expect(useEditorStore.getState().episode.elements.at(-1)).toMatchObject({
+      type: 'image',
+      bounds: { x: 0, y: 80, width: 480, height: 240 },
+      assetReference: { kind: 'imported', assetId: imported.id },
+    })
+
+    useEditorStore.getState().setActiveCompositionGroup('background')
+    const historyCount = useEditorStore.getState().historyPast.length
+    expect(
+      useEditorStore.getState().placeDraggedAsset(
+        { kind: 'imported', assetId: imported.id },
+        { x: 400, y: 400 },
+      ),
+    ).toBe(false)
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+    expect(useEditorStore.getState().assetLibraryMessage).toBe(
+      'Select a numbered layer plane before placing an asset.',
+    )
+  })
+
+  it('rejects an invalid dragged-asset center without changing history', () => {
+    const historyCount = useEditorStore.getState().historyPast.length
+
+    expect(
+      useEditorStore.getState().placeDraggedAsset(
+        {
+          kind: 'built-in',
+          assetId: 'builtin-decoration-radiance-v1',
+        },
+        { x: Number.NaN, y: 200 },
+      ),
+    ).toBe(false)
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+    expect(useEditorStore.getState().assetLibraryMessage).toBe(
+      'The canvas drop position is invalid.',
+    )
   })
 
   it('refuses image proportions that cannot fit at the minimum usable size', async () => {
@@ -1022,7 +1122,7 @@ describe('editor store', () => {
     expect(region).toMatchObject({
       id: 'background-color-region-1',
       layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
-      fill: '#123456',
+      fill: { kind: 'solid', color: '#123456' },
       bounds: { x: 0, y: 1200, width: 800, height: 600 },
     })
     expect(state.selectedElementId).toBe(region?.id)
@@ -1418,6 +1518,148 @@ describe('editor store', () => {
     expect(useEditorStore.getState().currentRevision).toBe(
       beforeCancel.currentRevision,
     )
+  })
+
+  it('coalesces an opacity gesture into one undo entry and restores cancelled or no-op gestures', () => {
+    const elementId = 'beat-01-stillness-accent-2'
+    const originalOpacity = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === elementId)?.opacity
+
+    expect(originalOpacity).toBeDefined()
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore.getState().beginElementOpacityEdit(elementId)
+    useEditorStore.getState().previewElementOpacity(elementId, 0.8)
+    useEditorStore.getState().previewElementOpacity(elementId, 0.5)
+    useEditorStore.getState().previewElementOpacity(elementId, 0.25)
+
+    expect(useEditorStore.getState().historyPast).toHaveLength(0)
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.opacity,
+    ).toBe(0.25)
+
+    useEditorStore.getState().endElementOpacityEdit()
+    expect(useEditorStore.getState().historyPast).toHaveLength(1)
+    expect(useEditorStore.getState().canUndo).toBe(true)
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.opacity,
+    ).toBe(originalOpacity)
+
+    useEditorStore.getState().redo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.opacity,
+    ).toBe(0.25)
+
+    const historyCount = useEditorStore.getState().historyPast.length
+    useEditorStore.getState().beginElementOpacityEdit(elementId)
+    useEditorStore.getState().previewElementOpacity(elementId, 0.6)
+    useEditorStore.getState().cancelElementOpacityEdit()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.opacity,
+    ).toBe(0.25)
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+
+    useEditorStore.getState().beginElementOpacityEdit(elementId)
+    useEditorStore.getState().previewElementOpacity(elementId, 0.6)
+    useEditorStore.getState().previewElementOpacity(elementId, 0.25)
+    useEditorStore.getState().endElementOpacityEdit()
+    expect(useEditorStore.getState().historyPast).toHaveLength(historyCount)
+  })
+
+  it('routes blend, gradient, and tile changes through document history', () => {
+    useEditorStore.getState().setActiveCompositionGroup('background')
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree)
+    expect(
+      useEditorStore.getState().createBackgroundColorRegion({
+        fill: '#7050B8',
+        startY: 400,
+        height: 600,
+      }),
+    ).toBe(true)
+
+    const regionId = useEditorStore.getState().selectedElementId
+    expect(regionId).toBeTruthy()
+    const beforeAppearanceHistory = useEditorStore.getState().historyPast.length
+
+    useEditorStore.getState().setElementBlendMode(regionId!, 'multiply')
+    useEditorStore.getState().setShapeFill(regionId!, {
+      kind: 'vertical-gradient',
+      top: { color: '#7050B8', opacity: 1 },
+      bottom: { color: '#11131F', opacity: 0 },
+    })
+
+    const region = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === regionId)
+    expect(region?.blendMode).toBe('multiply')
+    expect(region?.type === 'shape' ? region.fill : undefined).toEqual({
+      kind: 'vertical-gradient',
+      top: { color: '#7050B8', opacity: 1 },
+      bottom: { color: '#11131F', opacity: 0 },
+    })
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeAppearanceHistory + 2,
+    )
+
+    useEditorStore.getState().setActiveCompositionGroup('content')
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.contentPanels)
+    expect(
+      useEditorStore
+        .getState()
+        .placeBuiltInAsset('builtin-speech-balloon-oval-v1'),
+    ).toBe(true)
+    const imageId = useEditorStore.getState().selectedElementId
+    expect(imageId).toBeTruthy()
+
+    useEditorStore.getState().setImagePresentation(imageId!, 'tile')
+    const image = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === imageId)
+    expect(image?.type === 'image' ? image.presentation : undefined).toBe(
+      'tile',
+    )
+
+    useEditorStore.getState().resizeElement(imageId!, {
+      x: 100,
+      y: 120,
+      width: 240,
+      height: 240,
+    })
+    useEditorStore.getState().setImagePresentation(imageId!, 'single')
+    const restoredSingle = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === imageId)
+    expect(
+      restoredSingle?.type === 'image'
+        ? restoredSingle.presentation
+        : undefined,
+    ).toBe('single')
+    expect(restoredSingle?.bounds.width).toBeCloseTo(240)
+    expect(restoredSingle?.bounds.height).toBeCloseTo(240 * (250 / 360))
+
+    useEditorStore.getState().undo()
+    const restoredTile = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === imageId)
+    expect(
+      restoredTile?.type === 'image'
+        ? restoredTile.presentation
+        : undefined,
+    ).toBe('tile')
   })
 
   it('treats New Episode and Reset demo as boundaries that clear history', () => {

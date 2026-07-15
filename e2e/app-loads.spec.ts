@@ -361,10 +361,9 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       snapSceneBounds.y +
       (syntheticStartY - snapViewportY + syntheticStartHeight / 2) * snapScale,
   }
-  const syntheticMinimapElement = minimap.locator(
-    '[data-element-id="image-element-1"]',
+  const syntheticMinimapBounds = minimap.locator(
+    '[data-selection-outline-for="image-element-1"]',
   )
-  const syntheticMinimapBounds = syntheticMinimapElement.locator('rect').last()
   const syntheticMinimapStartX = await readNumericAttribute(
     syntheticMinimapBounds,
     'x',
@@ -660,7 +659,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   )
   const colorRegionMinimap = minimap.locator(
     '[data-element-id="background-color-region-1"]',
-  )
+  ).locator('rect')
   await expect(colorRegionRow).toHaveAttribute('aria-pressed', 'true')
   await expect(colorRegionMinimap).toHaveAttribute('fill', '#334477')
   await expect(colorRegionMinimap).toHaveAttribute('x', '0')

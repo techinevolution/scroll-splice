@@ -4,6 +4,7 @@ import { useEditorStore } from './app/store'
 import { AppMenuBar } from './components/AppMenuBar'
 import { AssetPanel } from './components/AssetPanel'
 import { CompositionGroupControls } from './components/CompositionGroupControls'
+import { SelectedElementAppearanceControls } from './components/SelectedElementAppearanceControls'
 import { MAX_EPISODE_NAME_LENGTH } from './core/commands'
 import { EditorCanvas } from './editor/EditorCanvas'
 import { LayersPanel } from './layers/LayersPanel'
@@ -302,7 +303,10 @@ export function App() {
         >
           {documentStatus}
         </span>
-        <SelectionStatus />
+        <div className="status-selection-area">
+          <SelectionStatus />
+          <SelectedElementAppearanceControls />
+        </div>
         <span>800u fixed width · local browser project</span>
       </footer>
     </main>

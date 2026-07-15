@@ -20,13 +20,18 @@ import {
   resizeEpisodeHeight as resizeEpisodeHeightCommand,
   setBaseColor as setBaseColorCommand,
   setCompositionGroupVisibility as setCompositionGroupVisibilityCommand,
+  setElementBlendMode as setElementBlendModeCommand,
+  setElementOpacity as setElementOpacityCommand,
   setElementVisibility as setElementVisibilityCommand,
   setEpisodeName as setEpisodeNameCommand,
+  setImagePresentation as setImagePresentationCommand,
   setLayerPlaneVisibility as setLayerPlaneVisibilityCommand,
+  setShapeFill as setShapeFillCommand,
 } from '../core/commands'
 import {
   DEFAULT_ZOOM_FACTOR,
   boundsIntersectViewport,
+  clampElementPosition,
   clampViewportPosition,
   clampZoomFactor,
   preserveViewportCenter,
@@ -39,9 +44,12 @@ import {
   getLayerPlaneById,
   getLayerPlanesForGroup,
   type CompositionGroup,
+  type ElementBlendMode,
   type ElementBounds,
   type EpisodeDocument,
+  type ImageElement,
   type ImageAssetReference,
+  type ShapeFill,
 } from '../core/episode'
 import {
   ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
@@ -52,6 +60,7 @@ import {
   revokeRuntimeImportedImages,
   type AssetLibrarySnapshot,
   type AssetLibrarySnapshotTransform,
+  type AssetDragPayload,
   type AssetRepository,
   type BrowserImageFile,
   type CreatorAssetCategorySnapshot,
@@ -73,6 +82,7 @@ interface EditorState {
   readonly historyPast: readonly HistoryCheckpoint[]
   readonly historyFuture: readonly HistoryCheckpoint[]
   readonly episodeHeightResizeStart: HistoryCheckpoint | null
+  readonly elementOpacityEditStart: ElementOpacityEditStart | null
   readonly currentRevision: number
   readonly nextRevision: number
   readonly savedRevision: number | null
@@ -155,6 +165,20 @@ interface EditorState {
     logicalBounds: ElementBounds,
   ) => void
   readonly clearElementBoundsPreview: (elementId?: string) => void
+  readonly setElementOpacity: (elementId: string, opacity: number) => void
+  readonly beginElementOpacityEdit: (elementId: string) => void
+  readonly previewElementOpacity: (elementId: string, opacity: number) => void
+  readonly endElementOpacityEdit: () => void
+  readonly cancelElementOpacityEdit: () => void
+  readonly setElementBlendMode: (
+    elementId: string,
+    blendMode: ElementBlendMode,
+  ) => void
+  readonly setShapeFill: (elementId: string, fill: ShapeFill) => void
+  readonly setImagePresentation: (
+    elementId: string,
+    presentation: ImageElement['presentation'],
+  ) => void
   readonly toggleMagnet: () => void
   readonly toggleSliceGuides: () => void
   readonly toggleAssetPanel: () => void
@@ -170,6 +194,11 @@ interface EditorState {
   ) => Promise<boolean>
   readonly placeBuiltInAsset: (assetId: string) => boolean
   readonly placeImportedAsset: (assetId: string) => boolean
+  readonly placeDraggedAsset: (
+    payload: AssetDragPayload,
+    logicalCenter: LogicalPosition,
+  ) => boolean
+  readonly reportAssetDropError: (message: string) => void
   readonly undo: () => void
   readonly redo: () => void
   readonly saveEpisode: () => void
@@ -184,6 +213,11 @@ interface HistoryCheckpoint {
   readonly activeCompositionGroup: CompositionGroup
   readonly activeLayerPlaneId: string
   readonly revision: number
+}
+
+interface ElementOpacityEditStart {
+  readonly elementId: string
+  readonly checkpoint: HistoryCheckpoint
 }
 
 const INITIAL_VIEWPORT_LOGICAL_HEIGHT = 900
@@ -299,6 +333,7 @@ function getCenteredImageBounds(
   state: EditorState,
   intrinsicWidth: number,
   intrinsicHeight: number,
+  logicalCenter?: LogicalPosition,
 ): ElementBounds | undefined {
   if (
     !Number.isFinite(intrinsicWidth) ||
@@ -335,10 +370,24 @@ function getCenteredImageBounds(
   )
   const width = intrinsicWidth * scale
   const height = intrinsicHeight * scale
+  const center = logicalCenter ?? {
+    x: state.viewportX + state.viewportLogicalWidth / 2,
+    y: state.viewportY + state.viewportLogicalHeight / 2,
+  }
+
+  if (!Number.isFinite(center.x) || !Number.isFinite(center.y)) {
+    return undefined
+  }
+
+  const position = clampElementPosition(
+    { x: center.x - width / 2, y: center.y - height / 2 },
+    { width, height },
+    state.episode.logicalWidth,
+    state.episode.logicalHeight,
+  )
 
   return {
-    x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
-    y: state.viewportY + (state.viewportLogicalHeight - height) / 2,
+    ...position,
     width,
     height,
   }
@@ -348,11 +397,13 @@ function placeImageAssetInEpisode(
   state: EditorState,
   asset: ResolvedImageAsset,
   assetReference: ImageAssetReference,
+  logicalCenter?: LogicalPosition,
 ): EpisodeDocument | undefined {
   const bounds = getCenteredImageBounds(
     state,
     asset.intrinsicWidth,
     asset.intrinsicHeight,
+    logicalCenter,
   )
 
   if (!bounds) {
@@ -365,6 +416,119 @@ function placeImageAssetInEpisode(
     assetReference,
     bounds,
   })
+}
+
+interface AssetPlacementTransition {
+  readonly placed: boolean
+  readonly nextState: EditorState | EditorStatePatch
+}
+
+function createAssetPlacementTransition(
+  state: EditorState,
+  assetReference: ImageAssetReference,
+  logicalCenter?: LogicalPosition,
+): AssetPlacementTransition {
+  const activeLayerPlane = getLayerPlaneById(
+    state.episode,
+    state.activeLayerPlaneId,
+  )
+
+  if (activeLayerPlane?.kind !== 'ordinary') {
+    return {
+      placed: false,
+      nextState: {
+        assetLibraryMessage:
+          'Select a numbered layer plane before placing an asset.',
+        assetLibraryMessageKind: 'error',
+      },
+    }
+  }
+
+  if (
+    logicalCenter &&
+    (!Number.isFinite(logicalCenter.x) || !Number.isFinite(logicalCenter.y))
+  ) {
+    return {
+      placed: false,
+      nextState: {
+        assetLibraryMessage: 'The canvas drop position is invalid.',
+        assetLibraryMessageKind: 'error',
+      },
+    }
+  }
+
+  let asset: ResolvedImageAsset | undefined
+  let missingSourceMessage: string
+  let cannotFitMessage: string
+
+  if (assetReference.kind === 'built-in') {
+    const builtIn = BUILT_IN_ASSETS.find(
+      (candidate) => candidate.id === assetReference.assetId,
+    )
+
+    asset = builtIn
+      ? {
+          id: builtIn.id,
+          displayName: builtIn.displayName,
+          intrinsicWidth: builtIn.intrinsicWidth,
+          intrinsicHeight: builtIn.intrinsicHeight,
+          sourceUrl: builtIn.source,
+        }
+      : undefined
+    missingSourceMessage = 'That built-in asset is unavailable.'
+    cannotFitMessage =
+      'This asset cannot fit inside the episode at a usable size.'
+  } else {
+    asset = state.importedImageAssets.find(
+      (candidate) => candidate.id === assetReference.assetId,
+    )
+    missingSourceMessage = 'That imported asset source is unavailable.'
+    cannotFitMessage =
+      'This image cannot fit inside the episode at a usable size.'
+  }
+
+  if (!asset) {
+    return {
+      placed: false,
+      nextState: {
+        assetLibraryMessage: missingSourceMessage,
+        assetLibraryMessageKind: 'error',
+      },
+    }
+  }
+
+  const episode = placeImageAssetInEpisode(
+    state,
+    asset,
+    assetReference,
+    logicalCenter,
+  )
+
+  if (!episode) {
+    return {
+      placed: false,
+      nextState: {
+        assetLibraryMessage: cannotFitMessage,
+        assetLibraryMessageKind: 'error',
+      },
+    }
+  }
+
+  if (episode === state.episode) {
+    return { placed: false, nextState: state }
+  }
+
+  const createdElement = episode.elements.at(-1)
+
+  return {
+    placed: true,
+    nextState: commitEpisodeChange(state, episode, {
+      selectedElementId: createdElement?.id ?? state.selectedElementId,
+      liveElementBounds: null,
+      assetLibraryMessage: `Placed “${asset.displayName}”.`,
+      assetLibraryMessageKind: 'success',
+    }),
+  }
 }
 
 function createHistoryCheckpoint(state: EditorState): HistoryCheckpoint {
@@ -411,6 +575,7 @@ function commitEpisodeChange(
     ),
     historyFuture: [],
     episodeHeightResizeStart: null,
+    elementOpacityEditStart: null,
     currentRevision: revision,
     nextRevision: revision + 1,
     canUndo: true,
@@ -500,6 +665,7 @@ function restoreHistoryCheckpoint(
     ...reconcileCheckpointContext(checkpoint.episode, checkpoint),
     liveElementBounds: null,
     episodeHeightResizeStart: null,
+    elementOpacityEditStart: null,
     currentRevision: checkpoint.revision,
     hasUnsavedChanges: isDirtyAtRevision(
       checkpoint.revision,
@@ -568,6 +734,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   historyPast: [],
   historyFuture: [],
   episodeHeightResizeStart: null,
+  elementOpacityEditStart: null,
   currentRevision: 0,
   nextRevision: 1,
   savedRevision: 0,
@@ -1212,6 +1379,190 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
+  setElementOpacity: (elementId, opacity) => {
+    set((state) => {
+      if (state.elementOpacityEditStart) {
+        return state
+      }
+
+      return commitEpisodeChange(
+        state,
+        setElementOpacityCommand(state.episode, elementId, opacity),
+      )
+    })
+  },
+
+  beginElementOpacityEdit: (elementId) => {
+    set((state) => {
+      const element = state.episode.elements.find(({ id }) => id === elementId)
+
+      if (
+        !element ||
+        state.selectedElementId !== elementId ||
+        state.elementOpacityEditStart ||
+        state.episodeHeightResizeStart
+      ) {
+        return state
+      }
+
+      return {
+        elementOpacityEditStart: {
+          elementId,
+          checkpoint: createHistoryCheckpoint(state),
+        },
+      }
+    })
+  },
+
+  previewElementOpacity: (elementId, opacity) => {
+    set((state) => {
+      const start = state.elementOpacityEditStart
+
+      if (!start || start.elementId !== elementId) {
+        return state
+      }
+
+      const episode = setElementOpacityCommand(state.episode, elementId, opacity)
+
+      return episode === state.episode
+        ? state
+        : {
+            episode,
+            hasUnsavedChanges: true,
+            documentStatus: 'Unsaved changes',
+          }
+    })
+  },
+
+  endElementOpacityEdit: () => {
+    set((state) => {
+      const start = state.elementOpacityEditStart
+
+      if (!start) {
+        return state
+      }
+
+      const startingOpacity = start.checkpoint.episode.elements.find(
+        ({ id }) => id === start.elementId,
+      )?.opacity
+      const endingOpacity = state.episode.elements.find(
+        ({ id }) => id === start.elementId,
+      )?.opacity
+
+      if (
+        startingOpacity === undefined ||
+        endingOpacity === undefined ||
+        startingOpacity === endingOpacity
+      ) {
+        const restored = restoreHistoryCheckpoint(state, start.checkpoint)
+
+        return {
+          ...restored,
+          historyPast: state.historyPast,
+          historyFuture: state.historyFuture,
+          canUndo: state.historyPast.length > 0,
+          canRedo: state.historyFuture.length > 0,
+          documentStatus: restored.hasUnsavedChanges
+            ? 'Unsaved changes'
+            : state.hasSavedEpisode
+              ? 'Saved locally'
+              : 'Demo ready · not saved',
+        }
+      }
+
+      const revision = state.nextRevision
+
+      return {
+        elementOpacityEditStart: null,
+        historyPast: appendHistoryCheckpoint(
+          state.historyPast,
+          start.checkpoint,
+        ),
+        historyFuture: [],
+        currentRevision: revision,
+        nextRevision: revision + 1,
+        canUndo: true,
+        canRedo: false,
+        hasUnsavedChanges: isDirtyAtRevision(revision, state.savedRevision),
+        documentStatus: 'Unsaved changes',
+      }
+    })
+  },
+
+  cancelElementOpacityEdit: () => {
+    set((state) => {
+      const start = state.elementOpacityEditStart
+
+      if (!start) {
+        return state
+      }
+
+      const restored = restoreHistoryCheckpoint(state, start.checkpoint)
+
+      return {
+        ...restored,
+        historyPast: state.historyPast,
+        historyFuture: state.historyFuture,
+        canUndo: state.historyPast.length > 0,
+        canRedo: state.historyFuture.length > 0,
+        documentStatus: restored.hasUnsavedChanges
+          ? 'Unsaved changes'
+          : state.hasSavedEpisode
+            ? 'Saved locally'
+            : 'Demo ready · not saved',
+      }
+    })
+  },
+
+  setElementBlendMode: (elementId, blendMode) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setElementBlendModeCommand(state.episode, elementId, blendMode),
+      ),
+    )
+  },
+
+  setShapeFill: (elementId, fill) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setShapeFillCommand(state.episode, elementId, fill),
+      ),
+    )
+  },
+
+  setImagePresentation: (elementId, presentation) => {
+    set((state) => {
+      const element = state.episode.elements.find(
+        ({ id }) => id === elementId,
+      )
+      const source =
+        element?.type === 'image'
+          ? element.assetReference.kind === 'built-in'
+            ? BUILT_IN_ASSETS.find(
+                ({ id }) => id === element.assetReference.assetId,
+              )
+            : state.importedImageAssets.find(
+                ({ id }) => id === element.assetReference.assetId,
+              )
+          : undefined
+      const sourceAspectRatio = source
+        ? source.intrinsicWidth / source.intrinsicHeight
+        : undefined
+
+      return commitEpisodeChange(
+        state,
+        setImagePresentationCommand(
+          state.episode,
+          elementId,
+          presentation,
+          { sourceAspectRatio },
+        ),
+      )
+    })
+  },
+
   toggleMagnet: () => {
     set((state) => ({ magnetEnabled: !state.magnetEnabled }))
   },
@@ -1674,121 +2025,46 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   placeBuiltInAsset: (assetId) => {
     const state = get()
-    const activeLayerPlane = getLayerPlaneById(
-      state.episode,
-      state.activeLayerPlaneId,
-    )
-    const builtIn = BUILT_IN_ASSETS.find((asset) => asset.id === assetId)
-
-    if (!builtIn) {
-      set({
-        assetLibraryMessage: 'That built-in asset is unavailable.',
-        assetLibraryMessageKind: 'error',
-      })
-      return false
-    }
-
-    if (activeLayerPlane?.kind !== 'ordinary') {
-      set({
-        assetLibraryMessage:
-          'Select a numbered layer plane before placing an asset.',
-        assetLibraryMessageKind: 'error',
-      })
-      return false
-    }
-
-    const asset: ResolvedImageAsset = {
-      id: builtIn.id,
-      displayName: builtIn.displayName,
-      intrinsicWidth: builtIn.intrinsicWidth,
-      intrinsicHeight: builtIn.intrinsicHeight,
-      sourceUrl: builtIn.source,
-    }
-    const episode = placeImageAssetInEpisode(state, asset, {
+    const transition = createAssetPlacementTransition(state, {
       kind: 'built-in',
-      assetId: builtIn.id,
+      assetId,
     })
 
-    if (!episode) {
-      set({
-        assetLibraryMessage:
-          'This asset cannot fit inside the episode at a usable size.',
-        assetLibraryMessageKind: 'error',
-      })
-      return false
-    }
-
-    if (episode === state.episode) {
-      return false
-    }
-
-    const createdElement = episode.elements.at(-1)
-    set(
-      commitEpisodeChange(state, episode, {
-        selectedElementId: createdElement?.id ?? state.selectedElementId,
-        liveElementBounds: null,
-        assetLibraryMessage: `Placed “${builtIn.displayName}”.`,
-        assetLibraryMessageKind: 'success',
-      }),
-    )
-    return true
+    set(transition.nextState)
+    return transition.placed
   },
 
   placeImportedAsset: (assetId) => {
     const state = get()
-    const activeLayerPlane = getLayerPlaneById(
-      state.episode,
-      state.activeLayerPlaneId,
-    )
-    const imported = state.importedImageAssets.find(
-      (asset) => asset.id === assetId,
-    )
-
-    if (!imported) {
-      set({
-        assetLibraryMessage: 'That imported asset source is unavailable.',
-        assetLibraryMessageKind: 'error',
-      })
-      return false
-    }
-
-    if (activeLayerPlane?.kind !== 'ordinary') {
-      set({
-        assetLibraryMessage:
-          'Select a numbered layer plane before placing an asset.',
-        assetLibraryMessageKind: 'error',
-      })
-      return false
-    }
-
-    const episode = placeImageAssetInEpisode(state, imported, {
+    const transition = createAssetPlacementTransition(state, {
       kind: 'imported',
-      assetId: imported.id,
+      assetId,
     })
 
-    if (!episode) {
-      set({
-        assetLibraryMessage:
-          'This image cannot fit inside the episode at a usable size.',
-        assetLibraryMessageKind: 'error',
-      })
-      return false
-    }
+    set(transition.nextState)
+    return transition.placed
+  },
 
-    if (episode === state.episode) {
-      return false
-    }
-
-    const createdElement = episode.elements.at(-1)
-    set(
-      commitEpisodeChange(state, episode, {
-        selectedElementId: createdElement?.id ?? state.selectedElementId,
-        liveElementBounds: null,
-        assetLibraryMessage: `Placed “${imported.displayName}”.`,
-        assetLibraryMessageKind: 'success',
-      }),
+  placeDraggedAsset: (payload, logicalCenter) => {
+    const state = get()
+    const transition = createAssetPlacementTransition(
+      state,
+      { kind: payload.kind, assetId: payload.assetId },
+      logicalCenter,
     )
-    return true
+
+    set(transition.nextState)
+    return transition.placed
+  },
+
+  reportAssetDropError: (message) => {
+    const normalizedMessage = message.trim()
+
+    set({
+      assetLibraryMessage:
+        normalizedMessage || 'That asset could not be dropped on the canvas.',
+      assetLibraryMessageKind: 'error',
+    })
   },
 
   undo: () => {
@@ -1879,6 +2155,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         historyPast: [],
         historyFuture: [],
         episodeHeightResizeStart: null,
+        elementOpacityEditStart: null,
         currentRevision: revision,
         nextRevision: revision + 1,
         savedRevision: revision,
@@ -1920,6 +2197,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         historyPast: [],
         historyFuture: [],
         episodeHeightResizeStart: null,
+        elementOpacityEditStart: null,
         currentRevision: revision,
         nextRevision: revision + 1,
         savedRevision: null,
@@ -1958,6 +2236,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         historyPast: [],
         historyFuture: [],
         episodeHeightResizeStart: null,
+        elementOpacityEditStart: null,
         currentRevision: revision,
         nextRevision: revision + 1,
         savedRevision: isSavedEpisodeAvailable

@@ -32,6 +32,35 @@ export const MAX_ZOOM_FACTOR = 2
 export const DEFAULT_ZOOM_FACTOR = 1
 export const CENTER_SNAP_THRESHOLD_PX = 8
 
+export function clientPointToEpisodePosition(
+  clientPoint: LogicalPosition,
+  canvasClientOrigin: LogicalPosition,
+  episodePixelOffset: LogicalPosition,
+  viewScale: number,
+): LogicalPosition | undefined {
+  if (
+    !Number.isFinite(clientPoint.x) ||
+    !Number.isFinite(clientPoint.y) ||
+    !Number.isFinite(canvasClientOrigin.x) ||
+    !Number.isFinite(canvasClientOrigin.y) ||
+    !Number.isFinite(episodePixelOffset.x) ||
+    !Number.isFinite(episodePixelOffset.y) ||
+    !Number.isFinite(viewScale) ||
+    viewScale <= 0
+  ) {
+    return undefined
+  }
+
+  return {
+    x:
+      (clientPoint.x - canvasClientOrigin.x - episodePixelOffset.x) /
+      viewScale,
+    y:
+      (clientPoint.y - canvasClientOrigin.y - episodePixelOffset.y) /
+      viewScale,
+  }
+}
+
 export function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(Math.max(value, minimum), Math.max(minimum, maximum))
 }

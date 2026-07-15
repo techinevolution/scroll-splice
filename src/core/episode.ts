@@ -1,6 +1,17 @@
 export const LEGACY_EPISODE_FORMAT_VERSION = 3 as const
-export const EPISODE_FORMAT_VERSION = 4 as const
+export const IMAGE_EPISODE_FORMAT_VERSION = 4 as const
+export const EPISODE_FORMAT_VERSION = 5 as const
 export const EPISODE_LOGICAL_WIDTH = 800 as const
+
+export const ELEMENT_BLEND_MODES = [
+  'normal',
+  'multiply',
+  'screen',
+  'overlay',
+  'soft-light',
+] as const
+
+export type ElementBlendMode = (typeof ELEMENT_BLEND_MODES)[number]
 
 export const COMPOSITION_GROUPS = [
   'background',
@@ -78,17 +89,36 @@ interface EpisodeElementBase {
   readonly visible: boolean
   readonly locked: boolean
   readonly zIndex: number
+  readonly opacity: number
+  readonly blendMode: ElementBlendMode
   readonly assetReference: AssetReference
 }
+
+export interface ShapeFillStop {
+  readonly color: string
+  readonly opacity: number
+}
+
+export interface SolidShapeFill {
+  readonly kind: 'solid'
+  readonly color: string
+}
+
+export interface VerticalGradientShapeFill {
+  readonly kind: 'vertical-gradient'
+  readonly top: ShapeFillStop
+  readonly bottom: ShapeFillStop
+}
+
+export type ShapeFill = SolidShapeFill | VerticalGradientShapeFill
 
 export interface ShapeElement extends EpisodeElementBase {
   readonly type: 'shape'
   readonly shape: 'rectangle' | 'ellipse'
-  readonly fill: string
+  readonly fill: ShapeFill
   readonly stroke?: string
   readonly strokeWidth?: number
   readonly cornerRadius?: number
-  readonly opacity?: number
 }
 
 export interface TextElement extends EpisodeElementBase {
@@ -105,6 +135,7 @@ export interface TextElement extends EpisodeElementBase {
 export interface ImageElement extends EpisodeElementBase {
   readonly type: 'image'
   readonly assetReference: ImageAssetReference
+  readonly presentation: 'single' | 'tile'
 }
 
 export type EpisodeElement = ShapeElement | TextElement | ImageElement

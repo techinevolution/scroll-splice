@@ -13,71 +13,186 @@ import {
   isElementEffectivelyVisible,
   type ElementBounds,
   type EpisodeElement,
+  type ImageElement,
+  type ShapeElement,
 } from '../core/episode'
 import { useAssetImage } from '../editor/useAssetImage'
+import {
+  getTilePatternScale,
+  toCssMixBlendMode,
+} from '../rendering/elementAppearance'
 
 interface MinimapElementProps {
   readonly element: EpisodeElement
   readonly bounds: ElementBounds
   readonly isSelected: boolean
   readonly imageSourceUrl?: string
+  readonly definitionId: string
 }
 
 interface MinimapImageElementProps {
-  readonly elementId: string
+  readonly element: ImageElement
   readonly bounds: ElementBounds
   readonly sourceUrl?: string
   readonly isSelected: boolean
+  readonly definitionId: string
 }
 
 function MinimapImageElement({
-  elementId,
+  element,
   bounds,
   sourceUrl,
   isSelected,
+  definitionId,
 }: MinimapImageElementProps) {
   const { image, status } = useAssetImage(sourceUrl)
-  const outline = isSelected ? '#65E4FF' : '#746A8D'
-  const outlineWidth = isSelected ? 12 : 2
+  const patternId = `${definitionId}-pattern`
+  const imageIsReady = status === 'ready' && image !== null
+  const patternScale = imageIsReady
+    ? getTilePatternScale(
+        image.naturalWidth || image.width,
+        image.naturalHeight || image.height,
+      )
+    : 1
+  const tileWidth = imageIsReady
+    ? (image.naturalWidth || image.width) * patternScale
+    : 1
+  const tileHeight = imageIsReady
+    ? (image.naturalHeight || image.height) * patternScale
+    : 1
 
   return (
-    <g data-element-id={elementId} data-image-status={status}>
-      {status === 'ready' && image ? (
-        <image
-          href={image.src}
-          x={bounds.x}
-          y={bounds.y}
-          width={bounds.width}
-          height={bounds.height}
-          preserveAspectRatio="none"
-        />
-      ) : (
-        <>
+    <>
+      {imageIsReady && element.presentation === 'tile' ? (
+        <defs>
+          <pattern
+            id={patternId}
+            x={bounds.x}
+            y={bounds.y}
+            width={tileWidth}
+            height={tileHeight}
+            patternUnits="userSpaceOnUse"
+            patternContentUnits="userSpaceOnUse"
+          >
+            <image
+              href={image.src}
+              x={bounds.x}
+              y={bounds.y}
+              width={tileWidth}
+              height={tileHeight}
+              preserveAspectRatio="none"
+            />
+          </pattern>
+        </defs>
+      ) : null}
+
+      <g
+        data-element-id={element.id}
+        data-image-status={status}
+        data-opacity={element.opacity}
+        data-blend-mode={element.blendMode}
+        data-image-presentation={element.presentation}
+        opacity={element.opacity}
+        style={{ mixBlendMode: toCssMixBlendMode(element.blendMode) }}
+      >
+        {imageIsReady ? (
+          element.presentation === 'tile' ? (
+            <rect
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
+              fill={`url(#${patternId})`}
+            />
+          ) : (
+            <image
+              href={image.src}
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
+              preserveAspectRatio="none"
+            />
+          )
+        ) : (
+          <>
+            <rect
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
+              fill="#29233A"
+            />
+            <path
+              d={`M ${bounds.x} ${bounds.y} L ${bounds.x + bounds.width} ${bounds.y + bounds.height} M ${bounds.x + bounds.width} ${bounds.y} L ${bounds.x} ${bounds.y + bounds.height}`}
+              fill="none"
+              stroke="#AFA6C8"
+              strokeWidth="6"
+            />
+          </>
+        )}
+
+        {!isSelected ? (
           <rect
             x={bounds.x}
             y={bounds.y}
             width={bounds.width}
             height={bounds.height}
-            fill="#29233A"
-          />
-          <path
-            d={`M ${bounds.x} ${bounds.y} L ${bounds.x + bounds.width} ${bounds.y + bounds.height} M ${bounds.x + bounds.width} ${bounds.y} L ${bounds.x} ${bounds.y + bounds.height}`}
             fill="none"
-            stroke="#AFA6C8"
-            strokeWidth="6"
+            stroke="#746A8D"
+            strokeWidth="2"
           />
-        </>
-      )}
-      <rect
-        x={bounds.x}
-        y={bounds.y}
-        width={bounds.width}
-        height={bounds.height}
-        fill="none"
-        stroke={outline}
-        strokeWidth={outlineWidth}
-      />
-    </g>
+        ) : null}
+      </g>
+
+      {isSelected ? (
+        <rect
+          data-selection-outline-for={element.id}
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          fill="none"
+          stroke="#65E4FF"
+          strokeWidth="12"
+        />
+      ) : null}
+    </>
+  )
+}
+
+function ShapeGradientDefinition({
+  element,
+  definitionId,
+}: {
+  readonly element: ShapeElement
+  readonly definitionId: string
+}) {
+  if (element.fill.kind !== 'vertical-gradient') {
+    return null
+  }
+
+  return (
+    <defs>
+      <linearGradient
+        id={`${definitionId}-gradient`}
+        x1="0%"
+        y1="0%"
+        x2="0%"
+        y2="100%"
+      >
+        <stop
+          offset="0%"
+          stopColor={element.fill.top.color}
+          stopOpacity={element.fill.top.opacity}
+        />
+        <stop
+          offset="100%"
+          stopColor={element.fill.bottom.color}
+          stopOpacity={element.fill.bottom.opacity}
+        />
+      </linearGradient>
+    </defs>
   )
 }
 
@@ -86,67 +201,148 @@ function MinimapElement({
   bounds,
   isSelected,
   imageSourceUrl,
+  definitionId,
 }: MinimapElementProps) {
-  const stroke = isSelected ? '#65E4FF' : undefined
-  const strokeWidth = isSelected ? 12 : 0
+  const visualStyle = {
+    mixBlendMode: toCssMixBlendMode(element.blendMode),
+  }
 
   if (element.type === 'text') {
+    const textPreviewHeight = Math.max(bounds.height * 0.38, 12)
+
     return (
-      <rect
-        data-element-id={element.id}
-        x={bounds.x}
-        y={bounds.y}
-        width={bounds.width}
-        height={Math.max(bounds.height * 0.38, 12)}
-        rx="8"
-        fill={element.fill}
-        opacity="0.86"
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-      />
+      <>
+        <g
+          data-element-id={element.id}
+          data-opacity={element.opacity}
+          data-blend-mode={element.blendMode}
+          opacity={element.opacity}
+          style={visualStyle}
+        >
+          <rect
+            x={bounds.x}
+            y={bounds.y}
+            width={bounds.width}
+            height={textPreviewHeight}
+            rx="8"
+            fill={element.fill}
+            opacity="0.86"
+          />
+        </g>
+        {isSelected ? (
+          <rect
+            data-selection-outline-for={element.id}
+            x={bounds.x}
+            y={bounds.y}
+            width={bounds.width}
+            height={textPreviewHeight}
+            rx="8"
+            fill="none"
+            stroke="#65E4FF"
+            strokeWidth="12"
+          />
+        ) : null}
+      </>
     )
   }
 
   if (element.type === 'image') {
     return (
       <MinimapImageElement
-        elementId={element.id}
+        element={element}
         bounds={bounds}
         sourceUrl={imageSourceUrl}
         isSelected={isSelected}
+        definitionId={definitionId}
       />
     )
   }
 
+  const shapeFill =
+    element.fill.kind === 'solid'
+      ? element.fill.color
+      : `url(#${definitionId}-gradient)`
+
   if (element.shape === 'ellipse') {
     return (
-      <ellipse
-        data-element-id={element.id}
-        cx={bounds.x + bounds.width / 2}
-        cy={bounds.y + bounds.height / 2}
-        rx={bounds.width / 2}
-        ry={bounds.height / 2}
-        fill={element.fill}
-        opacity={element.opacity}
-        stroke={stroke}
-        strokeWidth={strokeWidth}
-      />
+      <>
+        <ShapeGradientDefinition
+          element={element}
+          definitionId={definitionId}
+        />
+        <g
+          data-element-id={element.id}
+          data-opacity={element.opacity}
+          data-blend-mode={element.blendMode}
+          data-fill-kind={element.fill.kind}
+          opacity={element.opacity}
+          style={visualStyle}
+        >
+          <ellipse
+            cx={bounds.x + bounds.width / 2}
+            cy={bounds.y + bounds.height / 2}
+            rx={bounds.width / 2}
+            ry={bounds.height / 2}
+            fill={shapeFill}
+            stroke={element.stroke}
+            strokeWidth={element.strokeWidth}
+          />
+        </g>
+        {isSelected ? (
+          <ellipse
+            data-selection-outline-for={element.id}
+            cx={bounds.x + bounds.width / 2}
+            cy={bounds.y + bounds.height / 2}
+            rx={bounds.width / 2}
+            ry={bounds.height / 2}
+            fill="none"
+            stroke="#65E4FF"
+            strokeWidth="12"
+          />
+        ) : null}
+      </>
     )
   }
 
   return (
-    <rect
-      data-element-id={element.id}
-      x={bounds.x}
-      y={bounds.y}
-      width={bounds.width}
-      height={bounds.height}
-      rx={element.cornerRadius}
-      fill={element.fill}
-      opacity={element.opacity}
-      stroke={stroke ?? element.stroke}
-      strokeWidth={strokeWidth || element.strokeWidth}
-    />
+    <>
+      <ShapeGradientDefinition
+        element={element}
+        definitionId={definitionId}
+      />
+      <g
+        data-element-id={element.id}
+        data-opacity={element.opacity}
+        data-blend-mode={element.blendMode}
+        data-fill-kind={element.fill.kind}
+        opacity={element.opacity}
+        style={visualStyle}
+      >
+        <rect
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          rx={element.cornerRadius}
+          fill={shapeFill}
+          stroke={element.stroke}
+          strokeWidth={element.strokeWidth}
+        />
+      </g>
+      {isSelected ? (
+        <rect
+          data-selection-outline-for={element.id}
+          x={bounds.x}
+          y={bounds.y}
+          width={bounds.width}
+          height={bounds.height}
+          rx={element.cornerRadius}
+          fill="none"
+          stroke="#65E4FF"
+          strokeWidth="12"
+        />
+      ) : null}
+    </>
   )
 }
 
@@ -338,6 +534,7 @@ export function EpisodeMinimap() {
         <svg
           viewBox={`0 0 ${episode.logicalWidth} ${episode.logicalHeight}`}
           preserveAspectRatio="none"
+          style={{ isolation: 'isolate' }}
           aria-hidden="true"
         >
           {baseColor ? (
@@ -348,10 +545,11 @@ export function EpisodeMinimap() {
               fill={baseColor}
             />
           ) : null}
-          {orderedElements.map((element) => (
+          {orderedElements.map((element, index) => (
             <MinimapElement
               key={element.id}
               element={element}
+              definitionId={`minimap-appearance-${index}`}
               imageSourceUrl={
                 resolvedImageAssets.get(element.id)?.sourceUrl
               }

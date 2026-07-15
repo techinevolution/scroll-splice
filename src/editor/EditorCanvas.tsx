@@ -3,6 +3,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type DragEvent as ReactDragEvent,
   type KeyboardEvent,
 } from 'react'
 import type Konva from 'konva'
@@ -18,13 +19,18 @@ import {
 } from 'react-konva'
 
 import { useEditorStore } from '../app/store'
+import {
+  ASSET_DRAG_MIME_TYPE,
+  parseAssetDragPayload,
+} from '../assets/dragPayload'
 import { resolveImageAsset } from '../assets/runtime'
 import {
   MIN_ELEMENT_SIZE,
-  isBackgroundColorRegion,
+  isElementFreeformResizable,
 } from '../core/commands'
 import {
   boundsIntersectViewport,
+  clientPointToEpisodePosition,
   clampElementPosition,
   getFitScale,
   getEpisodeCenterSnap,
@@ -41,6 +47,11 @@ import {
   WEBTOON_CANVAS_OBSERVED_PROFILE,
   getCandidateLogicalSliceBoundaries,
 } from '../export/profiles'
+import {
+  getKonvaShapeFillProps,
+  getTilePatternScale,
+  toCanvasCompositeOperation,
+} from '../rendering/elementAppearance'
 import { useElementSize } from './useElementSize'
 import { CanvasBaseColorControl } from './CanvasBaseColorControl'
 import { EpisodeHeightControls } from './EpisodeHeightControls'
@@ -90,6 +101,7 @@ interface ImageElementVisualProps {
   readonly sourceUrl?: string
   readonly width: number
   readonly height: number
+  readonly presentation: 'single' | 'tile'
 }
 
 const IMAGE_PLACEHOLDER_LABELS = {
@@ -104,10 +116,30 @@ function ImageElementVisual({
   sourceUrl,
   width,
   height,
+  presentation,
 }: ImageElementVisualProps) {
   const { image, status } = useAssetImage(sourceUrl)
 
   if (status === 'ready' && image) {
+    if (presentation === 'tile') {
+      const patternScale = getTilePatternScale(
+        image.naturalWidth || image.width,
+        image.naturalHeight || image.height,
+      )
+
+      return (
+        <Rect
+          width={width}
+          height={height}
+          fillPatternImage={image}
+          fillPatternRepeat="repeat"
+          fillPatternScaleX={patternScale}
+          fillPatternScaleY={patternScale}
+          perfectDrawEnabled={false}
+        />
+      )
+    }
+
     return (
       <KonvaImage
         image={image}
@@ -164,7 +196,7 @@ function ElementNode({
   const { bounds } = element
   const nodeRef = useRef<Konva.Group>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
-  const isBackgroundRegion = isBackgroundColorRegion(element)
+  const isFreeformResizable = isElementFreeformResizable(element)
   const isResizable = isSelected && !element.locked
 
   useEffect(() => {
@@ -179,7 +211,7 @@ function ElementNode({
     transformer.moveToTop()
     transformer.forceUpdate()
     transformer.getLayer()?.batchDraw()
-  }, [bounds.height, bounds.width, isResizable])
+  }, [bounds.height, bounds.width, isFreeformResizable, isResizable])
 
   useEffect(
     () => () => onClearPreview(element.id),
@@ -228,7 +260,8 @@ function ElementNode({
         name={`episode-element episode-element-${element.type}`}
         x={bounds.x}
         y={bounds.y}
-        draggable={isSelected && !element.locked}
+        listening={element.opacity > 0}
+        draggable={element.opacity > 0 && isSelected && !element.locked}
         onMouseDown={(event) => {
           event.cancelBubble = true
           onSelect(element.id)
@@ -277,53 +310,60 @@ function ElementNode({
           if (stage) stage.container().style.cursor = 'default'
         }}
       >
-        {element.type === 'shape' && element.shape === 'rectangle' ? (
-          <Rect
-            width={bounds.width}
-            height={bounds.height}
-            fill={element.fill}
-            stroke={element.stroke}
-            strokeWidth={element.strokeWidth}
-            cornerRadius={element.cornerRadius}
-            opacity={element.opacity}
-          />
-        ) : null}
+        <Group
+          name="episode-element-visual"
+          opacity={element.opacity}
+          globalCompositeOperation={toCanvasCompositeOperation(
+            element.blendMode,
+          )}
+        >
+          {element.type === 'shape' && element.shape === 'rectangle' ? (
+            <Rect
+              width={bounds.width}
+              height={bounds.height}
+              {...getKonvaShapeFillProps(element.fill, bounds.height)}
+              stroke={element.stroke}
+              strokeWidth={element.strokeWidth}
+              cornerRadius={element.cornerRadius}
+            />
+          ) : null}
 
-        {element.type === 'shape' && element.shape === 'ellipse' ? (
-          <Ellipse
-            x={bounds.width / 2}
-            y={bounds.height / 2}
-            radiusX={bounds.width / 2}
-            radiusY={bounds.height / 2}
-            fill={element.fill}
-            stroke={element.stroke}
-            strokeWidth={element.strokeWidth}
-            opacity={element.opacity}
-          />
-        ) : null}
+          {element.type === 'shape' && element.shape === 'ellipse' ? (
+            <Ellipse
+              x={bounds.width / 2}
+              y={bounds.height / 2}
+              radiusX={bounds.width / 2}
+              radiusY={bounds.height / 2}
+              {...getKonvaShapeFillProps(element.fill, bounds.height)}
+              stroke={element.stroke}
+              strokeWidth={element.strokeWidth}
+            />
+          ) : null}
 
-        {element.type === 'text' ? (
-          <Text
-            width={bounds.width}
-            height={bounds.height}
-            text={element.text}
-            fill={element.fill}
-            fontFamily={element.fontFamily}
-            fontSize={element.fontSize}
-            fontStyle={element.fontWeight >= 700 ? 'bold' : 'normal'}
-            lineHeight={element.lineHeight}
-            align={element.align}
-            verticalAlign="middle"
-          />
-        ) : null}
+          {element.type === 'text' ? (
+            <Text
+              width={bounds.width}
+              height={bounds.height}
+              text={element.text}
+              fill={element.fill}
+              fontFamily={element.fontFamily}
+              fontSize={element.fontSize}
+              fontStyle={element.fontWeight >= 700 ? 'bold' : 'normal'}
+              lineHeight={element.lineHeight}
+              align={element.align}
+              verticalAlign="middle"
+            />
+          ) : null}
 
-        {element.type === 'image' ? (
-          <ImageElementVisual
-            sourceUrl={imageSourceUrl}
-            width={bounds.width}
-            height={bounds.height}
-          />
-        ) : null}
+          {element.type === 'image' ? (
+            <ImageElementVisual
+              sourceUrl={imageSourceUrl}
+              width={bounds.width}
+              height={bounds.height}
+              presentation={element.presentation}
+            />
+          ) : null}
+        </Group>
 
         {isSelected && !isResizable ? (
           <Rect
@@ -347,12 +387,12 @@ function ElementNode({
         <Transformer
           ref={transformerRef}
           enabledAnchors={
-            isBackgroundRegion
+            isFreeformResizable
               ? FREEFORM_RESIZE_ANCHORS
               : PROPORTIONAL_RESIZE_ANCHORS
           }
           rotateEnabled={false}
-          keepRatio={!isBackgroundRegion}
+          keepRatio={!isFreeformResizable}
           flipEnabled={false}
           anchorSize={14}
           anchorCornerRadius={3}
@@ -410,6 +450,12 @@ export function EditorCanvas() {
   const toggleMagnet = useEditorStore((state) => state.toggleMagnet)
   const toggleSliceGuides = useEditorStore(
     (state) => state.toggleSliceGuides,
+  )
+  const placeDraggedAsset = useEditorStore(
+    (state) => state.placeDraggedAsset,
+  )
+  const reportAssetDropError = useEditorStore(
+    (state) => state.reportAssetDropError,
   )
   const [centerSnapGuideVisible, setCenterSnapGuideVisible] = useState(false)
   const { elementRef, size } = useElementSize<HTMLDivElement>()
@@ -531,6 +577,76 @@ export function EditorCanvas() {
     })
   }
 
+  const hasAssetDragPayload = (event: ReactDragEvent<HTMLDivElement>) =>
+    Array.from(event.dataTransfer.types).includes(ASSET_DRAG_MIME_TYPE)
+
+  const isCanvasChromeDropTarget = (target: EventTarget | null) =>
+    target instanceof Element &&
+    Boolean(
+      target.closest(
+        '.canvas-base-color-control, .episode-height-edge, .episode-end-controls',
+      ),
+    )
+
+  const handleAssetDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (
+      !hasAssetDragPayload(event) ||
+      isCanvasChromeDropTarget(event.target)
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+  }
+
+  const handleAssetDrop = (event: ReactDragEvent<HTMLDivElement>) => {
+    if (!hasAssetDragPayload(event)) {
+      return
+    }
+
+    event.preventDefault()
+
+    if (isCanvasChromeDropTarget(event.target)) {
+      reportAssetDropError(
+        'Drop the asset on the episode itself, not a canvas control.',
+      )
+      return
+    }
+
+    const payload = parseAssetDragPayload(
+      event.dataTransfer.getData(ASSET_DRAG_MIME_TYPE),
+    )
+
+    if (!payload) {
+      reportAssetDropError(
+        'Only valid items from the ScrollSplice Asset Library can be dropped here.',
+      )
+      return
+    }
+
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const logicalCenter = clientPointToEpisodePosition(
+      { x: event.clientX, y: event.clientY },
+      { x: bounds.left, y: bounds.top },
+      { x: groupX, y: -viewportY * viewScale },
+      viewScale,
+    )
+
+    if (
+      !logicalCenter ||
+      logicalCenter.x < 0 ||
+      logicalCenter.x > episode.logicalWidth ||
+      logicalCenter.y < 0 ||
+      logicalCenter.y > episode.logicalHeight
+    ) {
+      reportAssetDropError('Drop the asset inside the episode canvas.')
+      return
+    }
+
+    placeDraggedAsset(payload, logicalCenter)
+  }
+
   return (
     <div className="editor-canvas-shell">
       <div
@@ -554,12 +670,22 @@ export function EditorCanvas() {
         data-selected-y={selectedElement?.bounds.y ?? ''}
         data-selected-width={selectedElement?.bounds.width ?? ''}
         data-selected-height={selectedElement?.bounds.height ?? ''}
+        data-selected-opacity={selectedElement?.opacity ?? ''}
+        data-selected-blend-mode={selectedElement?.blendMode ?? ''}
+        data-selected-fill-kind={
+          selectedElement?.type === 'shape' ? selectedElement.fill.kind : ''
+        }
+        data-selected-image-presentation={
+          selectedElement?.type === 'image'
+            ? selectedElement.presentation
+            : ''
+        }
         data-image-element-count={imageElementCount}
         data-visible-image-element-count={visibleImageElementCount}
         data-missing-image-element-count={missingImageElementCount}
         data-resize-handle-count={
           selectedElement && !selectedElement.locked
-            ? isBackgroundColorRegion(selectedElement)
+            ? isElementFreeformResizable(selectedElement)
               ? FREEFORM_RESIZE_ANCHORS.length
               : PROPORTIONAL_RESIZE_ANCHORS.length
             : 0
@@ -569,6 +695,8 @@ export function EditorCanvas() {
         aria-label="Episode editing canvas. Use the mouse wheel, trackpad, or arrow keys to move through the episode."
         tabIndex={0}
         onKeyDown={handleKeyboardNavigation}
+        onDragOver={handleAssetDragOver}
+        onDrop={handleAssetDrop}
       >
         <Stage
           width={stageWidth}

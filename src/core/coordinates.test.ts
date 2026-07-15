@@ -4,6 +4,7 @@ import {
   CENTER_SNAP_THRESHOLD_PX,
   boundsIntersectViewport,
   boundsIntersectVerticalViewport,
+  clientPointToEpisodePosition,
   centerBoundsInViewport2D,
   centerBoundsInViewport,
   clampElementPosition,
@@ -25,6 +26,44 @@ import {
 } from './coordinates'
 
 describe('viewport coordinates', () => {
+  it('maps a client drop point through canvas offset, zoom, and pan', () => {
+    expect(
+      clientPointToEpisodePosition(
+        { x: 300, y: 250 },
+        { x: 100, y: 50 },
+        { x: -600, y: -2_000 },
+        2,
+      ),
+    ).toEqual({ x: 400, y: 1_100 })
+
+    expect(
+      clientPointToEpisodePosition(
+        { x: 300, y: 175 },
+        { x: 100, y: 50 },
+        { x: 100, y: -100 },
+        0.5,
+      ),
+    ).toEqual({ x: 200, y: 450 })
+
+    expect(
+      clientPointToEpisodePosition(
+        { x: 150, y: 175 },
+        { x: 100, y: 50 },
+        { x: 100, y: -100 },
+        0.5,
+      ),
+    ).toEqual({ x: -100, y: 450 })
+
+    expect(
+      clientPointToEpisodePosition(
+        { x: 0, y: 0 },
+        { x: 0, y: 0 },
+        { x: 0, y: 0 },
+        0,
+      ),
+    ).toBeUndefined()
+  })
+
   it('fits the fixed logical width and derives the visible logical height', () => {
     const scale = getFitScale(600, 800)
 
