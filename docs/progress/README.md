@@ -125,3 +125,4 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Katherine's upload, placement, alpha, and resize checks passed. The visible white seam in the original Oval and Rounded balloon outline artwork is separately recorded as later polish.
 - File: 1440 × 900 PNG, 153,678 bytes.
 - SHA-256: `aa160a27ef595f06b8f93261c595851b7f8fca0a70a3224b114d478ba7e1d3d7`.
+- Published and verified on local and remote `main` in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`.

@@ -326,7 +326,7 @@ Explicitly excluded: text inside balloons, balloon-tail editing, recoloring, opa
 
 ### July 15 post-review UI polish
 
-**Status:** implemented and browser-validated locally; publication is pending the final documentation and repository check.
+**Status:** implemented, browser-validated, and published July 15 in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`; local and remote `main` matched after the push.
 
 - Keep File, Edit, and future application menus above the Asset Library and all other workspace overlays.
 - Render **Decor** in the narrow rail while preserving **Decorations** as the accessible name, drawer heading, and category identity.
