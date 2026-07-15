@@ -323,6 +323,83 @@ describe('editor store', () => {
     expect(useEditorStore.getState().viewportY).toBe(0)
   })
 
+  it('previews live element bounds without mutating the episode and clears on commit', () => {
+    const elementId = 'beat-01-stillness-accent-2'
+    const episode = useEditorStore.getState().episode
+
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore.getState().previewElementBounds(elementId, {
+      x: 400,
+      y: 500,
+      width: 60,
+      height: 60,
+    })
+
+    expect(useEditorStore.getState().episode).toBe(episode)
+    expect(useEditorStore.getState().liveElementBounds).toEqual({
+      elementId,
+      bounds: { x: 400, y: 500, width: 60, height: 60 },
+    })
+
+    useEditorStore.getState().clearElementBoundsPreview('different-element')
+    expect(useEditorStore.getState().liveElementBounds).not.toBeNull()
+
+    useEditorStore.getState().clearElementBoundsPreview(elementId)
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+    useEditorStore.getState().previewElementBounds(elementId, {
+      x: 400,
+      y: 500,
+      width: 60,
+      height: 60,
+    })
+
+    useEditorStore.getState().moveElement(elementId, { x: 400, y: 500 })
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.bounds,
+    ).toMatchObject({ x: 400, y: 500 })
+  })
+
+  it('clears stale live bounds on selection changes, deletion, and reset', () => {
+    const elementId = 'beat-01-stillness-accent-2'
+    const previewBounds = { x: 400, y: 500, width: 60, height: 60 }
+
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore
+      .getState()
+      .previewElementBounds(elementId, previewBounds)
+    useEditorStore
+      .getState()
+      .selectElement('beat-01-stillness-title')
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore
+      .getState()
+      .previewElementBounds(elementId, previewBounds)
+    useEditorStore.getState().deleteElement(elementId)
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+
+    useEditorStore.getState().resetEpisode()
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore
+      .getState()
+      .previewElementBounds(elementId, previewBounds)
+    useEditorStore.getState().setActiveCompositionGroup('background')
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+
+    useEditorStore.getState().resetEpisode()
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore
+      .getState()
+      .previewElementBounds(elementId, previewBounds)
+    useEditorStore.getState().resetEpisode()
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
+  })
+
   it('resizes through the command and restores the fixture on reset', () => {
     const elementId = 'beat-01-stillness-accent-2'
     const before = useEditorStore
@@ -334,6 +411,13 @@ describe('editor store', () => {
       throw new Error('Missing resize fixture element')
     }
 
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore.getState().previewElementBounds(elementId, {
+      ...before.bounds,
+      width: before.bounds.width * 1.5,
+      height: before.bounds.height * 1.5,
+    })
+    expect(useEditorStore.getState().liveElementBounds).not.toBeNull()
     useEditorStore.getState().resizeElement(elementId, {
       ...before.bounds,
       width: before.bounds.width * 1.5,
@@ -345,6 +429,7 @@ describe('editor store', () => {
       .episode.elements.find(({ id }) => id === elementId)
     expect(resized?.bounds.width).toBe(before.bounds.width * 1.5)
     expect(resized?.bounds.height).toBe(before.bounds.height * 1.5)
+    expect(useEditorStore.getState().liveElementBounds).toBeNull()
 
     useEditorStore.getState().resetEpisode()
     expect(useEditorStore.getState().episode).toBe(buildWeekEpisode)

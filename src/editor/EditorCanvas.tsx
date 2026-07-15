@@ -44,6 +44,22 @@ import { CanvasBaseColorControl } from './CanvasBaseColorControl'
 import { EpisodeHeightControls } from './EpisodeHeightControls'
 
 const RENDER_BUFFER = 160
+const PROPORTIONAL_RESIZE_ANCHORS = [
+  'top-left',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+]
+const FREEFORM_RESIZE_ANCHORS = [
+  'top-left',
+  'top-center',
+  'top-right',
+  'middle-left',
+  'middle-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+]
 
 interface ElementNodeProps {
   readonly element: EpisodeElement
@@ -58,6 +74,11 @@ interface ElementNodeProps {
     elementId: string,
     bounds: EpisodeElement['bounds'],
   ) => void
+  readonly onPreviewBounds: (
+    elementId: string,
+    bounds: EpisodeElement['bounds'],
+  ) => void
+  readonly onClearPreview: (elementId?: string) => void
   readonly onSnapChange: (snapped: boolean) => void
 }
 
@@ -71,13 +92,15 @@ function ElementNode({
   onSelect,
   onMove,
   onResize,
+  onPreviewBounds,
+  onClearPreview,
   onSnapChange,
 }: ElementNodeProps) {
   const { bounds } = element
   const nodeRef = useRef<Konva.Group>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const isBackgroundRegion = isBackgroundColorRegion(element)
-  const isResizable = isSelected && !element.locked && !isBackgroundRegion
+  const isResizable = isSelected && !element.locked
 
   useEffect(() => {
     const node = nodeRef.current
@@ -93,13 +116,25 @@ function ElementNode({
     transformer.getLayer()?.batchDraw()
   }, [bounds.height, bounds.width, isResizable])
 
+  useEffect(
+    () => () => onClearPreview(element.id),
+    [element.id, onClearPreview],
+  )
+
+  const getTransformedBounds = (node: Konva.Node) => ({
+    x: node.x(),
+    y: node.y(),
+    width: bounds.width * Math.abs(node.scaleX()),
+    height: bounds.height * Math.abs(node.scaleY()),
+  })
+
   const constrainDrag = (
     node: Konva.Node,
     bypassMagnet: boolean,
   ) => {
-    const requestedX = isBackgroundRegion ? 0 : node.x()
+    const requestedX = node.x()
     const centerSnap =
-      magnetEnabled && !bypassMagnet && !isBackgroundRegion
+      magnetEnabled && !bypassMagnet
         ? getEpisodeCenterSnap(
             requestedX,
             bounds.width,
@@ -136,21 +171,29 @@ function ElementNode({
           onSelect(element.id)
         }}
         onDragMove={(event) => {
-          constrainDrag(event.target, event.evt.altKey)
+          const position = constrainDrag(
+            event.target,
+            event.evt?.altKey ?? false,
+          )
+          onPreviewBounds(element.id, {
+            ...bounds,
+            ...position,
+          })
         }}
         onDragEnd={(event) => {
-          const position = constrainDrag(event.target, event.evt.altKey)
+          const position = constrainDrag(
+            event.target,
+            event.evt?.altKey ?? false,
+          )
           onMove(element.id, position.x, position.y)
           onSnapChange(false)
         }}
+        onTransform={(event) => {
+          onPreviewBounds(element.id, getTransformedBounds(event.target))
+        }}
         onTransformEnd={(event) => {
           const node = event.target
-          const requestedBounds = {
-            x: node.x(),
-            y: node.y(),
-            width: bounds.width * Math.abs(node.scaleX()),
-            height: bounds.height * Math.abs(node.scaleY()),
-          }
+          const requestedBounds = getTransformedBounds(node)
 
           node.scale({ x: 1, y: 1 })
           node.position({ x: bounds.x, y: bounds.y })
@@ -228,14 +271,13 @@ function ElementNode({
       {isResizable ? (
         <Transformer
           ref={transformerRef}
-          enabledAnchors={[
-            'top-left',
-            'top-right',
-            'bottom-left',
-            'bottom-right',
-          ]}
+          enabledAnchors={
+            isBackgroundRegion
+              ? FREEFORM_RESIZE_ANCHORS
+              : PROPORTIONAL_RESIZE_ANCHORS
+          }
           rotateEnabled={false}
-          keepRatio
+          keepRatio={!isBackgroundRegion}
           flipEnabled={false}
           anchorSize={14}
           anchorCornerRadius={3}
@@ -281,6 +323,12 @@ export function EditorCanvas() {
   const selectElement = useEditorStore((state) => state.selectElement)
   const moveElement = useEditorStore((state) => state.moveElement)
   const resizeElement = useEditorStore((state) => state.resizeElement)
+  const previewElementBounds = useEditorStore(
+    (state) => state.previewElementBounds,
+  )
+  const clearElementBoundsPreview = useEditorStore(
+    (state) => state.clearElementBoundsPreview,
+  )
   const toggleMagnet = useEditorStore((state) => state.toggleMagnet)
   const toggleSliceGuides = useEditorStore(
     (state) => state.toggleSliceGuides,
@@ -404,10 +452,10 @@ export function EditorCanvas() {
         data-selected-width={selectedElement?.bounds.width ?? ''}
         data-selected-height={selectedElement?.bounds.height ?? ''}
         data-resize-handle-count={
-          selectedElement &&
-          !selectedElement.locked &&
-          !isBackgroundColorRegion(selectedElement)
-            ? 4
+          selectedElement && !selectedElement.locked
+            ? isBackgroundColorRegion(selectedElement)
+              ? FREEFORM_RESIZE_ANCHORS.length
+              : PROPORTIONAL_RESIZE_ANCHORS.length
             : 0
         }
         role="region"
@@ -469,6 +517,8 @@ export function EditorCanvas() {
                   onResize={(elementId, bounds) =>
                     resizeElement(elementId, bounds)
                   }
+                  onPreviewBounds={previewElementBounds}
+                  onClearPreview={clearElementBoundsPreview}
                   onSnapChange={setCenterSnapGuideVisible}
                 />
               ))}

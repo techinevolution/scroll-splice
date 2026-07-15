@@ -419,7 +419,7 @@ describe('resizeElement', () => {
     )
   })
 
-  it('rejects unknown, locked, invalid, and Background color-region resizes', () => {
+  it('rejects unknown, locked, and invalid resizes', () => {
     const requestedBounds = {
       ...shapeElement.bounds,
       width: shapeElement.bounds.width * 2,
@@ -433,14 +433,6 @@ describe('resizeElement', () => {
           : element,
       ),
     }
-    const withRegion = createBackgroundColorRegion(buildWeekEpisode, {
-      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
-      fill: '#332255',
-      startY: 900,
-      height: 600,
-    })
-    const region = withRegion.elements.at(-1)
-
     expect(resizeElement(buildWeekEpisode, 'missing', requestedBounds)).toBe(
       buildWeekEpisode,
     )
@@ -453,17 +445,73 @@ describe('resizeElement', () => {
         width: Number.NaN,
       }),
     ).toBe(buildWeekEpisode)
+  })
+
+  it('resizes Background color regions independently from every edge', () => {
+    const withRegion = createBackgroundColorRegion(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      fill: '#332255',
+      startY: 900,
+      height: 600,
+    })
+    const region = withRegion.elements.at(-1)
+
     expect(region).toBeDefined()
     if (!region) {
       throw new Error('The Background color region is missing.')
     }
-    expect(
-      resizeElement(withRegion, region.id, {
-        ...region.bounds,
-        width: region.bounds.width / 2,
-        height: region.bounds.height / 2,
-      }),
-    ).toBe(withRegion)
+
+    const resizedFromTopLeft = resizeElement(withRegion, region.id, {
+      x: 200,
+      y: 1_000,
+      width: 600,
+      height: 500,
+    })
+    expect(resizedFromTopLeft.elements.at(-1)?.bounds).toEqual({
+      x: 200,
+      y: 1_000,
+      width: 600,
+      height: 500,
+    })
+
+    const resizedFromBottomRight = resizeElement(withRegion, region.id, {
+      x: 0,
+      y: 900,
+      width: 500,
+      height: 300,
+    })
+    expect(resizedFromBottomRight.elements.at(-1)?.bounds).toEqual({
+      x: 0,
+      y: 900,
+      width: 500,
+      height: 300,
+    })
+
+    const minimumFromTopLeft = resizeElement(withRegion, region.id, {
+      x: 799,
+      y: 1_499,
+      width: 1,
+      height: 1,
+    })
+    expect(minimumFromTopLeft.elements.at(-1)?.bounds).toEqual({
+      x: 800 - MIN_ELEMENT_SIZE,
+      y: 1_500 - MIN_ELEMENT_SIZE,
+      width: MIN_ELEMENT_SIZE,
+      height: MIN_ELEMENT_SIZE,
+    })
+
+    const clampedFromBottomRight = resizeElement(withRegion, region.id, {
+      x: 0,
+      y: 900,
+      width: 10_000,
+      height: 10_000,
+    })
+    expect(clampedFromBottomRight.elements.at(-1)?.bounds).toEqual({
+      x: 0,
+      y: 900,
+      width: buildWeekEpisode.logicalWidth,
+      height: buildWeekEpisode.logicalHeight - 900,
+    })
   })
 })
 
@@ -693,6 +741,18 @@ describe('createBackgroundColorRegion', () => {
 
     expect(moved?.bounds.x).toBe(0)
     expect(moved?.bounds.y).toBe(1200)
+
+    const narrowed = resizeElement(nextDocument, created.id, {
+      ...created.bounds,
+      width: 500,
+    })
+    const freelyMoved = moveElement(narrowed, created.id, {
+      x: 200,
+      y: 1200,
+    }).elements.at(-1)
+
+    expect(freelyMoved?.bounds.x).toBe(200)
+    expect(freelyMoved?.bounds.y).toBe(1200)
   })
 
   it('keeps the chosen start and trims a region at the episode bottom', () => {

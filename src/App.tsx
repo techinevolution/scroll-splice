@@ -25,14 +25,36 @@ function constrainEpisodeNameDraft(value: string): string {
   return `${leadingWhitespace}${trimmedValue.slice(0, MAX_EPISODE_NAME_LENGTH)}${trailingWhitespace}`
 }
 
-export function App() {
-  const episodeName = useEditorStore((state) => state.episode.name)
-  const setEpisodeName = useEditorStore((state) => state.setEpisodeName)
+function SelectionStatus() {
   const selectedElement = useEditorStore((state) =>
     state.episode.elements.find(
       ({ id }) => id === state.selectedElementId,
     ),
   )
+  const liveElementBounds = useEditorStore((state) => state.liveElementBounds)
+  const bounds =
+    selectedElement && liveElementBounds?.elementId === selectedElement.id
+      ? liveElementBounds.bounds
+      : selectedElement?.bounds
+
+  return (
+    <span
+      data-testid="selection-status"
+      data-x={bounds?.x ?? ''}
+      data-y={bounds?.y ?? ''}
+      data-width={bounds?.width ?? ''}
+      data-height={bounds?.height ?? ''}
+    >
+      {selectedElement && bounds
+        ? `${selectedElement.name} · x ${Math.round(bounds.x)} · y ${Math.round(bounds.y)} · w ${Math.round(bounds.width)} · h ${Math.round(bounds.height)}`
+        : 'Nothing selected'}
+    </span>
+  )
+}
+
+export function App() {
+  const episodeName = useEditorStore((state) => state.episode.name)
+  const setEpisodeName = useEditorStore((state) => state.setEpisodeName)
   const resetEpisode = useEditorStore((state) => state.resetEpisode)
   const [isEditingEpisodeName, setIsEditingEpisodeName] = useState(false)
   const [episodeNameDraft, setEpisodeNameDraft] = useState(episodeName)
@@ -171,11 +193,7 @@ export function App() {
 
       <footer className="status-bar">
         <span className="status-ready">Editor ready</span>
-        <span data-testid="selection-status">
-          {selectedElement
-            ? `${selectedElement.name} · x ${Math.round(selectedElement.bounds.x)} · y ${Math.round(selectedElement.bounds.y)} · w ${Math.round(selectedElement.bounds.width)} · h ${Math.round(selectedElement.bounds.height)}`
-            : 'Nothing selected'}
-        </span>
+        <SelectionStatus />
         <span>800u fixed width · local demo</span>
       </footer>
     </main>

@@ -43,6 +43,10 @@ import {
 interface EditorState {
   readonly episode: EpisodeDocument
   readonly selectedElementId: string | null
+  readonly liveElementBounds: {
+    readonly elementId: string
+    readonly bounds: ElementBounds
+  } | null
   readonly activeCompositionGroup: CompositionGroup
   readonly activeLayerPlaneId: string
   readonly viewportX: number
@@ -98,6 +102,11 @@ interface EditorState {
     elementId: string,
     logicalBounds: ElementBounds,
   ) => void
+  readonly previewElementBounds: (
+    elementId: string,
+    logicalBounds: ElementBounds,
+  ) => void
+  readonly clearElementBoundsPreview: (elementId?: string) => void
   readonly toggleMagnet: () => void
   readonly toggleSliceGuides: () => void
   readonly toggleAssetPanel: () => void
@@ -139,6 +148,7 @@ function getLogicalViewport(state: EditorState): LogicalViewport {
 export const useEditorStore = create<EditorState>((set, get) => ({
   episode: buildWeekEpisode,
   selectedElementId: null,
+  liveElementBounds: null,
   activeCompositionGroup: INITIAL_COMPOSITION_GROUP,
   activeLayerPlaneId: INITIAL_LAYER_PLANE_ID,
   viewportX: 0,
@@ -163,6 +173,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         activeCompositionGroup: group,
         activeLayerPlaneId: firstLayerPlane?.id ?? state.activeLayerPlaneId,
         selectedElementId: null,
+        liveElementBounds: null,
       }
     })
   },
@@ -189,6 +200,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           selectedElement?.layerPlaneId === layerPlane.id
             ? selectedElement.id
             : null,
+        liveElementBounds: null,
       }
     })
   },
@@ -210,6 +222,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         activeLayerPlaneId:
           createdLayerPlane?.id ?? state.activeLayerPlaneId,
         selectedElementId: null,
+        liveElementBounds: null,
       }
     })
   },
@@ -253,6 +266,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         activeCompositionGroup: layerPlane.compositionGroup,
         activeLayerPlaneId: survivor.id,
         selectedElementId: null,
+        liveElementBounds: null,
       }
     })
   },
@@ -440,7 +454,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   selectElement: (elementId, reveal = false) => {
     set((state) => {
       if (!elementId) {
-        return { selectedElementId: null }
+        return { selectedElementId: null, liveElementBounds: null }
       }
 
       const element = state.episode.elements.find(({ id }) => id === elementId)
@@ -449,7 +463,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         : undefined
 
       if (!element || !compositionGroup) {
-        return { selectedElementId: null }
+        return { selectedElementId: null, liveElementBounds: null }
       }
 
       const viewport = getLogicalViewport(state)
@@ -464,6 +478,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
       return {
         selectedElementId: element.id,
+        liveElementBounds: null,
         activeCompositionGroup: compositionGroup,
         activeLayerPlaneId: element.layerPlaneId,
         viewportX: reveal && !isVisible ? revealedPosition.x : state.viewportX,
@@ -522,6 +537,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           state.selectedElementId === elementId
             ? null
             : state.selectedElementId,
+        liveElementBounds:
+          state.liveElementBounds?.elementId === elementId
+            ? null
+            : state.liveElementBounds,
       }
     })
   },
@@ -551,6 +570,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return {
         episode,
         selectedElementId: createdElement?.id ?? state.selectedElementId,
+        liveElementBounds: null,
       }
     })
   },
@@ -572,6 +592,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       episode,
       selectedElementId: createdElement?.id ?? state.selectedElementId,
+      liveElementBounds: null,
     })
 
     return true
@@ -580,13 +601,74 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   moveElement: (elementId, logicalPosition) => {
     set((state) => ({
       episode: moveElementCommand(state.episode, elementId, logicalPosition),
+      liveElementBounds:
+        state.liveElementBounds?.elementId === elementId
+          ? null
+          : state.liveElementBounds,
     }))
   },
 
   resizeElement: (elementId, logicalBounds) => {
     set((state) => ({
       episode: resizeElementCommand(state.episode, elementId, logicalBounds),
+      liveElementBounds:
+        state.liveElementBounds?.elementId === elementId
+          ? null
+          : state.liveElementBounds,
     }))
+  },
+
+  previewElementBounds: (elementId, logicalBounds) => {
+    set((state) => {
+      const element = state.episode.elements.find(({ id }) => id === elementId)
+      const currentPreview = state.liveElementBounds
+      const hasFinitePositiveBounds =
+        Number.isFinite(logicalBounds.x) &&
+        Number.isFinite(logicalBounds.y) &&
+        Number.isFinite(logicalBounds.width) &&
+        Number.isFinite(logicalBounds.height) &&
+        logicalBounds.width > 0 &&
+        logicalBounds.height > 0
+
+      if (
+        !element ||
+        element.locked ||
+        state.selectedElementId !== elementId ||
+        !hasFinitePositiveBounds
+      ) {
+        return state
+      }
+
+      if (
+        currentPreview?.elementId === elementId &&
+        currentPreview.bounds.x === logicalBounds.x &&
+        currentPreview.bounds.y === logicalBounds.y &&
+        currentPreview.bounds.width === logicalBounds.width &&
+        currentPreview.bounds.height === logicalBounds.height
+      ) {
+        return state
+      }
+
+      return {
+        liveElementBounds: {
+          elementId,
+          bounds: { ...logicalBounds },
+        },
+      }
+    })
+  },
+
+  clearElementBoundsPreview: (elementId) => {
+    set((state) => {
+      if (
+        !state.liveElementBounds ||
+        (elementId && state.liveElementBounds.elementId !== elementId)
+      ) {
+        return state
+      }
+
+      return { liveElementBounds: null }
+    })
   },
 
   toggleMagnet: () => {
@@ -616,6 +698,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return {
         episode: buildWeekEpisode,
         selectedElementId: null,
+        liveElementBounds: null,
         activeCompositionGroup: INITIAL_COMPOSITION_GROUP,
         activeLayerPlaneId: INITIAL_LAYER_PLANE_ID,
         viewportX: 0,

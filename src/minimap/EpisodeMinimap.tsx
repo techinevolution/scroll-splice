@@ -10,16 +10,17 @@ import {
   compareElementsByRenderOrder,
   getEffectiveEpisodeBaseColor,
   isElementEffectivelyVisible,
+  type ElementBounds,
   type EpisodeElement,
 } from '../core/episode'
 
 interface MinimapElementProps {
   readonly element: EpisodeElement
+  readonly bounds: ElementBounds
   readonly isSelected: boolean
 }
 
-function MinimapElement({ element, isSelected }: MinimapElementProps) {
-  const { bounds } = element
+function MinimapElement({ element, bounds, isSelected }: MinimapElementProps) {
   const stroke = isSelected ? '#65E4FF' : undefined
   const strokeWidth = isSelected ? 12 : 0
 
@@ -75,6 +76,7 @@ function MinimapElement({ element, isSelected }: MinimapElementProps) {
 export function EpisodeMinimap() {
   const episode = useEditorStore((state) => state.episode)
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
+  const liveElementBounds = useEditorStore((state) => state.liveElementBounds)
   const viewportX = useEditorStore((state) => state.viewportX)
   const viewportY = useEditorStore((state) => state.viewportY)
   const viewportLogicalWidth = useEditorStore(
@@ -243,6 +245,12 @@ export function EpisodeMinimap() {
             <MinimapElement
               key={element.id}
               element={element}
+              bounds={
+                liveElementBounds?.elementId === element.id &&
+                selectedElementId === element.id
+                  ? liveElementBounds.bounds
+                  : element.bounds
+              }
               isSelected={element.id === selectedElementId}
             />
           ))}

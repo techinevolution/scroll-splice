@@ -114,6 +114,9 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const contentGroup = page.getByRole('button', {
     name: 'Content composition group',
   })
+  const contentGroupEye = page.getByRole('button', {
+    name: 'Content group visibility',
+  })
   const contentPlane1 = page.getByRole('button', {
     name: 'Content plane 1',
     exact: true,
@@ -339,6 +342,13 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       snapSceneBounds.y +
       (syntheticStartY - snapViewportY + syntheticStartHeight / 2) * snapScale,
   }
+  const syntheticMinimapElement = minimap.locator(
+    '[data-element-id="synthetic-shape-1"]',
+  )
+  const syntheticMinimapStartX = await readNumericAttribute(
+    syntheticMinimapElement,
+    'x',
+  )
 
   await page.keyboard.down('Alt')
   await page.mouse.move(syntheticCenter.x, syntheticCenter.y)
@@ -346,6 +356,16 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await page.mouse.move(syntheticCenter.x + 260, syntheticCenter.y, {
     steps: 5,
   })
+  await expect
+    .poll(() => readNumericAttribute(selectionStatus, 'data-x'))
+    .toBeGreaterThan(syntheticStartX + 200)
+  await expect
+    .poll(() => readNumericAttribute(syntheticMinimapElement, 'x'))
+    .toBeGreaterThan(syntheticMinimapStartX + 200)
+  await expect(canvas).toHaveAttribute(
+    'data-selected-x',
+    String(syntheticStartX),
+  )
   await page.mouse.up()
   await page.keyboard.up('Alt')
   await expect
@@ -391,9 +411,6 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     'synthetic-shape-1',
   )
 
-  const syntheticMinimapElement = minimap.locator(
-    '[data-element-id="synthetic-shape-1"]',
-  )
   const minimapWidthBeforeResize = await readNumericAttribute(
     syntheticMinimapElement,
     'width',
@@ -417,6 +434,16 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     resizeHandlePoint.x + 60 * snapScale,
     resizeHandlePoint.y + 44 * snapScale,
     { steps: 6 },
+  )
+  await expect
+    .poll(() => readNumericAttribute(selectionStatus, 'data-width'))
+    .toBeGreaterThan(syntheticStartWidth)
+  await expect
+    .poll(() => readNumericAttribute(syntheticMinimapElement, 'width'))
+    .toBeGreaterThan(minimapWidthBeforeResize)
+  await expect(canvas).toHaveAttribute(
+    'data-selected-width',
+    String(syntheticStartWidth),
   )
   await page.mouse.up()
   await expect
@@ -525,6 +552,8 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(minimapFirstPanel).toHaveCount(1)
 
   await backgroundGroup.click()
+  await contentGroupEye.click()
+  await expect(contentGroupEye).toHaveAttribute('aria-pressed', 'false')
   await expect(
     page.getByRole('button', { name: 'Background plane 1', exact: true }),
   ).toHaveAttribute('aria-pressed', 'true')
@@ -613,36 +642,114 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(colorRegionMinimap).toHaveAttribute('fill', '#334477')
   await expect(colorRegionMinimap).toHaveAttribute('x', '0')
   await expect(canvas).toHaveAttribute('data-selected-x', '0')
-  await expect(canvas).toHaveAttribute('data-resize-handle-count', '0')
+  await expect(canvas).toHaveAttribute('data-resize-handle-count', '8')
   const colorRegionCanvasBounds = await sceneCanvas.boundingBox()
   if (!colorRegionCanvasBounds) {
     throw new Error('The color-region canvas did not produce visible bounds.')
   }
   const colorRegionScale = colorRegionCanvasBounds.width / 800
+  const colorRegionRightHandle = {
+    x: colorRegionCanvasBounds.x + colorRegionCanvasBounds.width - 2,
+    y: colorRegionCanvasBounds.y + (300 + 600 / 2) * colorRegionScale,
+  }
+  const colorRegionMinimapWidthBeforeResize = await readNumericAttribute(
+    colorRegionMinimap,
+    'width',
+  )
+  await page.mouse.move(colorRegionRightHandle.x, colorRegionRightHandle.y)
+  await page.mouse.down()
+  await page.mouse.move(
+    colorRegionRightHandle.x - 180 * colorRegionScale,
+    colorRegionRightHandle.y,
+    { steps: 6 },
+  )
+  await expect
+    .poll(() => readNumericAttribute(selectionStatus, 'data-width'))
+    .toBeLessThan(700)
+  await expect
+    .poll(() => readNumericAttribute(colorRegionMinimap, 'width'))
+    .toBeLessThan(colorRegionMinimapWidthBeforeResize)
+  await expect(canvas).toHaveAttribute('data-selected-width', '800')
+  await page.mouse.up()
+
+  const resizedColorRegionWidth = await readNumericAttribute(
+    canvas,
+    'data-selected-width',
+  )
+  expect(resizedColorRegionWidth).toBeLessThan(700)
+  expect(
+    Math.abs(
+      (await readNumericAttribute(canvas, 'data-selected-height')) - 600,
+    ),
+  ).toBeLessThan(0.01)
+  const centeredColorRegionX = (800 - resizedColorRegionWidth) / 2
   const colorRegionDragPoint = {
-    x: colorRegionCanvasBounds.x + 12 * colorRegionScale,
+    x: colorRegionCanvasBounds.x + 20 * colorRegionScale,
     y: colorRegionCanvasBounds.y + 350 * colorRegionScale,
   }
   await page.mouse.move(colorRegionDragPoint.x, colorRegionDragPoint.y)
   await page.mouse.down()
   await page.mouse.move(
-    colorRegionDragPoint.x + 110 * colorRegionScale,
-    colorRegionDragPoint.y + 40 * colorRegionScale,
-    { steps: 4 },
+    colorRegionDragPoint.x + centeredColorRegionX * colorRegionScale,
+    colorRegionDragPoint.y,
+    { steps: 6 },
   )
   await expect
-    .poll(() => readLogicalCanvasPixel(sceneCanvas, 20, 390))
-    .toBe('51,68,119')
-  await page.mouse.up()
-  await expect(canvas).toHaveAttribute('data-selected-x', '0')
-  await expect(colorRegionMinimap).toHaveAttribute('x', '0')
+    .poll(async () =>
+      Math.abs(
+        (await readNumericAttribute(selectionStatus, 'data-x')) -
+          centeredColorRegionX,
+      ),
+    )
+    .toBeLessThan(1)
   await expect
-    .poll(async () => {
-      const status = (await selectionStatus.textContent()) ?? ''
-      const position = status.match(/Background color region 1 · x 0 · y (\d+)/)
-      return position ? Number(position[1]) : 0
-    })
-    .toBeGreaterThan(300)
+    .poll(async () =>
+      Math.abs(
+        (await readNumericAttribute(colorRegionMinimap, 'x')) -
+          centeredColorRegionX,
+      ),
+    )
+    .toBeLessThan(1)
+  await expect(centerSnapGuide).toBeVisible()
+  await expect(canvas).toHaveAttribute('data-selected-x', '0')
+  await page.mouse.up()
+  await expect
+    .poll(async () =>
+      Math.abs(
+        (await readNumericAttribute(canvas, 'data-selected-x')) -
+          centeredColorRegionX,
+      ),
+    )
+    .toBeLessThan(1)
+  await expect(centerSnapGuide).toHaveCount(0)
+
+  await magnetToggle.click()
+  await expect(magnetToggle).toHaveAttribute('aria-pressed', 'false')
+  const centeredColorRegionPoint = {
+    x:
+      colorRegionCanvasBounds.x +
+      (centeredColorRegionX + 20) * colorRegionScale,
+    y: colorRegionDragPoint.y,
+  }
+  await page.mouse.move(centeredColorRegionPoint.x, centeredColorRegionPoint.y)
+  await page.mouse.down()
+  await page.mouse.move(
+    centeredColorRegionPoint.x + 60 * colorRegionScale,
+    centeredColorRegionPoint.y,
+    { steps: 5 },
+  )
+  await expect
+    .poll(() => readNumericAttribute(selectionStatus, 'data-x'))
+    .toBeGreaterThan(centeredColorRegionX + 40)
+  await expect(centerSnapGuide).toHaveCount(0)
+  await page.mouse.up()
+  const freelyMovedColorRegionX = await readNumericAttribute(
+    canvas,
+    'data-selected-x',
+  )
+  expect(freelyMovedColorRegionX).toBeGreaterThan(centeredColorRegionX + 40)
+  await magnetToggle.click()
+  await expect(magnetToggle).toHaveAttribute('aria-pressed', 'true')
 
   const movedColorRegionY = await readNumericAttribute(canvas, 'data-selected-y')
   await canvas.hover()
@@ -650,18 +757,32 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect
     .poll(() => readNumericAttribute(episodePosition, 'data-viewport-y'))
     .toBeGreaterThan(900)
-  await expect(canvas).toHaveAttribute('data-selected-x', '0')
-  await expect(colorRegionMinimap).toHaveAttribute('x', '0')
+  expect(await readNumericAttribute(canvas, 'data-selected-x')).toBe(
+    freelyMovedColorRegionX,
+  )
+  expect(await readNumericAttribute(colorRegionMinimap, 'x')).toBe(
+    freelyMovedColorRegionX,
+  )
   await page.mouse.wheel(0, -1_200)
   await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
-  await expect(canvas).toHaveAttribute('data-selected-x', '0')
-  await expect(colorRegionMinimap).toHaveAttribute('x', '0')
+  expect(await readNumericAttribute(canvas, 'data-selected-x')).toBe(
+    freelyMovedColorRegionX,
+  )
+  expect(await readNumericAttribute(colorRegionMinimap, 'x')).toBe(
+    freelyMovedColorRegionX,
+  )
   await expect
     .poll(() =>
-      readLogicalCanvasPixel(sceneCanvas, 20, movedColorRegionY + 10),
+      readLogicalCanvasPixel(
+        sceneCanvas,
+        freelyMovedColorRegionX + 10,
+        movedColorRegionY + 10,
+      ),
     )
     .toBe('51,68,119')
 
+  await contentGroupEye.click()
+  await expect(contentGroupEye).toHaveAttribute('aria-pressed', 'true')
   await contentGroup.click()
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
   const addContentPlane = page.getByRole('button', {

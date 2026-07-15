@@ -114,10 +114,10 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - A tall episode surface inside a pannable and zoomable workspace. **Fit Width** is the dependable default, with an implemented 50–200% display scale, accurate scroll progress, and horizontal access whenever the enlarged episode is wider than the viewport. View scale changes presentation only and never alters logical episode or export dimensions.
 - Default-on, toggleable dotted horizontal guides derived from the selected provisional export profile show each 1,280-unit boundary across the 800-unit episode width. These guides are editor chrome for composition awareness: they track pan and zoom but are not episode elements, generated slice files, minimap content, or proof that production export has run.
 - Selection, move, resize, and delete for placed elements.
-- Visible selection outline with corner handles for direct resizing.
+- Visible selection outline with four proportional corner handles for ordinary shapes/text and eight independent width/height handles for Background color regions.
 - Default-on proximity snapping and alignment guides, controlled by a clearly visible magnet toggle and a documented temporary bypass during a drag. Snapping suggests centers, edges, and guides without forcing an ordinary element into a box, resizing it, or preventing intentional asymmetry.
 - A pinned first Background plane that supplies the editable full-scroll base RGB color instead of relying on a hardcoded white canvas. Selecting it exposes the same **Base color** through a compact Layers swatch and a direct canvas-side control, so the base stays discoverable without being buried in a menu. Hiding it reveals an editor-only transparency checkerboard rather than changing episode data.
-- Ordinary Background planes that can hold full-width color regions, gradients, photos, textures, splatters, or edge decoration. A full-width solid color region is structurally `x = 0` and 800 units wide, so it stays horizontally centered and moves vertically only; the magnet toggle does not release that invariant. Adding one asks where on the scroll it should begin and defaults sensibly to the current viewport.
+- Ordinary Background planes that can hold color regions, gradients, photos, textures, splatters, or edge decoration. A solid color region starts full width for convenience, but its `x`, `y`, `width`, and `height` are thereafter freely editable. It moves on both axes, resizes width and height independently through eight handles, and uses the same center magnet and off/Alt/Option bypass as other movable elements. Adding one asks where on the scroll it should begin and defaults sensibly to the current viewport.
 - Quick panel/frame creation with rectangular and angled or polygonal masks so an image can be repositioned inside an irregular panel without destructive cropping.
 - Allow intentional bleed and panel-breakout effects beyond an irregular frame or episode edge while clipping only at the final output boundary.
 - Preserve alpha transparency in imported and placed images rather than flattening them onto white.
@@ -133,7 +133,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Viewport box accurately representing the visible main-canvas region at the current episode height and view scale.
 - Drag the viewport box to pan the main canvas.
 - Click a minimap location to jump there.
-- Update after element movement, panel reorder, episode resize, zoom, or viewport change.
+- Preview logical element bounds continuously during movement or resize, then continue to update after panel reorder, episode resize, zoom, viewport change, or the final document commit.
 
 ### 4. Layers panel
 
@@ -225,7 +225,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 - The canvas remains the visual center of gravity.
 - Minimap navigation should feel immediate, with no confusing jump between the viewport box and main canvas.
 - Selection must stay synchronized across canvas, composition group, numbered plane, and element list, including Layers-panel selection of hidden elements.
-- Dragging must always show what will happen before the user drops.
+- Dragging or resizing must always show what will happen before the user releases: the status bar displays live logical `x/y/w/h`, and the minimap previews the same transient bounds without mutating the durable document until gesture end.
 - The Add rail should remain easy to reach, while its Asset Library drawer must not permanently shrink the working area.
 - The composition-group selector must stay centered above the story canvas at supported desktop sizes; the full-height right inspector and its element list scroll independently and can collapse into an overlay on narrower displays.
 - Group selection filters organization only. Visibility changes happen through explicit eye controls, not merely by switching groups.
@@ -237,7 +237,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 - Height reduction must consume only unused tail space; hidden content and long Background color regions protect their full logical bounds just like visible Content elements.
 - Transparent areas should preview accurately against the current background treatment.
 - Element opacity must be adjustable independently of source-image alpha and displayed as a precise percentage for the selected element.
-- Ordinary-element snapping is on by default, easy to toggle or temporarily bypass, and clear about which center, edge, guide, or nearby element is being matched. Structural constraints such as an 800-wide Background color region remaining at `x = 0` are not disabled by bypassing the magnet.
+- Element snapping is on by default, easy to toggle or temporarily bypass, and clear about which center, edge, guide, or nearby element is being matched. Background color regions participate in center snapping after their full-width creation default; **Magnet Off** or Alt/Option permits intentional asymmetric placement.
 - Long episodes must remain usable; off-screen content should not make basic editing sluggish.
 - The manual editor must remain complete and understandable when OpenAI features are disconnected or unavailable.
 - Autonomous work must show progress, allow cancellation, make generated assets distinguishable, and preserve a clear path back to manual editing.
@@ -246,7 +246,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 
 - A creator imports six images, drags them into a vertical episode, reorders two panels, adjusts their spacing, and exports the strip without reading instructions.
 - A creator chooses a numbered **Content** plane, opens **Uploads** from the Add rail, and drags an image onto the canvas; the new element appears in that plane's list.
-- A creator switches to Background plane 2, adds a long purple color region beginning at the current viewport, moves it vertically while it remains centered across the full 800-unit width, and places a separate transparent fade above it.
+- A creator switches to Background plane 2, adds a long purple color region beginning at the current viewport, moves and resizes it while the status and minimap preview its live bounds, optionally snaps it back to center, and places a separate transparent fade above it.
 - A creator makes an angled panel mask, repositions a photo inside it, and lets a character or sound effect break beyond the frame without snapping forcing it back inside.
 - On a smaller monitor, the creator can scroll or collapse the right inspector without losing the composition-group controls or access to the Asset Library.
 - A creator combines a chosen background color with a transparent uploaded background and optional edge decoration, then extends the episode as new story beats are added.

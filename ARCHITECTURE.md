@@ -79,7 +79,7 @@ The approved organization model remains shallow and predictable rather than beco
 - Every other plane is an unrestricted creative surface. Examples such as “Fade,” “Characters,” or “Film” are optional names, never enforced content types.
 - Every element references one `layerPlaneId`; its group is derived from that plane rather than duplicated as a second source of truth.
 - Proposed checkpoint E would bump the unsaved fixture directly from format v3 to v4 and add required element `opacity` from 0–1 while preserving per-pixel source alpha. It has not started and is not automatic next work after the corrective checkpoint. If later approved, existing fixture elements and every creation command default to `opacity = 1`; eye visibility remains independent, and a zero-opacity element remains addressable through Layers. No migration layer is needed before persistence exists; any future loader must handle versions explicitly.
-- Ordinary full-width color regions are elements with logical start `y`, height, and color. They are structurally `x = 0` and 800 units wide. The editor now constrains the live Konva node as well as the committed command so horizontal pointer noise cannot produce a temporary canvas/minimap disagreement or a remount-dependent recenter. Creating one asks for a start and length and defaults the start to the current viewport. A later format v4 may add an optional color-region-only `verticalAlphaFade` with normalized `top` and `bottom` values; absence means no fade. General gradients and post-creation length editing remain later work.
+- Ordinary color regions are elements with normal logical `x`, `y`, `width`, and `height` bounds plus color. Creation starts them at `x = 0` and 800 units wide for convenience, but that is not an invariant: subsequent moves and eight-handle transforms freely edit both axes and dimensions. A later format v4 may add an optional color-region-only `verticalAlphaFade` with normalized `top` and `bottom` values; absence means no fade. General gradients remain later work.
 - Effective visibility is `group visible AND plane visible AND element visible`. A hidden element is absent from the canvas and hit testing but may remain selected from the Layers panel.
 - Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents elements by logical `y` from top to bottom and uses local stacking only to resolve equal or overlapping positions.
 - `activeCompositionGroup` and `activeLayerPlaneId` are transient editor state. Canvas selection activates both so the matching row remains discoverable.
@@ -106,7 +106,7 @@ The left control remains an application-shell concern: a compact **Add** rail op
 The implemented Build Week command surface is intentionally small:
 
 - `moveElement(elementId, logicalPosition)` returns an updated document.
-- `resizeElement(elementId, logicalBounds)` proportionally resizes an unlocked ordinary element within episode bounds, rejects a full-width Background color region, and scales Text font size with its bounds.
+- `resizeElement(elementId, logicalBounds)` resizes an unlocked element within episode bounds; ordinary shapes/text preserve ratio and Text font scale, while Background color regions accept independent width/height changes.
 - `setElementVisibility(elementId, visible)` changes one element's eye state.
 - `setCompositionGroupVisibility(group, visible)` changes only the group eye state and preserves every element's individual setting.
 - `createLayerPlane(document, group)` appends an ordinary plane with a stable ID and order.
@@ -118,7 +118,7 @@ The implemented Build Week command surface is intentionally small:
 - `resizeEpisodeHeight(document, requestedHeight)` safely grows or trims the logical scroll while respecting the centralized 1,280-unit minimum and every element's bottom bound.
 - `deleteElement(document, elementId)` removes one placed episode instance.
 - `createSyntheticShapeElement(document, input)` places one code-defined demo rectangle in an ordinary plane.
-- `createBackgroundColorRegion(document, input)` places one solid full-width region in an ordinary Background plane.
+- `createBackgroundColorRegion(document, input)` places one solid region at the full episode width as an editable starting geometry in an ordinary Background plane.
 - `resetEpisode()` restores the known fixture document through application coordination.
 
 Navigation and selection do not change the document. They update application state.
@@ -146,7 +146,7 @@ These extensions are implemented and validated locally in checkpoints A and B:
 - `deleteElement(document, elementId)` removes one placed episode instance and nothing from a future source-asset repository. The trash control sits beside that element's eye in Layers.
 - `createSyntheticShapeElement(document, input)` creates one code-defined demo rectangle only in an ordinary plane; application coordination detects and selects the appended stable element ID.
 - `resizeEpisodeHeight(document, requestedHeight)` supports precise growth and shrink requests. It clamps to `MIN_EPISODE_LOGICAL_HEIGHT = 1280` and to the greatest logical bottom bound of all elements, including hidden elements and Background color regions, so it never clips or moves content. The existing `extendEpisodeHeight` remains the coarse 1280-unit shortcut.
-- `createBackgroundColorRegion(document, input)` creates a full-width solid element only in an ordinary Background plane from a chosen start, length, and color. The movement command preserves `x = 0` and the 800-unit width while changing only its vertical position; fixed group/plane order supplies its compositing position rather than a renderer exception.
+- At historical checkpoint B, `createBackgroundColorRegion(document, input)` created a full-width solid element in an ordinary Background plane from a chosen start, length, and color and preserved `x = 0` during movement. The later free-transform correction supersedes that movement restriction while retaining full width as the creation default.
 
 The bottom-edge resize hit area converts pointer movement through the shared coordinate module and requests logical height through `resizeEpisodeHeight`. Background plane 1 derives from the resulting document height and is excluded from the content-floor calculation because it has no independent bounds. Canvas viewport clamping and minimap fitting respond to the same committed height. General gradients, imported background photos, and blend modes remain deferred.
 
@@ -156,10 +156,10 @@ The title's existing validation does not change in checkpoint A. Ordinary title 
 
 The July 14 corrective checkpoint adds behavior without changing the format-v3 document shape:
 
-- Full-width Background regions remain ordinary elements, but the renderer now forces their live drag node to `x = 0` before release as well as relying on the pure movement invariant. The canvas, document, and minimap therefore cannot disagree during diagonal pointer movement, and culling/remounting is no longer what repairs the visible position.
-- `resizeElement(document, elementId, requestedBounds)` is a pure command over the existing element bounds. It rejects unknown, locked, non-finite, and full-width Background-region requests; preserves the original aspect ratio; clamps inside the episode; and enforces `MIN_ELEMENT_SIZE = 24`. Text scales `fontSize` proportionally with a minimum of 8. No schema bump is needed.
-- The selected unlocked ordinary element attaches one Konva transformer with four corner anchors. Rotation, flipping, side anchors, freeform distortion, and Background-region handles are disabled. Transform scale is normalized back into one committed bounds update, after which canvas and minimap derive from the same document.
-- The coordinate module owns the 8 CSS-pixel episode-center test so the screen threshold remains stable across zoom. Magnet state starts enabled, a temporary editor-only vertical guide appears while snapped, and magnet-off or Alt/Option bypasses the rule without mutating document geometry by itself.
+- A Background color region starts full width, then behaves as freely editable bounded geometry. Its live drag node follows both axes; the same 8 CSS-pixel center rule applies when the magnet is enabled, while Magnet Off or Alt/Option bypasses snapping.
+- `resizeElement(document, elementId, requestedBounds)` is a pure command over existing bounds. It rejects unknown, locked, or non-finite requests, clamps inside the episode, and enforces `MIN_ELEMENT_SIZE = 24`. Ordinary shapes/text preserve ratio and Text scales `fontSize` proportionally with a minimum of 8; Background regions accept independent width/height bounds. No schema bump is needed.
+- Selected unlocked ordinary shapes/text attach four proportional corner anchors. Background regions attach eight anchors—four corners and four sides—with ratio locking disabled. Rotation, flipping, crop, perspective, and freeform distortion remain disabled.
+- `liveElementBounds` is transient application state. During drag or transform, shared logical preview bounds update the canvas status `x/y/w/h` and the minimap without rewriting the episode document. One pure command commits at gesture end; clearing or canceling the gesture discards the preview.
 
 Zustand owns:
 
@@ -170,6 +170,7 @@ Zustand owns:
 - the logical two-dimensional viewport dimensions and position
 - the transient Fit Width-relative zoom factor
 - active transient pointer state
+- the selected element's transient live bounds preview
 - the current Assets drawer state
 - default-on transient magnet and candidate-guide visibility
 - command dispatch and reset
@@ -227,23 +228,23 @@ Guide visibility and the selected preview profile are transient editor state. Gu
 
 ### Movement
 
-1. Konva supplies transient drag feedback in screen space.
-2. On drag end, the editor converts the destination to logical episode coordinates.
-3. The application dispatches `moveElement`.
-4. The pure command returns the next document.
-5. Canvas, minimap, and layers derive their next view from that document.
+1. Konva supplies drag feedback, converted continuously into clamped logical bounds.
+2. Magnet On applies the 8 CSS-pixel center snap; Magnet Off or Alt/Option bypasses it.
+3. The store publishes transient live bounds to the status bar and minimap without mutating the document.
+4. On drag end, the application dispatches one `moveElement` command and clears the preview.
+5. Canvas, minimap, and layers derive their lasting view from the returned document.
 
-The corrective checkpoint implements transient `magnetEnabled` state that defaults to `true`. Its intentionally small first rule snaps an ordinary movable element's horizontal center to the episode centerline when the distance is at most 8 CSS pixels at the current zoom. The canvas shows a temporary vertical center guide while snapped. Turning the magnet off or holding Alt/Option during that drag bypasses snapping; edge and nearby-element targets remain deferred. The shared coordinate module converts the 8-pixel screen threshold to logical units before the same `moveElement` command is dispatched. Toggling the magnet never mutates the document by itself. Structural element rules still win: a full-width Background color region always remains `x = 0` and 800 units wide whether the magnet is enabled or bypassed.
+The corrective checkpoint implements transient `magnetEnabled` state that defaults to `true`. Its intentionally small first rule snaps any movable element's horizontal center—including a Background color region—to the episode centerline when the distance is at most 8 CSS pixels at the current zoom. The canvas shows a temporary vertical center guide while snapped. Turning the magnet off or holding Alt/Option during that drag bypasses snapping; edge and nearby-element targets remain deferred. Toggling the magnet never mutates document geometry by itself.
 
 ### Bounded corner resize
 
-1. Selection attaches four proportional corner handles only to an unlocked ordinary element.
+1. Selection attaches four proportional corner handles to an unlocked ordinary shape/text or eight independent handles to a Background color region.
 2. Konva supplies transient visual scale while keeping rotation and flipping disabled.
-3. On transform end, the editor converts that scale into requested logical bounds and resets the node's transient scale.
-4. The application dispatches the pure `resizeElement` command once.
+3. Each transform event publishes logical preview bounds to status `x/y/w/h` and the minimap.
+4. On transform end, the editor converts scale into requested logical bounds, resets node scale, dispatches one pure `resizeElement` command, and clears the preview.
 5. Canvas and minimap rerender from the same committed format-v3 bounds.
 
-This interaction deliberately excludes full-width Background color regions, side-handle stretching, rotation, crop, perspective, and a general transform property panel.
+This interaction includes independent side-handle stretching for Background color regions but still excludes rotation, flipping, crop, perspective, and a general transform property panel.
 
 ### Composition-group, plane, and visibility flow
 
@@ -369,16 +370,16 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, center-snap thresholds at zoom, proportional `resizeElement` bounds and guards, reset behavior, serializable model invariants, pinned Background plane 1, group/plane/element ordering, three-level effective visibility, hidden-row selection, name validation, guarded empty-plane deletion, safe element deletion, coarse and precise height changes, content-floor clamping, color-region geometry, versioned profile candidate boundaries, center-preserving two-dimensional zoom, and minimap viewport geometry at zoom. Opacity bounds remain later work.
-- Playwright: load the sample; prove stable title anchors; navigate through the minimap; create and safely delete an empty plane; open the Assets drawer and place code-defined demo rectangles in empty and populated ordinary planes; select and delete a placed element; edit the base from Layers and canvas; extend and safely trim the episode; create and diagonally drag a live-constrained Background color region; exercise Fit Width and bounded zoom; verify candidate-guide visibility, magnet snap and bypass, four-corner proportional resize and minimap agreement; and reset.
+- Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, center-snap thresholds at zoom, proportional ordinary-element resize, independent Background-region resize, transient bounds preview/reset, serializable model invariants, pinned Background plane 1, ordering/visibility, title/plane/element deletion, episode-height safety, profile candidates, zoom, and minimap geometry. Opacity bounds remain later work.
+- Playwright: load the sample; prove stable title anchors; navigate through the minimap; create/delete planes and elements; place synthetic assets; edit the base; resize the episode; create, freely move, center-snap/bypass, and independently resize a Background color region while status `x/y/w/h` and minimap preview update live; exercise Fit Width and bounded zoom; verify proportional ordinary-element resize; and reset.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
 - Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
 
-Corrective checkpoint D validation covers the stable title anchor, live vertical-only full-width region movement, default-on magnet state, the 8-pixel center snap and Alt/Option bypass, profile-to-logical interval calculation, the observed 1,280-unit candidate boundaries, guide toggle state, alignment at every supported zoom and viewport position, absence from document serialization/minimap/output, and the four proportional resize handles with their command guards and minimap synchronization. If later approved, checkpoint E adds format-v4 defaults/reset, opacity clamping, visibility independence, zero-opacity hit testing, source-alpha multiplication, color-region-only fade guards, and canvas/minimap agreement. The separate export checkpoint adds deterministic boundary planning, creator-adjustment validation, encoded dimension/byte/count preflight, stale-profile handling, and comparison with the authenticated unpublished upload results.
+Corrective checkpoint D validation covers stable title anchors, default-on magnet state and bypass, profile-derived candidates, four proportional ordinary-element handles, eight independent Background-region handles, free two-axis Background movement, transient status/minimap bounds during move and resize, one final command commit, and reset. The original fixed-width validation remains historical and is superseded by this passing extension. If later approved, checkpoint E adds opacity and fade coverage. The separate export checkpoint adds deterministic boundary planning and encoded preflight.
 
 The post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. That passing checkpoint and its documentation were published to `main` through `8a493a2` on July 14.
 
-The corrective checkpoint passes 120 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. Its public-safe 1440 × 900 visual record is documented separately from the historical 94-test A/B/C evidence. Katherine's human retest remains pending, and the checkpoint is not published.
+The historical fixed-width corrective checkpoint passed 120 unit tests. Its superseding free-transform build passes 123 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. The existing public-safe 1440 × 900 progress record documents the preceding fixed-width UI and remains labeled as historical evidence. Katherine's human retest remains pending, and the latest checkpoint is not published.
 
 ## Non-negotiable invariants
 

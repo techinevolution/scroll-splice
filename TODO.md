@@ -21,7 +21,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Run the next **HUMAN TEST and direction checkpoint** on the completed A/B/C build; confirm placed-element deletion, the bottom **Add asset** action, minimap behavior, and ordinary movement; record the title-anchor and Background-region drag findings.
 - [x] Approve **Export-aware polish and alpha controls** as the next implementation goal after the documentation/publication checkpoint.
 - [x] Authorize publishing the already passing A/B/C implementation and matching documentation to `main` on July 14.
-- [ ] Re-test the local corrective checkpoint: centered title with stable anchors; the square canvas and upper-left Canvas base control; visible unlabeled 1,280-unit dotted guides; live full-width Background-region constraint; magnet center snap and bypass; four-corner proportional asset resize; and safe episode resizing from the bottom canvas edge. Do not select another slice until this review passes.
+- [ ] Re-test the local corrective checkpoint: centered title with stable anchors; the square canvas and upper-left Canvas base control; visible unlabeled 1,280-unit dotted guides; freely movable/eight-handle Background regions with center snap and bypass; live status `x/y/w/h` plus minimap previews during move/resize; four-corner proportional ordinary-asset resize; and safe episode resizing from the bottom canvas edge. Do not select another slice until this review passes.
 
 ## Katherine — before submission
 
@@ -44,10 +44,11 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Record the local A/B/C evidence: 94 unit tests, strict typecheck, ESLint, production build, isolated Playwright Chromium walkthrough, and visual QA at 1440 × 900, 1280 × 720, and 1024 × 768.
 - [x] Document the current creator-controls screenshot as the build Katherine tested on July 14, including what worked and the follow-up findings.
 - [x] Publish the validated Episode Setup and A/B/C implementation stack, screenshot evidence, and export-aware planning documents to `main` through `8a493a2`.
-- [x] Implement corrective checkpoint D locally: keep the **EPISODE** label anchored; constrain full-width Background regions live and structurally to `x = 0`; add a default-on 8 CSS-pixel episode-center snap with magnet-off and Alt/Option bypass; add toggleable profile-derived 1,280-unit candidate guides that never enter document or output data; and add the directly requested four proportional corner handles for selected unlocked ordinary elements. The implementation keeps format v3 and is ready for Katherine's human review.
-- [x] Complete the corrective checkpoint's full regression suite and visual inspection, then hand it to Katherine for the human test above. No push has occurred; remote `main` remains at `6d6437e` until a later push is explicitly authorized.
+- [x] Implement and validate the original corrective checkpoint D locally. Its fixed-width `x = 0`, vertical-only, no-Background-resize rule is preserved only as historical evidence and superseded by the next item.
+- [x] Implement and browser-validate freely editable Background-region `x/y/width/height`, eight independent handles, center magnet/bypass, transient live status/minimap bounds, and one pure command commit at gesture end. Format remains v3.
+- [x] Complete the corrective checkpoint's 123-test regression suite, static/build checks, expanded Chromium walkthrough, and supported-size visual inspection, then hand it to Katherine for the human test above. No push has occurred; remote `main` remains at `6d6437e` until a later push is explicitly authorized.
 - [ ] After Katherine's review, decide whether E should proceed. It has not started: format-v4 element opacity and a basic vertical two-stop alpha fade for solid Background color regions remain proposed, not automatic next work.
-- [ ] After the next approved product checkpoint passes, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
+- [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 
 ## Joint — only if the human MVP finishes early
 

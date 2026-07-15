@@ -68,7 +68,7 @@ These requests refine the intended product without enlarging the required contes
 - keep the fixed **EPISODE** label anchored when title editing activates; the input replaces only the title's visual footprint and must not shift the header
 - show default-on, toggleable gray dotted candidate slice boundaries from the selected export profile; for the observed WEBTOON mapping, draw a horizontal guide every 1280 logical units across the 800-unit episode
 - keep planning guides as editor chrome that follows pan and zoom but never enters the episode document, minimap, tall master, or exported images
-- keep full-width Background color regions structurally centered at `x = 0` and 800 units wide while allowing vertical movement; use a default-on magnet for optional ordinary-element alignment without preventing intentional asymmetry
+- create Background color regions full width by default, then let creators freely edit `x`, `y`, `width`, and `height`; apply the default-on center magnet with the same off/Alt/Option bypass used for intentional asymmetry
 - add deterministic creator-reviewed self-slicing later so ScrollSplice can control cut positions and preflight output before manual WEBTOON upload, while making no promise that WEBTOON will avoid recompression or optimization
 
 ## Completed implementation slice: composition groups and visibility
@@ -205,7 +205,7 @@ Must-have work:
 - Retain **Add scroll space** as the fast 1280-unit action, and add a distinct bottom-edge drag handle for precise height adjustment.
 - Convert the pointer drag through shared logical-coordinate helpers. Allow growth and shrinking of unused tail space, but clamp the minimum to the lowest content bound across every plane; hidden elements and color regions count. Never move, crop, or delete content to satisfy a shrink request.
 - Keep the current viewport valid as height changes, let the pinned base follow the resulting document height, and refit the complete minimap continuously or immediately after commit.
-- Introduce a solid full-width color-region element for ordinary Background planes. Creation accepts a color, vertical start, and length, defaults the start from the current viewport, remains vertically movable, and participates in normal selection, visibility, ordering, deletion, minimap, and height-safety rules.
+- At this historical checkpoint, introduce a solid full-width color-region element for ordinary Background planes. Creation accepts a color, vertical start, and length, defaults the start from the current viewport, remains vertically movable, and participates in normal selection, visibility, ordering, deletion, minimap, and height-safety rules. The later free-transform correction supersedes the fixed-width/vertical-only behavior without changing this checkpoint record.
 - Keep each color region independent from pinned Background plane 1. The base remains a full-scroll fallback; ordinary regions provide local color changes above it and below Content.
 
 Acceptance:
@@ -246,26 +246,28 @@ Excluded: opacity, general element resize handles, snapping, canvas rotation, pl
 
 ## Current corrective checkpoint: stable editing, guides, and bounded corner resize
 
-**Status:** complete and validated locally; Katherine's human review is the remaining gate. The checkpoint passes 120 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. It has not been pushed; remote `main` remains at `6d6437e`. Hand this exact checkpoint to Katherine before choosing more work.
+**Status:** the original fixed-width D checkpoint passed 120 unit tests, strict typecheck, ESLint, production build, one isolated expanded Playwright Chromium walkthrough, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. Katherine then superseded its Background-region contract. The free-transform extension now passes 123 unit tests, strict typecheck, ESLint, production build, the expanded Chromium walkthrough, and supported-size visual inspection; human review still precedes any later product slice or push. Remote `main` remains at `6d6437e`.
 
 This checkpoint repairs the failed manual-review findings without folding in the later alpha system:
 
 ### D. Stable editing chrome, candidate slice guides, and direct corrective resize
 
 - Keep the fixed **EPISODE** label and surrounding header controls on stable anchors. When title editing activates, replace only the title text's footprint with a tightly sized input; do not move the label or reset control.
-- Keep every full-width Background color region structurally at `x = 0` and 800 logical units wide. Pointer movement changes only its vertical position, so horizontal pointer noise cannot produce visible jitter.
-- Add a clearly visible magnet control whose transient state starts enabled. In this checkpoint, implement one actual, conservative rule: when an ordinary movable element's horizontal center comes within 8 CSS pixels of the episode centerline, snap it to logical `x = (800 - element.width) / 2` and show a temporary vertical center guide. Turning the magnet off or holding Alt/Option during that drag bypasses the snap. Edge-to-edge and nearby-element snapping remain later work. The full-width Background-region invariant does not depend on the magnet.
+- Preserve full width only as the Background color region's creation default. Thereafter its `x`, `y`, `width`, and `height` are ordinary editable geometry: it moves freely on both axes and resizes width and height independently.
+- Keep the clearly visible magnet control enabled by default. When any movable element, including a Background color region, comes within 8 CSS pixels of the episode centerline, snap its horizontal center and show the temporary vertical guide. **Magnet Off** or Alt/Option during that drag bypasses the snap. Edge-to-edge and nearby-element snapping remain later work.
 - Add default-on, toggleable gray dotted horizontal candidate guides derived from the selected versioned export profile. For `webtoon-canvas-2026-07-13-observed`, map 800 logical units to 800 output pixels and place interior candidates at `y = 1280, 2560, ...` while the value remains below the episode height.
 - Keep the guides aligned through pan, zoom, height changes, and reset. They are editor overlays only and must not appear in the episode document, Layers, minimap, tall master, or exported files.
-- Add the smallest resize behavior Katherine directly requested in the failed review: a selected unlocked ordinary element has four proportional corner handles. Resizing preserves aspect ratio, clamps to the episode, has a 24-logical-unit minimum, scales a text element's font size with its bounds, and commits once through a pure document command. Do not expose rotation, flipping, side handles, freeform distortion, or handles on a full-width Background color region. The minimap derives the committed resized bounds from the same document.
+- Keep four proportional corner handles for selected unlocked ordinary shapes/text. Give a Background color region eight handles—four corners and four sides—with `keepRatio` disabled so width and height change independently. Clamp valid bounds inside the episode, retain the 24-logical-unit minimum, and keep rotation/flipping disabled.
+- During every move or resize, publish transient logical bounds so the status bar's `x/y/w/h` and minimap preview update before release. Do not rewrite the episode document on every pointer event; one pure `moveElement` or `resizeElement` command commits at gesture end, and clearing/canceling the gesture removes the preview.
 
 Acceptance:
 
 - activating, committing, canceling, or blurring title editing causes no header shift
-- full-width Background color regions drag smoothly on the vertical axis and remain exactly full width
-- the magnet defaults on; one browser test proves the 8-pixel center snap and guide, another proves Alt/Option bypass; toggling it never changes document geometry by itself
+- a newly created Background color region starts full width, then moves freely on both axes and resizes width/height independently from eight handles
+- the magnet defaults on; browser coverage proves the 8-pixel center snap for an ordinary element and a Background region plus Magnet Off and Alt/Option bypass; toggling it never changes document geometry by itself
 - candidate guides appear at the correct logical boundaries at every supported zoom and can be hidden without changing the document
-- selected unlocked ordinary shapes and text expose four proportional corner handles, respect the 24-unit minimum and episode bounds, and update the minimap from their committed bounds; Background color regions expose no resize handles
+- selected unlocked ordinary shapes/text retain four proportional corner handles, while Background color regions expose eight independent handles; both respect the 24-unit minimum and episode bounds
+- status `x/y/w/h` and minimap geometry follow transient bounds during drag/resize, then agree with the one command committed at gesture end
 - title, movement, deletion, height, zoom, minimap, selection, placement, visibility, and reset regressions remain passing
 
 ### E. Proposed after review: Asset Properties and Opacity plus basic Background fades
@@ -285,7 +287,7 @@ Acceptance:
 - a solid Background color region can transition vertically between two alpha endpoints in canvas and minimap
 - focused model/command/store/render tests, strict typecheck, lint, production build, Playwright, and visual inspection pass
 
-Explicitly excluded from the current corrective checkpoint and proposed E: production file export, real import, persistence, undo/redo, general gradients, arbitrary fade angles, blend modes, masks, a broader resize/transform system, tab reordering, deployment, OAuth, OpenAI runtime work, and AI. The four proportional corner handles in D are the only resize behavior in scope. After the next Katherine-approved checkpoint passes, stop and produce the requested reconciled inventory of implemented features versus remaining documented/chat requests before proposing more product work.
+Explicitly excluded from the current corrective checkpoint and proposed E: production file export, real import, persistence, undo/redo, general gradients, arbitrary fade angles, blend modes, masks, rotation, flipping, crop, perspective, tab reordering, deployment, OAuth, OpenAI runtime work, and AI. In scope are four proportional corner handles for ordinary shapes/text and eight independent handles for Background color regions. After the next Katherine-approved checkpoint passes, stop and produce the requested reconciled inventory of implemented features versus remaining documented/chat requests before proposing more product work.
 
 ### Later bounded slices
 
@@ -355,7 +357,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 
 - Complete Katherine's hands-on test of **Direct Creator Controls**, **Safe Precise Height and Background Color Regions**, and **Canvas Zoom and 2D Viewport**. **Complete.**
 - Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Complete through `8a493a2`.**
-- Repair the failed polish review as checkpoint D: stable title anchors, live `x = 0` Background-region movement, visible profile-derived candidate guides, the default-on center magnet with bypass, and the directly requested bounded four-corner resize. **Implemented locally; validation and human review pending.**
+- Repair the failed polish review as checkpoint D: stable title anchors, visible profile-derived candidate guides, default-on center magnet with bypass, proportional ordinary-element resize, and live status/minimap bounds. The first fixed-width Background implementation passed locally but was superseded; free Background-region movement and eight-handle independent resize are now implemented and pending validation/human review.
 - Stop after checkpoint D passes validation and hand it to Katherine. Do not begin opacity/fades or assume they are the next slice before that review.
 - Keep deterministic WEBTOON file export separate until the harmless authenticated upload verification and a later explicit export checkpoint.
 - Keep every coherent checkpoint tested and independently understandable.
@@ -404,7 +406,7 @@ Work through these only in order, with a passing checkpoint after each. Items 4�
 4. Direct Creator Controls. **Complete and human-tested.**
 5. Safe Precise Height and solid Background Color Regions. **Complete and human-tested.**
 6. Canvas Zoom and 2D Viewport. **Complete and human-tested.**
-7. Stable editing chrome, candidate slice guides, and directly requested bounded corner resize. **Implemented and validated locally; Katherine review pending.**
+7. Stable editing chrome, candidate slice guides, proportional ordinary-element resize, and free eight-handle Background-region transforms with live status/minimap preview. **Latest extension implemented locally; validation and Katherine review pending.**
 8. Asset Properties and Opacity plus basic Background fades. **Not started; reconsider after review.**
 9. Deterministic WEBTOON slice planning and export after upload verification.
 10. Layer-tab naming and reordering.
@@ -430,7 +432,7 @@ The smallest acceptable proof is one request that produces one image candidate, 
 ## Deferred work
 
 - Real asset import and project-folder design. The per-plane paperclip currently opens the Asset Library and places only code-defined synthetic demo rectangles; it is not a real import path.
-- General gradients, arbitrary fade angles, blend modes, uploaded background imagery, and optional edge decoration. Solid movable full-width Background color regions are complete; a basic vertical alpha fade is only an unstarted post-review proposal.
+- General gradients, arbitrary fade angles, blend modes, uploaded background imagery, and optional edge decoration. Solid Background color regions now start full width and support free movement and independent resize; a basic vertical alpha fade is only an unstarted post-review proposal.
 - Transparency-preserving image import and preview.
 - A researched starter speech-balloon library plus creator-defined reusable balloon and decorative assets.
 - New-episode creation and the full File/Edit/View/Window/Help command model; native OS menus follow desktop packaging. Title editing and its stable anchored footprint are implemented locally in checkpoint D.
@@ -493,7 +495,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D is implemented locally but must pass validation and Katherine's human review before any later slice is chosen or pushed. Real uploads, production export, deployment, opacity/fades, and other later slices remain unstarted or separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D's original fixed-width version passed local validation; its superseding free Background-region transform extension is implemented locally and must pass its own validation plus Katherine's review before any later slice is chosen or pushed. Real uploads, production export, deployment, opacity/fades, and other later slices remain unstarted or separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

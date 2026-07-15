@@ -161,7 +161,6 @@ export function resizeElement(
   if (
     !element ||
     element.locked ||
-    isBackgroundColorRegion(element) ||
     !areFinitePositiveBounds(requestedBounds) ||
     !areFinitePositiveBounds(element.bounds) ||
     (element.type === 'text' &&
@@ -172,6 +171,45 @@ export function resizeElement(
     document.logicalHeight <= 0
   ) {
     return document
+  }
+
+  if (isBackgroundColorRegion(element)) {
+    const horizontal = resizeFreeformAxis(
+      element.bounds.x,
+      element.bounds.width,
+      requestedBounds.x,
+      requestedBounds.width,
+      document.logicalWidth,
+    )
+    const vertical = resizeFreeformAxis(
+      element.bounds.y,
+      element.bounds.height,
+      requestedBounds.y,
+      requestedBounds.height,
+      document.logicalHeight,
+    )
+    const bounds = {
+      x: horizontal.start,
+      y: vertical.start,
+      width: horizontal.size,
+      height: vertical.size,
+    }
+
+    if (
+      bounds.x === element.bounds.x &&
+      bounds.y === element.bounds.y &&
+      bounds.width === element.bounds.width &&
+      bounds.height === element.bounds.height
+    ) {
+      return document
+    }
+
+    return {
+      ...document,
+      elements: document.elements.map((candidate) =>
+        candidate.id === element.id ? { ...candidate, bounds } : candidate,
+      ),
+    }
   }
 
   const widthScale = requestedBounds.width / element.bounds.width
@@ -247,6 +285,33 @@ export function resizeElement(
           }
         : candidate,
     ),
+  }
+}
+
+function resizeFreeformAxis(
+  currentStart: number,
+  currentSize: number,
+  requestedStart: number,
+  requestedSize: number,
+  containerSize: number,
+) {
+  const currentEnd = currentStart + currentSize
+  const requestedEnd = requestedStart + requestedSize
+  const keepsStartEdge =
+    Math.abs(requestedStart - currentStart) <=
+    Math.abs(requestedEnd - currentEnd)
+  const maximumSize = keepsStartEdge
+    ? containerSize - currentStart
+    : currentEnd
+  const size = clamp(
+    requestedSize,
+    Math.min(MIN_ELEMENT_SIZE, maximumSize),
+    maximumSize,
+  )
+
+  return {
+    start: keepsStartEdge ? currentStart : currentEnd - size,
+    size,
   }
 }
 
