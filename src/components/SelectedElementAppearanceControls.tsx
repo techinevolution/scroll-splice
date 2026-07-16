@@ -7,6 +7,7 @@ import {
   type ElementBlendMode,
   type ShapeFillStop,
 } from '../core/episode'
+import { SelectedTextControls } from './SelectedTextControls'
 
 const BLEND_MODE_LABELS: Readonly<Record<ElementBlendMode, string>> = {
   normal: 'Normal',
@@ -225,6 +226,20 @@ export function SelectedElementAppearanceControls() {
           ))}
         </select>
       </label>
+
+      {selectedElement.type === 'text' ? (
+        <SelectedTextControls
+          key={JSON.stringify([
+            selectedElement.id,
+            selectedElement.text,
+            selectedElement.fill,
+            selectedElement.fontSize,
+            selectedElement.fontWeight,
+            selectedElement.align,
+          ])}
+          element={selectedElement}
+        />
+      ) : null}
 
       {isColorRegion && selectedElement.type === 'shape' ? (
         <>

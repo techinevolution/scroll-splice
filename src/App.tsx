@@ -1,9 +1,16 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from 'react'
 
 import { useEditorStore } from './app/store'
 import { AppMenuBar } from './components/AppMenuBar'
 import { AssetPanel } from './components/AssetPanel'
 import { CompositionGroupControls } from './components/CompositionGroupControls'
+import { ReaderPreview } from './components/ReaderPreview'
 import { SelectedElementAppearanceControls } from './components/SelectedElementAppearanceControls'
 import { MAX_EPISODE_NAME_LENGTH } from './core/commands'
 import { EditorCanvas } from './editor/EditorCanvas'
@@ -74,6 +81,7 @@ export function App() {
   const resetEpisode = useEditorStore((state) => state.resetEpisode)
   const [isEditingEpisodeName, setIsEditingEpisodeName] = useState(false)
   const [episodeNameDraft, setEpisodeNameDraft] = useState(episodeName)
+  const [readerPreviewOpen, setReaderPreviewOpen] = useState(false)
   const episodeNameInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -126,6 +134,17 @@ export function App() {
   }
 
   const saveFromUi = () => {
+    const activePlaneNameInput = document.querySelector<HTMLInputElement>(
+      '[data-testid="active-layer-plane-name"]',
+    )
+
+    if (
+      activePlaneNameInput &&
+      document.activeElement === activePlaneNameInput
+    ) {
+      activePlaneNameInput.blur()
+    }
+
     if (isEditingEpisodeName) {
       commitEpisodeNameEdit()
     }
@@ -154,8 +173,33 @@ export function App() {
     reopenEpisode()
   }
 
+  const openReaderPreview = () => {
+    if (isEditingEpisodeName) {
+      commitEpisodeNameEdit()
+    }
+
+    setReaderPreviewOpen(true)
+  }
+
+  const closeReaderPreview = useCallback(() => {
+    setReaderPreviewOpen(false)
+  }, [])
+
+  const resetDemo = () => {
+    if (!confirmDiscard('Discard unsaved changes and reset the demo?')) {
+      return
+    }
+
+    cancelEpisodeNameEdit()
+    resetEpisode()
+  }
+
   useEffect(() => {
     const handleApplicationShortcut = (event: globalThis.KeyboardEvent) => {
+      if (readerPreviewOpen) {
+        return
+      }
+
       if (!(event.metaKey || event.ctrlKey) || event.altKey) {
         return
       }
@@ -206,6 +250,7 @@ export function App() {
           onReopen={reopenSavedEpisode}
           onUndo={undo}
           onRedo={redo}
+          onReaderPreview={openReaderPreview}
         />
 
         <div className="brand-lockup">
@@ -266,10 +311,7 @@ export function App() {
         <button
           className="reset-button"
           type="button"
-          onClick={() => {
-            cancelEpisodeNameEdit()
-            resetEpisode()
-          }}
+          onClick={resetDemo}
         >
           Reset demo
         </button>
@@ -309,6 +351,10 @@ export function App() {
         </div>
         <span>800u fixed width · local browser project</span>
       </footer>
+
+      {readerPreviewOpen ? (
+        <ReaderPreview onClose={closeReaderPreview} />
+      ) : null}
     </main>
   )
 }

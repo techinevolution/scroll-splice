@@ -25,6 +25,8 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Approve the optional local history/save/menu slice: bounded undo/redo, one explicit local save, reload/reopen, blank New Episode, and only the requested File/Edit commands.
 - [x] Test the completed local history/save/menu slice: undo/redo representative edits, Save, page reload, later unsaved edit, confirmed Reopen, New Episode, and recovery of the retained save. Katherine reported July 15 that the tests completed and everything works well.
 - [x] Approve the next five-slice `/goal`: Asset Library drag-to-canvas placement, format-v5 opacity, vertical two-stop gradient/fade, tiled texture presentation, and five restrained blend modes. Existing real upload, source alpha, and ordinary Background-photo placement stay intact.
+- [x] Approve the July 15 creator completion pass: plane organization/element stacking, basic independent text, and reader preview with a safe Reset Demo boundary.
+- [ ] After all three completion-pass slices and their full regression story pass, review the resulting creator workflow in the running app.
 
 ## Katherine — before submission
 
@@ -63,6 +65,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement and pixel-test exactly Normal, Multiply, Screen, Overlay, and Soft Light; carry all appearance data through undo/redo, Save, reload, Reopen, and reset.
 - [x] After all five checkpoints pass: run 255 unit tests across 13 files, typecheck, lint, production build, focused drag/appearance Chromium coverage, and the full 6-of-6 Playwright Chromium suite; visually inspect and index the public-safe screenshot and update completion evidence.
 - [x] Review the complete diff and private-file status, commit the coherent passing slice, and publish feature commit `7768daa0617b66c696f769d97dd531f9029272c8` to `main` under Katherine's active authorization.
+- [x] Implement completion-pass slice 1 without a format bump: optional plane names, grip and Move Left/Right reordering, Bring Forward/Send Backward, and Move to Plane.
+- [x] Implement completion-pass slice 2 without a format bump: create and edit independent text wording, color, size, weight, and alignment over existing balloon assets.
+- [x] Implement completion-pass slice 3: chrome-free same-document Reader Preview and unsaved confirmation for Reset Demo while preserving the explicit saved slot.
+- [x] Exercise the documented blank-episode-to-preview creator story, pass 270 unit tests across 13 files, typecheck, lint, production build, and all 7 Playwright stories, then visually inspect and index the public-safe July 16 editor screenshot and Reader Preview. Publication remains a separate verified git step.
 - [ ] Later built-in artwork polish: replace or repair the visible white seam in the original Oval and Rounded balloon outlines; do not block current creator work on it.
 - [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.

@@ -1662,6 +1662,125 @@ describe('editor store', () => {
     ).toBe('tile')
   })
 
+  it('coordinates plane naming and reordering through undoable history', () => {
+    useEditorStore.getState().setActiveCompositionGroup('content')
+    useEditorStore.getState().createLayerPlane()
+
+    const createdPlaneId = useEditorStore.getState().activeLayerPlaneId
+    expect(createdPlaneId).toBe('content-plane-3')
+
+    useEditorStore.getState().setLayerPlaneName(createdPlaneId, 'Dialogue')
+    useEditorStore.getState().reorderLayerPlane(createdPlaneId, 0)
+
+    expect(
+      getLayerPlanesForGroup(
+        useEditorStore.getState().episode,
+        'content',
+      ).map(({ id, name }) => ({ id, name })),
+    ).toEqual([
+      { id: createdPlaneId, name: 'Dialogue' },
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels, name: undefined },
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentText, name: undefined },
+    ])
+
+    useEditorStore.getState().undo()
+    expect(
+      getLayerPlanesForGroup(
+        useEditorStore.getState().episode,
+        'content',
+      ).map(({ id }) => id),
+    ).toEqual([
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      createdPlaneId,
+    ])
+    useEditorStore.getState().redo()
+    expect(
+      getLayerPlanesForGroup(
+        useEditorStore.getState().episode,
+        'content',
+      )[0]?.id,
+    ).toBe(createdPlaneId)
+  })
+
+  it('moves selected content between ordinary planes and follows it', () => {
+    const elementId = 'beat-01-stillness-title'
+    useEditorStore.getState().selectElement(elementId)
+    useEditorStore
+      .getState()
+      .moveElementToLayerPlane(
+        elementId,
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      )
+
+    const movedState = useEditorStore.getState()
+    expect(
+      movedState.episode.elements.find(({ id }) => id === elementId)
+        ?.layerPlaneId,
+    ).toBe(BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree)
+    expect(movedState.activeCompositionGroup).toBe('background')
+    expect(movedState.activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+    )
+    expect(movedState.selectedElementId).toBe(elementId)
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().activeCompositionGroup).toBe('content')
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId)?.layerPlaneId,
+    ).toBe(BUILD_WEEK_LAYER_PLANE_IDS.contentText)
+  })
+
+  it('creates and applies independent lettering as two undoable changes', () => {
+    useEditorStore.getState().setActiveCompositionGroup('content')
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.contentText)
+
+    expect(useEditorStore.getState().createTextElement()).toBe(true)
+    const elementId = useEditorStore.getState().selectedElementId
+    expect(elementId).toBeTruthy()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId),
+    ).toMatchObject({ type: 'text', text: 'Your text' })
+
+    useEditorStore.getState().updateTextElement(elementId!, {
+      text: 'Keep the light close.',
+      fill: '#102030',
+      fontSize: 42,
+      fontWeight: 700,
+      align: 'right',
+    })
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId),
+    ).toMatchObject({
+      text: 'Keep the light close.',
+      fill: '#102030',
+      fontSize: 42,
+      fontWeight: 700,
+      align: 'right',
+    })
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.find(({ id }) => id === elementId),
+    ).toMatchObject({ text: 'Your text', fontSize: 36 })
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === elementId),
+    ).toBe(false)
+  })
+
   it('treats New Episode and Reset demo as boundaries that clear history', () => {
     useEditorStore.getState().setEpisodeName('Before new episode')
     expect(useEditorStore.getState().canUndo).toBe(true)
@@ -1673,6 +1792,7 @@ describe('editor store', () => {
     expect(useEditorStore.getState().historyFuture).toHaveLength(0)
     expect(useEditorStore.getState().canUndo).toBe(false)
     expect(useEditorStore.getState().canRedo).toBe(false)
+    expect(useEditorStore.getState().savedRevision).toBeNull()
     expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
 
     useEditorStore.getState().placeSyntheticAsset({
@@ -1687,6 +1807,20 @@ describe('editor store', () => {
     expect(useEditorStore.getState().historyFuture).toHaveLength(0)
     expect(useEditorStore.getState().canUndo).toBe(false)
     expect(useEditorStore.getState().canRedo).toBe(false)
+    expect(useEditorStore.getState().savedRevision).toBeNull()
+    expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
+    expect(useEditorStore.getState().documentStatus).toBe(
+      'Demo reset · unsaved changes',
+    )
+
+    useEditorStore.setState({
+      hasSavedEpisode: true,
+      savedRevision: 123,
+    })
+    useEditorStore.getState().resetEpisode()
+    expect(useEditorStore.getState().hasSavedEpisode).toBe(true)
+    expect(useEditorStore.getState().savedRevision).toBe(123)
+    expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
   })
 
   it('saves, tracks dirty revisions, and reopens from lazy browser localStorage', () => {

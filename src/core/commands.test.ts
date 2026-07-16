@@ -13,12 +13,16 @@ import {
   createImageElement,
   createLayerPlane,
   createSyntheticShapeElement,
+  createTextElement,
   deleteElement,
   deleteEmptyLayerPlane,
   extendEpisodeHeight,
   getEpisodeContentBottom,
   MIN_EPISODE_LOGICAL_HEIGHT,
   moveElement,
+  moveElementInStack,
+  moveElementToLayerPlane,
+  reorderLayerPlane,
   resizeElement,
   resizeEpisodeHeight,
   setBaseColor,
@@ -28,8 +32,10 @@ import {
   setElementVisibility,
   setEpisodeName,
   setImagePresentation,
+  setLayerPlaneName,
   setLayerPlaneVisibility,
   setShapeFill,
+  updateTextElement,
 } from './commands'
 import {
   getBackgroundBaseLayerPlane,
@@ -1518,5 +1524,225 @@ describe('getEffectiveEpisodeBaseColor', () => {
 
     expect(getEffectiveEpisodeBaseColor(baseHidden)).toBeUndefined()
     expect(getEffectiveEpisodeBaseColor(backgroundHidden)).toBeUndefined()
+  })
+})
+
+describe('layer plane organization', () => {
+  it('sets, trims, and clears an optional ordinary plane name', () => {
+    const named = setLayerPlaneName(
+      buildWeekEpisode,
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      '  Main panels  ',
+    )
+
+    expect(
+      getLayerPlanesForGroup(named, 'content').find(
+        ({ id }) => id === BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      )?.name,
+    ).toBe('Main panels')
+
+    const cleared = setLayerPlaneName(
+      named,
+      BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      '   ',
+    )
+
+    expect(
+      getLayerPlanesForGroup(cleared, 'content').find(
+        ({ id }) => id === BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      ),
+    ).not.toHaveProperty('name')
+  })
+
+  it('rejects invalid names and protects the pinned base plane', () => {
+    expect(
+      setLayerPlaneName(
+        buildWeekEpisode,
+        BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        'x'.repeat(33),
+      ),
+    ).toBe(buildWeekEpisode)
+    expect(
+      setLayerPlaneName(
+        buildWeekEpisode,
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+        'Base',
+      ),
+    ).toBe(buildWeekEpisode)
+  })
+
+  it('reorders planes within one group while preserving their stable IDs', () => {
+    const withThirdPlane = createLayerPlane(buildWeekEpisode, 'content')
+    const reordered = reorderLayerPlane(
+      withThirdPlane,
+      'content-plane-3',
+      0,
+    )
+
+    expect(
+      getLayerPlanesForGroup(reordered, 'content').map(({ id, order }) => ({
+        id,
+        order,
+      })),
+    ).toEqual([
+      { id: 'content-plane-3', order: 1 },
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels, order: 2 },
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentText, order: 3 },
+    ])
+  })
+
+  it('keeps the Background base pinned when an ordinary plane targets it', () => {
+    const withThirdPlane = createLayerPlane(buildWeekEpisode, 'background')
+    const reordered = reorderLayerPlane(
+      withThirdPlane,
+      'background-plane-3',
+      0,
+    )
+
+    expect(
+      getLayerPlanesForGroup(reordered, 'background').map(({ id }) => id),
+    ).toEqual([
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      'background-plane-3',
+      BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+    ])
+    expect(
+      reorderLayerPlane(
+        buildWeekEpisode,
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+        1,
+      ),
+    ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('element stack organization', () => {
+  it('moves an element one step in its plane stack and compacts z indexes', () => {
+    const titleId = 'beat-01-stillness-title'
+    const captionId = 'beat-01-stillness-caption'
+    const moved = moveElementInStack(buildWeekEpisode, titleId, 'forward')
+    const planeStack = moved.elements
+      .filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      )
+      .sort((first, second) => first.zIndex - second.zIndex)
+
+    expect(planeStack.findIndex(({ id }) => id === captionId)).toBeLessThan(
+      planeStack.findIndex(({ id }) => id === titleId),
+    )
+    expect(planeStack.map(({ zIndex }) => zIndex)).toEqual(
+      planeStack.map((_, index) => index),
+    )
+  })
+
+  it('returns the original document at the back edge of a stack', () => {
+    expect(
+      moveElementInStack(
+        buildWeekEpisode,
+        'beat-01-stillness-title',
+        'backward',
+      ),
+    ).toBe(buildWeekEpisode)
+  })
+
+  it('moves an element to the top of an ordinary destination plane', () => {
+    const elementId = 'beat-01-stillness-title'
+    const original = buildWeekEpisode.elements.find(
+      ({ id }) => id === elementId,
+    )
+    const destination = createLayerPlane(buildWeekEpisode, 'content')
+    const moved = moveElementToLayerPlane(
+      destination,
+      elementId,
+      'content-plane-3',
+    )
+    const movedElement = moved.elements.find(({ id }) => id === elementId)
+
+    expect(movedElement?.layerPlaneId).toBe('content-plane-3')
+    expect(movedElement?.zIndex).toBe(0)
+    expect(movedElement?.assetReference).toBe(original?.assetReference)
+    expect(movedElement?.id).toBe(original?.id)
+  })
+
+  it('rejects moving an element onto the pinned base plane', () => {
+    expect(
+      moveElementToLayerPlane(
+        buildWeekEpisode,
+        'beat-01-stillness-title',
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundBase,
+      ),
+    ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('creator text commands', () => {
+  it('creates a selected-plane text element with safe fixed typography', () => {
+    const created = createTextElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      text: '  We keep going.  ',
+      fill: '#221133',
+      bounds: { x: 100, y: 200, width: 500, height: 96 },
+    })
+    const text = created.elements.at(-1)
+
+    expect(text).toMatchObject({
+      type: 'text',
+      text: 'We keep going.',
+      fill: '#221133',
+      fontSize: 36,
+      fontWeight: 600,
+      align: 'center',
+      lineHeight: 1.2,
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    })
+  })
+
+  it('updates wording and approved text styling in one command', () => {
+    const updated = updateTextElement(
+      buildWeekEpisode,
+      'beat-01-stillness-title',
+      {
+        text: '  A quieter beginning  ',
+        fill: '#123456',
+        fontSize: 44,
+        fontWeight: 400,
+        align: 'left',
+      },
+    )
+
+    expect(
+      updated.elements.find(({ id }) => id === 'beat-01-stillness-title'),
+    ).toMatchObject({
+      text: 'A quieter beginning',
+      fill: '#123456',
+      fontSize: 44,
+      fontWeight: 400,
+      align: 'left',
+    })
+  })
+
+  it('rejects blank text and out-of-range font sizes', () => {
+    expect(
+      createTextElement(buildWeekEpisode, {
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+        text: '   ',
+        fill: '#000000',
+        bounds: { x: 0, y: 0, width: 400, height: 80 },
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      updateTextElement(
+        buildWeekEpisode,
+        'beat-01-stillness-title',
+        {
+          text: 'Valid words',
+          fill: '#000000',
+          fontSize: 201,
+          fontWeight: 600,
+          align: 'center',
+        },
+      ),
+    ).toBe(buildWeekEpisode)
   })
 })

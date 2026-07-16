@@ -2,7 +2,7 @@
 
 ## First principles
 
-ScrollSplice edits one logical vertical episode. The episode document is durable product data; canvas, minimap, layers, future preview, and future export are replaceable views of it.
+ScrollSplice edits one logical vertical episode. The episode document is durable product data; canvas, minimap, layers, implemented Reader Preview, and future export are replaceable views of it.
 
 The architecture follows seven rules:
 
@@ -62,10 +62,11 @@ The sample document contains:
 - a stable episode ID and format version
 - an editable episode name
 - a fixed logical width of `800` units and flexible logical height
-- ordered `LayerPlane` records with stable IDs, group ownership, visibility, and base or ordinary kind
+- ordered `LayerPlane` records with stable IDs, group ownership, visibility, optional creator-facing names, and base or ordinary kind
 - an ordered flat collection of elements
 - for each element: stable ID, readable name, plane reference, asset reference, logical `x`, `y`, `width`, `height`, visibility, and stacking order
 - for image elements: a built-in or imported asset reference, with intrinsic/source data resolved at the application edge
+- for text elements: wording, color, font family, font size, weight, line height, and left/center/right alignment
 
 The implemented v5 appearance shape remains plain data: every element has normalized `opacity` and one of Normal, Multiply, Screen, Overlay, or Soft Light; Background color-region fills may be solid or vertical two-stop color/alpha gradients; and image presentation may be single or tiled. Tile presentation uses a fixed automatic scale capped at a 160-logical-unit tile edge rather than a creator density control. Supported v3/v4 documents normalize to v5 defaults without changing source assets.
 
@@ -98,16 +99,16 @@ Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without specul
 
 - The right panel shows compact numbered tabs below `Layers · Background`, `Layers · Content`, or `Layers · Foreground`.
 - When Background plane 1 is active, the inspector and canvas each show a compact color control backed by the same `setBaseColor` command. Both are editor chrome. If the base plane is hidden, canvas and minimap show an editor-only checkerboard that is not episode content or export output.
-- The implemented foundation provides stable identity, selection, creation, visibility, overflow arrows, and automatic active-tab reveal before any later plane-reordering slice.
-- A later layer-management slice gives ordinary tabs a dedicated drag handle and dispatches a pure reorder command inside the active group. Background plane 1 remains pinned.
-- Move Left/Right commands provide a keyboard and non-drag alternative in that same management slice. Small left and right overflow arrows scroll the tab strip without changing plane order, and the active tab scrolls into view from the foundation onward.
+- The implemented foundation provides stable identity, selection, creation, visibility, overflow arrows, automatic active-tab reveal, optional names, and same-group ordering without changing the document format.
+- Ordinary tabs have a dedicated drag grip that dispatches a pure reorder command inside the active group. Background plane 1 remains pinned.
+- Move Left/Right commands provide a keyboard and non-drag alternative. Small left and right overflow arrows scroll the tab strip without changing plane order, and the active tab continues to scroll into view.
 - A `+` creates another ordinary plane in the active group. Plane numbers reflect current order; stable IDs preserve identity when numbers change.
 - An ordinary plane may be deleted only when it contains no elements. Hidden elements still count as contents, Background plane 1 is never deletable, and every group retains at least one plane. After deletion, application coordination activates the nearest remaining plane.
 - Group, plane, and element eye states remain independent and preserve child settings.
 
 An empty plane's centered action area pairs the implemented **Delete plane** control with a paperclip **Add asset** action. The same add action remains available when an ordinary plane is populated. It opens the overlay Asset Library and targets the currently active ordinary plane.
 
-The fixed left rail is an application-shell concern with five destinations: **Uploads**, **Speech Balloons**, **Decorations**, **Splatters**, and **My Library**. Creator-named categories live inside My Library so an unbounded list cannot overwhelm the rail. Category selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The starter catalog contains nine original transparent SVG assets—three in each built-in category. The local build supports click and native drag placement, select, move, proportional resize, visibility, delete, history, opacity, the five recorded blend modes, and single/tile image presentation. Recolor, text-in-balloon, tail editing, crop, rotate, flip, and perspective remain deferred.
+The fixed left rail is an application-shell concern with five destinations: **Uploads**, **Speech Balloons**, **Decorations**, **Splatters**, and **My Library**. Creator-named categories live inside My Library so an unbounded list cannot overwhelm the rail. Category selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The starter catalog contains nine original transparent SVG assets—three in each built-in category. The local build supports click and native drag placement, select, move, proportional resize, visibility, delete, history, opacity, the five recorded blend modes, single/tile image presentation, and independent editable text that may sit over a balloon image. Recolor, compound balloon/text behavior, automatic fitting, tail editing, crop, rotate, flip, and perspective remain deferred.
 
 ## Commands and state ownership
 
@@ -128,13 +129,31 @@ The implemented Build Week command surface is intentionally small:
 - `createImageElement(document, input)` places one built-in or imported image reference in an ordinary plane with stable geometry and stacking.
 - `createSyntheticShapeElement(document, input)` places one code-defined demo rectangle in an ordinary plane.
 - `createBackgroundColorRegion(document, input)` places one solid region at the full episode width as an editable starting geometry in an ordinary Background plane.
+- `setLayerPlaneName(document, planeId, name)` writes or clears one ordinary plane's optional creator-facing name.
+- `reorderLayerPlane(document, planeId, destinationOrder)` reorders an ordinary plane only inside its fixed group while retaining stable IDs.
+- `moveElementInStack(document, elementId, direction)` performs one local Bring Forward or Send Backward step inside the current plane.
+- `moveElementToLayerPlane(document, elementId, planeId)` moves one element to a valid ordinary destination without changing its stable identity or asset reference.
+- `createTextElement(document, input)` creates one independent text element, and `updateTextElement(document, elementId, patch)` validates its supported wording and typography changes.
 - `resetEpisode()` restores the known fixture document through application coordination.
 
 Navigation and selection do not change the document. They update application state.
 
-Reordering, plane rename, moving elements between planes, asset-source deletion, and editable balloon properties remain later work. The implemented appearance commands cover element opacity, vertical two-stop Background fills, single/tile image presentation, and the five recorded blend modes. Do not add arbitrary nesting, folders, additional save slots, autosave, file-system access, cloud storage, arbitrary gradient or blend infrastructure, or a general migration framework.
+Asset-source deletion and compound balloon properties remain later work. Bounded plane naming/reordering, local element stacking, Move to Plane, and independent basic text use the existing format-v5 fields. The implemented appearance commands cover element opacity, vertical two-stop Background fills, single/tile image presentation, and the five recorded blend modes. Do not add arbitrary nesting, folders, additional save slots, autosave, file-system access, cloud storage, arbitrary gradient or blend infrastructure, or a general migration framework.
 
 The appearance slices add pure commands such as `setElementOpacity`, `setBackgroundRegionFill`, `setImagePresentation`, and `setElementBlendMode`. They validate supported targets and values, return the original document for a no-op or invalid request, and enter the same bounded history path as existing document edits. Opacity clamps to 0–1. A selected opacity slider publishes transient preview state, but one gesture commits once. Format v5 normalizes supported v3/v4 data to 100% opacity, Normal blending, solid fills, and single-image presentation while preserving existing v4 shape opacity.
+
+### Implemented creator-completion command and view extensions
+
+The three creator-completion slices extend existing seams rather than introducing a new model:
+
+- Plane naming writes or clears the existing optional `LayerPlane.name`. Same-group plane reorder changes only ordinary-plane `order`, retains stable IDs, compacts visible numbering, and cannot move Background plane 1. A drag gesture and Move Left/Right dispatch the same pure operation and produce one history entry.
+- Bring Forward and Send Backward adjust the selected element's local `zIndex` by one position inside its current plane. The Layers list remains spatially sorted by logical `y`; explicit actions own visual stacking.
+- Move to Plane changes one selected element's `layerPlaneId` to an ordinary destination in any fixed group, normalizes local stacking at that destination, and preserves its stable ID, bounds, appearance, and asset reference. Application coordination activates the destination group and plane.
+- Add Text creates one ordinary `TextElement` in the active ordinary plane. Text property commands update wording, fill color, font size, the existing `400 | 600 | 700` weight, or left/center/right alignment. The font family and line-height defaults remain fixed for this slice. Text remains independently movable, resizable, visible, composited, and selectable; no image asset or compound balloon record owns it.
+- Reader preview is a read-only presentation over the current normalized document and resolved asset sources. It does not create a second episode representation and does not write document, history, dirty, selection, active-plane, zoom, or viewport state.
+- Reset Demo confirmation belongs to application lifecycle coordination. When dirty, cancellation is a true no-op. Confirmation loads the fixture as an unsaved document, clears stale selection/history/live interaction state, and never deletes or overwrites the explicit saved slot or Asset Library.
+
+These changes use existing format-v5 plane and element fields and require no format bump. Their document mutations enter the same bounded history and validated save paths as existing commands.
 
 ### Implemented episode-structure command extension
 
@@ -157,7 +176,7 @@ These extensions are implemented and validated locally in checkpoints A and B:
 - `resizeEpisodeHeight(document, requestedHeight)` supports precise growth and shrink requests. It clamps to `MIN_EPISODE_LOGICAL_HEIGHT = 1280` and to the greatest logical bottom bound of all elements, including hidden elements and Background color regions, so it never clips or moves content. The existing `extendEpisodeHeight` remains the coarse 1280-unit shortcut.
 - At historical checkpoint B, `createBackgroundColorRegion(document, input)` created a full-width solid element in an ordinary Background plane from a chosen start, length, and color and preserved `x = 0` during movement. The later free-transform correction supersedes that movement restriction while retaining full width as the creation default.
 
-The bottom-edge resize hit area converts pointer movement through the shared coordinate module and requests logical height through `resizeEpisodeHeight`. Background plane 1 derives from the resulting document height and is excluded from the content-floor calculation because it has no independent bounds. Canvas viewport clamping and minimap fitting respond to the same committed height. Real PNG/JPEG/WebP imports with source alpha can already be placed on ordinary Background planes 2 and later; Background plane 1 remains the pinned color-only base. The approved goal adds vertical two-stop fills, tiled presentation, and five blend modes, while background-specific cover/crop and texture-density controls remain deferred.
+The bottom-edge resize hit area converts pointer movement through the shared coordinate module and requests logical height through `resizeEpisodeHeight`. Background plane 1 derives from the resulting document height and is excluded from the content-floor calculation because it has no independent bounds. Canvas viewport clamping and minimap fitting respond to the same committed height. Real PNG/JPEG/WebP imports with source alpha can already be placed on ordinary Background planes 2 and later; Background plane 1 remains the pinned color-only base. The implemented appearance goal adds vertical two-stop fills, tiled presentation, and five blend modes, while background-specific cover/crop and texture-density controls remain deferred.
 
 The title's existing validation does not change in checkpoint A. Ordinary title text remains the click target, and the input is created after activation with no permanent pencil control. The corrective checkpoint gives the fixed **EPISODE** label its own stable column and gives title text and input one clamped footprint, so activation replaces only the title and cannot shift the label or neighboring reset control.
 
@@ -192,18 +211,19 @@ Canvas, minimap, and layers subscribe to this shared state. They must not keep c
 
 ## Local history, episode persistence, and the Asset Library
 
-The approved July 14 creator-workflow slice added a deliberately small local episode boundary. The July 15 Asset Library slice adds one explicit compatible format transition and a separate source-media boundary:
+The implemented July 14 creator-workflow slice added a deliberately small local episode boundary. The July 15 Asset Library slice adds one explicit compatible format transition and a separate source-media boundary:
 
 - `ProjectRepository` owns one browser key, `scrollsplice.project.last.v1`. Its versioned envelope contains a save timestamp and one validated format-v5 `EpisodeDocument`. The parser accepts the two explicitly supported older episode formats, normalizes their appearance defaults, and rejects corrupt or unknown versions.
 - The format-v5 transition leaves the envelope key and source-media store unchanged. Episode layout still stores stable asset IDs only, while imported source `Blob`s remain in the separate IndexedDB Asset Library.
 - `AssetRepository` owns the versioned IndexedDB database `scrollsplice-asset-library-v1`. It stores one validated asset-library snapshot containing creator categories, source metadata, and unchanged PNG/JPEG/WebP `Blob`s. Category creation and imports use one atomic IndexedDB read-transform-write transaction, so concurrent tabs merge against the latest saved snapshot instead of overwriting one another. The successful update returns that merged snapshot, and the initiating tab refreshes its categories and runtime sources from it.
 - **Save** is explicit. It writes the current episode only; selection, viewport, zoom, open panels, live pointer bounds, history stacks, and provider/account data are never persisted.
 - Import and creator-category creation persist immediately to the local Asset Library and do not create episode-history entries. Placing an asset creates a normal image element and one episode-history entry; it becomes durable only after **File > Save**.
-- New Episode, Reopen, Reset, Undo, and Redo do not delete imported sources or creator categories. Clearing browser site data, changing profiles/origins, or losing one storage boundary can still leave a saved episode with a missing source; renderers show an honest selectable placeholder.
+- New Episode, Reopen, Reset Demo, Undo, and Redo do not delete imported sources or creator categories. Clearing browser site data, changing profiles/origins, or losing one storage boundary can still leave a saved episode with a missing source; renderers show an honest selectable placeholder.
 - On app startup, a valid last save opens automatically. Missing or unavailable storage falls back to the public-safe demo. Corrupt or unsupported records are reported and left untouched rather than being silently deleted or coerced.
 - **Reopen** reads the last explicit save and resets selection, viewport, zoom, transient controls, and undo/redo. If the current document is dirty, the application asks before discarding it.
 - **New Episode** creates an unsaved **Untitled Episode** with a stable ID, 800-unit width, 1,280-unit height, a pinned white Background base, one ordinary Background plane, one Content plane, one Foreground plane, and no elements. It does not delete the existing saved slot, so **Reopen** can still recover that last save.
-- The in-app menu surface is intentionally limited to **File > New Episode / Save / Reopen** and **Edit > Undo / Redo**. It is browser UI, not a native macOS or Windows menu.
+- The creator-completion pass gives **Reset Demo** the same dirty-document guard as the other destructive lifecycle actions. Cancel preserves the complete current editor state. Confirm loads the fixture as unsaved and keeps the last explicit save available to **Reopen**.
+- The in-app menu surface is intentionally limited to **File > New Episode / Save / Reopen**, **Edit > Undo / Redo**, and **View > Reader Preview**. It is browser UI, not a native macOS or Windows menu.
 - Shortcuts are `Mod+S`, `Mod+Z`, `Mod+Shift+Z`, and `Ctrl+Y`. Undo/redo shortcuts do not replace native text-field history while an editable field has focus.
 
 The Zustand coordinator keeps a maximum of 100 history checkpoints. Every successful episode-document mutation goes through one commit helper, clears redo after a new branch, and records the prior document plus enough selection/group/plane context to restore a coherent editor. This includes element and layer-plane creation/deletion, movement, resize, title, coarse extension, precise height, element/plane/group visibility, and base color. A bottom-edge pointer gesture may publish many live height previews, but its start and final height form one undo step. Navigation, zoom, selection-only changes, drawer state, magnet state, guide visibility, and live bounds are transient and not undoable document edits.
@@ -304,6 +324,26 @@ This same flow supports background photos: choose an ordinary Background plane�
 6. Canvas, minimap, and Layers panel derive effective visibility from the same episode document.
 
 Hidden elements do not render and cannot capture canvas selection. They remain selectable from the Layers panel; hiding a selected element keeps the selection and removes only its canvas outline until it is shown again.
+
+### Implemented plane-order and element-stack flow
+
+1. A creator optionally names an ordinary plane or uses its dedicated grip to drag it within the active group; Move Left/Right requests the same adjacent reorder without requiring drag.
+2. The pure command retains stable IDs, rejects cross-group movement and the pinned base, normalizes order, and returns one document revision.
+3. The selected element's Bring Forward/Send Backward action changes only local overlap order inside its plane. Move to Plane changes one stable `layerPlaneId` to a valid ordinary destination and activates that context.
+4. Canvas and minimap immediately use the resulting deterministic group/plane/local stack while the Layers row list continues to describe top-to-bottom scroll position.
+
+### Implemented independent-text flow
+
+1. A visible Add Text action creates one default `TextElement` in the active ordinary plane and selects it.
+2. Compact controls commit wording, color, size, weight, or alignment through pure commands; ordinary movement, proportional resize, opacity, blend, visibility, and deletion remain shared behavior.
+3. A creator may position that text over a balloon image, but the two elements remain independent and may be selected, moved, reordered, or deleted separately.
+4. Canvas, minimap, Layers, history, and persistence consume the same format-v5 text data.
+
+### Implemented reader-preview and reset flow
+
+1. Entering preview records no document mutation. The application presents the same episode and resolved assets at the episode aspect ratio without editor chrome.
+2. Preview scroll is local to that view. Exiting returns to the preserved editor selection, group, plane, zoom, and logical viewport with unchanged dirty/history state.
+3. Reset Demo checks dirty state before replacement. Cancel changes nothing; confirm loads the fixture as unsaved, clears stale transient/history context, and preserves the explicit saved slot for Reopen.
 
 ## Application-edge seams
 
@@ -420,15 +460,16 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 - Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, center-snap thresholds at zoom, proportional ordinary-element resize, independent Background-region resize, transient bounds preview/reset, serializable model invariants, pinned Background plane 1, ordering/visibility, title/plane/element deletion, episode-height safety, profile candidates, zoom, minimap geometry, drop-coordinate conversion, v3/v4-to-v5 normalization, opacity bounds/history coalescing, fill and presentation validation, and blend-mode command coverage.
 - Vitest for the published appearance slice: format-v5 save validation, supported v3/v4 opening, invalid image-reference rejection, atomic concurrent-tab asset-library updates, category/import merge behavior, extreme-ratio placement refusal, blank-document invariants, bounded history, lifecycle clearing, dirty/saved revision behavior, and canvas/minimap appearance agreement.
-- Playwright: the complete editor story covers title, minimap, plane/element controls, synthetic placement, base color, episode height, Background-region transforms, snapping, live bounds, zoom, proportional resize, reset, File/Edit menus, and save/reload/reopen/New Episode. Focused Asset Library and appearance stories cover built-in and imported drag placement, click fallback, creator-category creation, reusable transparent PNG import, source-alpha compositing, opacity gesture history, gradients/fades, tile presentation, blend modes, and appearance persistence.
+- Playwright: the complete editor story covers title, minimap, plane/element controls, synthetic placement, base color, episode height, Background-region transforms, snapping, live bounds, zoom, proportional resize, reset, File/Edit/View menus, and save/reload/reopen/New Episode. Focused Asset Library and appearance stories cover built-in and imported drag placement, click fallback, creator-category creation, reusable transparent PNG import, source-alpha compositing, opacity gesture history, gradients/fades, tile presentation, blend modes, and appearance persistence.
+- The creator-completion story covers stable plane rename/reorder through both drag and Move Left/Right, pinned-base rejection, local stacking and cross-group Move to Plane, independent text creation/property history and persistence, Reader Preview state restoration, and Reset Demo cancel/confirm plus saved-slot recovery.
 - Static checks: ESLint, strict TypeScript, and the Vite production build.
-- Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and public deployment.
+- Visual inspection: workspace hierarchy, canvas/minimap agreement, selection clarity, long-episode navigation, and chrome-free Reader Preview. Public deployment is inspected separately when it exists.
 
-Corrective checkpoint D validation covers stable title anchors, default-on magnet state and bypass, profile-derived candidates, four proportional ordinary-element handles, eight independent Background-region handles, free two-axis Background movement, transient status/minimap bounds during move and resize, one final command commit, and reset. The original fixed-width validation remains historical and is superseded by this passing extension. Katherine accepted the superseding checkpoint with notes; minimap aspect distortion remains polish. The local history/save/menu slice adds 154 passing unit tests, static/build validation, and a second isolated Chromium story for save/reload/reopen/New Episode. The five-slice direct-placement and appearance goal passes 255 unit tests across 13 files, strict typecheck, ESLint, production build, focused drag/appearance Chromium coverage, the full 6-of-6 Chromium suite, and public-safe visual inspection. It was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The separate export checkpoint adds deterministic boundary planning and encoded preflight.
+Corrective checkpoint D validation covers stable title anchors, default-on magnet state and bypass, profile-derived candidates, four proportional ordinary-element handles, eight independent Background-region handles, free two-axis Background movement, transient status/minimap bounds during move and resize, one final command commit, and reset. The original fixed-width validation remains historical and is superseded by this passing extension. Katherine accepted the superseding checkpoint with notes; minimap aspect distortion remains polish. The local history/save/menu slice adds 154 passing unit tests, static/build validation, and a second isolated Chromium story for save/reload/reopen/New Episode. The five-slice direct-placement and appearance goal passes 255 unit tests across 13 files, strict typecheck, ESLint, production build, focused drag/appearance Chromium coverage, the full 6-of-6 Chromium suite, and public-safe visual inspection. It was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass extends that baseline with 270 passing unit tests across 13 files, strict typecheck, ESLint, production build, all 7 Playwright Chromium stories, and local visual inspection of both editor and Reader Preview; publication is not claimed before a verified push. The production build emits a non-blocking Vite advisory for its 637.55 kB minified JavaScript chunk. The separate export checkpoint adds deterministic boundary planning and encoded preflight.
 
 The post-review build passes 94 unit tests, strict typecheck, ESLint, the production build, and one isolated Playwright Chromium walkthrough including element movement at 200% zoom. Its running UI was visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. That passing checkpoint and its documentation were published to `main` through `8a493a2` on July 14.
 
-The historical fixed-width corrective checkpoint passed 120 unit tests. Its superseding free-transform build passed 123 unit tests before the newer history/save/menu work. The current Asset Library build passes 214 unit tests across 11 files, strict typecheck, ESLint, production build, four Chromium stories, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. The earlier public-safe records remain labeled as historical evidence, and the Asset Library screenshot is indexed separately. Katherine's human retest passed checkpoint D with notes and her July 15 review passed the history/save/menu slice. The combined passing stack was published to `main` in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`, and local/remote equality was verified after the push.
+The historical fixed-width corrective checkpoint passed 120 unit tests. Its superseding free-transform build passed 123 unit tests before the newer history/save/menu work. The historical Asset Library checkpoint passed 214 unit tests across 11 files, strict typecheck, ESLint, production build, four Chromium stories, and visual inspection at 1440 × 900, 1280 × 720, and 1024 × 768. The published appearance baseline supersedes that current-count claim with 255 unit tests across 13 files and the complete 6-of-6 Playwright suite. The earlier public-safe records remain labeled as historical evidence, and the Asset Library screenshot is indexed separately. Katherine's human retest passed checkpoint D with notes and her July 15 review passed the history/save/menu slice. The combined Asset Library stack was published to `main` in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`, and local/remote equality was verified after the push.
 
 ## Non-negotiable invariants
 
@@ -436,7 +477,7 @@ The historical fixed-width corrective checkpoint passed 120 unit tests. Its supe
 - Selection and viewport each have one application-state owner.
 - Document history and dirty/saved state each have one application-state owner; neither enters the episode document.
 - Core model, coordinates, and commands import no React, Konva, Zustand, persistence, export, platform, or authentication code.
-- Canvas, minimap, layers, future preview, and future export agree on geometry and ordering.
+- Canvas, minimap, layers, the implemented Reader Preview, and future export agree on geometry and ordering.
 - Fixed composition-group rank, ordered layer planes, and local element stacking produce one deterministic stack; active-group or active-plane filtering never changes rendered visibility.
 - Group, plane, and element visibility remain separate state, and hidden elements remain addressable from Layers.
 - The live canvas is viewport-sized, not episode-sized.

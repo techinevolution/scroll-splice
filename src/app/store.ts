@@ -12,10 +12,14 @@ import {
   createImageElement as createImageElementCommand,
   createLayerPlane as createLayerPlaneCommand,
   createSyntheticShapeElement as createSyntheticShapeElementCommand,
+  createTextElement as createTextElementCommand,
   deleteElement as deleteElementCommand,
   deleteEmptyLayerPlane as deleteEmptyLayerPlaneCommand,
   extendEpisodeHeight as extendEpisodeHeightCommand,
   moveElement as moveElementCommand,
+  moveElementInStack as moveElementInStackCommand,
+  moveElementToLayerPlane as moveElementToLayerPlaneCommand,
+  reorderLayerPlane as reorderLayerPlaneCommand,
   resizeElement as resizeElementCommand,
   resizeEpisodeHeight as resizeEpisodeHeightCommand,
   setBaseColor as setBaseColorCommand,
@@ -25,8 +29,11 @@ import {
   setElementVisibility as setElementVisibilityCommand,
   setEpisodeName as setEpisodeNameCommand,
   setImagePresentation as setImagePresentationCommand,
+  setLayerPlaneName as setLayerPlaneNameCommand,
   setLayerPlaneVisibility as setLayerPlaneVisibilityCommand,
   setShapeFill as setShapeFillCommand,
+  updateTextElement as updateTextElementCommand,
+  type UpdateTextElementInput,
 } from '../core/commands'
 import {
   DEFAULT_ZOOM_FACTOR,
@@ -117,6 +124,11 @@ interface EditorState {
   readonly setActiveLayerPlane: (layerPlaneId: string) => void
   readonly createLayerPlane: () => void
   readonly deleteLayerPlane: (layerPlaneId: string) => void
+  readonly setLayerPlaneName: (layerPlaneId: string, name: string) => void
+  readonly reorderLayerPlane: (
+    layerPlaneId: string,
+    targetIndex: number,
+  ) => void
   readonly setEpisodeName: (name: string) => void
   readonly extendEpisodeHeight: () => void
   readonly resizeEpisodeHeight: (
@@ -143,10 +155,19 @@ interface EditorState {
   ) => void
   readonly setBaseColor: (color: string) => void
   readonly deleteElement: (elementId: string) => void
+  readonly moveElementInStack: (
+    elementId: string,
+    direction: 'backward' | 'forward',
+  ) => void
+  readonly moveElementToLayerPlane: (
+    elementId: string,
+    layerPlaneId: string,
+  ) => void
   readonly placeSyntheticAsset: (input: {
     readonly name: string
     readonly fill: string
   }) => void
+  readonly createTextElement: () => boolean
   readonly createBackgroundColorRegion: (input: {
     readonly fill: string
     readonly startY: number
@@ -175,6 +196,10 @@ interface EditorState {
     blendMode: ElementBlendMode,
   ) => void
   readonly setShapeFill: (elementId: string, fill: ShapeFill) => void
+  readonly updateTextElement: (
+    elementId: string,
+    input: UpdateTextElementInput,
+  ) => void
   readonly setImagePresentation: (
     elementId: string,
     presentation: ImageElement['presentation'],
@@ -874,6 +899,28 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
+  setLayerPlaneName: (layerPlaneId, name) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setLayerPlaneNameCommand(state.episode, layerPlaneId, name),
+      ),
+    )
+  },
+
+  reorderLayerPlane: (layerPlaneId, targetIndex) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        reorderLayerPlaneCommand(
+          state.episode,
+          layerPlaneId,
+          targetIndex,
+        ),
+      ),
+    )
+  },
+
   setEpisodeName: (name) => {
     set((state) => {
       const episode = setEpisodeNameCommand(state.episode, name)
@@ -1243,6 +1290,44 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
+  moveElementInStack: (elementId, direction) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        moveElementInStackCommand(state.episode, elementId, direction),
+      ),
+    )
+  },
+
+  moveElementToLayerPlane: (elementId, layerPlaneId) => {
+    set((state) => {
+      const targetLayerPlane = getLayerPlaneById(
+        state.episode,
+        layerPlaneId,
+      )
+      const episode = moveElementToLayerPlaneCommand(
+        state.episode,
+        elementId,
+        layerPlaneId,
+      )
+
+      if (
+        episode === state.episode ||
+        !targetLayerPlane ||
+        targetLayerPlane.kind !== 'ordinary'
+      ) {
+        return state
+      }
+
+      return commitEpisodeChange(state, episode, {
+        activeCompositionGroup: targetLayerPlane.compositionGroup,
+        activeLayerPlaneId: targetLayerPlane.id,
+        selectedElementId: elementId,
+        liveElementBounds: null,
+      })
+    })
+  },
+
   placeSyntheticAsset: ({ name, fill }) => {
     set((state) => {
       const width = 150
@@ -1270,6 +1355,36 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         liveElementBounds: null,
       })
     })
+  },
+
+  createTextElement: () => {
+    const state = get()
+    const width = Math.min(520, state.episode.logicalWidth)
+    const height = 96
+    const episode = createTextElementCommand(state.episode, {
+      layerPlaneId: state.activeLayerPlaneId,
+      text: 'Your text',
+      fill: '#1b1630',
+      bounds: {
+        x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
+        y: state.viewportY + (state.viewportLogicalHeight - height) / 2,
+        width,
+        height,
+      },
+    })
+
+    if (episode === state.episode) {
+      return false
+    }
+
+    const createdElement = episode.elements.at(-1)
+    set(
+      commitEpisodeChange(state, episode, {
+        selectedElementId: createdElement?.id ?? state.selectedElementId,
+        liveElementBounds: null,
+      }),
+    )
+    return true
   },
 
   createBackgroundColorRegion: ({ fill, startY, height }) => {
@@ -1528,6 +1643,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       commitEpisodeChange(
         state,
         setShapeFillCommand(state.episode, elementId, fill),
+      ),
+    )
+  },
+
+  updateTextElement: (elementId, input) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        updateTextElementCommand(state.episode, elementId, input),
       ),
     )
   },
@@ -2229,8 +2353,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       )
 
       const revision = state.nextRevision
-      const isSavedEpisodeAvailable = state.hasSavedEpisode
-
       return {
         episode: buildWeekEpisode,
         historyPast: [],
@@ -2239,15 +2361,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         elementOpacityEditStart: null,
         currentRevision: revision,
         nextRevision: revision + 1,
-        savedRevision: isSavedEpisodeAvailable
-          ? state.savedRevision
-          : revision,
+        savedRevision: state.hasSavedEpisode ? state.savedRevision : null,
         canUndo: false,
         canRedo: false,
-        hasUnsavedChanges: isSavedEpisodeAvailable,
-        documentStatus: isSavedEpisodeAvailable
-          ? 'Demo reset · unsaved changes'
-          : 'Demo reset · not saved',
+        hasUnsavedChanges: true,
+        documentStatus: 'Demo reset · unsaved changes',
         selectedElementId: null,
         liveElementBounds: null,
         activeCompositionGroup: INITIAL_COMPOSITION_GROUP,

@@ -7,6 +7,7 @@ import {
   getTilePatternScale,
   toCanvasCompositeOperation,
   toCssMixBlendMode,
+  toKonvaFontStyle,
 } from './elementAppearance'
 
 describe('element appearance rendering helpers', () => {
@@ -16,6 +17,12 @@ describe('element appearance rendering helpers', () => {
     expect(toCanvasCompositeOperation('soft-light')).toBe('soft-light')
     expect(toCssMixBlendMode('normal')).toBe('normal')
     expect(toCssMixBlendMode('overlay')).toBe('overlay')
+  })
+
+  it('keeps every supported text weight consistent in Konva', () => {
+    expect(toKonvaFontStyle(400)).toBe('400')
+    expect(toKonvaFontStyle(600)).toBe('600')
+    expect(toKonvaFontStyle(700)).toBe('700')
   })
 
   it('creates solid and vertical Konva fill properties', () => {

@@ -4,6 +4,7 @@ import { useEditorStore } from '../app/store'
 import { resolveImageAsset } from '../assets/runtime'
 import { VisibilityIcon } from '../components/VisibilityIcon'
 import {
+  COMPOSITION_GROUPS,
   COMPOSITION_GROUP_LABELS,
   compareElementsByCanvasPosition,
   getLayerPlaneById,
@@ -53,6 +54,25 @@ function PaperclipIcon() {
   )
 }
 
+function TextIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M5 5h14M12 5v14M8 19h8" />
+    </svg>
+  )
+}
+
 export function LayersPanel() {
   const elements = useEditorStore((state) => state.episode.elements)
   const episode = useEditorStore((state) => state.episode)
@@ -78,12 +98,20 @@ export function LayersPanel() {
   const setElementVisibility = useEditorStore(
     (state) => state.setElementVisibility,
   )
+  const moveElementInStack = useEditorStore(
+    (state) => state.moveElementInStack,
+  )
+  const moveElementToLayerPlane = useEditorStore(
+    (state) => state.moveElementToLayerPlane,
+  )
+  const createTextElement = useEditorStore((state) => state.createTextElement)
   const selectedLayerRef = useRef<HTMLButtonElement>(null)
   const layersListRef = useRef<HTMLUListElement>(null)
   const [showColorRegionForm, setShowColorRegionForm] = useState(false)
   const [colorRegionFill, setColorRegionFill] = useState('#7B5CC7')
   const [colorRegionStart, setColorRegionStart] = useState('0')
   const [colorRegionHeight, setColorRegionHeight] = useState('1280')
+  const [moveTargetPlaneId, setMoveTargetPlaneId] = useState('')
   const activeLayerPlane = getLayerPlaneById(episode, activeLayerPlaneId)
   const activeGroupLayerPlanes = getLayerPlanesForGroup(
     episode,
@@ -97,6 +125,55 @@ export function LayersPanel() {
         .sort(compareElementsByCanvasPosition),
     [activeLayerPlaneId, elements],
   )
+  const selectedElement = useMemo(
+    () => elements.find(({ id }) => id === selectedElementId),
+    [elements, selectedElementId],
+  )
+  const localStackElements = useMemo(
+    () =>
+      elements
+        .filter(({ layerPlaneId }) => layerPlaneId === activeLayerPlaneId)
+        .sort(
+          (first, second) =>
+            first.zIndex - second.zIndex || first.id.localeCompare(second.id),
+        ),
+    [activeLayerPlaneId, elements],
+  )
+  const selectedStackIndex = selectedElement
+    ? localStackElements.findIndex(({ id }) => id === selectedElement.id)
+    : -1
+  const canSendSelectedBackward =
+    selectedStackIndex > 0 && !selectedElement?.locked
+  const canBringSelectedForward =
+    !selectedElement?.locked &&
+    selectedStackIndex >= 0 &&
+    selectedStackIndex < localStackElements.length - 1
+  const ordinaryPlaneOptions = useMemo(
+    () =>
+      COMPOSITION_GROUPS.flatMap((compositionGroup) =>
+        getLayerPlanesForGroup(episode, compositionGroup)
+          .filter((layerPlane) => layerPlane.kind === 'ordinary')
+          .map((layerPlane) => ({
+            id: layerPlane.id,
+            label: `${COMPOSITION_GROUP_LABELS[compositionGroup]} plane ${layerPlane.order}${layerPlane.name ? ` — ${layerPlane.name}` : ''}`,
+          })),
+      ),
+    [episode],
+  )
+  const availableMoveTargets = useMemo(
+    () =>
+      selectedElement
+        ? ordinaryPlaneOptions.filter(
+            ({ id }) => id !== selectedElement.layerPlaneId,
+          )
+        : [],
+    [ordinaryPlaneOptions, selectedElement],
+  )
+  const resolvedMoveTargetPlaneId = availableMoveTargets.some(
+    ({ id }) => id === moveTargetPlaneId,
+  )
+    ? moveTargetPlaneId
+    : (availableMoveTargets[0]?.id ?? '')
   const groupLabel = COMPOSITION_GROUP_LABELS[activeCompositionGroup]
   const isGroupVisible =
     episode.compositionGroupVisibility[activeCompositionGroup]
@@ -295,6 +372,25 @@ export function LayersPanel() {
               <PaperclipIcon />
               <span>Add asset</span>
             </button>
+            <button
+              className="layer-empty-action layer-empty-text"
+              type="button"
+              disabled={!canHoldElements}
+              aria-label={
+                canHoldElements
+                  ? `Add text to ${planeLabel}`
+                  : 'Add text unavailable: Background plane 1 is the full-episode base color'
+              }
+              title={
+                canHoldElements
+                  ? `Add text to ${planeLabel}`
+                  : 'Select an ordinary numbered plane to add text'
+              }
+              onClick={createTextElement}
+            >
+              <TextIcon />
+              <span>Add text</span>
+            </button>
           </div>
         </div>
       ) : null}
@@ -392,6 +488,105 @@ export function LayersPanel() {
         })}
       </ul>
 
+      {selectedElement ? (
+        <div
+          className="selected-layer-management"
+          aria-label={`${selectedElement.name} layer actions`}
+          data-testid="selected-layer-management"
+        >
+          <div className="selected-layer-stack-actions">
+            <button
+              type="button"
+              disabled={!canSendSelectedBackward}
+              aria-label={`Send ${selectedElement.name} backward`}
+              title={
+                selectedElement.locked
+                  ? 'Unlock this element before changing its stack position'
+                  : canSendSelectedBackward
+                  ? 'Move one step behind within this plane'
+                  : 'Already at the back of this plane'
+              }
+              onClick={() =>
+                moveElementInStack(selectedElement.id, 'backward')
+              }
+            >
+              Send Backward
+            </button>
+            <button
+              type="button"
+              disabled={!canBringSelectedForward}
+              aria-label={`Bring ${selectedElement.name} forward`}
+              title={
+                selectedElement.locked
+                  ? 'Unlock this element before changing its stack position'
+                  : canBringSelectedForward
+                  ? 'Move one step forward within this plane'
+                  : 'Already at the front of this plane'
+              }
+              onClick={() =>
+                moveElementInStack(selectedElement.id, 'forward')
+              }
+            >
+              Bring Forward
+            </button>
+          </div>
+
+          <form
+            className="move-element-to-plane"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (resolvedMoveTargetPlaneId) {
+                moveElementToLayerPlane(
+                  selectedElement.id,
+                  resolvedMoveTargetPlaneId,
+                )
+              }
+            }}
+          >
+            <label>
+              <span>Move to Plane</span>
+              <select
+                value={resolvedMoveTargetPlaneId}
+                disabled={
+                  availableMoveTargets.length === 0 || selectedElement.locked
+                }
+                aria-label={`Destination plane for ${selectedElement.name}`}
+                title={
+                  selectedElement.locked
+                    ? 'Unlock this element before moving it to another plane'
+                    : undefined
+                }
+                data-testid="move-element-plane-select"
+                onChange={(event) =>
+                  setMoveTargetPlaneId(event.currentTarget.value)
+                }
+              >
+                {availableMoveTargets.length === 0 ? (
+                  <option value="">No other ordinary planes</option>
+                ) : null}
+                {availableMoveTargets.map((layerPlane) => (
+                  <option value={layerPlane.id} key={layerPlane.id}>
+                    {layerPlane.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="submit"
+              disabled={!resolvedMoveTargetPlaneId || selectedElement.locked}
+              title={
+                selectedElement.locked
+                  ? 'Unlock this element before moving it to another plane'
+                  : 'Move the selected element to the chosen plane'
+              }
+              data-testid="move-element-plane-submit"
+            >
+              Move
+            </button>
+          </form>
+        </div>
+      ) : null}
+
       {canHoldElements && !isEmptyPlane ? (
         <div
           className="plane-element-actions plane-element-footer"
@@ -404,6 +599,14 @@ export function LayersPanel() {
           >
             <PaperclipIcon />
             <span>Add asset</span>
+          </button>
+          <button
+            type="button"
+            onClick={createTextElement}
+            title={`Add text to ${planeLabel}`}
+          >
+            <TextIcon />
+            <span>Add text</span>
           </button>
         </div>
       ) : null}

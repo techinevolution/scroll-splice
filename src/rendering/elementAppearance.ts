@@ -1,4 +1,8 @@
-import type { ElementBlendMode, ShapeFill } from '../core/episode'
+import type {
+  ElementBlendMode,
+  ShapeFill,
+  TextElement,
+} from '../core/episode'
 
 export const MAX_TILE_EDGE_LOGICAL_UNITS = 160
 
@@ -43,6 +47,12 @@ export function toCssMixBlendMode(
   blendMode: ElementBlendMode,
 ): ElementBlendMode {
   return blendMode
+}
+
+export function toKonvaFontStyle(
+  fontWeight: TextElement['fontWeight'],
+): string {
+  return String(fontWeight)
 }
 
 export function getKonvaShapeFillProps(

@@ -24,10 +24,11 @@
 }
 
 body {
-  min-width: 900px;
+  min-width: 0;
   min-height: 100vh;
   margin: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 button,
@@ -56,8 +57,9 @@ p {
 .app-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 310px;
-  grid-template-rows: 68px minmax(0, 1fr) 44px;
+  grid-template-rows: 68px minmax(0, 1fr) 64px;
   width: 100vw;
+  min-width: 900px;
   height: 100dvh;
   background: #100d17;
 }
@@ -1013,6 +1015,11 @@ p {
   gap: 0.3rem;
   overflow: hidden;
   padding: 0.45rem 0.55rem;
+  border-bottom: 0;
+  background: #141019;
+}
+
+.layer-plane-navigation-shell {
   border-bottom: 1px solid rgb(255 255 255 / 7%);
   background: #141019;
 }
@@ -1038,13 +1045,60 @@ p {
 }
 
 .layer-plane-tab {
+  position: relative;
   display: grid;
-  min-width: 58px;
-  grid-template-columns: minmax(28px, 1fr) 26px;
-  overflow: hidden;
+  min-width: 76px;
+  grid-template-columns: 18px minmax(28px, 1fr) 26px;
+  overflow: visible;
   border: 1px solid rgb(255 255 255 / 10%);
   border-radius: 0.45rem 0.45rem 0.2rem 0.2rem;
   background: #211b2b;
+}
+
+.layer-plane-tab > .layer-plane-select:first-of-type {
+  grid-column: 1 / 3;
+}
+
+.layer-plane-drag-grip {
+  display: grid;
+  min-width: 0;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-right: 1px solid rgb(255 255 255 / 7%);
+  color: #a398ae;
+  background: transparent;
+  font-size: 0.66rem;
+  letter-spacing: 0;
+  cursor: grab;
+}
+
+.layer-plane-drag-grip:active {
+  cursor: grabbing;
+}
+
+.layer-plane-tab.is-dragging {
+  opacity: 0.48;
+}
+
+.layer-plane-drop-marker {
+  position: absolute;
+  z-index: 2;
+  top: -3px;
+  bottom: -3px;
+  width: 3px;
+  border-radius: 2px;
+  background: #65e4ff;
+  box-shadow: 0 0 8px rgb(101 228 255 / 70%);
+  pointer-events: none;
+}
+
+.layer-plane-drop-marker.is-before {
+  left: -3px;
+}
+
+.layer-plane-drop-marker.is-after {
+  right: -3px;
 }
 
 .layer-plane-tab.is-active {
@@ -1120,6 +1174,72 @@ p {
 .layer-plane-scroll:disabled {
   color: #4c4554;
   cursor: default;
+}
+
+.active-layer-plane-settings {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.35rem;
+  padding: 0.42rem 0.55rem 0.5rem;
+  border-top: 1px solid rgb(255 255 255 / 5%);
+  background: #17121e;
+}
+
+.active-layer-plane-settings.is-pinned {
+  grid-template-columns: 1fr;
+  align-items: center;
+  min-height: 37px;
+}
+
+.layer-plane-pinned-label {
+  color: #84798f;
+  font-size: 0.6rem;
+  font-weight: 750;
+  text-align: center;
+}
+
+.layer-plane-name-control {
+  display: grid;
+  min-width: 0;
+  gap: 0.18rem;
+  color: #887d94;
+  font-size: 0.54rem;
+  font-weight: 700;
+}
+
+.layer-plane-name-control input,
+.layer-plane-move {
+  height: 28px;
+  min-width: 0;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 0.36rem;
+  color: #d8d0e2;
+  background: #241d2d;
+  font-size: 0.58rem;
+}
+
+.layer-plane-name-control input {
+  width: 100%;
+  padding: 0 0.38rem;
+}
+
+.layer-plane-move {
+  padding: 0 0.42rem;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.layer-plane-move:disabled {
+  color: #5f5668;
+  cursor: default;
+}
+
+.layer-plane-move:not(:disabled):hover,
+.layer-plane-drag-grip:hover {
+  color: #65e4ff;
+  background: rgb(101 228 255 / 7%);
 }
 
 .visibility-note {
@@ -1263,7 +1383,7 @@ p {
 
 .layer-empty-actions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.55rem;
 }
 
@@ -1307,6 +1427,12 @@ p {
   border-color: rgb(101 228 255 / 48%);
   color: #a7f0ff;
   background: rgb(101 228 255 / 8%);
+}
+
+.layer-empty-text:not(:disabled):hover {
+  border-color: rgb(154 124 255 / 52%);
+  color: #d6c8ff;
+  background: rgb(154 124 255 / 9%);
 }
 
 .layers-list {
@@ -1404,6 +1530,73 @@ p {
   color: #ff9aaa;
 }
 
+.selected-layer-management {
+  display: grid;
+  gap: 0.48rem;
+  padding: 0.55rem 0.65rem;
+  border-top: 1px solid rgb(101 228 255 / 14%);
+  background: rgb(101 228 255 / 3%);
+}
+
+.selected-layer-stack-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.selected-layer-stack-actions button,
+.move-element-to-plane button,
+.move-element-to-plane select {
+  min-width: 0;
+  height: 28px;
+  border: 1px solid rgb(255 255 255 / 12%);
+  border-radius: 0.38rem;
+  color: #c5bbd1;
+  background: #241d2d;
+  font-size: 0.58rem;
+}
+
+.selected-layer-stack-actions button,
+.move-element-to-plane button {
+  padding: 0 0.42rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.selected-layer-stack-actions button:disabled,
+.move-element-to-plane button:disabled,
+.move-element-to-plane select:disabled {
+  color: #62596b;
+  cursor: default;
+}
+
+.selected-layer-stack-actions button:not(:disabled):hover,
+.move-element-to-plane button:not(:disabled):hover {
+  border-color: rgb(101 228 255 / 35%);
+  color: #e9faff;
+}
+
+.move-element-to-plane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 0.4rem;
+}
+
+.move-element-to-plane label {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+  color: #8f849b;
+  font-size: 0.55rem;
+  font-weight: 700;
+}
+
+.move-element-to-plane select {
+  width: 100%;
+  padding: 0 1.4rem 0 0.38rem;
+}
+
 .visibility-icon {
   position: relative;
   display: block;
@@ -1483,6 +1676,73 @@ p {
   align-items: center;
   gap: 0.5rem;
   color: #c8bfda;
+}
+
+.selected-text-controls {
+  display: flex;
+  min-width: max-content;
+  align-items: end;
+  gap: 0.42rem;
+  padding-left: 0.45rem;
+  border-left: 1px solid rgb(255 255 255 / 10%);
+}
+
+.text-control {
+  display: grid;
+  gap: 0.16rem;
+  color: #8f859d;
+  font-size: 0.55rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.text-control textarea,
+.text-control input,
+.text-control select,
+.text-apply-button {
+  height: 27px;
+  border: 1px solid rgb(255 255 255 / 13%);
+  border-radius: 0.32rem;
+  color: #eee8f8;
+  background: #211a2b;
+  font-size: 0.61rem;
+}
+
+.text-wording-control textarea {
+  width: 180px;
+  min-height: 27px;
+  padding: 0.3rem 0.4rem;
+  resize: horizontal;
+  line-height: 1.25;
+}
+
+.text-color-control input {
+  width: 29px;
+  padding: 2px;
+}
+
+.text-font-size-control input {
+  width: 48px;
+  padding: 0 0.3rem;
+}
+
+.text-font-weight-control select,
+.text-alignment-control select {
+  padding: 0 1.25rem 0 0.35rem;
+}
+
+.text-apply-button {
+  padding: 0 0.55rem;
+  color: #17121f;
+  background: #65e4ff;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.text-apply-button:disabled {
+  color: #706879;
+  background: #2b2434;
+  cursor: default;
 }
 
 .appearance-control,

@@ -1,4 +1,24 @@
-import { expect, test, type Locator } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
+
+async function resetDemoSafely(page: Page) {
+  const isDirty =
+    (await page.getByTestId('episode-heading').getAttribute('data-dirty')) ===
+    'true'
+  let dialogMessage = ''
+
+  if (isDirty) {
+    page.once('dialog', async (dialog) => {
+      dialogMessage = dialog.message()
+      await dialog.accept()
+    })
+  }
+
+  await page.getByRole('button', { name: 'Reset demo' }).click()
+
+  if (isDirty) {
+    expect(dialogMessage).toBe('Discard unsaved changes and reset the demo?')
+  }
+}
 
 async function readLogicalCanvasPixel(
   surface: Locator,
@@ -279,7 +299,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await sliceGuidesToggle.click()
   await expect(sliceGuidesToggle).toHaveAttribute('aria-pressed', 'true')
   await expect(firstSliceGuide).toBeVisible()
-  await resetDemo.click()
+  await resetDemoSafely(page)
   await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
 
   const inspectorBounds = await inspector.boundingBox()
@@ -480,7 +500,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect
     .poll(() => readNumericAttribute(syntheticMinimapBounds, 'height'))
     .toBeGreaterThan(minimapHeightBeforeResize)
-  await resetDemo.click()
+  await resetDemoSafely(page)
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
 
@@ -918,7 +938,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     })
     .toBe(true)
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await resetDemoSafely(page)
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
   await expect(
@@ -964,7 +984,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   expect(finelyTrimmedHeight).toBeLessThan(initialEpisodeHeight)
   expect(initialEpisodeHeight - finelyTrimmedHeight).toBeLessThan(1_280)
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await resetDemoSafely(page)
   await episodePosition.press('End')
   const viewportAtOriginalEnd = await episodePosition.getAttribute(
     'data-viewport-y',
@@ -1005,7 +1025,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     String(initialEpisodeHeight + 2_560),
   )
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await resetDemoSafely(page)
   await expect(canvas).toHaveAttribute(
     'data-episode-height',
     String(initialEpisodeHeight),
@@ -1098,7 +1118,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     })
     .toBe(true)
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await resetDemoSafely(page)
   await zoomSlider.fill('200')
 
   const zoomedMinimapBounds = await minimap.boundingBox()
@@ -1142,7 +1162,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(finalCaptionLayer).toHaveAttribute('aria-pressed', 'true')
   await expect(selectionStatus).toContainText('Beat 6 · Dawn · Caption')
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await resetDemoSafely(page)
   await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
   await expect
     .poll(() => readLogicalCanvasPixel(sceneCanvas, 100, 210))
@@ -1172,12 +1192,12 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await page.mouse.up()
   await expect(selectionStatus).toContainText(/x (129|130) · y 216/)
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await resetDemoSafely(page)
   await contentPlane2.click()
   await firstTitleLayer.click()
   await expect(selectionStatus).toContainText('x 80 · y 176')
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await resetDemoSafely(page)
   for (const viewport of [
     { width: 1280, height: 720 },
     { width: 1024, height: 768 },
@@ -1265,7 +1285,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       headerRegions?.resetLeft ?? 0,
     )
 
-    await page.getByRole('button', { name: 'Reset demo' }).click()
+    await resetDemoSafely(page)
   }
 
   await expect

@@ -51,6 +51,7 @@ import {
   getKonvaShapeFillProps,
   getTilePatternScale,
   toCanvasCompositeOperation,
+  toKonvaFontStyle,
 } from '../rendering/elementAppearance'
 import { useElementSize } from './useElementSize'
 import { CanvasBaseColorControl } from './CanvasBaseColorControl'
@@ -348,7 +349,7 @@ function ElementNode({
               fill={element.fill}
               fontFamily={element.fontFamily}
               fontSize={element.fontSize}
-              fontStyle={element.fontWeight >= 700 ? 'bold' : 'normal'}
+              fontStyle={toKonvaFontStyle(element.fontWeight)}
               lineHeight={element.lineHeight}
               align={element.align}
               verticalAlign="middle"

@@ -19,16 +19,21 @@ import {
   type ShapeFill,
   type ShapeFillStop,
   type ShapeElement,
+  type TextElement,
 } from './episode'
 
 export const DEFAULT_EPISODE_HEIGHT_INCREMENT = 1280
 export const MIN_EPISODE_LOGICAL_HEIGHT = 1280
 export const MIN_ELEMENT_SIZE = 24
 export const MAX_EPISODE_NAME_LENGTH = 60
+export const MAX_LAYER_PLANE_NAME_LENGTH = 32
+export const MAX_TEXT_CONTENT_LENGTH = 2000
+export const MAX_TEXT_FONT_SIZE = 200
 export const SYNTHETIC_SHAPE_GENERATOR_ID =
   'scrollsplice-editor-shape-v1'
 export const BACKGROUND_COLOR_REGION_GENERATOR_ID =
   'scrollsplice-background-color-region-v1'
+export const TEXT_ELEMENT_GENERATOR_ID = 'scrollsplice-editor-text-v1'
 
 const MIN_TEXT_FONT_SIZE = 8
 
@@ -51,6 +56,24 @@ export interface CreateImageElementInput {
   readonly name: string
   readonly assetReference: ImageAssetReference
   readonly bounds: ElementBounds
+}
+
+export interface CreateTextElementInput {
+  readonly layerPlaneId: string
+  readonly text: string
+  readonly fill: string
+  readonly bounds: ElementBounds
+  readonly fontSize?: number
+  readonly fontWeight?: TextElement['fontWeight']
+  readonly align?: TextElement['align']
+}
+
+export interface UpdateTextElementInput {
+  readonly text: string
+  readonly fill: string
+  readonly fontSize: number
+  readonly fontWeight: TextElement['fontWeight']
+  readonly align: TextElement['align']
 }
 
 export function setEpisodeName(
@@ -518,6 +541,135 @@ export function deleteElement(
     : { ...document, elements }
 }
 
+export function moveElementInStack(
+  document: EpisodeDocument,
+  elementId: string,
+  direction: 'backward' | 'forward',
+): EpisodeDocument {
+  const element = document.elements.find(({ id }) => id === elementId)
+
+  if (
+    !element ||
+    element.locked ||
+    (direction !== 'backward' && direction !== 'forward')
+  ) {
+    return document
+  }
+
+  const stack = document.elements
+    .filter(({ layerPlaneId }) => layerPlaneId === element.layerPlaneId)
+    .sort(
+      (first, second) =>
+        first.zIndex - second.zIndex || first.id.localeCompare(second.id),
+    )
+  const currentIndex = stack.findIndex(({ id }) => id === elementId)
+  const targetIndex =
+    direction === 'backward' ? currentIndex - 1 : currentIndex + 1
+
+  if (
+    currentIndex < 0 ||
+    targetIndex < 0 ||
+    targetIndex >= stack.length
+  ) {
+    return document
+  }
+
+  const reordered = [...stack]
+  const movedElement = reordered[currentIndex]
+
+  if (!movedElement) {
+    return document
+  }
+
+  reordered.splice(currentIndex, 1)
+  reordered.splice(targetIndex, 0, movedElement)
+  const zIndexes = new Map(
+    reordered.map(({ id }, index) => [id, index]),
+  )
+
+  return {
+    ...document,
+    elements: document.elements.map((candidate) => {
+      const zIndex = zIndexes.get(candidate.id)
+
+      return zIndex !== undefined && candidate.zIndex !== zIndex
+        ? { ...candidate, zIndex }
+        : candidate
+    }),
+  }
+}
+
+export function moveElementToLayerPlane(
+  document: EpisodeDocument,
+  elementId: string,
+  targetLayerPlaneId: string,
+): EpisodeDocument {
+  const element = document.elements.find(({ id }) => id === elementId)
+  const targetLayerPlane = getLayerPlaneById(document, targetLayerPlaneId)
+
+  if (
+    !element ||
+    element.locked ||
+    !targetLayerPlane ||
+    targetLayerPlane.kind !== 'ordinary' ||
+    element.layerPlaneId === targetLayerPlane.id
+  ) {
+    return document
+  }
+
+  const sourceStack = document.elements
+    .filter(
+      (candidate) =>
+        candidate.layerPlaneId === element.layerPlaneId &&
+        candidate.id !== element.id,
+    )
+    .sort(
+      (first, second) =>
+        first.zIndex - second.zIndex || first.id.localeCompare(second.id),
+    )
+  const targetStack = document.elements
+    .filter(
+      (candidate) => candidate.layerPlaneId === targetLayerPlane.id,
+    )
+    .sort(
+      (first, second) =>
+        first.zIndex - second.zIndex || first.id.localeCompare(second.id),
+    )
+  const sourceZIndexes = new Map(
+    sourceStack.map(({ id }, index) => [id, index]),
+  )
+  const targetZIndexes = new Map(
+    targetStack.map(({ id }, index) => [id, index]),
+  )
+
+  return {
+    ...document,
+    elements: document.elements.map((candidate) => {
+      if (candidate.id === element.id) {
+        return {
+          ...candidate,
+          layerPlaneId: targetLayerPlane.id,
+          zIndex: targetStack.length,
+        }
+      }
+
+      const sourceZIndex = sourceZIndexes.get(candidate.id)
+
+      if (sourceZIndex !== undefined) {
+        return candidate.zIndex === sourceZIndex
+          ? candidate
+          : { ...candidate, zIndex: sourceZIndex }
+      }
+
+      const targetZIndex = targetZIndexes.get(candidate.id)
+
+      return targetZIndex !== undefined && candidate.zIndex !== targetZIndex
+        ? { ...candidate, zIndex: targetZIndex }
+        : candidate
+    }),
+  }
+}
+
 export function createSyntheticShapeElement(
   document: EpisodeDocument,
   input: CreateSyntheticShapeElementInput,
@@ -605,6 +757,120 @@ export function createImageElement(
   return { ...document, elements: [...document.elements, element] }
 }
 
+export function createTextElement(
+  document: EpisodeDocument,
+  input: CreateTextElementInput,
+): EpisodeDocument {
+  const layerPlane = getLayerPlaneById(document, input.layerPlaneId)
+  const text = input.text.trim()
+  const fill = input.fill.trim()
+  const fontSize = input.fontSize ?? 36
+  const fontWeight = input.fontWeight ?? 600
+  const align = input.align ?? 'center'
+
+  if (
+    !layerPlane ||
+    layerPlane.kind !== 'ordinary' ||
+    text.length === 0 ||
+    text.length > MAX_TEXT_CONTENT_LENGTH ||
+    fill.length === 0 ||
+    !isValidTextFontSize(fontSize) ||
+    !isTextFontWeight(fontWeight) ||
+    !isTextAlignment(align)
+  ) {
+    return document
+  }
+
+  const bounds = clampNewElementBounds(document, input.bounds)
+
+  if (!bounds) {
+    return document
+  }
+
+  const { id, number } = createElementId(document, 'text-element')
+  const highestZIndex = document.elements.reduce(
+    (highest, element) =>
+      element.layerPlaneId === layerPlane.id
+        ? Math.max(highest, element.zIndex)
+        : highest,
+    -1,
+  )
+  const element: TextElement = {
+    id,
+    name: `Text ${number}`,
+    layerPlaneId: layerPlane.id,
+    type: 'text',
+    bounds,
+    text,
+    fill,
+    fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+    fontSize,
+    fontWeight,
+    lineHeight: 1.2,
+    align,
+    visible: true,
+    locked: false,
+    zIndex: highestZIndex + 1,
+    opacity: 1,
+    blendMode: 'normal',
+    assetReference: {
+      kind: 'synthetic',
+      generatorId: TEXT_ELEMENT_GENERATOR_ID,
+    },
+  }
+
+  return { ...document, elements: [...document.elements, element] }
+}
+
+export function updateTextElement(
+  document: EpisodeDocument,
+  elementId: string,
+  input: UpdateTextElementInput,
+): EpisodeDocument {
+  const text = input.text.trim()
+  const fill = input.fill.trim()
+
+  if (
+    text.length === 0 ||
+    text.length > MAX_TEXT_CONTENT_LENGTH ||
+    fill.length === 0 ||
+    !isValidTextFontSize(input.fontSize) ||
+    !isTextFontWeight(input.fontWeight) ||
+    !isTextAlignment(input.align)
+  ) {
+    return document
+  }
+
+  let changed = false
+  const elements = document.elements.map((element) => {
+    if (element.id !== elementId || element.type !== 'text') {
+      return element
+    }
+
+    if (
+      element.text === text &&
+      element.fill === fill &&
+      element.fontSize === input.fontSize &&
+      element.fontWeight === input.fontWeight &&
+      element.align === input.align
+    ) {
+      return element
+    }
+
+    changed = true
+    return {
+      ...element,
+      text,
+      fill,
+      fontSize: input.fontSize,
+      fontWeight: input.fontWeight,
+      align: input.align,
+    }
+  })
+
+  return changed ? { ...document, elements } : document
+}
+
 export function createBackgroundColorRegion(
   document: EpisodeDocument,
   input: CreateBackgroundColorRegionInput,
@@ -687,6 +953,110 @@ export function createLayerPlane(
   return {
     ...document,
     layerPlanes: [...document.layerPlanes, layerPlane],
+  }
+}
+
+export function setLayerPlaneName(
+  document: EpisodeDocument,
+  layerPlaneId: string,
+  requestedName: string,
+): EpisodeDocument {
+  const layerPlane = getLayerPlaneById(document, layerPlaneId)
+  const name = requestedName.trim()
+
+  if (
+    !layerPlane ||
+    layerPlane.kind !== 'ordinary' ||
+    name.length > MAX_LAYER_PLANE_NAME_LENGTH ||
+    name === (layerPlane.name ?? '')
+  ) {
+    return document
+  }
+
+  return {
+    ...document,
+    layerPlanes: document.layerPlanes.map((candidate) => {
+      if (
+        candidate.id !== layerPlane.id ||
+        candidate.kind !== 'ordinary'
+      ) {
+        return candidate
+      }
+
+      if (name.length > 0) {
+        return { ...candidate, name }
+      }
+
+      return {
+        id: candidate.id,
+        kind: 'ordinary',
+        compositionGroup: candidate.compositionGroup,
+        order: candidate.order,
+        visible: candidate.visible,
+      }
+    }),
+  }
+}
+
+export function reorderLayerPlane(
+  document: EpisodeDocument,
+  layerPlaneId: string,
+  requestedTargetIndex: number,
+): EpisodeDocument {
+  const layerPlane = getLayerPlaneById(document, layerPlaneId)
+
+  if (
+    !layerPlane ||
+    layerPlane.kind !== 'ordinary' ||
+    !Number.isInteger(requestedTargetIndex)
+  ) {
+    return document
+  }
+
+  const groupLayerPlanes = getLayerPlanesForGroup(
+    document,
+    layerPlane.compositionGroup,
+  )
+  const currentIndex = groupLayerPlanes.findIndex(
+    ({ id }) => id === layerPlane.id,
+  )
+  const minimumTargetIndex =
+    layerPlane.compositionGroup === 'background' &&
+    groupLayerPlanes[0]?.kind === 'base'
+      ? 1
+      : 0
+  const targetIndex = clamp(
+    requestedTargetIndex,
+    minimumTargetIndex,
+    groupLayerPlanes.length - 1,
+  )
+
+  if (currentIndex < 0 || currentIndex === targetIndex) {
+    return document
+  }
+
+  const reordered = [...groupLayerPlanes]
+  const movedLayerPlane = reordered[currentIndex]
+
+  if (!movedLayerPlane) {
+    return document
+  }
+
+  reordered.splice(currentIndex, 1)
+  reordered.splice(targetIndex, 0, movedLayerPlane)
+  const orders = new Map(
+    reordered.map(({ id }, index) => [id, index + 1]),
+  )
+
+  return {
+    ...document,
+    layerPlanes: document.layerPlanes.map((candidate) => {
+      const order = orders.get(candidate.id)
+
+      return order !== undefined && candidate.order !== order
+        ? { ...candidate, order }
+        : candidate
+    }),
   }
 }
 
@@ -925,6 +1295,26 @@ function areShapeFillsEqual(first: ShapeFill, second: ShapeFill): boolean {
 
 function isUnknownRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isValidTextFontSize(fontSize: number): boolean {
+  return (
+    Number.isFinite(fontSize) &&
+    fontSize >= MIN_TEXT_FONT_SIZE &&
+    fontSize <= MAX_TEXT_FONT_SIZE
+  )
+}
+
+function isTextFontWeight(
+  fontWeight: number,
+): fontWeight is TextElement['fontWeight'] {
+  return fontWeight === 400 || fontWeight === 600 || fontWeight === 700
+}
+
+function isTextAlignment(
+  align: string,
+): align is TextElement['align'] {
+  return align === 'left' || align === 'center' || align === 'right'
 }
 
 function clampNewElementBounds(

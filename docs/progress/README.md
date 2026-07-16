@@ -109,7 +109,7 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Captured by Codex from the running local build during final persistent Asset Library validation.
 - Shows the fixed five-destination Add rail, overlay **Speech Balloons** library, three original transparent starter balloons, an **Oval balloon** placed on Foreground plane 1, its four proportional corner handles, matching Layers row, and synchronized minimap representation.
 - The same build provides original Decorations and Splatters, creator-named categories inside **My Library**, validated PNG/JPEG/WebP import with alpha preserved, atomic concurrent-tab IndexedDB source updates, current-tab refresh from the returned saved snapshot, clear refusal for unplaceable extreme source ratios, format-v4 image references, and v3-to-v4 episode opening. The focused Chromium story proves alpha against sampled underlying canvas pixels and verifies uploaded-image resize through undo/redo, Save, reload, and Reopen; those state transitions are automated evidence rather than claims derived from this still image.
-- The balloon is intentionally a simple visual asset. Text-in-balloon, tail editing, recoloring, crop, rotation, flip, and opacity controls are not part of this slice.
+- The balloon is intentionally a simple visual asset. Independent text was not part of this historical slice; compound balloon/text behavior, automatic fitting, tail editing, recoloring, crop, and rotation remain deferred.
 - Contains only the original public-safe code-rendered **Signal in the Fog** fixture and ScrollSplice's original built-in balloon; no Root & Table production artwork, private creative material, or third-party comic reference appears.
 - Captured in bundled Chromium at a 1440 × 900 viewport.
 - File: 1440 × 900 PNG, 174,153 bytes.
@@ -140,3 +140,16 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - File: 1440 × 900 RGB PNG, 124,384 bytes.
 - SHA-256: `c0b9bc5a359d23035cd965001b5f1e51056ee08cd87a0a36093771096ab7e4e3`.
 - The implementation, documentation, and screenshot were published in feature commit `7768daa0617b66c696f769d97dd531f9029272c8`. This checkpoint does not imply deployment or Devpost submission.
+
+## July 16 — Creator completion pass
+
+![ScrollSplice creator completion pass](2026-07-16-creator-completion-pass.png)
+
+- Captured from a fresh bundled-Chromium context after the three creator-completion slices were implemented and visually inspected.
+- Shows the public-safe **Signal in the Fog** fixture with its first title selected on the optionally named **Lettering and captions** plane. The frame includes dedicated plane drag grips, Move Left/Right, local stack actions, Move to Plane, Add asset/Add text, the selected text property strip, and the new **View** menu entry point.
+- The same build provides same-group plane drag reordering with a pinned Background base, independent basic text, a chrome-free full-scroll Reader Preview, and a cancelable dirty-work warning for Reset Demo. The creator-story browser test exercises plane reordering, persists representative plane naming and text properties through Save, reload, and Reopen, then separately proves saved-slot recovery after a confirmed reset.
+- Contains only the public-safe code-rendered fixture; no uploaded user art, Root & Table production artwork, private creative material, or third-party comic reference appears.
+- Local validation passes 270 unit tests across 13 files, strict typecheck, ESLint, production build, and the complete 7-of-7 Playwright Chromium suite. Visual inspection also confirmed Reader Preview at a representative desktop size. The passing build retains Vite's non-blocking advisory for its 637.55 kB minified JavaScript chunk.
+- File: 1440 × 900 PNG, 143,201 bytes.
+- SHA-256: `05da8ce3c827e474506927f4d556b70ac277ef7b78dbfba8875b370903f6185c`.
+- WEBTOON export, OpenAI/OAuth, Finder drop, autosave/recovery, source deletion, masks, crop, rotation, and compound balloon/tail editing remain deferred. This checkpoint does not imply deployment or Devpost submission.

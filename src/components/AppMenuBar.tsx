@@ -16,10 +16,13 @@ export interface AppMenuBarProps {
   readonly onReopen: () => void
   readonly onUndo: () => void
   readonly onRedo: () => void
+  readonly onReaderPreview: () => void
 }
 
-type MenuName = 'file' | 'edit'
+type MenuName = 'file' | 'edit' | 'view'
 type MenuFocusTarget = 'first' | 'last'
+
+const MENU_NAMES: readonly MenuName[] = ['file', 'edit', 'view']
 
 interface MenuItemDefinition {
   readonly label: string
@@ -48,13 +51,16 @@ export function AppMenuBar({
   onReopen,
   onUndo,
   onRedo,
+  onReaderPreview,
 }: AppMenuBarProps) {
   const componentId = useId()
   const rootRef = useRef<HTMLElement>(null)
   const fileTriggerRef = useRef<HTMLButtonElement>(null)
   const editTriggerRef = useRef<HTMLButtonElement>(null)
+  const viewTriggerRef = useRef<HTMLButtonElement>(null)
   const fileMenuRef = useRef<HTMLDivElement>(null)
   const editMenuRef = useRef<HTMLDivElement>(null)
+  const viewMenuRef = useRef<HTMLDivElement>(null)
   const requestedFocusRef = useRef<MenuFocusTarget>('first')
   const [openMenu, setOpenMenu] = useState<MenuName | null>(null)
 
@@ -62,17 +68,27 @@ export function AppMenuBar({
   const editTriggerId = `${componentId}-edit-trigger`
   const fileMenuId = `${componentId}-file-menu`
   const editMenuId = `${componentId}-edit-menu`
+  const viewTriggerId = `${componentId}-view-trigger`
+  const viewMenuId = `${componentId}-view-menu`
 
-  const getTrigger = (menu: MenuName) =>
-    menu === 'file' ? fileTriggerRef.current : editTriggerRef.current
+  const getTrigger = (menu: MenuName) => {
+    if (menu === 'file') return fileTriggerRef.current
+    if (menu === 'edit') return editTriggerRef.current
+    return viewTriggerRef.current
+  }
+
+  const getMenu = (menu: MenuName) => {
+    if (menu === 'file') return fileMenuRef.current
+    if (menu === 'edit') return editMenuRef.current
+    return viewMenuRef.current
+  }
 
   useEffect(() => {
     if (!openMenu) {
       return
     }
 
-    const menu =
-      openMenu === 'file' ? fileMenuRef.current : editMenuRef.current
+    const menu = getMenu(openMenu)
     const enabledItems = getEnabledMenuItems(menu)
     const target =
       requestedFocusRef.current === 'last'
@@ -115,8 +131,15 @@ export function AppMenuBar({
     }
   }
 
-  const switchMenu = (menu: MenuName) => {
-    const nextMenu = menu === 'file' ? 'edit' : 'file'
+  const getAdjacentMenu = (menu: MenuName, direction: -1 | 1) => {
+    const currentIndex = MENU_NAMES.indexOf(menu)
+    return MENU_NAMES[
+      (currentIndex + direction + MENU_NAMES.length) % MENU_NAMES.length
+    ] ?? menu
+  }
+
+  const switchMenu = (menu: MenuName, direction: -1 | 1) => {
+    const nextMenu = getAdjacentMenu(menu, direction)
     getTrigger(nextMenu)?.focus()
     openMenuAndFocus(nextMenu, 'first')
   }
@@ -133,7 +156,8 @@ export function AppMenuBar({
       openMenuAndFocus(menu, 'last')
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault()
-      const nextMenu = menu === 'file' ? 'edit' : 'file'
+      const direction = event.key === 'ArrowLeft' ? -1 : 1
+      const nextMenu = getAdjacentMenu(menu, direction)
 
       if (openMenu) {
         getTrigger(nextMenu)?.focus()
@@ -180,7 +204,7 @@ export function AppMenuBar({
       target?.focus()
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault()
-      switchMenu(menu)
+      switchMenu(menu, event.key === 'ArrowLeft' ? -1 : 1)
     } else if (event.key === 'Escape') {
       event.preventDefault()
       closeMenu(menu, true)
@@ -202,6 +226,9 @@ export function AppMenuBar({
   const editItems: readonly MenuItemDefinition[] = [
     { label: 'Undo', disabled: !canUndo, action: onUndo },
     { label: 'Redo', disabled: !canRedo, action: onRedo },
+  ]
+  const viewItems: readonly MenuItemDefinition[] = [
+    { label: 'Reader Preview', action: onReaderPreview },
   ]
 
   const renderMenu = (
@@ -304,6 +331,33 @@ export function AppMenuBar({
           editMenuId,
           editMenuRef,
           editItems,
+        )}
+      </div>
+
+      <div className="app-menu-group">
+        <button
+          ref={viewTriggerRef}
+          className="app-menu-trigger"
+          id={viewTriggerId}
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={openMenu === 'view'}
+          aria-controls={viewMenuId}
+          onClick={() =>
+            openMenu === 'view'
+              ? setOpenMenu(null)
+              : openMenuAndFocus('view', 'first')
+          }
+          onKeyDown={(event) => handleTriggerKeyDown(event, 'view')}
+        >
+          View
+        </button>
+        {renderMenu(
+          'view',
+          viewTriggerId,
+          viewMenuId,
+          viewMenuRef,
+          viewItems,
         )}
       </div>
     </nav>

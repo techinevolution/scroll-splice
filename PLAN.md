@@ -12,7 +12,7 @@ Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed 
 
 Katherine completed the required hands-on test of that combined build on July 14. She confirmed placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary canvas movement. She then failed the first proposed polish review because title editing still shifted the fixed **EPISODE** label, the 1,280-unit dotted guides were not present, full-width Background regions could drift sideways in the live Konva node while the document and minimap stayed at `x = 0`, no visible magnet existed, and selected assets had no corner resize handles.
 
-Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized the bounded Asset Library slice and publication of the resulting passing build to `main`. The complete stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; the July 15 menu/rail correction was later published in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`. Katherine then selected the five-slice direct-placement and appearance `/goal` below. It was implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8`.
+Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized the bounded Asset Library slice and publication of the resulting passing build to `main`. The complete stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; the July 15 menu/rail correction was later published in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`. Katherine then selected the five-slice direct-placement and appearance `/goal` below. It was implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8`. On July 15 she authorized the three-slice **creator completion pass** below: composition ordering, independent text, and Reader Preview with a safe Reset Demo boundary. All three slices are implemented and locally validated; their commit and publication remain evidence-based outcomes to record only after a verified push.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -386,11 +386,53 @@ All five functional checkpoints and the validation suite pass. Native drag works
 
 Explicitly deferred from this goal: operating-system file drop, Layers-panel drop destinations, arbitrary/multi-stop/angled gradients, image masks, crop/cover, texture-density controls, rotation, flipping, perspective, source deletion or editing, additional blend modes, plane/tab reordering, production export, deployment, OAuth, OpenAI runtime work, and AI-generated assets.
 
+## Implemented `/goal`: creator completion pass
+
+**Status:** Katherine authorized these three ordered, separately testable slices on July 15. They are implemented without a format bump and locally validated through 270 unit tests across 13 files, strict typecheck, ESLint, production build, all 7 Playwright Chromium stories, a public-safe 1440 × 900 screenshot, and visual inspection of both the editor and Reader Preview. This status does not claim publication; record a commit and remote equality only after the passing work is pushed and verified.
+
+### End-to-end creator story
+
+A creator starts a blank episode, names it, chooses the base color, and imports transparent panels, a balloon image, and decorative effects. She creates and optionally names several numbered planes, reorders two planes, corrects one local overlap with **Bring Forward** or **Send Backward**, and moves a misplaced element to the right plane without recreating it. She adds an independent text element over the balloon, edits its wording and basic typography, and uses the existing movement, resize, opacity, and blend controls to compose the beat. After extending and refining the scroll, she enters a chrome-free reader preview that uses the exact same document, exits without losing her editor position, saves, reloads, and reopens the work. If she tries **Reset Demo** with unsaved changes, she may cancel without losing anything or confirm the reset and still recover the last explicit save through **Reopen**.
+
+### Slice 1 — Plane organization and element stacking
+
+- Let an ordinary plane keep an optional creator-facing name without changing its stable ID or unrestricted meaning.
+- Reorder ordinary planes only within their fixed composition group through a dedicated tab drag grip, a clear insertion marker, and visible **Move Left** / **Move Right** actions. Overflow arrows remain navigation only. Background plane 1 stays pinned and cannot move.
+- Keep the Layers element list ordered spatially from the top of the scroll; do not make row position ambiguously represent stacking. Give the selected element explicit **Bring Forward** and **Send Backward** actions within its current plane.
+- Add a visible, keyboard-accessible **Move to Plane** action that can move the selected element to an ordinary plane in any fixed group. Update the active group and plane to the destination, preserve the selected stable element and asset reference, and never duplicate it or target Background plane 1.
+- Implement these operations as pure document commands over existing `LayerPlane.name`, plane `order`, element `layerPlaneId`, and element `zIndex`. They create one normal history entry, survive Save/reload/Reopen, and require no format bump.
+
+### Slice 2 — Basic independent text
+
+- Add one visible **Add Text** action targeting the active ordinary plane. It creates a normal, independently selectable and movable `TextElement`; it is not embedded in an image asset.
+- For a selected text element, edit wording, color, font size, weight, and left/center/right alignment through compact controls. Keep the font choice fixed for this slice.
+- Carry text creation and each committed property change through the existing canvas, minimap, Layers, resize, opacity, blend, undo/redo, Save, reload, Reopen, and reset paths.
+- Use text as an independent element over the existing balloon image assets. Do not introduce a compound balloon/text entity, automatic text fitting, editable tails, or balloon style generation.
+- The format-v5 `TextElement` already contains these fields, so this slice also requires no format bump.
+
+### Slice 3 — Reader preview and safe Reset Demo
+
+- Add a chrome-free reader preview that renders the current authoritative episode at its logical aspect ratio and complete height. It must use the same effective visibility, group/plane/element order, geometry, text, source alpha, opacity, gradients, tiles, and blend modes as the editor.
+- Hide editor-only menus, rail, panels, minimap, guides, selections, handles, controls, and status while previewing. Scrolling is allowed; preview itself cannot mutate the document, history, dirty state, selection, active group/plane, zoom, or editor viewport.
+- Exiting preview restores the same editor state and logical viewport the creator left.
+- Give **Reset Demo** the same unsaved-work respect as New Episode and Reopen. If the document is dirty, cancel leaves the entire editor untouched; confirm loads the fixture as an unsaved document, clears stale history/transient editing state, and leaves the explicit saved slot available to **Reopen**. A clean document may reset without an unnecessary warning.
+
+### Goal acceptance
+
+- Stable IDs survive plane rename/reorder; plane numbers reflect order; Background plane 1 never moves; drag and Move Left/Right agree; overflow arrows never reorder.
+- Bring Forward/Send Backward change only local stacking, and Move to Plane moves one selected element exactly once to a valid ordinary destination while canvas, minimap, active group/plane, and Layers agree.
+- All organization commands are reversible and persist through Save, reload, and Reopen without a format change.
+- A creator can add text over a balloon, edit all five approved text properties, move and resize it, change opacity/blend, undo/redo it, and recover the same result after Save/reload/Reopen.
+- Reader preview matches the editor's durable document and appearance, contains no editor chrome, and returns without changing document or editor context.
+- Reset Demo protects dirty work on cancel; a confirmed reset is visibly unsaved and the last explicit save remains recoverable.
+- The existing published 255-test/13-file and 6-of-6 baseline remains covered. The current local completion pass has 270 passing unit tests across 13 files, strict typecheck, ESLint, production build, and all 7 Playwright Chromium stories, plus the indexed screenshot and Reader Preview inspection. The 637.55 kB minified JavaScript chunk produces a non-blocking Vite size advisory.
+
+Explicitly deferred from this completion pass: deterministic WEBTOON export; OpenAI runtime work, AI generation, OAuth, and external connectors; operating-system/Finder file drop; autosave and crash recovery; source-asset deletion or advanced category management; panel masks, crop/cover, rotation, flipping, perspective, editable balloon tails, and a compound balloon/text model.
+
 ### Later bounded slices
 
 1. **Deterministic WEBTOON slice planning and export:** after the harmless unpublished upload verification, let the creator review cut positions, render ordered files within the selected verified profile, and preflight dimensions, encoded bytes, total bytes, count, format, and order. Matching the profile cannot guarantee WEBTOON will avoid later optimization.
-2. **Layer management:** add dedicated drag grips, a clear insertion marker, accessible Move Left/Right actions, and optional names. Reorder only inside the active group, renumber labels while retaining stable IDs, and never move or delete Background plane 1. Safe empty-plane deletion is complete; populated-plane deletion remains deferred until moving content and undo/recovery are designed.
-3. **Add rail and Asset Library shell:** replace the single Assets control with the **Add** rail and category-based **Asset Library** shell using only public-safe placeholders. Its later Add-to-canvas action targets the active numbered plane; real import, speech-balloon artwork, and AI-generated content remain outside the shell-only slice.
+2. **Panel and transform tools:** after the completion pass, separately design rectangular or irregular masks, intentional bleed, crop/cover, rotation, and other advanced transforms without weakening the shared geometry or nondestructive-source boundaries.
 
 ### Submission runway: July 19–21
 
@@ -507,10 +549,12 @@ Treat these as bounded options rather than a mandatory queue, and begin only the
 8. Local history, one explicit save/reopen slot, blank New Episode, and minimal File/Edit menus. **Complete, validated, and human-tested.**
 9. Direct placement and foundational appearance: drag-to-canvas, format-v5 opacity, vertical two-stop gradient/fade, tiled texture presentation, and five restrained blend modes. **Complete, validated, and published in `7768daa`.**
 10. Deterministic WEBTOON slice planning and export after upload verification.
-11. Layer-tab naming and reordering.
+11. Plane optional names/reordering plus explicit element stacking and Move to Plane. **Implemented and locally validated as creator completion pass slice 1; publication pending.**
 12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete, validated, and published July 15 in `fdd4ead`.**
 13. Asset-to-canvas drag. **Folded into current item 9; click-to-place remains the accessible fallback.**
 14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+15. Basic independent text creation and editing over existing balloon assets. **Implemented and locally validated as creator completion pass slice 2; publication pending.**
+16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented and locally validated as creator completion pass slice 3; publication pending.**
 
 Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
@@ -531,14 +575,14 @@ The smallest acceptable proof is one request that produces one image candidate, 
 - Project-folder design, portable source packaging, source deletion, category rename/delete/reorder, and advanced asset management. Real browser-local PNG/JPEG/WebP import is implemented.
 - Arbitrary-angle or multi-stop gradients, additional blend modes beyond Normal/Multiply/Screen/Overlay/Soft Light, background-specific cover/crop controls, texture-density controls, and optional edge decoration. Real imported images may be placed on ordinary Background planes 2 and later; Background plane 1 remains the color-only base. The implemented local goal adds only a vertical two-stop gradient/fade and a fixed-auto-scale repeated-tile presentation capped at a 160-logical-unit tile edge.
 - Additional import formats, source replacement, crop, recolor, rotation, flip, and other asset-specific editing beyond the implemented transparency-preserving PNG/JPEG/WebP preview.
-- Editable balloon text, tails, styles, semantic guidance, and creator-authored reusable balloon templates beyond the implemented original starter visuals and creator categories.
-- Commands beyond the implemented **File > New Episode / Save / Reopen** and **Edit > Undo / Redo** surface. View, Window, Help, open/import, Save As, multiple recent projects, and native OS menus remain deferred until their own workflow or desktop-packaging slice.
+- Compound balloon/text behavior, editable tails, balloon styles, semantic guidance, automatic text fitting, and creator-authored reusable balloon templates. The completion pass adds only independent basic text placed over the existing balloon image assets.
+- Commands beyond the implemented **File > New Episode / Save / Reopen**, **Edit > Undo / Redo**, and **View > Reader Preview** surface. Additional View commands, Window, Help, open/import, Save As, multiple recent projects, and native OS menus remain deferred until their own workflow or desktop-packaging slice.
 - Canvas Zoom and 2D Viewport is complete and published in the earlier A/B/C stack; its state is transient and does not alter episode or export geometry.
 - The direct-placement and foundational-appearance goal is implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8` with its screenshot evidence and documentation.
 - Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, advanced edge/nearby-element snapping beyond checkpoint D's single centerline rule, and resize behavior beyond the implemented four proportional corner handles.
 - Persistence beyond the implemented explicit episode slot and separate IndexedDB source library: autosave, crash recovery, portable file-system project files, multiple projects, account/cloud sync, and additional format migrations.
 - History beyond the implemented 100-checkpoint document undo/redo: named history, persisted history, branching, collaborative history, rotation, crop, masks, and advanced transforms.
-- Moving elements between planes or groups, including the later element-row **Move to plane** context action and its visible keyboard-accessible alternative; arbitrary nested groups; and element-order editing beyond the numbered-plane foundation.
+- Populated-plane deletion, arbitrary nested groups, multi-selection, and grouping. The implemented completion pass is limited to optional plane names/order, adjacent local stacking actions, and moving one selected element to an ordinary plane.
 - Production tall-master and WEBTOON slice export.
 - Authenticated WEBTOON upload verification and other platform profiles.
 - Desktop packaging, mobile editing, accounts, OAuth, cloud storage, collaboration, and publishing integrations.
@@ -592,7 +636,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. Production export, deployment, advanced transforms, and other later slices remain separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass is implemented and locally validated with the complete current regression suite, all seven Playwright stories, and indexed visual evidence; do not claim publication until the push is verified. Production export, deployment, advanced transforms, and other later slices remain separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

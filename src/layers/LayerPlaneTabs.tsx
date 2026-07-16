@@ -5,6 +5,8 @@ import {
   useMemo,
   useRef,
   useState,
+  type DragEvent,
+  type KeyboardEvent,
 } from 'react'
 
 import { useEditorStore } from '../app/store'
@@ -26,6 +28,13 @@ const INITIAL_OVERFLOW_STATE: OverflowState = {
   canScrollRight: false,
 }
 
+const LAYER_PLANE_DRAG_TYPE = 'application/x-scrollsplice-layer-plane-id'
+
+interface DropIntent {
+  readonly targetId: string
+  readonly position: 'before' | 'after'
+}
+
 export function LayerPlaneTabs() {
   const episode = useEditorStore((state) => state.episode)
   const activeCompositionGroup = useEditorStore(
@@ -41,14 +50,38 @@ export function LayerPlaneTabs() {
   const setLayerPlaneVisibility = useEditorStore(
     (state) => state.setLayerPlaneVisibility,
   )
+  const setLayerPlaneName = useEditorStore(
+    (state) => state.setLayerPlaneName,
+  )
+  const reorderLayerPlane = useEditorStore(
+    (state) => state.reorderLayerPlane,
+  )
   const scrollportRef = useRef<HTMLDivElement>(null)
   const tabListRef = useRef<HTMLDivElement>(null)
+  const planeNameInputRef = useRef<HTMLInputElement>(null)
+  const skipNextNameCommitRef = useRef(false)
   const [overflowState, setOverflowState] = useState(INITIAL_OVERFLOW_STATE)
+  const [draggedPlaneId, setDraggedPlaneId] = useState<string | null>(null)
+  const [dropIntent, setDropIntent] = useState<DropIntent | null>(null)
   const layerPlanes = useMemo(
     () => getLayerPlanesForGroup(episode, activeCompositionGroup),
     [activeCompositionGroup, episode],
   )
   const groupLabel = COMPOSITION_GROUP_LABELS[activeCompositionGroup]
+  const activeLayerPlane = layerPlanes.find(
+    ({ id }) => id === activeLayerPlaneId,
+  )
+  const activePlaneIndex = layerPlanes.findIndex(
+    ({ id }) => id === activeLayerPlaneId,
+  )
+  const canMoveActivePlaneLeft =
+    activeLayerPlane?.kind === 'ordinary' &&
+    activePlaneIndex > 0 &&
+    layerPlanes[activePlaneIndex - 1]?.kind === 'ordinary'
+  const canMoveActivePlaneRight =
+    activeLayerPlane?.kind === 'ordinary' &&
+    activePlaneIndex >= 0 &&
+    activePlaneIndex < layerPlanes.length - 1
 
   const updateOverflowState = useCallback(() => {
     const scrollport = scrollportRef.current
@@ -133,92 +166,322 @@ export function LayerPlaneTabs() {
     })
   }
 
+  const commitPlaneName = () => {
+    const input = planeNameInputRef.current
+    if (!activeLayerPlane || !input) return
+
+    const nextName = input.value.trim()
+    if (nextName !== (activeLayerPlane.name ?? '')) {
+      setLayerPlaneName(activeLayerPlane.id, nextName)
+    }
+    input.value = nextName
+  }
+
+  const handlePlaneNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      skipNextNameCommitRef.current = true
+      commitPlaneName()
+      event.currentTarget.blur()
+      return
+    }
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      skipNextNameCommitRef.current = true
+      event.currentTarget.value = activeLayerPlane?.name ?? ''
+      event.currentTarget.blur()
+    }
+  }
+
+  const handlePlaneNameBlur = () => {
+    if (skipNextNameCommitRef.current) {
+      skipNextNameCommitRef.current = false
+      return
+    }
+
+    commitPlaneName()
+  }
+
+  const handleDragStart = (
+    event: DragEvent<HTMLSpanElement>,
+    layerPlaneId: string,
+  ) => {
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData(LAYER_PLANE_DRAG_TYPE, layerPlaneId)
+    setDraggedPlaneId(layerPlaneId)
+    setDropIntent(null)
+  }
+
+  const handleDragOver = (
+    event: DragEvent<HTMLDivElement>,
+    targetLayerPlaneId: string,
+  ) => {
+    const sourcePlane = layerPlanes.find(({ id }) => id === draggedPlaneId)
+    const targetPlane = layerPlanes.find(
+      ({ id }) => id === targetLayerPlaneId,
+    )
+
+    if (
+      !sourcePlane ||
+      sourcePlane.kind !== 'ordinary' ||
+      !targetPlane ||
+      targetPlane.kind !== 'ordinary' ||
+      sourcePlane.id === targetPlane.id
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'move'
+    const targetBounds = event.currentTarget.getBoundingClientRect()
+    const position =
+      event.clientX < targetBounds.left + targetBounds.width / 2
+        ? 'before'
+        : 'after'
+
+    setDropIntent((currentIntent) =>
+      currentIntent?.targetId === targetLayerPlaneId &&
+      currentIntent.position === position
+        ? currentIntent
+        : { targetId: targetLayerPlaneId, position },
+    )
+  }
+
+  const handleDrop = (
+    event: DragEvent<HTMLDivElement>,
+    targetLayerPlaneId: string,
+  ) => {
+    event.preventDefault()
+
+    const sourceIndex = layerPlanes.findIndex(
+      ({ id }) => id === draggedPlaneId,
+    )
+    const targetIndex = layerPlanes.findIndex(
+      ({ id }) => id === targetLayerPlaneId,
+    )
+    const sourcePlane = layerPlanes[sourceIndex]
+    const targetPlane = layerPlanes[targetIndex]
+    const position =
+      dropIntent?.targetId === targetLayerPlaneId
+        ? dropIntent.position
+        : 'before'
+
+    if (
+      draggedPlaneId &&
+      sourcePlane?.kind === 'ordinary' &&
+      targetPlane?.kind === 'ordinary' &&
+      sourceIndex !== targetIndex
+    ) {
+      let finalIndex = targetIndex + (position === 'after' ? 1 : 0)
+      if (sourceIndex < finalIndex) {
+        finalIndex -= 1
+      }
+
+      if (finalIndex !== sourceIndex) {
+        reorderLayerPlane(draggedPlaneId, finalIndex)
+      }
+    }
+
+    setDraggedPlaneId(null)
+    setDropIntent(null)
+  }
+
+  const handleDragLeave = (
+    event: DragEvent<HTMLDivElement>,
+    targetLayerPlaneId: string,
+  ) => {
+    const nextTarget = event.relatedTarget
+    if (
+      nextTarget instanceof Node &&
+      event.currentTarget.contains(nextTarget)
+    ) {
+      return
+    }
+
+    setDropIntent((currentIntent) =>
+      currentIntent?.targetId === targetLayerPlaneId ? null : currentIntent,
+    )
+  }
+
+  const clearDragState = () => {
+    setDraggedPlaneId(null)
+    setDropIntent(null)
+  }
+
   return (
-    <div
-      className="layer-plane-navigation"
-      role="group"
-      aria-label={`${groupLabel} layer planes`}
-    >
-      {overflowState.hasOverflow ? (
-        <button
-          className="layer-plane-scroll"
-          type="button"
-          aria-label="Scroll layer planes left"
-          disabled={!overflowState.canScrollLeft}
-          onClick={() => scrollTabs(-1)}
-        >
-          ‹
-        </button>
-      ) : null}
-
+    <div className="layer-plane-navigation-shell">
       <div
-        ref={scrollportRef}
-        className="layer-plane-scrollport"
-        data-testid="layer-plane-scrollport"
+        className="layer-plane-navigation"
+        role="group"
+        aria-label={`${groupLabel} layer planes`}
       >
-        <div ref={tabListRef} className="layer-plane-tab-list">
-          {layerPlanes.map((layerPlane) => {
-            const isActive = layerPlane.id === activeLayerPlaneId
-            const planeLabel = `${groupLabel} plane ${layerPlane.order}`
+        {overflowState.hasOverflow ? (
+          <button
+            className="layer-plane-scroll"
+            type="button"
+            aria-label="Scroll layer planes left"
+            disabled={!overflowState.canScrollLeft}
+            onClick={() => scrollTabs(-1)}
+          >
+            ‹
+          </button>
+        ) : null}
 
-            return (
-              <div
-                className={`layer-plane-tab${isActive ? ' is-active' : ''}${layerPlane.visible ? '' : ' is-hidden'}`}
-                data-layer-plane-id={layerPlane.id}
-                key={layerPlane.id}
-              >
-                <button
-                  className="layer-plane-select"
-                  type="button"
-                  aria-label={planeLabel}
-                  aria-pressed={isActive}
-                  title={layerPlane.name ?? planeLabel}
-                  onClick={() => setActiveLayerPlane(layerPlane.id)}
-                >
-                  {layerPlane.order}
-                </button>
-                <button
-                  className="layer-plane-eye"
-                  type="button"
-                  aria-label={`${planeLabel} visibility`}
-                  aria-pressed={layerPlane.visible}
-                  title={`${layerPlane.visible ? 'Hide' : 'Show'} ${planeLabel}`}
-                  onClick={() =>
-                    setLayerPlaneVisibility(
-                      layerPlane.id,
-                      !layerPlane.visible,
-                    )
+        <div
+          ref={scrollportRef}
+          className="layer-plane-scrollport"
+          data-testid="layer-plane-scrollport"
+        >
+          <div ref={tabListRef} className="layer-plane-tab-list">
+            {layerPlanes.map((layerPlane) => {
+              const isActive = layerPlane.id === activeLayerPlaneId
+              const planeLabel = `${groupLabel} plane ${layerPlane.order}`
+              const planeDropIntent =
+                dropIntent?.targetId === layerPlane.id ? dropIntent : null
+
+              return (
+                <div
+                  className={`layer-plane-tab${isActive ? ' is-active' : ''}${layerPlane.visible ? '' : ' is-hidden'}${draggedPlaneId === layerPlane.id ? ' is-dragging' : ''}${planeDropIntent ? ` is-drop-${planeDropIntent.position}` : ''}`}
+                  data-layer-plane-id={layerPlane.id}
+                  data-drop-position={planeDropIntent?.position}
+                  key={layerPlane.id}
+                  onDragOver={(event) => handleDragOver(event, layerPlane.id)}
+                  onDragLeave={(event) =>
+                    handleDragLeave(event, layerPlane.id)
                   }
+                  onDrop={(event) => handleDrop(event, layerPlane.id)}
                 >
-                  <VisibilityIcon visible={layerPlane.visible} />
-                </button>
-              </div>
-            )
-          })}
+                  {planeDropIntent ? (
+                    <span
+                      className={`layer-plane-drop-marker is-${planeDropIntent.position}`}
+                      data-testid={`layer-plane-drop-${planeDropIntent.position}`}
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  {layerPlane.kind === 'ordinary' ? (
+                    <span
+                      className="layer-plane-drag-grip"
+                      draggable
+                      aria-hidden="true"
+                      title={`Drag to reorder ${planeLabel}`}
+                      data-testid={`layer-plane-drag-grip-${layerPlane.id}`}
+                      onDragStart={(event) =>
+                        handleDragStart(event, layerPlane.id)
+                      }
+                      onDragEnd={clearDragState}
+                    >
+                      ⋮⋮
+                    </span>
+                  ) : null}
+                  <button
+                    className="layer-plane-select"
+                    type="button"
+                    aria-label={planeLabel}
+                    aria-pressed={isActive}
+                    title={layerPlane.name ?? planeLabel}
+                    onClick={() => setActiveLayerPlane(layerPlane.id)}
+                  >
+                    {layerPlane.order}
+                  </button>
+                  <button
+                    className="layer-plane-eye"
+                    type="button"
+                    aria-label={`${planeLabel} visibility`}
+                    aria-pressed={layerPlane.visible}
+                    title={`${layerPlane.visible ? 'Hide' : 'Show'} ${planeLabel}`}
+                    onClick={() =>
+                      setLayerPlaneVisibility(
+                        layerPlane.id,
+                        !layerPlane.visible,
+                      )
+                    }
+                  >
+                    <VisibilityIcon visible={layerPlane.visible} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
         </div>
+
+        {overflowState.hasOverflow ? (
+          <button
+            className="layer-plane-scroll"
+            type="button"
+            aria-label="Scroll layer planes right"
+            disabled={!overflowState.canScrollRight}
+            onClick={() => scrollTabs(1)}
+          >
+            ›
+          </button>
+        ) : null}
+
+        <button
+          className="layer-plane-add"
+          type="button"
+          aria-label={`Add ${groupLabel} plane`}
+          title={`Add ${groupLabel} plane`}
+          onClick={createLayerPlane}
+        >
+          +
+        </button>
       </div>
 
-      {overflowState.hasOverflow ? (
-        <button
-          className="layer-plane-scroll"
-          type="button"
-          aria-label="Scroll layer planes right"
-          disabled={!overflowState.canScrollRight}
-          onClick={() => scrollTabs(1)}
+      {activeLayerPlane ? (
+        <div
+          className={`active-layer-plane-settings${activeLayerPlane.kind === 'base' ? ' is-pinned' : ''}`}
+          data-testid="active-layer-plane-settings"
         >
-          ›
-        </button>
-      ) : null}
+          {activeLayerPlane.kind === 'ordinary' ? (
+            <button
+              className="layer-plane-move layer-plane-move-left"
+              type="button"
+              disabled={!canMoveActivePlaneLeft}
+              aria-label={`Move ${groupLabel} plane ${activeLayerPlane.order} left`}
+              onClick={() =>
+                reorderLayerPlane(activeLayerPlane.id, activePlaneIndex - 1)
+              }
+            >
+              Move Left
+            </button>
+          ) : (
+            <span className="layer-plane-pinned-label">Pinned base</span>
+          )}
 
-      <button
-        className="layer-plane-add"
-        type="button"
-        aria-label={`Add ${groupLabel} plane`}
-        title={`Add ${groupLabel} plane`}
-        onClick={createLayerPlane}
-      >
-        +
-      </button>
+          {activeLayerPlane.kind === 'ordinary' ? (
+            <label className="layer-plane-name-control">
+              <span>Plane name</span>
+              <input
+                key={`${activeLayerPlane.id}:${activeLayerPlane.name ?? ''}`}
+                ref={planeNameInputRef}
+                type="text"
+                maxLength={32}
+                defaultValue={activeLayerPlane.name ?? ''}
+                placeholder="Optional name"
+                aria-label={`${groupLabel} plane ${activeLayerPlane.order} name`}
+                data-testid="active-layer-plane-name"
+                onBlur={handlePlaneNameBlur}
+                onKeyDown={handlePlaneNameKeyDown}
+              />
+            </label>
+          ) : null}
+
+          {activeLayerPlane.kind === 'ordinary' ? (
+            <button
+              className="layer-plane-move layer-plane-move-right"
+              type="button"
+              disabled={!canMoveActivePlaneRight}
+              aria-label={`Move ${groupLabel} plane ${activeLayerPlane.order} right`}
+              onClick={() =>
+                reorderLayerPlane(activeLayerPlane.id, activePlaneIndex + 1)
+              }
+            >
+              Move Right
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   )
 }
