@@ -26,7 +26,9 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Test the completed local history/save/menu slice: undo/redo representative edits, Save, page reload, later unsaved edit, confirmed Reopen, New Episode, and recovery of the retained save. Katherine reported July 15 that the tests completed and everything works well.
 - [x] Approve the next five-slice `/goal`: Asset Library drag-to-canvas placement, format-v5 opacity, vertical two-stop gradient/fade, tiled texture presentation, and five restrained blend modes. Existing real upload, source alpha, and ordinary Background-photo placement stay intact.
 - [x] Approve the July 15 creator completion pass: plane organization/element stacking, basic independent text, and reader preview with a safe Reset Demo boundary.
-- [ ] After all three completion-pass slices and their full regression story pass, review the resulting creator workflow in the running app.
+- [x] Publish all three creator-completion slices and their full regression story to `main` in `cb1f28443f7b1045d139879a2bba7b03edf25856`.
+- [x] Replace the three-slice stopping point with one authorized locally feasible human-editor completion goal; do not ask Katherine to select each remaining feature slice individually.
+- [ ] Use [FEATURE_TEST_SHEET.md](FEATURE_TEST_SHEET.md) for the broad completion-pass hands-on review after Codex reports final regression and visual closeout.
 
 ## Katherine — before submission
 
@@ -70,11 +72,17 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement completion-pass slice 3: chrome-free same-document Reader Preview and unsaved confirmation for Reset Demo while preserving the explicit saved slot.
 - [x] Exercise the documented blank-episode-to-preview creator story, pass 270 unit tests across 13 files, typecheck, lint, production build, and all 7 Playwright stories, then visually inspect and index the public-safe July 16 editor screenshot and Reader Preview.
 - [x] Publish creator-completion feature commit `cb1f28443f7b1045d139879a2bba7b03edf25856` to `main` and verify local/remote equality immediately after the push.
-- [ ] Later built-in artwork polish: replace or repair the visible white seam in the original Oval and Rounded balloon outlines; do not block current creator work on it.
-- [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
+- [x] Complete visible polish: repair the Oval/Rounded balloon seams, correct minimap aspect presentation, and make the right inspector collapsible/overlay-based on constrained desktop widths.
+- [x] Implement Finder/canvas/plane/Layers image drop plus creator-category and reusable-source rename/move/replace/delete safeguards.
+- [x] Implement debounced crash recovery, multiple local projects, Save As/Open Local, and portable `.scrollsplice` project import/export with asset blobs.
+- [x] Implement bounded format v6 with deterministic v3/v4/v5 defaults, transforms/lock, richer snapping, multi-selection/flat grouping, populated-plane paths, story-beat movement, image masks/crop/frame/bleed, and an atomic fitted editable speech balloon.
+- [x] Implement tall-master and deterministic PNG/JPEG slice rendering with creator-reviewed cuts, observed-profile preflight, and explicit provisional/manual-upload labeling.
+- [x] Create [FEATURE_TEST_SHEET.md](FEATURE_TEST_SHEET.md) as Katherine's coherent end-to-end review story.
+- [x] Finish the combined local closeout: 377 unit tests across 28 files, typecheck, lint, production build, and all 13 Playwright Chromium stories pass; index the editor, Reader Preview, and provisional-export screenshots.
+- [x] Record local feature commit `a26927f` and the still-unpublished state without rewriting the pre-event baseline. No push has been performed.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 
-## Joint — only if the human MVP finishes early
+## Joint — only after the local human-editor completion goal and submission path are stable
 
 - [ ] Decide whether to spend remaining Build Week time on the optional generate-and-place proof or submission polish.
 - [ ] If choosing the proof, verify an officially supported OpenAI authorization path and approve the network, credential, privacy, synthetic-data, cost, and time limits before adding dependencies.
@@ -82,7 +90,7 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Joint — later, not Build Week scope
 
-- [x] Before the speech-balloon asset slice: review current Clip Studio official balloon guidance and professional lettering conventions; use only a small neutral original set, treat meanings as conventions rather than rules, and keep readable names/controls while text editing remains deferred.
+- [x] Before the original speech-balloon asset slice: review current Clip Studio guidance and professional lettering conventions; use only a small neutral original set and treat meanings as conventions rather than rules. Text was deferred at that historical checkpoint; independent text and an atomic editable balloon now exist.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
 - [ ] After that upload verification and a separate export-slice approval: implement creator-reviewed deterministic slicing and preflight against a verified `ExportProfile`; do not promise that WEBTOON will preserve accepted files without optimization.
 - [ ] Before full autonomous creation: define approved project context, reference-image consent, generation budget, cancellation/recovery behavior, provenance fields, and which editor commands may run without per-action approval.

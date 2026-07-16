@@ -12,7 +12,36 @@ Katherine approved **Episode Setup and Expandable Scroll**, and Codex completed 
 
 Katherine completed the required hands-on test of that combined build on July 14. She confirmed placed-element deletion, the bottom **Add asset** action, expanded-height minimap behavior, and ordinary canvas movement. She then failed the first proposed polish review because title editing still shifted the fixed **EPISODE** label, the 1,280-unit dotted guides were not present, full-width Background regions could drift sideways in the live Konva node while the document and minimap stayed at `x = 0`, no visible magnet existed, and selected assets had no corner resize handles.
 
-Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized the bounded Asset Library slice and publication of the resulting passing build to `main`. The complete stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; the July 15 menu/rail correction was later published in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`. Katherine then selected the five-slice direct-placement and appearance `/goal` below. It was implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8`. On July 15 she authorized the three-slice **creator completion pass** below: composition ordering, independent text, and Reader Preview with a safe Reset Demo boundary. All three slices are implemented and locally validated; their commit and publication remain evidence-based outcomes to record only after a verified push.
+Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized the bounded Asset Library slice and publication of the resulting passing build to `main`. The complete stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; the July 15 menu/rail correction was later published in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`. Katherine then selected the five-slice direct-placement and appearance `/goal` below. It was implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8`. On July 15 she authorized the three-slice **creator completion pass** below: composition ordering, independent text, and Reader Preview with a safe Reset Demo boundary. All three slices were implemented, validated, and published in `cb1f28443f7b1045d139879a2bba7b03edf25856` on July 16, with local and remote `main` verified equal immediately after the push.
+
+## Current authorized goal: complete the locally feasible human editor
+
+On July 16 Katherine replaced the earlier three-slice stopping point with one broader instruction: continue through the documented human-editor backlog and make ScrollSplice as complete as practical before preparing the feature-by-feature test sheet. This is authorization to keep implementing coherent local slices without asking her to choose each one individually. It does **not** silently authorize external services, private-data transfer, a new runtime stack, or claims that have not been validated.
+
+Implementation status in the current working build:
+
+1. **Visible workspace polish — implemented:** repaired starter-balloon seams, proportional minimap presentation, a collapsible/overlay inspector, and useful Window/Help surfaces.
+2. **Complete asset intake and library management — implemented:** operating-system image drop, canvas/plane/Layers targets, creator-category rename/delete/reorder, and guarded source rename/move/replace/delete across current and durable references.
+3. **Recoverable and portable project state — implemented:** debounced crash recovery distinct from explicit Save, multiple local projects, Save As/Open Local, and portable `.scrollsplice` import/export containing unchanged reusable asset blobs.
+4. **Editing transforms and organization — implemented:** edge/center/nearby-element snapping, rotation, flip, lock, exact geometry/alignment, multi-selection, flat non-nested grouping, populated-plane move/delete paths, and atomic 128-unit story-beat movement. During grouped pointer movement, only the primary member has live status/minimap preview; followers update together at the final atomic commit on release.
+5. **Panels, crop, and intentional overflow — implemented as bounded presets:** rectangle/rounded/slant-left/slant-right/diamond image masks, Cover focus/zoom, optional mask-following frame border, and constrained or final-output-clipped **episode-edge** bleed. A masked image remains clipped to its frame. First-class panel breakout is not implemented; the current manual workaround is a separate duplicated unmasked overlay. Arbitrary point editing remains outside this build.
+6. **Text and speech-balloon composition — implemented as one atomic editable balloon element:** automatic fitting, typography/body controls, and editable tail side/anchor/width/tip. Creator template saving remains outside this build.
+7. **Local render/export proof — implemented provisionally:** tall master, creator-reviewed deterministic PNG/JPEG slices, observed-profile preflight, and explicit **not upload-verified / manual upload** labeling.
+8. **Reliability and handoff — locally complete:** 377 unit tests across 28 files, strict typecheck, ESLint, production build, and all 13 Playwright Chromium stories pass. The editor, Reader Preview, and provisional-export screenshots are indexed, and [Feature Test Sheet](FEATURE_TEST_SHEET.md) is ready for Katherine's review. Commit/publication evidence remains separate.
+
+The locally feasible goal excludes production accounts, OAuth, OpenAI runtime access, cloud sync, external connectors, desktop packaging, automated WEBTOON login/upload/publishing, and any use of private Root & Table material. Those features need their existing network, privacy, credential, platform, or stack decisions before implementation. Public deployment and Devpost evidence remain scheduled work rather than editor features.
+
+### Implemented bounded format-v6 direction
+
+The current build advances the episode document from format v5 to a bounded format v6 covering only:
+
+- common transform and protection fields for rotation, horizontal/vertical flip, and lock
+- richer but explicit appearance data needed by cover/crop and the approved local render path
+- image-frame data with rectangular or normalized polygon masks plus separately controlled episode-edge overflow; masks themselves still clip their image content
+- flat, non-nested element-group records that associate member element IDs for selection and movement
+- one atomic editable speech-balloon element containing its body, fitted text, and tail data
+
+Existing v3/v4/v5 documents open with deterministic v6 defaults; unknown future formats fail safely. Format v6 does not create arbitrary nesting, a generic scene graph, a plugin schema, or a broad migration framework.
 
 ## Completed `/goal`: first Katherine-testable human editor
 
@@ -304,7 +333,7 @@ Explicitly excluded: autosave, crash recovery, file picker or downloadable proje
 
 - Replace the one-button synthetic drawer with a fixed Add rail for **Uploads**, **Speech Balloons**, **Decorations**, **Splatters**, and **My Library**. Keep creator-named categories inside My Library so an unbounded list cannot overwhelm the rail.
 - Use an overlay drawer with an honest current-plane target, loading/error/empty states, a close action, and a compact thumbnail grid. Opening it must not permanently reduce the canvas width.
-- Supply a small original starter set of neutral, transparent code-rendered SVG speech balloons, decorations, and splatters. The balloon set is visual artwork only; meanings are conventions rather than universal rules, and text/tail/style editing remains deferred.
+- Supply a small original starter set of neutral, transparent code-rendered SVG speech balloons, decorations, and splatters. At this historical Asset Library checkpoint the balloon set was visual artwork only; the later format-v6 completion pass adds a separate atomic editable balloon with fitted text/tail/style controls.
 - Import PNG, JPEG, and WebP files into a local browser asset repository without modifying the source bytes. Preserve source alpha. Reject unsupported or undecodable files clearly and keep the Build Week import safety limits visible. Parse PNG/JPEG/WebP header dimensions and enforce the 40-megapixel limit before full browser decode, then decode and confirm the declaration. Category and import mutations use one atomic IndexedDB read-transform-write transaction so concurrent tabs merge against the latest snapshot; the initiating tab refreshes from the returned saved categories and sources.
 - Let creators create named local categories and import an image into the selected category. **Uploads** remains the all-imports view, while My Library filters the same stable source IDs without duplicating files.
 - Add a real image element with a stable source reference. Clicking an asset places one proportional instance in the active ordinary plane, centered in the current viewport; the existing move, eye, trash, undo/redo, minimap, Layers selection, and proportional four-corner resize behavior applies. If an extreme source ratio cannot fit inside the episode while keeping both axes at least 24 logical units, refuse placement clearly instead of distorting it.
@@ -429,10 +458,11 @@ A creator starts a blank episode, names it, chooses the base color, and imports 
 
 Explicitly deferred from this completion pass: deterministic WEBTOON export; OpenAI runtime work, AI generation, OAuth, and external connectors; operating-system/Finder file drop; autosave and crash recovery; source-asset deletion or advanced category management; panel masks, crop/cover, rotation, flipping, perspective, editable balloon tails, and a compound balloon/text model.
 
-### Later bounded slices
+### Remaining bounded follow-ups
 
-1. **Deterministic WEBTOON slice planning and export:** after the harmless unpublished upload verification, let the creator review cut positions, render ordered files within the selected verified profile, and preflight dimensions, encoded bytes, total bytes, count, format, and order. Matching the profile cannot guarantee WEBTOON will avoid later optimization.
-2. **Panel and transform tools:** after the completion pass, separately design rectangular or irregular masks, intentional bleed, crop/cover, rotation, and other advanced transforms without weakening the shared geometry or nondestructive-source boundaries.
+1. **Publish the passing local completion stack:** local validation and public-safe screenshots are complete; record the final commit/push state without rewriting the pre-event baseline.
+2. **Authenticated WEBTOON upload verification:** use harmless unpublished files to establish actual boundary, alpha, order, filename, preview, and recompression behavior. Only then may the observed export profile become upload-verified.
+3. **Optional later editor depth:** creator-saved editable-balloon templates, arbitrary polygon-point editing, row context-menu shortcuts, perspective/freeform distortion, or richer section systems require separate design and are not hidden requirements of this completion pass.
 
 ### Submission runway: July 19–21
 
@@ -448,7 +478,7 @@ Submit a small, complete, reliable **human-operated** editor MVP in the **Apps f
 4. select the same element from the canvas or layers list
 5. move the selected element and reset the demo
 
-That is the simplest required MVP for Build Week. The optional history/save/menu and persistent Asset Library slices strengthen the creator workflow without becoming new contest requirements. The current local build includes validated browser-local import, but it does not pretend that portable or multi-project persistence/recovery, production export, or autonomous creation is complete. The editor must work without an OpenAI connection.
+That is the simplest required MVP for Build Week. The larger local completion pass strengthens the creator workflow without becoming a new contest requirement. The current local build includes browser-local import, explicit save, crash recovery, multiple local projects, portable project files, advanced editing, and clearly provisional image rendering; it does not claim upload-verified WEBTOON compatibility or autonomous creation. The editor works without an OpenAI connection.
 
 ## Build Week must-haves
 
@@ -498,14 +528,15 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 - Record her feedback, document the reviewed screenshot, and publish the already passing implementation/doc checkpoint to `main`. **Complete through `8a493a2`.**
 - Repair the failed polish review as checkpoint D: stable title anchors, visible profile-derived candidate guides, default-on center magnet with bypass, proportional ordinary-element resize, and live status/minimap bounds. The first fixed-width Background implementation was superseded; free Background-region movement and eight-handle independent resize passed validation and Katherine's retest with minimap aspect distortion logged as polish. **Complete with notes.**
 - Implement and validate the separately approved optional local history/save/menu slice, including explicit Save, reload/reopen, blank New Episode, bounded undo/redo, and the exact File/Edit surface. **Complete, passed Katherine's July 15 review, and published with the Asset Library stack in `fdd4ead`.**
-- Keep deterministic WEBTOON file export separate until the harmless authenticated upload verification and a later explicit export checkpoint.
+- Keep upload-verified WEBTOON compatibility separate until the harmless authenticated upload verification; the current completion goal may build a clearly provisional local renderer and slicer from the observed profile.
 - Keep every coherent checkpoint tested and independently understandable.
 - Do not spend the full product day on deployment, video, or Devpost assembly.
 
 ### July 15–18 — Two-hour product and reliability evenings
 
-- Continue one approved, bounded human-editor slice at a time.
-- Prioritize creator-facing foundations that later features depend on; avoid OAuth, autonomous generation, production export, and other infrastructure expansion.
+- Continue through the current authorized locally feasible human-editor goal in coherent, validated slices; do not stop merely because the historical three-slice creator-completion pass is finished.
+- Follow the dependency order in the current goal: polish, asset workflows, recoverable/portable projects, transforms and organization, frames, balloon/text composition, then clearly provisional local render/export.
+- Avoid OAuth, autonomous generation, cloud services, WEBTOON automation, and other externally gated infrastructure.
 - Preserve navigation, minimap, selection, movement, reset, and the shared episode model after every change.
 - Use one evening for regression tests and visual refinement before the submission runway.
 - Stop starting new product features after July 18.
@@ -535,9 +566,9 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 - Tag the exact submitted commit as `build-week-submission` and record it in the compliance evidence table.
 - Preserve the submitted repository, demo, video, and access path unchanged and available through the judging period ending August 5 at 5:00 PM PT.
 
-## Optional Build Week product slices
+## Product-slice record and remaining completion queue
 
-Treat these as bounded options rather than a mandatory queue, and begin only the item Katherine explicitly selects; every completed item still needs its own passing checkpoint. Items 4–6 were authorized together by Katherine's follow-up review and are complete. Item 7 passed human review with notes. Item 8 passed Katherine's July 15 review. Katherine then selected item 12; it is complete, validated, and published in `fdd4ead`. She next selected item 9, which is complete, validated, and published in `7768daa`. Every remaining item stays separately gated. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
+Items 1–16 preserve the historical slice record. On July 16 Katherine authorized the remaining locally feasible human-editor queue as one goal rather than requiring another feature choice after every three slices. The combined implementation is recorded in local commit `a26927f`; the full local regression suite, public-safe visual record, and feature sheet are complete. The commit has not been pushed. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above. **Complete.**
 2. The layer-planes and episode-backdrop foundation defined above. **Complete.**
@@ -548,15 +579,17 @@ Treat these as bounded options rather than a mandatory queue, and begin only the
 7. Stable editing chrome, candidate slice guides, proportional ordinary-element resize, and free eight-handle Background-region transforms with live status/minimap preview. **Complete; human review pass with notes; later published in `fdd4ead`.**
 8. Local history, one explicit save/reopen slot, blank New Episode, and minimal File/Edit menus. **Complete, validated, and human-tested.**
 9. Direct placement and foundational appearance: drag-to-canvas, format-v5 opacity, vertical two-stop gradient/fade, tiled texture presentation, and five restrained blend modes. **Complete, validated, and published in `7768daa`.**
-10. Deterministic WEBTOON slice planning and export after upload verification.
+10. Local tall-master rendering, deterministic slice planning, and preflight. **Implemented provisionally in local feature commit `a26927f`; output is labeled not upload-verified and manual-upload only.**
 11. Plane optional names/reordering plus explicit element stacking and Move to Plane. **Implemented, validated, and published in `cb1f284`.**
 12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete, validated, and published July 15 in `fdd4ead`.**
 13. Asset-to-canvas drag. **Folded into current item 9; click-to-place remains the accessible fallback.**
-14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
+14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional external-services gate below is satisfied. This is not part of the active local human-editor completion goal.
 15. Basic independent text creation and editing over existing balloon assets. **Implemented, validated, and published in `cb1f284`.**
 16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented, validated, and published in `cb1f284`.**
 
-Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
+Completion-pass additions across the historical items are implemented and locally validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, and atomic editable speech balloons; plus provisional rendering. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 377 unit tests, typecheck, lint, build, and 13 Playwright stories and is recorded in local commit `a26927f`. Do not describe it as published: no push has been performed.
+
+Continue through the locally feasible queue while validation remains healthy. Stop immediately if product work threatens the scheduled submission runway or the minimum editor experience.
 
 ### Additional gate for the OpenAI stretch
 
@@ -570,20 +603,20 @@ The image-generation proof is lower priority than the human interaction stretche
 
 The smallest acceptable proof is one request that produces one image candidate, records its generation provenance, adds it through the asset boundary, and places it through the ordinary episode command path. Read-only project tools may expose a normalized episode snapshot, viewport, selection, asset metadata, and prepared canvas-region preview. Do not attempt full autonomous episode creation, private-asset upload, external-service connectors, or unrestricted agent writes during Build Week.
 
-## Deferred work
+## Deferred or gated work
 
-- Project-folder design, portable source packaging, source deletion, category rename/delete/reorder, and advanced asset management. Real browser-local PNG/JPEG/WebP import is implemented.
-- Arbitrary-angle or multi-stop gradients, additional blend modes beyond Normal/Multiply/Screen/Overlay/Soft Light, background-specific cover/crop controls, texture-density controls, and optional edge decoration. Real imported images may be placed on ordinary Background planes 2 and later; Background plane 1 remains the color-only base. The implemented local goal adds only a vertical two-stop gradient/fade and a fixed-auto-scale repeated-tile presentation capped at a 160-logical-unit tile edge.
-- Additional import formats, source replacement, crop, recolor, rotation, flip, and other asset-specific editing beyond the implemented transparency-preserving PNG/JPEG/WebP preview.
-- Compound balloon/text behavior, editable tails, balloon styles, semantic guidance, automatic text fitting, and creator-authored reusable balloon templates. The completion pass adds only independent basic text placed over the existing balloon image assets.
-- Commands beyond the implemented **File > New Episode / Save / Reopen**, **Edit > Undo / Redo**, and **View > Reader Preview** surface. Additional View commands, Window, Help, open/import, Save As, multiple recent projects, and native OS menus remain deferred until their own workflow or desktop-packaging slice.
+The following human-editor items are implemented and locally validated and are no longer deferred: portable local project packaging, recovery, multiple local projects, operating-system file drop, category/source management, practical crop/cover, rotation/flip/lock, richer snapping, non-nested grouping, bounded panel-mask presets, atomic editable-balloon composition, useful browser-app menus, and provisional local rendering. Publication remains separate from implementation proof.
+
+Still deferred or gated:
+
+- Native operating-system menus and desktop packaging. Browser-app File/Edit/View/Window/Help surfaces may be added only where they perform real local actions.
+- A claim of upload-verified WEBTOON compatibility, exact production profile enforcement, or automatic publishing until the manual discovery in `WEBTOON_REQUIREMENTS.md` is complete. Provisional local files must say what was and was not verified.
+- Cloud/account sync, collaboration, provider-backed storage, production OAuth, and authenticated external connectors.
+- OpenAI runtime access, autonomous episode creation, and generated-asset network workflows until the separate credential, privacy, cost, and supported-auth gates pass.
+- A full Photoshop replacement: painting, unrestricted vector editing, arbitrary nested layers/groups, perspective/freeform distortion, animation, or destructive source editing.
+- Additional import or export formats without a demonstrated creator or platform need.
 - Canvas Zoom and 2D Viewport is complete and published in the earlier A/B/C stack; its state is transient and does not alter episode or export geometry.
 - The direct-placement and foundational-appearance goal is implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8` with its screenshot evidence and documentation.
-- Clip Studio-style rectangular and irregular panel masks, intentional bleed/panel breakouts, advanced edge/nearby-element snapping beyond checkpoint D's single centerline rule, and resize behavior beyond the implemented four proportional corner handles.
-- Persistence beyond the implemented explicit episode slot and separate IndexedDB source library: autosave, crash recovery, portable file-system project files, multiple projects, account/cloud sync, and additional format migrations.
-- History beyond the implemented 100-checkpoint document undo/redo: named history, persisted history, branching, collaborative history, rotation, crop, masks, and advanced transforms.
-- Populated-plane deletion, arbitrary nested groups, multi-selection, and grouping. The implemented completion pass is limited to optional plane names/order, adjacent local stacking actions, and moving one selected element to an ordinary plane.
-- Production tall-master and WEBTOON slice export.
 - Authenticated WEBTOON upload verification and other platform profiles.
 - Desktop packaging, mobile editing, accounts, OAuth, cloud storage, collaboration, and publishing integrations.
 - Full autonomous episode creation, including planning, repeated generation, continuity passes, and unattended layout changes. This is an intended product track after the human workflow, not a required Build Week feature.
@@ -591,7 +624,7 @@ The smallest acceptable proof is one request that produces one image candidate, 
 
 ## WEBTOON discovery track
 
-The Build Week editor can proceed without production export. Katherine completed the authenticated form-observation portion on July 13: the current UI displays 800 × 1280 px before automatic optimization, a 2 MB image threshold, 50 MB and 100 images per episode, JPG/JPEG/PNG support, and a separate 202 × 142 episode thumbnail under 500 KB. Checkpoint D may use that visibly `form-observed` profile only to draw provisional candidate guides. Before deterministic file export begins, complete the remaining harmless unpublished upload behavior tests in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md), including exact boundary enforcement, transformation behavior, ordering, transparency, filename behavior, previews, and draft reopening.
+The Build Week editor can proceed without upload-verified production export. Katherine completed the authenticated form-observation portion on July 13: the current UI displays 800 × 1280 px before automatic optimization, a 2 MB image threshold, 50 MB and 100 images per episode, JPG/JPEG/PNG support, and a separate 202 × 142 episode thumbnail under 500 KB. Checkpoint D uses that visibly `form-observed` profile for provisional candidate guides, and the current local renderer can create and preflight clearly provisional files from the same profile. The harmless unpublished upload behavior tests in [WEBTOON_REQUIREMENTS.md](WEBTOON_REQUIREMENTS.md) remain mandatory before any upload-verified compatibility claim. Those tests cover exact boundary enforcement, transformation behavior, ordering, transparency, filename behavior, previews, and draft reopening.
 
 Keep platform constraints in a data-driven export profile so a changed limit can be updated without changing the episode model or editor commands. The later exporter should plan creator-reviewed cuts, produce files no larger than the selected verified profile allows, and preflight every encoded file and the whole package. That gives the creator control over seams and known limits; it cannot guarantee that WEBTOON will not recompress, resize, reformat, or otherwise optimize an accepted upload.
 
@@ -631,12 +664,12 @@ The Build Week submission is complete only when:
 - all automated checks pass and the application has been visually inspected
 - the repository and README clearly distinguish July 12 planning from judged July 13–21 implementation
 - the public video, repository URL, access URL, category, description, and `/feedback` Session ID are ready
-- private Root & Table art, secrets, required OAuth infrastructure, direct WEBTOON publishing, and production export remain outside the submission
+- private Root & Table art, secrets, required OAuth infrastructure, direct WEBTOON publishing, and any claim of upload-verified WEBTOON export remain outside the required submission; a provisional local render proof may be included only when labeled honestly
 - the human editor works without OpenAI access; any autonomous feature shown is clearly labeled as completed stretch rather than implied future behavior
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass passes the complete current regression suite, all seven Playwright stories, and indexed visual evidence and was published in `cb1f28443f7b1045d139879a2bba7b03edf25856`. Production export, deployment, advanced transforms, and other later slices remain separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass passes the complete current regression suite, all seven Playwright stories, and indexed visual evidence and was published in `cb1f28443f7b1045d139879a2bba7b03edf25856`. The historical three-slice stop is complete; continue through the current locally feasible human-editor goal. Upload-verified WEBTOON compatibility, deployment, OpenAI/OAuth, cloud services, and external connectors remain separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

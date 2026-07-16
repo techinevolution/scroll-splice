@@ -2,7 +2,7 @@
 
 ## First principles
 
-ScrollSplice edits one logical vertical episode. The episode document is durable product data; canvas, minimap, layers, implemented Reader Preview, and future export are replaceable views of it.
+ScrollSplice edits one logical vertical episode. The episode document is durable product data; canvas, minimap, Layers, Reader Preview, and the local renderer are replaceable views of it.
 
 The architecture follows seven rules:
 
@@ -21,7 +21,7 @@ This is modularity by separation of responsibility, not by speculative infrastru
 - React 19 and plain CSS own the static application shell and panels.
 - React-Konva/Konva renders only the interactive editing viewport.
 - Zustand coordinates the current document, selection, viewport, command dispatch, and transient UI state.
-- A small application-edge `ProjectRepository` validates and stores one explicit format-v5 episode save in browser local storage. Its bounded parser normalizes supported v3 and v4 documents into v5 and rejects corrupt or unknown versions; no durable data enters React or Konva objects.
+- Application-edge project repositories validate format-v6 episodes, normalize supported v3/v4/v5 documents into v6, keep explicit local saves separate from debounced crash recovery, and support multiple local projects plus portable project files. No durable data enters React or Konva objects.
 - A separate application-edge `AssetRepository` stores creator categories and unchanged imported image `Blob`s in IndexedDB. Episode saves contain stable asset IDs only.
 - A lightweight React/CSS/SVG minimap derives from the episode document; it is not a second Konva editor.
 - Strict TypeScript defines the core contracts.
@@ -38,7 +38,7 @@ A single generate-and-place proof is permitted only as late stretch work under t
 Create a folder only when its active behavior exists. The intended ownership is:
 
 - `src/core/episode.ts`: plain episode and element types.
-- `src/core/createBlankEpisode.ts`: pure construction of the minimal 800 × 1,280 format-v5 episode used by **New Episode**.
+- `src/core/createBlankEpisode.ts`: pure construction of the minimal 800 × 1,280 format-v6 episode used by **New Episode**.
 - `src/core/coordinates.ts`: episode, viewport, screen, and minimap conversion plus clamping.
 - `src/core/commands.ts`: pure document edits used by the Build Week MVP.
 - `src/app/store.ts`: Zustand application coordination, bounded history, document status, and command dispatch.
@@ -48,14 +48,18 @@ Create a folder only when its active behavior exists. The intended ownership is:
 - `src/layers/`: ordered layer presentation and selection requests.
 - `src/components/`: shell and small ordinary React controls.
 - `src/assets/`: original built-in catalog, import validation, local asset snapshots, runtime source resolution, and the IndexedDB adapter.
-- `src/persistence/projectRepository.ts`: one versioned local-browser episode-save adapter plus defensive format-v5 validation and explicit supported v3/v4 normalization.
-- `src/export/profiles.ts`: provisional versioned output-profile data and pure candidate-boundary math only; it does not render or write export files.
+- `src/persistence/projectRepository.ts`: defensive episode parsing and the legacy/current explicit-save boundary.
+- `src/persistence/projectLibraryRepository.ts`: multiple browser-local project records and recent-project summaries.
+- `src/persistence/recoveryRepository.ts`: debounced unsaved recovery snapshots kept visibly separate from explicit saves.
+- `src/persistence/portableProject.ts` and `portableProjectMerge.ts`: validated `.scrollsplice` files containing one episode plus reusable asset blobs, with collision-safe ID remapping on import.
+- `src/export/profiles.ts`: provisional versioned output-profile data and pure candidate-boundary/slice-plan math.
+- `src/export/renderEpisode.ts`: browser-local tall-master and slice rendering plus encoded-file preflight; it does not upload or publish.
 
-Do not create empty `services`, `adapters`, or `auth` trees merely to represent future ideas. Their boundaries are documented below and become files only when an approved slice needs them. The implemented `src/persistence/` tree exists only for the approved single-slot browser adapter; it is not a project library, file-system layer, cloud service, or account sync system. The small implemented `src/export/` seam exists only because the candidate-guide slice needs one versioned `ExportProfile`; it is not an exporter.
+Do not create empty `services`, `adapters`, or `auth` trees merely to represent future ideas. Their boundaries are documented below and become files only when an approved slice needs them. The implemented persistence and export trees remain browser-local application-edge adapters; they are not a backend, cloud/account sync system, WEBTOON connector, or publishing service.
 
-## Current Build Week document model
+## Current validated document model
 
-The implemented format-v5 document uses one shallow, explicit organization path: fixed composition group -> ordered layer plane -> flat element references by `layerPlaneId`. An element's group is derived from its plane rather than duplicated on the element. Version 4 introduced a real `ImageElement` whose source is a stable built-in or imported asset ID; version 5 adds the bounded shared appearance fields. Source bytes and browser object URLs never enter the episode document. Direct drag placement changes only initial bounds and needs no separate schema field.
+The implemented format-v6 document uses one shallow, explicit organization path: fixed composition group -> ordered layer plane -> flat element references by `layerPlaneId`. An element's group is derived from its plane rather than duplicated on the element. Version 4 introduced real image references, version 5 added shared appearance, and version 6 adds bounded transforms/protection/overflow, image frames/crop/masks, flat element-group membership, and one atomic editable speech-balloon element. Source bytes and browser object URLs never enter the episode document.
 
 The sample document contains:
 
@@ -64,11 +68,13 @@ The sample document contains:
 - a fixed logical width of `800` units and flexible logical height
 - ordered `LayerPlane` records with stable IDs, group ownership, visibility, optional creator-facing names, and base or ordinary kind
 - an ordered flat collection of elements
-- for each element: stable ID, readable name, plane reference, asset reference, logical `x`, `y`, `width`, `height`, visibility, and stacking order
-- for image elements: a built-in or imported asset reference, with intrinsic/source data resolved at the application edge
+- for each element: stable ID, readable name, plane reference, asset reference, logical bounds, visibility, lock state, stacking, opacity/blend, rotation/flip, and constrained-or-episode-edge-bleed behavior
+- for image elements: a built-in or imported asset reference plus Stretch/Cover/Tile presentation, crop focus/zoom, rectangle or normalized-polygon mask, and optional frame border; source data resolves at the application edge
 - for text elements: wording, color, font family, font size, weight, line height, and left/center/right alignment
+- for speech balloons: body/outline styling, fitted text and typography bounds, and one editable tail side/anchor/width/tip
+- a flat collection of non-nested `ElementGroup` member-ID records used for selection and atomic movement
 
-The implemented v5 appearance shape remains plain data: every element has normalized `opacity` and one of Normal, Multiply, Screen, Overlay, or Soft Light; Background color-region fills may be solid or vertical two-stop color/alpha gradients; and image presentation may be single or tiled. Tile presentation uses a fixed automatic scale capped at a 160-logical-unit tile edge rather than a creator density control. Supported v3/v4 documents normalize to v5 defaults without changing source assets.
+The format-v6 appearance shape remains plain data: every element has normalized opacity and one of Normal, Multiply, Screen, Overlay, or Soft Light; Background color regions may be solid or vertical two-stop color/alpha gradients; and images use Stretch, Cover, or Tile. Tile presentation uses a fixed automatic scale capped at a 160-logical-unit tile edge. Supported v3/v4/v5 documents normalize to deterministic v6 defaults without changing source assets.
 
 The original fixture should contain six visually distinct beats rendered from code-defined shapes and text so that scrolling, minimap navigation, selection, and movement are easy to judge without separate artwork licensing. It may suggest a vertical comic but must not copy or expose private Root & Table work.
 
@@ -77,6 +83,12 @@ The `800`-unit width is a convenient logical coordinate choice that also maps di
 Selection, hover, active drag, two-dimensional viewport position, zoom, panel-collapse state, and reset state are editor state, not episode content. The implemented view uses the fitted episode width as 100%, then applies a transient 50–200% factor without changing document geometry.
 
 Do not put React objects, Konva nodes, browser handles, user IDs, OAuth fields, provider tokens, WEBTOON metadata, or platform upload state in the episode document.
+
+## Implemented bounded format-v6 extension
+
+Format v6 extends the existing shallow document rather than introducing a second scene graph. Common element fields carry rotation, horizontal/vertical flip, lock state, and constrained-or-episode-edge-bleed behavior. Image elements own explicit Cover crop focus/zoom, rectangle or normalized-polygon mask data, and an optional mask-following border. A mask always clips its image; bleed does not create a hole through that clipping boundary. First-class panel breakout would need a later explicit composition contract, while the current workaround uses a separate duplicated unmasked overlay. Flat `ElementGroup` records associate stable member IDs without owning duplicate geometry or allowing recursive groups. The speech balloon is one atomic element rather than a hidden group of loose text and shape children.
+
+The v6 loader gives supported v3/v4/v5 documents deterministic defaults, preserves stable IDs and source references, and rejects unknown future versions. Core commands remain pure, and canvas, minimap, Layers, Reader Preview, persistence, portable files, recovery, and rendering consume the same normalized episode. Arbitrary mask-point editing, nested groups, a generic migration framework, plugins, and parallel panel/balloon documents remain deliberately absent.
 
 ## Implemented layer-plane foundation
 
@@ -138,7 +150,7 @@ The implemented Build Week command surface is intentionally small:
 
 Navigation and selection do not change the document. They update application state.
 
-Asset-source deletion and compound balloon properties remain later work. Bounded plane naming/reordering, local element stacking, Move to Plane, and independent basic text use the existing format-v5 fields. The implemented appearance commands cover element opacity, vertical two-stop Background fills, single/tile image presentation, and the five recorded blend modes. Do not add arbitrary nesting, folders, additional save slots, autosave, file-system access, cloud storage, arbitrary gradient or blend infrastructure, or a general migration framework.
+Plane naming/reordering, local stacking, Move to Plane, and independent text retain their original fields. Format v6 adds the implemented transform/lock/overflow, image-frame/crop/mask, flat-group, and atomic speech-balloon commands. Guarded source management, multiple/portable projects, and recovery stay in application-edge adapters rather than the episode model. The implementation still excludes arbitrary nesting, a generic folder/scene graph, cloud storage, speculative gradient/blend infrastructure, and a general migration framework.
 
 The appearance slices add pure commands such as `setElementOpacity`, `setBackgroundRegionFill`, `setImagePresentation`, and `setElementBlendMode`. They validate supported targets and values, return the original document for a no-op or invalid request, and enter the same bounded history path as existing document edits. Opacity clamps to 0–1. A selected opacity slider publishes transient preview state, but one gesture commits once. Format v5 normalizes supported v3/v4 data to 100% opacity, Normal blending, solid fills, and single-image presentation while preserving existing v4 shape opacity.
 
@@ -153,7 +165,7 @@ The three creator-completion slices extend existing seams rather than introducin
 - Reader preview is a read-only presentation over the current normalized document and resolved asset sources. It does not create a second episode representation and does not write document, history, dirty, selection, active-plane, zoom, or viewport state.
 - Reset Demo confirmation belongs to application lifecycle coordination. When dirty, cancellation is a true no-op. Confirmation loads the fixture as an unsaved document, clears stale selection/history/live interaction state, and never deletes or overwrites the explicit saved slot or Asset Library.
 
-These changes use existing format-v5 plane and element fields and require no format bump. Their document mutations enter the same bounded history and validated save paths as existing commands.
+These historical creator-completion changes used the existing format-v5 fields. They now pass unchanged through the format-v6 history and persistence paths.
 
 ### Implemented episode-structure command extension
 
@@ -209,28 +221,31 @@ Zustand owns:
 
 Canvas, minimap, and layers subscribe to this shared state. They must not keep competing copies of comic content, selection, or viewport position.
 
-## Local history, episode persistence, and the Asset Library
+## Local history, project persistence, recovery, and the Asset Library
 
-The implemented July 14 creator-workflow slice added a deliberately small local episode boundary. The July 15 Asset Library slice adds one explicit compatible format transition and a separate source-media boundary:
+The browser-local storage boundary now separates explicit saves, recovery, reusable source media, and portable transfer:
 
-- `ProjectRepository` owns one browser key, `scrollsplice.project.last.v1`. Its versioned envelope contains a save timestamp and one validated format-v5 `EpisodeDocument`. The parser accepts the two explicitly supported older episode formats, normalizes their appearance defaults, and rejects corrupt or unknown versions.
-- The format-v5 transition leaves the envelope key and source-media store unchanged. Episode layout still stores stable asset IDs only, while imported source `Blob`s remain in the separate IndexedDB Asset Library.
+- The bounded episode parser accepts supported v3/v4/v5 documents, normalizes them to validated format v6, and rejects corrupt or unknown versions.
+- `ProjectLibraryRepository` owns multiple explicit browser-local project records and recent-project summaries. Save updates the current project; Save As creates a new project identity; Open Local and delete operate only on this library.
+- `RecoveryRepository` stores a debounced unsaved snapshot separately from explicit saves. Startup offers Restore/Discard when that snapshot is newer/useful; lifecycle flushes improve crash/close coverage without turning explicit Save into invisible autosave.
+- Portable `.scrollsplice` files contain a validated episode plus the complete reusable asset-library snapshot. Import collision-remaps category/source IDs and rewrites episode references before merging, so unrelated local records are not overwritten.
+- Episode layout stores stable asset IDs only, while imported source `Blob`s remain in the separate IndexedDB Asset Library except when deliberately copied into a portable file.
 - `AssetRepository` owns the versioned IndexedDB database `scrollsplice-asset-library-v1`. It stores one validated asset-library snapshot containing creator categories, source metadata, and unchanged PNG/JPEG/WebP `Blob`s. Category creation and imports use one atomic IndexedDB read-transform-write transaction, so concurrent tabs merge against the latest saved snapshot instead of overwriting one another. The successful update returns that merged snapshot, and the initiating tab refreshes its categories and runtime sources from it.
-- **Save** is explicit. It writes the current episode only; selection, viewport, zoom, open panels, live pointer bounds, history stacks, and provider/account data are never persisted.
+- **Save** remains explicit. It writes the current episode into the current local project; selection, viewport, zoom, open panels, live pointer bounds, history stacks, and provider/account data are never persisted.
 - Import and creator-category creation persist immediately to the local Asset Library and do not create episode-history entries. Placing an asset creates a normal image element and one episode-history entry; it becomes durable only after **File > Save**.
 - New Episode, Reopen, Reset Demo, Undo, and Redo do not delete imported sources or creator categories. Clearing browser site data, changing profiles/origins, or losing one storage boundary can still leave a saved episode with a missing source; renderers show an honest selectable placeholder.
-- On app startup, a valid last save opens automatically. Missing or unavailable storage falls back to the public-safe demo. Corrupt or unsupported records are reported and left untouched rather than being silently deleted or coerced.
+- On app startup, a valid current/recent project opens automatically. Missing or unavailable storage falls back to the public-safe demo. Corrupt or unsupported records are reported and left untouched rather than silently deleted or coerced.
 - **Reopen** reads the last explicit save and resets selection, viewport, zoom, transient controls, and undo/redo. If the current document is dirty, the application asks before discarding it.
 - **New Episode** creates an unsaved **Untitled Episode** with a stable ID, 800-unit width, 1,280-unit height, a pinned white Background base, one ordinary Background plane, one Content plane, one Foreground plane, and no elements. It does not delete the existing saved slot, so **Reopen** can still recover that last save.
 - The creator-completion pass gives **Reset Demo** the same dirty-document guard as the other destructive lifecycle actions. Cancel preserves the complete current editor state. Confirm loads the fixture as unsaved and keeps the last explicit save available to **Reopen**.
-- The in-app menu surface is intentionally limited to **File > New Episode / Save / Reopen**, **Edit > Undo / Redo**, and **View > Reader Preview**. It is browser UI, not a native macOS or Windows menu.
-- Shortcuts are `Mod+S`, `Mod+Z`, `Mod+Shift+Z`, and `Ctrl+Y`. Undo/redo shortcuts do not replace native text-field history while an editable field has focus.
+- The working in-app surface is **File > New Episode / Open Local Project / Save / Save As / Reopen Current / Import Project / Export Project File / Export Episode Images**, **Edit > Undo / Redo**, **View > Reader Preview**, **Window > Show/Hide Inspector**, and **Help > Shortcuts & About**. It is browser UI, not a native macOS or Windows menu.
+- Shortcuts are `Mod+S`, `Mod+Shift+S`, `Mod+Z`, `Mod+Shift+Z`, `Ctrl+Y`, `Mod+D`, Delete/Backspace, and arrow-key nudging with Shift for 10 units. Editing fields retain native text behavior.
 
 The Zustand coordinator keeps a maximum of 100 history checkpoints. Every successful episode-document mutation goes through one commit helper, clears redo after a new branch, and records the prior document plus enough selection/group/plane context to restore a coherent editor. This includes element and layer-plane creation/deletion, movement, resize, title, coarse extension, precise height, element/plane/group visibility, and base color. A bottom-edge pointer gesture may publish many live height previews, but its start and final height form one undo step. Navigation, zoom, selection-only changes, drawer state, magnet state, guide visibility, and live bounds are transient and not undoable document edits.
 
 Undo and redo restore the episode document, clear stale live previews, clamp the viewport, preserve a still-valid selection, and otherwise choose a valid group/plane context. Save marks the current revision clean without deleting history. Reaching that saved revision again through undo/redo clears the dirty indicator; leaving it marks the document unsaved. Reopen and New Episode are lifecycle boundaries that clear both history stacks.
 
-This is not autosave, crash recovery, a portable file picker/project package, a multi-project library, native desktop storage, cloud/account sync, source deletion, or a general migration framework. Those require separate product and storage decisions.
+The source-management boundary also supports category rename/delete/reorder and source rename/category move/replace/delete. Deletion is reference-safe across the current episode, explicit saves, recovery, and every local project. Category deletion retains its sources by returning them to Uploads. Native desktop storage, cloud/account sync, and a general migration framework remain outside the goal.
 
 ## Viewport and coordinate model
 
@@ -249,7 +264,7 @@ Selecting an off-screen element from the layers list centers that element in the
 
 Coordinate conversion and clamping live in one tested core module. Do not duplicate formulas in canvas and minimap components.
 
-The current movement command clamps every element inside the 800-unit episode width. A later panel/frame slice must replace that blanket rule with explicit overflow behavior: irregular panels, effects, and breakout art may extend into an editor bleed area while final rendering clips to the episode output boundary. Optional snapping is a proximity aid and must never silently resize, crop, straighten, or force those elements back inside.
+The format-v6 movement command uses explicit overflow behavior: **Keep inside** clamps to episode bounds, while **Allow bleed** permits episode-edge overflow and the final renderer clips to the 800-unit output boundary. Image masks remain their own clipping boundaries even when bleed is enabled; panel-mask breakout is not first-class and currently requires a separate unmasked overlay element. Optional snapping is a proximity aid and never silently resizes, crops, straightens, or forces a bleed-enabled element back inside.
 
 ### Implemented adjustable zoom and two-dimensional viewport
 
@@ -284,35 +299,35 @@ Guide visibility and the selected preview profile are transient editor state. Gu
 ### Movement
 
 1. Konva supplies drag feedback, converted continuously into clamped logical bounds.
-2. Magnet On applies the 8 CSS-pixel center snap; Magnet Off or Alt/Option bypasses it.
+2. Magnet On evaluates episode centers/edges and nearby-element centers/edges within a zoom-aware CSS-pixel threshold; Magnet Off or Alt/Option bypasses it.
 3. The store publishes transient live bounds to the status bar and minimap without mutating the document.
 4. On drag end, the application dispatches one `moveElement` command and clears the preview.
 5. Canvas, minimap, and layers derive their lasting view from the returned document.
 
-The corrective checkpoint implements transient `magnetEnabled` state that defaults to `true`. Its intentionally small first rule snaps any movable element's horizontal center—including a Background color region—to the episode centerline when the distance is at most 8 CSS pixels at the current zoom. The canvas shows a temporary vertical center guide while snapped. Turning the magnet off or holding Alt/Option during that drag bypasses snapping; edge and nearby-element targets remain deferred. Toggling the magnet never mutates document geometry by itself.
+The transient `magnetEnabled` state defaults to `true`. The shared coordinate module ranks episode-center/edge and nearby-element center/edge candidates within a zoom-aware threshold and returns temporary horizontal/vertical guides with the snapped logical position. Turning the magnet off or holding Alt/Option during a drag bypasses snapping. Toggling the magnet never mutates document geometry by itself.
 
 ### Bounded corner resize
 
 1. Selection attaches four proportional corner handles to an unlocked ordinary shape/text or eight independent handles to a Background color region.
-2. Konva supplies transient visual scale while keeping rotation and flipping disabled.
+2. Konva supplies transient visual scale. Rotation and flip are separate explicit format-v6 appearance commands rather than accidental Transformer gestures.
 3. Each transform event publishes logical preview bounds to status `x/y/w/h` and the minimap.
 4. On transform end, the editor converts scale into requested logical bounds, resets node scale, dispatches one pure `resizeElement` command, and clears the preview.
-5. Canvas and minimap rerender from the same committed format-v5 bounds and appearance data.
+5. Canvas and minimap rerender from the same committed format-v6 bounds and appearance data.
 
-This interaction includes independent side-handle stretching for Background color regions but still excludes rotation, flipping, crop, perspective, and a general transform property panel.
+This interaction includes independent side-handle stretching for Background color regions. Rotation, flip, exact geometry, alignment, lock, image crop/masks/frame, and edge behavior are exposed through explicit controls. Perspective and freeform distortion remain excluded.
 
 ### Asset-library and placement flow
 
 1. App startup hydrates creator categories and imported source `Blob`s from `AssetRepository`, creating runtime-only object URLs for rendering.
 2. Upload validates PNG/JPEG/WebP signature, byte size, and optional creator-category identity; it parses declared dimensions from PNG IHDR, JPEG SOF, or WebP VP8/VP8L/VP8X headers and rejects an over-40-megapixel source before full decode. The browser decoder still verifies the source and must confirm the header dimensions before the unchanged source is saved.
 3. Clicking a built-in or imported asset requests one proportional, viewport-centered `ImageElement` in the active ordinary plane. Native drag uses a strictly parsed stable-ID payload and the shared pan/zoom conversion to place that same source beneath the pointer. Placement fits the source while keeping both axes at least the shared 24-logical-unit minimum; an extreme aspect ratio that cannot satisfy that minimum inside the episode is refused with a clear message rather than distorted.
-4. The pure image command returns a format-v5 episode; either placement path creates one normal history entry and selects the new instance without drag-plus-click duplication.
+4. The pure image command returns a format-v6 episode; every placement path creates one normal history entry and selects the new instance without drag-plus-click duplication.
 5. Canvas, minimap, and Layers resolve the same stable reference. If a source is absent, all surfaces remain usable and show missing-source state instead of crashing.
 6. **File > Save** persists layout and stable IDs only. IndexedDB persists reusable source media separately.
 
-The implemented direct-placement slice extends step 3 without replacing it. An Asset Library card uses native drag events with an internal payload containing only source kind and stable ID. The canvas strictly parses that payload, maps the screen drop through current pan and zoom into logical episode coordinates, centers and clamps the same proportional element beneath the pointer, and dispatches the existing creation path once. Click-to-place remains the accessible fallback. Operating-system file drop and precise Layers-panel drop targets remain deferred.
+An Asset Library card uses native drag events with an internal payload containing only source kind and stable ID. The canvas strictly parses that payload, maps the screen drop through current pan and zoom into logical coordinates, and dispatches the existing creation path once. Click-to-place remains the accessible fallback. Operating-system PNG/JPEG/WebP drop performs one atomic import-and-place action, while plane-tab and active-Layers-list drops place a validated internal asset on the explicit destination plane with feedback.
 
-This same flow supports background photos: choose an ordinary Background plane—plane 2 or later—and place an imported image there above the full-scroll base. Background plane 1 is deliberately color-only. Single photos retain proportional resize; tile presentation repeats the unchanged source across freely resized coverage, using fixed automatic scaling with a maximum 160-logical-unit tile edge. It is not a crop/cover or density-control system.
+This same flow supports background photos: choose an ordinary Background plane—plane 2 or later—and place an imported image there above the full-scroll base. Background plane 1 is deliberately color-only. Stretch fills the selected bounds, Cover provides non-destructive focus/zoom, and Tile repeats the unchanged source with fixed automatic scaling capped at a 160-logical-unit tile edge.
 
 ### Composition-group, plane, and visibility flow
 
@@ -337,7 +352,22 @@ Hidden elements do not render and cannot capture canvas selection. They remain s
 1. A visible Add Text action creates one default `TextElement` in the active ordinary plane and selects it.
 2. Compact controls commit wording, color, size, weight, or alignment through pure commands; ordinary movement, proportional resize, opacity, blend, visibility, and deletion remain shared behavior.
 3. A creator may position that text over a balloon image, but the two elements remain independent and may be selected, moved, reordered, or deleted separately.
-4. Canvas, minimap, Layers, history, and persistence consume the same format-v5 text data.
+4. Canvas, minimap, Layers, history, and persistence consume the same format-v6 text data.
+
+### Implemented multi-selection, group, and story flow
+
+1. `selectedElementIds` owns the current flat selection while `selectedElementId` identifies its primary member for geometry/appearance controls.
+2. Shift selection toggles ordinary members. Selecting any member of an existing flat group selects that group; groups never contain other groups.
+3. Grouped move, nudge, duplicate, delete, plane move, and 128-unit story-beat movement dispatch one pure command and produce one history entry while preserving relative geometry.
+4. During a grouped pointer drag, only the primary member publishes live status/minimap bounds; follower members update at the atomic document commit on release.
+5. Populated-plane deletion requires either an explicit same-group destination or a separate destructive confirmation; Background plane 1, the final plane, and locked contents remain protected.
+
+### Implemented editable speech-balloon flow
+
+1. **Editable balloon** creates one `SpeechBalloonElement`, not a hidden collection of loose children.
+2. The element owns body fill/stroke/corners, text and typography limits, padding/line height, and one tail with enabled state, side, anchor, width, and normalized tip.
+3. A shared pure layout function fits text between the recorded minimum and maximum size whenever bounds or properties change.
+4. Canvas, minimap, Reader Preview, visual bounds/clamping, save/reopen, portable projects, history, and local output all consume the same balloon record.
 
 ### Implemented reader-preview and reset flow
 
@@ -347,11 +377,13 @@ Hidden elements do not render and cannot capture canvas selection. They remain s
 
 ## Application-edge seams
 
-The local forms of `ProjectRepository` and `AssetRepository` are implemented. The remaining contracts are future boundaries, not Build Week infrastructure to scaffold:
+The browser-local project, recovery, asset, portable-file, and renderer adapters are implemented. Network/authentication contracts remain future boundaries, not Build Week infrastructure to scaffold:
 
-- `ProjectRepository`: currently saves and loads one local format-v5 episode and explicitly normalizes supported v3/v4 saves; a future adapter may support a real project library or account-backed data without changing core commands.
-- `AssetRepository`: currently imports, identifies, persists, and resolves local PNG/JPEG/WebP sources and creator categories without destructive edits; a future adapter may add portable or account-backed storage.
-- `ExportService`: render masters and platform slices without editor chrome.
+- `ProjectRepository`/`ProjectLibraryRepository`: validate supported episode versions and own explicit current/multiple local saves without changing core commands.
+- `RecoveryRepository`: owns debounced unsaved snapshots and Restore/Discard, never identity or cloud sync.
+- `AssetRepository`: imports, identifies, persists, resolves, safely replaces, and reference-checks local PNG/JPEG/WebP sources and creator categories.
+- Portable project codec/merge: transfers a validated episode plus unchanged asset blobs with collision-safe ID remapping.
+- Local renderer: renders masters and profile slices without editor chrome, then preflights encoded local files. It does not upload.
 - `AuthSessionProvider`: expose a neutral ScrollSplice user/workspace session at the application edge.
 - `ModelConnectionProvider`: expose an authorized, revocable OpenAI model connection without leaking provider credentials into UI or core modules.
 - `ProjectContextReader`: produce bounded, serializable project and episode context for future model tools.
@@ -433,9 +465,9 @@ The intended end state may assemble a complete first-pass episode autonomously, 
 
 The only permitted Build Week proof is one synthetic generate-and-place loop after the complete human MVP and submission path pass. It may expose a minimal read-only snapshot and use one existing placement command. It must not require private art, broad filesystem access, an external connector, full agent autonomy, or judge credentials. If secure model authorization cannot be completed without weakening the static app or schedule, defer the proof without affecting MVP completion.
 
-## Future export boundary
+## Implemented provisional export boundary
 
-Production export is deferred, but its first-principles contract is clear:
+Upload-verified production export remains gated, but the implemented provisional local renderer follows this first-principles contract:
 
 1. Render a tall master from the episode document.
 2. Load a versioned, data-driven `ExportProfile` describing platform limits.
@@ -444,9 +476,9 @@ Production export is deferred, but its first-principles contract is clear:
 5. Preflight format, dimensions, per-file bytes, total bytes, image count, and sequence after encoding or any adjustment.
 6. Report violations without overwriting source assets.
 
-WEBTOON limits can change. The exporter must not scatter fixed limits through the editor or claim compatibility until the current profile has been verified through the manual discovery process in `WEBTOON_REQUIREMENTS.md`. Matching a verified profile reduces avoidable platform transformations but cannot guarantee that WEBTOON will never recompress, resize, reformat, or otherwise optimize an upload.
+WEBTOON limits can change. The exporter must not scatter fixed limits through the editor. Before the manual discovery process in `WEBTOON_REQUIREMENTS.md` is complete, files created from the current `form-observed` profile must be labeled provisional and must not claim WEBTOON compatibility. Matching a later verified profile reduces avoidable platform transformations but cannot guarantee that WEBTOON will never recompress, resize, reformat, or otherwise optimize an upload.
 
-Planning guides and deterministic file export are separate bounded checkpoints. The guide checkpoint may use a visibly `form-observed` profile without writing files. Self-slicing waits for the harmless unpublished upload verification, then uses `ExportService` at the application edge; it never adds slice records or platform state to the episode document.
+Planning guides and deterministic file export remain separate concerns even though both are implemented. Both use the visibly `form-observed` profile, but only the exporter writes clearly provisional local files. Upload-verified compatibility still waits for the harmless unpublished upload verification. Neither path adds slice records or platform state to the episode document.
 
 ## Public access and provenance
 
@@ -457,6 +489,8 @@ The production build must be a static artifact suitable for GitHub Pages. Deploy
 The public demo uses only original synthetic content or explicitly approved assets. Root & Table production artwork remains local and ignored.
 
 ## Validation
+
+Local feature commit `a26927f` passes 377 Vitest cases across 28 files, strict TypeScript, ESLint, the production build, and all 13 Playwright Chromium stories. The production build contains 137 modules; CSS is 40.26 kB and JavaScript is 769.96 kB minified / 222.48 kB gzip, with Vite's non-blocking over-500 kB advisory. New focused coverage includes v3/v4/v5-to-v6 defaults, transforms and visual bounds, image crop/masks/frame parity, flat groups and populated-plane commands, fitted speech-balloon geometry and round trips, reference-safe source deletion, multiple/recovery/portable project behavior, provisional render/preflight behavior, and ExportDialog focus restoration/Tab containment.
 
 - Vitest: coordinate conversion, viewport clamping, off-screen centering, `moveElement`, center-snap thresholds at zoom, proportional ordinary-element resize, independent Background-region resize, transient bounds preview/reset, serializable model invariants, pinned Background plane 1, ordering/visibility, title/plane/element deletion, episode-height safety, profile candidates, zoom, minimap geometry, drop-coordinate conversion, v3/v4-to-v5 normalization, opacity bounds/history coalescing, fill and presentation validation, and blend-mode command coverage.
 - Vitest for the published appearance slice: format-v5 save validation, supported v3/v4 opening, invalid image-reference rejection, atomic concurrent-tab asset-library updates, category/import merge behavior, extreme-ratio placement refusal, blank-document invariants, bounded history, lifecycle clearing, dirty/saved revision behavior, and canvas/minimap appearance agreement.
@@ -477,13 +511,13 @@ The historical fixed-width corrective checkpoint passed 120 unit tests. Its supe
 - Selection and viewport each have one application-state owner.
 - Document history and dirty/saved state each have one application-state owner; neither enters the episode document.
 - Core model, coordinates, and commands import no React, Konva, Zustand, persistence, export, platform, or authentication code.
-- Canvas, minimap, layers, the implemented Reader Preview, and future export agree on geometry and ordering.
+- Canvas, minimap, Layers, Reader Preview, and the local renderer agree on geometry and ordering.
 - Fixed composition-group rank, ordered layer planes, and local element stacking produce one deterministic stack; active-group or active-plane filtering never changes rendered visibility.
 - Group, plane, and element visibility remain separate state, and hidden elements remain addressable from Layers.
 - The live canvas is viewport-sized, not episode-sized.
 - Source assets are never mutated by placed-element edits.
 - Platform rules, account identity, provider tokens, and upload state never enter the episode document or editor commands.
-- Local episode saving validates format v5, explicitly normalizes supported v3/v4 saves, and persists only stable asset IDs rather than transient editor state or imported bytes. Imported source `Blob`s remain in the separate IndexedDB Asset Library throughout.
+- Local episode saving validates format v6, explicitly normalizes supported v3/v4/v5 saves, and persists only stable asset IDs rather than transient editor state or imported bytes. Imported source `Blob`s remain in IndexedDB except when deliberately copied into a portable project file.
 - The complete human editor works when model services, OAuth, skills, and connectors are absent.
 - Model context is explicit, bounded, serializable, and approved before private material leaves the app.
 - Model write tools call the same tested commands available to humans and cannot mutate UI framework state directly.

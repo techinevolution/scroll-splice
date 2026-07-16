@@ -122,9 +122,9 @@ Record the date, browser, account context, observed UI text, screenshots that co
 
 Do not publish the test episode. Delete or retain the unpublished draft according to Katherine's direction after its evidence has been generalized into this document.
 
-## Future `ExportProfile` contract
+## Implemented provisional `ExportProfile` contract
 
-WEBTOON must be represented as versioned data at the export boundary, not as constants embedded in the episode model. A future profile should be able to express:
+WEBTOON is represented as versioned data at the export boundary, not as constants embedded in the episode model. The current provisional profile expresses:
 
 - profile ID, human-readable name, source links, and verification date
 - accepted formats and any verified extension/filename rules
@@ -139,31 +139,30 @@ WEBTOON must be represented as versioned data at the export boundary, not as con
 
 The first profile can use the ID `webtoon-canvas-2026-07-13-observed`, but its verification state must remain `form-observed` rather than `upload-verified` until the remaining tests pass.
 
-Unknown values must remain visibly unknown. The exporter should refuse a “verified WEBTOON package” claim when the profile is stale or incomplete; it may still offer a clearly labeled provisional export.
+Unknown values remain visibly unknown. The implemented exporter refuses a “verified WEBTOON package” claim while the profile is incomplete; it offers only a clearly labeled provisional export for manual upload.
 
 The observed profile may drive provisional planning guides before it is upload-verified, but the editor must label that profile state and must not present those guides as proof that WEBTOON will accept or preserve the resulting files unchanged.
 
-## Future export behavior
+## Implemented provisional export behavior
 
-The simplest dependable pipeline is:
+The local browser build implements this provisional pipeline:
 
 1. Render a non-destructive tall master from the logical episode.
-2. Plan slices within the selected verified profile. Start from its maximum-height candidate boundaries, then prefer an earlier visual gutter when that avoids splitting important art or text; never move a boundary beyond the profile maximum.
-3. Present the proposed cut plan for creator review and adjustment before writing files. Revalidate every adjusted span against the profile.
+2. Start from maximum-height candidate boundaries in the selected provisional profile.
+3. Present the cut plan for creator review and manual adjustment around important art or text. Revalidate every adjusted span against the profile.
 4. Encode and measure each file; adjust only through documented quality rules.
 5. Give slices a conservative ScrollSplice zero-padded alphanumeric basename, such as `episode01001.jpg`; treat this as an ordering convention until live testing confirms episode-image filename rules.
 6. Preflight dimensions, format, per-file bytes, total bytes, count, and sequence.
-7. Write a manifest containing profile version and verification date.
-8. Ask the creator to upload manually, inspect PC/mobile preview, set the content rating, and publish or schedule on WEBTOON.
+7. Ask the creator to download the files and upload manually, inspect PC/mobile preview, set the content rating, and publish or schedule on WEBTOON.
 
 Export must never overwrite source art. A passing ScrollSplice preflight means the files match the recorded profile; it does not guarantee WEBTOON policy approval, guarantee that WEBTOON will avoid recompression or other optimization, or replace the creator's PC/mobile preview and content review.
 
-### Later bounded checkpoint: slice planning and export
+### What remains before an upload-verified claim
 
-Candidate guides may be added as a small editor-planning checkpoint without implementing file output. Deterministic self-slicing remains a separate later checkpoint after the authenticated unpublished upload tests establish boundary, byte, ordering, transparency, and transformation behavior. That export checkpoint must keep every produced file within the selected profile, expose the proposed cuts before writing, preserve creator adjustments that remain valid, and rerun preflight after any quality or boundary change.
+Candidate guides and deterministic local slicing are implemented, including creator-adjustable ordered cuts, PNG/JPEG encoding, tall-master rendering, deterministic filenames, missing-source reporting, and preflight of dimensions, per-file bytes, total bytes, count, and accepted output format. Guides remain editor-only and do not enter output.
 
-Validation for the guide checkpoint should cover profile-to-logical boundary calculation, guides at 1280-unit multiples for the observed 800-wide mapping, toggle behavior, zoom/pan alignment, and proof that the episode document, minimap, reset fixture, rendered master, and export files contain no guide marks or records. Export-checkpoint validation later adds deterministic filenames and ordering, maximum dimensions and bytes, total count and bytes, stale/unverified-profile labeling, and comparison against the manual upload observations.
+The authenticated unpublished upload tests above are still required to establish actual boundary, byte, ordering, transparency, filename, preview, and transformation behavior. Until those observations are recorded, ScrollSplice output must be called **provisional, not upload-verified, not guaranteed WEBTOON-ready, and manual-upload only** even when local preflight passes.
 
 ## Build Week boundary
 
-Build Week can demonstrate the episode model and editor interaction without production export. The discovery file itself is enough for the one-week scope. Do not spend Build Week implementing slicing, thumbnails, WEBTOON metadata, login, or upload unless Katherine explicitly changes the approved milestone after the core submission is already safe.
+Build Week can demonstrate the episode model and editor interaction without production export. The optional local renderer does not enlarge the required contest milestone and does not implement thumbnails, WEBTOON metadata, login, upload, preview inspection, scheduling, or publishing.

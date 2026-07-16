@@ -32,7 +32,7 @@ The July 21 submission is a small but complete working editor experience, not th
 - a reset action that restores the known demonstration state
 - reliable public judge access and a clear demonstration
 
-Import, save/reopen, undo, resize, layer or panel reordering, production export, OpenAI model access, autonomous generation, OAuth, and cloud services are outside the required milestone. ScrollSplice may include passing optional creator-workflow additions without making them contest requirements; the current local build has history/save/menu and a persistent Asset Library. A narrow autonomous-generation proof is stretch work only after the complete human-operated judge experience and submission path are stable.
+Import, save/reopen, undo, resize, layer or panel reordering, production export, OpenAI model access, autonomous generation, OAuth, and cloud services are outside the required milestone. ScrollSplice may include passing optional creator-workflow additions without making them contest requirements; the published format-v5 build has history/save/menu, a persistent Asset Library, direct placement, bounded appearance, creator-controlled plane/element ordering, independent text, and Reader Preview. Katherine has authorized the remaining locally feasible human-editor work as one completion goal without enlarging the contest minimum. A narrow autonomous-generation proof remains stretch work only after the complete human-operated judge experience and submission path are stable.
 
 ### Creator-ready MVP
 
@@ -79,6 +79,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 4. Use the numbered tab strip under the Layers heading to choose one layer plane within that group; each plane may hold any creator-chosen mix of elements.
 5. Toggle a whole composition group, one numbered plane, or one element without disturbing the other visibility settings.
 6. Drag ordinary numbered tabs to reorder their planes within the active group. Background plane 1 remains pinned at the bottom because it is the episode-wide base color.
+7. Use the visible Move to Plane action to relocate one selected element without recreating it; a future context-menu shortcut may duplicate the same command.
 
 ### Refine and export
 
@@ -119,11 +120,11 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - A pinned first Background plane that supplies the editable full-scroll base RGB color instead of relying on a hardcoded white canvas. Selecting it exposes the same **Base color** through a compact Layers swatch and a direct canvas-side control, so the base stays discoverable without being buried in a menu. Hiding it reveals an editor-only transparency checkerboard rather than changing episode data.
 - Ordinary Background planes that can hold color regions, gradients, photos, textures, splatters, or edge decoration. A solid color region starts full width for convenience, but its `x`, `y`, `width`, and `height` are thereafter freely editable. It moves on both axes, resizes width and height independently through eight handles, and uses the same center magnet and off/Alt/Option bypass as other movable elements. Adding one asks where on the scroll it should begin and defaults sensibly to the current viewport.
 - Quick panel/frame creation with rectangular and angled or polygonal masks so an image can be repositioned inside an irregular panel without destructive cropping.
-- Allow intentional bleed and panel-breakout effects beyond an irregular frame or episode edge while clipping only at the final output boundary.
+- Allow intentional episode-edge bleed while clipping final output to the 800-unit episode boundary. Masked images remain clipped to their selected frame. First-class art breaking out of a panel mask is a later capability; the current human-editor workaround is a separate duplicated unmasked overlay above the framed image.
 - Preserve alpha transparency in imported and placed images rather than flattening them onto white.
 - Give every selected element an independent opacity value from 0–100%, editable through a contextual bottom control with a precise percentage input.
 - Let the creator extend the episode downward as the story grows. When the creator reaches the current end, a centered editor-only **Add scroll space** control adds 1,280 logical units per click for speed. A distinct bottom-edge drag handle fine-tunes the height upward or downward; shrinking stops at the lowest bound of every visible or hidden element and never moves, crops, or deletes content. Both controls are editor chrome rather than episode/export content, and the pinned base and minimap follow the resulting document height.
-- Later story-section or panel-sequence reordering for moving whole beats vertically without confusing those sections with the three composition groups.
+- Let creators multi-select or flat-group elements and move a complete story beat vertically without confusing that selection with the three composition groups.
 - Drop targets and insertion feedback while dragging.
 - Canvas scrolling that remains synchronized with the minimap.
 
@@ -149,10 +150,10 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Give each element row a small trash action beside its eye. It removes that placed episode instance only and never deletes the reusable source asset.
 - In a truly empty ordinary plane, show a centered empty-state **Delete plane** action with a small trash icon and text. Hidden elements still count as contents, Background plane 1 is never deletable, and every composition group retains at least one plane. After deletion, activate the nearest remaining plane and renumber the visible tabs without changing their stable identities.
 - Keep a paperclip **Add asset** affordance at the bottom of the active ordinary plane's list whether that plane is empty or populated. Pair it with the same-size empty-plane delete action when applicable. It opens the current Asset Library, where original built-ins or locally imported images can be added to that plane. The numbered-tab `+` creates another plane; it never attaches an asset or adds story height.
-- Later let creators move an element to another plane from its row's context menu and an equivalent visible keyboard-accessible action; right-click is a shortcut, not the only route.
+- The visible keyboard-accessible **Move to Plane** action is implemented. A later row context menu may duplicate it as a shortcut, but right-click is never the only route.
 - Basic names and type icons so similar elements can be distinguished.
 - Keep the list independently scrollable. On narrow displays, allow the right inspector to collapse or open as an overlay rather than squeezing the story canvas past usability.
-- Lock controls may follow after selection, grouping, and visibility are dependable.
+- Lock controls prevent accidental movement, resize, deletion, stacking, or plane transfer until the creator explicitly unlocks the element.
 
 ### 5. Add rail and Asset Library
 
@@ -160,17 +161,17 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Use **Uploads** for all creator-imported files; use separate fixed categories for built-in speech balloons, decorations, and splatters, plus creator-named categories inside **My Library**.
 - Show asset thumbnails and names inside the selected category.
 - Collapse the drawer to preserve canvas space, and prefer overlay behavior when display width is constrained.
-- The implemented safe fallback clicks an asset to create an independently editable element centered in the current viewport on the active numbered plane. Drag-to-place remains the later direct-manipulation goal.
-- Allow a later precise drop onto the Layers panel to choose the group, plane, or stacking destination directly.
+- Clicking an asset creates an independently editable element centered in the current viewport on the active numbered plane, and native internal drag-to-canvas placement creates the same element beneath the pointer. The click path remains the accessible fallback.
+- Allow a precise drop onto a numbered plane tab or the active Layers list to choose the destination plane directly.
 - Reusing an asset must not duplicate the original source file unnecessarily.
 - Include a free starter set of resizable comic speech balloons and let creators add their own reusable balloon or decorative assets. The implemented starter catalog has three original neutral balloons, three decorations, and three splatters.
-- Common speech-balloon forms were reviewed against the [Clip Studio balloon guide](https://tips.clip-studio.com/en-us/articles/863) and [Blambot's professional lettering conventions](https://blambot.com/en-gb/pages/comic-book-grammar-tradition) before the starter set was named. Treat those conventions as guidance rather than universal rules; editable text and tails remain later work.
+- Common speech-balloon forms were reviewed against the [Clip Studio balloon guide](https://tips.clip-studio.com/en-us/articles/863) and [Blambot's professional lettering conventions](https://blambot.com/en-gb/pages/comic-book-grammar-tradition) before the starter set was named. Treat those conventions as guidance rather than universal rules. Keep independent text available, and also provide an atomic fitted balloon/body/text/tail element; creator-saved templates may follow separately.
 
 ### 6. Drag-and-drop interaction system
 
 - One consistent interaction language across the app.
 - Drag assets from the Asset Library onto the canvas, where they become elements in the active numbered plane.
-- Allow a precise Layers-panel drop later without making it the only way to add an asset.
+- Allow precise numbered-plane and Layers-list drops without making them the only way to add an asset.
 - Drag canvas elements to reposition them.
 - Drag numbered plane tabs to change broad stacking within their composition group and use explicit element-order controls for local overlaps.
 - Provide clear previews, valid drop zones, and cancellation behavior.
@@ -178,16 +179,19 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 ### 7. Local project state
 
-- One local project containing assets and one or more episode documents.
+- Multiple explicit browser-local projects, each with an episode document and stable references into the reusable local Asset Library.
 - Episode data records canvas dimensions, ordered layer planes, element membership, transforms, visibility, opacity, and ordering.
 - Episode names are editable and remain associated with the correct saved document.
-- Save and reopen without losing layout.
+- Save, Save As, reopen, and switch local projects without losing layout.
 - Keep imported source assets separate from placed element instances.
+- Keep debounced crash recovery visibly separate from explicit Save.
+- Export/import a portable `.scrollsplice` project containing the episode and unchanged reusable source blobs, with collision-safe ID remapping on import.
 
 ### 8. Preview and export
 
 - Reader preview without editor chrome.
 - Export a tall PNG or JPG master and zero-padded ordered platform slices.
+- Before upload verification, a local renderer may use the current observed profile only when the resulting files and preflight are visibly labeled provisional and not guaranteed WEBTOON-ready.
 - After upload verification, use the selected WEBTOON profile to self-slice locally at no more than its verified dimensions, encode only an accepted format, and preflight every file and the complete package before writing. The currently observed UI labels are 800 × 1280 px, 2 MB per image, 50 MB total, 100 images, and JPG/JPEG/PNG; keep them visibly provisional until the upload test resolves exact enforcement and byte boundaries.
 - Passing local preflight does not guarantee WEBTOON will preserve the encoded bytes, dimensions, quality, or format; the creator must still upload manually and inspect the platform previews for optimization or recompression.
 - Report export failures clearly and do not overwrite source assets.
@@ -225,7 +229,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 - The canvas remains the visual center of gravity.
 - Minimap navigation should feel immediate, with no confusing jump between the viewport box and main canvas.
 - Selection must stay synchronized across canvas, composition group, numbered plane, and element list, including Layers-panel selection of hidden elements.
-- Dragging or resizing must always show what will happen before the user releases: the status bar displays live logical `x/y/w/h`, and the minimap previews the same transient bounds without mutating the durable document until gesture end.
+- Dragging or resizing one element must show what will happen before release: the status bar displays live logical `x/y/w/h`, and the minimap previews the same transient bounds without mutating the durable document until gesture end. For a grouped pointer move in the current build, that live preview covers the primary member; follower members update together when release atomically commits the group move.
 - The Add rail should remain easy to reach, while its Asset Library drawer must not permanently shrink the working area.
 - The composition-group selector must stay centered above the story canvas at supported desktop sizes; the full-height right inspector and its element list scroll independently and can collapse into an overlay on narrower displays.
 - Group selection filters organization only. Visibility changes happen through explicit eye controls, not merely by switching groups.

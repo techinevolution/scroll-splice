@@ -154,3 +154,37 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - SHA-256: `05da8ce3c827e474506927f4d556b70ac277ef7b78dbfba8875b370903f6185c`.
 - The implementation, documentation, and screenshot were published in feature commit `cb1f28443f7b1045d139879a2bba7b03edf25856`; local and remote `main` matched immediately after the push.
 - WEBTOON export, OpenAI/OAuth, Finder drop, autosave/recovery, source deletion, masks, crop, rotation, and compound balloon/tail editing remain deferred. This checkpoint does not imply deployment or Devpost submission.
+
+## July 16 — Complete local human editor
+
+![ScrollSplice complete local human editor](2026-07-16-complete-local-editor.png)
+
+- Captured after the broad human-editor implementation and before it was recorded in local feature commit `a26927f`.
+- Shows the public-safe **Signal in the Fog** fixture plus ScrollSplice's code-defined editable balloon, current File/Edit/View/Window/Help surface, responsive inspector, minimap, numbered planes, Layers actions, and selected-element controls.
+- The same working build includes Finder/canvas/plane/Layers image drop, complete local category/source management, multiple/recovery/portable projects, bounded format-v6 transforms and flat groups, image crop/masks/frame/bleed, atomic editable balloon text/tail fitting, and provisional local rendering. Those behaviors require tests and the feature sheet; this still image alone does not prove them.
+- Contains no Root & Table production artwork, user upload, private creative material, or third-party comic reference.
+- File: 1440 × 900 PNG, 161,742 bytes.
+- SHA-256: `47a4aa54e64e836c792e25ef84e84e5a19ca51e8786b9c1bd0c3c7a9633c5f82`.
+- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` has not been pushed.
+
+## July 16 — Complete Reader Preview
+
+![ScrollSplice complete Reader Preview](2026-07-16-complete-reader-preview.png)
+
+- Captured from the same public-safe build now recorded in local feature commit `a26927f`.
+- Shows the chrome-free full-scroll Reader Preview used to compare durable geometry, visibility, appearance, masks, text, and the atomic editable balloon against the editor and renderer.
+- Reader Preview is local product evidence, not a WEBTOON preview or public deployment.
+- File: 1440 × 900 PNG, 45,519 bytes.
+- SHA-256: `6a4ab652e790a2e4fd31c364a3dc436e26bf549859218d75c01b1bd3f11ffdb4`.
+- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` has not been pushed.
+
+## July 16 — Provisional local export
+
+![ScrollSplice provisional local export](2026-07-16-provisional-export.png)
+
+- Captured from the same public-safe build now recorded in local feature commit `a26927f`, with only the synthetic fixture and code-defined editable balloon.
+- Shows the local episode-image dialog, creator-reviewed cut controls, PNG/JPEG settings, render actions, and the prominent warning that the 800 × 1,280 profile comes from the observed form and has not passed the unpublished upload verification. The later rendered-file list and preflight state are covered by browser tests rather than this pre-render still.
+- This image proves that the local UI exists; it does **not** prove WEBTOON acceptance, byte preservation, preview accuracy, or an upload-verified/guaranteed-WEBTOON-ready package. Upload remains manual.
+- File: 1440 × 900 PNG, 197,505 bytes.
+- SHA-256: `c21b04b1298b202bae65040ae0e8701e5c4f839e190bc953dcf1afb4e2e08915`.
+- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` has not been pushed.
