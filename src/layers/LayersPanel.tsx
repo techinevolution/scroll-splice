@@ -252,6 +252,9 @@ export function LayersPanel() {
   )
   const moveElement = useEditorStore((state) => state.moveElement)
   const resizeElement = useEditorStore((state) => state.resizeElement)
+  const setElementOverflow = useEditorStore(
+    (state) => state.setElementOverflow,
+  )
   const openAssetPanel = useEditorStore((state) => state.openAssetPanel)
   const createBackgroundColorRegion = useEditorStore(
     (state) => state.createBackgroundColorRegion,
@@ -1123,6 +1126,27 @@ export function LayersPanel() {
               onCommit={(value) => updateSelectedBounds('height', value)}
             />
           </div>
+
+          <label className="selected-element-placement">
+            <span>Canvas placement</span>
+            <select
+              aria-label="Selected element canvas placement"
+              value={selectedElement.overflow}
+              disabled={selectedElement.locked || selectedElementIds.length > 1}
+              onChange={(event) =>
+                setElementOverflow(
+                  selectedElement.id,
+                  event.currentTarget.value === 'constrained'
+                    ? 'constrained'
+                    : 'bleed',
+                )
+              }
+            >
+              <option value="bleed">Allow partial outside</option>
+              <option value="constrained">Keep fully inside</option>
+            </select>
+            <small>Outside portions are cropped in preview and export.</small>
+          </label>
 
           <div className="selected-element-align" aria-label="Align selected element">
             <button type="button" disabled={selectedElement.locked || selectedElementIds.length > 1} onClick={() => alignSelectedElement({ horizontal: 'left' })}>Left</button>

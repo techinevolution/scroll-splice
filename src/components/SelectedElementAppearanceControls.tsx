@@ -449,9 +449,10 @@ export function SelectedElementAppearanceControls() {
       </span>
 
       <label className="appearance-control">
-        <span>Edges</span>
+        <span>Placement</span>
         <select
           aria-label="Selected element episode edge behavior"
+          title="Parts outside the story canvas are cropped in Reader Preview and export"
           value={selectedElement.overflow}
           disabled={selectedElement.locked}
           onChange={(event) =>
@@ -463,8 +464,8 @@ export function SelectedElementAppearanceControls() {
             )
           }
         >
-          <option value="constrained">Keep inside</option>
-          <option value="bleed">Allow bleed</option>
+          <option value="bleed">Allow outside canvas</option>
+          <option value="constrained">Keep fully inside</option>
         </select>
       </label>
 

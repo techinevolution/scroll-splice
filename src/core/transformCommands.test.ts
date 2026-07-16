@@ -54,12 +54,12 @@ function onlyImage(document: EpisodeDocument): ImageElement {
 }
 
 describe('v6 element transform commands', () => {
-  it('creates identity-constrained elements and normalizes rotation', () => {
+  it('creates identity elements that can extend outside and normalizes rotation', () => {
     const initial = createShapeEpisode()
     const created = onlyElement(initial)
 
     expect(created.transform).toEqual(IDENTITY_ELEMENT_TRANSFORM)
-    expect(created.overflow).toBe('constrained')
+    expect(created.overflow).toBe('bleed')
 
     const transformed = setElementTransform(initial, created.id, {
       rotationDegrees: 270,
@@ -73,11 +73,11 @@ describe('v6 element transform commands', () => {
       flipX: true,
       flipY: false,
     })
-    expect(element.bounds.y).toBe(30)
+    expect(element.bounds.y).toBe(0)
   })
 
   it('rejects impossible constrained rotations and respects element lock', () => {
-    const initial = createSyntheticShapeElement(
+    const bleeding = createSyntheticShapeElement(
       createBlankEpisode('shape-too-wide'),
       {
         layerPlaneId: BLANK_EPISODE_LAYER_PLANE_IDS.content,
@@ -85,6 +85,11 @@ describe('v6 element transform commands', () => {
         fill: '#000000',
         bounds: { x: 0, y: 0, width: 800, height: 800 },
       },
+    )
+    const initial = setElementOverflow(
+      bleeding,
+      onlyElement(bleeding).id,
+      'constrained',
     )
     const elementId = onlyElement(initial).id
 

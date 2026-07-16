@@ -67,6 +67,8 @@ export interface ElementTransform {
 
 export type ElementOverflow = 'constrained' | 'bleed'
 
+export const DEFAULT_ELEMENT_OVERFLOW = 'bleed' as const satisfies ElementOverflow
+
 export const IDENTITY_ELEMENT_TRANSFORM = {
   rotationDegrees: 0,
   flipX: false,

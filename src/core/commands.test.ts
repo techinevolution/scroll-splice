@@ -35,6 +35,7 @@ import {
   setElementLocked,
   setElementName,
   setElementOpacity,
+  setElementOverflow,
   setElementVisibility,
   setEpisodeName,
   setImagePresentation,
@@ -375,7 +376,12 @@ describe('moveElement', () => {
   })
 
   it('clamps the element inside the episode boundary', () => {
-    const nextDocument = moveElement(buildWeekEpisode, movableElement.id, {
+    const constrained = setElementOverflow(
+      buildWeekEpisode,
+      movableElement.id,
+      'constrained',
+    )
+    const nextDocument = moveElement(constrained, movableElement.id, {
       x: 10_000,
       y: 10_000,
     })
@@ -408,7 +414,12 @@ describe('nudgeElement and alignElement', () => {
       throw new Error('Missing nudge fixture element')
     }
 
-    const nudged = nudgeElement(buildWeekEpisode, elementId, { x: 7, y: -9 })
+    const constrained = setElementOverflow(
+      buildWeekEpisode,
+      elementId,
+      'constrained',
+    )
+    const nudged = nudgeElement(constrained, elementId, { x: 7, y: -9 })
     const nudgedElement = nudged.elements.find(({ id }) => id === elementId)
     const clamped = nudgeElement(nudged, elementId, {
       x: -99_000,
@@ -520,7 +531,12 @@ describe('duplicateElement', () => {
   })
 
   it('clamps the copy and preserves a source lock without mutating the source', () => {
-    const locked = setElementLocked(buildWeekEpisode, elementId, true)
+    const constrained = setElementOverflow(
+      buildWeekEpisode,
+      elementId,
+      'constrained',
+    )
+    const locked = setElementLocked(constrained, elementId, true)
     const source = locked.elements.find(({ id }) => id === elementId)
 
     if (!source) {
@@ -634,6 +650,26 @@ describe('resizeElement', () => {
     )
   })
 
+  it('keeps a proportional element partly outside while resizing from an edge', () => {
+    const currentRight = shapeElement.bounds.x + shapeElement.bounds.width
+    const requestedX = -80
+    const scale = (currentRight - requestedX) / shapeElement.bounds.width
+    const resized = resizeElement(buildWeekEpisode, shapeElement.id, {
+      x: requestedX,
+      y: shapeElement.bounds.y,
+      width: shapeElement.bounds.width * scale,
+      height: shapeElement.bounds.height * scale,
+    })
+    const resizedBounds = resized.elements.find(
+      ({ id }) => id === shapeElement.id,
+    )?.bounds
+
+    expect(resizedBounds?.x).toBe(requestedX)
+    expect((resizedBounds?.x ?? 0) + (resizedBounds?.width ?? 0)).toBeCloseTo(
+      currentRight,
+    )
+  })
+
   it('keeps the opposite corner fixed when minimum size is applied', () => {
     const currentRight = shapeElement.bounds.x + shapeElement.bounds.width
     const currentBottom = shapeElement.bounds.y + shapeElement.bounds.height
@@ -693,8 +729,13 @@ describe('resizeElement', () => {
   })
 
   it('clamps a resized element fully inside the episode', () => {
-    const nextDocument = resizeElement(
+    const constrained = setElementOverflow(
       buildWeekEpisode,
+      shapeElement.id,
+      'constrained',
+    )
+    const nextDocument = resizeElement(
+      constrained,
       shapeElement.id,
       {
         x: shapeElement.bounds.x,
@@ -816,8 +857,8 @@ describe('resizeElement', () => {
     expect(clampedFromBottomRight.elements.at(-1)?.bounds).toEqual({
       x: 0,
       y: 900,
-      width: buildWeekEpisode.logicalWidth,
-      height: buildWeekEpisode.logicalHeight - 900,
+      width: 10_000,
+      height: 10_000,
     })
   })
 
@@ -1209,7 +1250,7 @@ describe('createSyntheticShapeElement', () => {
       opacity: 1,
       blendMode: 'normal',
       transform: IDENTITY_ELEMENT_TRANSFORM,
-      overflow: 'constrained',
+      overflow: 'bleed',
       visible: true,
       locked: false,
       zIndex: Math.max(...planeZIndexes) + 1,
@@ -1391,7 +1432,7 @@ describe('createImageElement', () => {
       opacity: 1,
       blendMode: 'normal',
       transform: IDENTITY_ELEMENT_TRANSFORM,
-      overflow: 'constrained',
+      overflow: 'bleed',
       assetReference: {
         kind: 'built-in',
         assetId: 'speech-bubble-rounded',
@@ -1518,7 +1559,7 @@ describe('createBackgroundColorRegion', () => {
       opacity: 1,
       blendMode: 'normal',
       transform: IDENTITY_ELEMENT_TRANSFORM,
-      overflow: 'constrained',
+      overflow: 'bleed',
       visible: true,
       locked: false,
       zIndex: 0,
@@ -1537,7 +1578,7 @@ describe('createBackgroundColorRegion', () => {
       y: 1200,
     }).elements.at(-1)
 
-    expect(moved?.bounds.x).toBe(0)
+    expect(moved?.bounds.x).toBe(200)
     expect(moved?.bounds.y).toBe(1200)
 
     const narrowed = resizeElement(nextDocument, created.id, {

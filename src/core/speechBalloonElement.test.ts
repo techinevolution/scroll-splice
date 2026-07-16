@@ -32,6 +32,7 @@ describe('editable speech balloon commands', () => {
   it('creates one atomic element with an integrated tail and fitted text', () => {
     const element = onlyBalloon()
 
+    expect(element.overflow).toBe('bleed')
     expect(element.assetReference).toEqual({
       kind: 'synthetic',
       generatorId: 'scrollsplice-editable-speech-balloon-v1',
@@ -99,5 +100,24 @@ describe('editable speech balloon commands', () => {
     expect(getSpeechBalloonTextLayout(resizedBalloon).fontSize).toBeLessThan(
       getSpeechBalloonTextLayout(element).fontSize,
     )
+  })
+
+  it('resizes beyond the canvas edge without pulling the balloon back inside', () => {
+    const initial = createBalloonEpisode()
+    const element = onlyBalloon(initial)
+    const currentRight = element.bounds.x + element.bounds.width
+    const resized = resizeElement(initial, element.id, {
+      x: -120,
+      y: element.bounds.y,
+      width: currentRight + 120,
+      height: element.bounds.height,
+    })
+
+    expect(onlyBalloon(resized).bounds).toEqual({
+      x: -120,
+      y: element.bounds.y,
+      width: currentRight + 120,
+      height: element.bounds.height,
+    })
   })
 })

@@ -628,7 +628,7 @@ describe('parseEpisodeDocument', () => {
     ['out-of-bounds geometry', (episode: MutableRecord) => {
       const element = readRecordArray(episode, 'elements')[0]
       if (!element) throw new Error('Missing fixture element.')
-      readRecord(element.bounds).x = 799
+      readRecord(element.bounds).x = 800
     }],
     ['unknown shape type', (episode: MutableRecord) => {
       const element = readRecordArray(episode, 'elements')[0]

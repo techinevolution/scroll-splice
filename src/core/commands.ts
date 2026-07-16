@@ -10,6 +10,7 @@ import {
   normalizeElementTransform,
 } from './elementGeometry'
 import {
+  DEFAULT_ELEMENT_OVERFLOW,
   DEFAULT_IMAGE_FRAME,
   ELEMENT_BLEND_MODES,
   IDENTITY_ELEMENT_TRANSFORM,
@@ -506,6 +507,7 @@ export function resizeElement(
       requestedBounds.x,
       requestedBounds.width,
       document.logicalWidth,
+      element.overflow,
     )
     const vertical = resizeFreeformAxis(
       element.bounds.y,
@@ -513,6 +515,7 @@ export function resizeElement(
       requestedBounds.y,
       requestedBounds.height,
       document.logicalHeight,
+      element.overflow,
     )
     const requestedGeometry = {
       x: horizontal.start,
@@ -568,13 +571,22 @@ export function resizeElement(
       ? MIN_TEXT_FONT_SIZE / element.fontSize
       : 0,
   )
-  const maximumScale = Math.min(
-    (keepsLeftEdge ? document.logicalWidth - element.bounds.x : currentRight) /
-      element.bounds.width,
-    (keepsTopEdge
-      ? document.logicalHeight - element.bounds.y
-      : currentBottom) / element.bounds.height,
-  )
+  const maximumScale =
+    element.overflow === 'bleed'
+      ? element.type === 'text'
+        ? MAX_TEXT_FONT_SIZE / element.fontSize
+        : Number.POSITIVE_INFINITY
+      : Math.min(
+          (keepsLeftEdge
+            ? document.logicalWidth - element.bounds.x
+            : currentRight) / element.bounds.width,
+          (keepsTopEdge
+            ? document.logicalHeight - element.bounds.y
+            : currentBottom) / element.bounds.height,
+          element.type === 'text'
+            ? MAX_TEXT_FONT_SIZE / element.fontSize
+            : Number.POSITIVE_INFINITY,
+        )
 
   if (!Number.isFinite(requestedScale) || maximumScale <= 0) {
     return document
@@ -587,15 +599,19 @@ export function resizeElement(
   )
   const width = element.bounds.width * scale
   const height = element.bounds.height * scale
-  const position = clampElementPosition(
-    {
-      x: keepsLeftEdge ? element.bounds.x : currentRight - width,
-      y: keepsTopEdge ? element.bounds.y : currentBottom - height,
-    },
-    { width, height },
-    document.logicalWidth,
-    document.logicalHeight,
-  )
+  const requestedPosition = {
+    x: keepsLeftEdge ? element.bounds.x : currentRight - width,
+    y: keepsTopEdge ? element.bounds.y : currentBottom - height,
+  }
+  const position =
+    element.overflow === 'bleed'
+      ? requestedPosition
+      : clampElementPosition(
+          requestedPosition,
+          { width, height },
+          document.logicalWidth,
+          document.logicalHeight,
+        )
   const requestedGeometry = { ...position, width, height }
   const bounds = clampEpisodeElementGeometry(
     element,
@@ -634,15 +650,19 @@ function resizeFreeformAxis(
   requestedStart: number,
   requestedSize: number,
   containerSize: number,
+  overflow: ElementOverflow,
 ) {
   const currentEnd = currentStart + currentSize
   const requestedEnd = requestedStart + requestedSize
   const keepsStartEdge =
     Math.abs(requestedStart - currentStart) <=
     Math.abs(requestedEnd - currentEnd)
-  const maximumSize = keepsStartEdge
-    ? containerSize - currentStart
-    : currentEnd
+  const maximumSize =
+    overflow === 'bleed'
+      ? Number.POSITIVE_INFINITY
+      : keepsStartEdge
+        ? containerSize - currentStart
+        : currentEnd
   const size = clamp(
     requestedSize,
     Math.min(MIN_ELEMENT_SIZE, maximumSize),
@@ -1249,7 +1269,7 @@ export function createImageElement(
     opacity: 1,
     blendMode: 'normal',
     transform: IDENTITY_ELEMENT_TRANSFORM,
-    overflow: 'constrained',
+    overflow: DEFAULT_ELEMENT_OVERFLOW,
     assetReference: {
       kind: input.assetReference.kind,
       assetId,
@@ -1318,7 +1338,7 @@ export function createTextElement(
     opacity: 1,
     blendMode: 'normal',
     transform: IDENTITY_ELEMENT_TRANSFORM,
-    overflow: 'constrained',
+    overflow: DEFAULT_ELEMENT_OVERFLOW,
     assetReference: {
       kind: 'synthetic',
       generatorId: TEXT_ELEMENT_GENERATOR_ID,
@@ -1429,7 +1449,7 @@ export function createSpeechBalloonElement(
     opacity: 1,
     blendMode: 'normal',
     transform: IDENTITY_ELEMENT_TRANSFORM,
-    overflow: 'constrained',
+    overflow: DEFAULT_ELEMENT_OVERFLOW,
     assetReference: {
       kind: 'synthetic',
       generatorId: SPEECH_BALLOON_GENERATOR_ID,
@@ -1848,7 +1868,7 @@ function appendSyntheticShape(
     opacity: 1,
     blendMode: 'normal',
     transform: IDENTITY_ELEMENT_TRANSFORM,
-    overflow: 'constrained',
+    overflow: DEFAULT_ELEMENT_OVERFLOW,
     visible: true,
     locked: false,
     zIndex: highestZIndex + 1,

@@ -23,6 +23,7 @@ test('rotates, flips, crops, masks, and frames an image consistently', async ({
 
   const canvas = page.getByTestId('editor-canvas')
   const appearance = page.getByTestId('selected-appearance-controls')
+  const management = page.getByTestId('selected-layer-management')
   const rotation = appearance.getByLabel('Selected element rotation degrees')
 
   await rotation.fill('45')
@@ -30,9 +31,15 @@ test('rotates, flips, crops, masks, and frames an image consistently', async ({
   await appearance
     .getByRole('button', { name: 'Flip selected element horizontally' })
     .click()
-  await appearance
-    .getByLabel('Selected element episode edge behavior')
-    .selectOption('bleed')
+  await expect(
+    management.getByLabel('Selected element canvas placement'),
+  ).toHaveValue('bleed')
+  await management.getByLabel('Selected element X').fill('-80')
+  await management.getByLabel('Selected element X').press('Enter')
+  await expect(page.getByTestId('selection-status')).toHaveAttribute(
+    'data-x',
+    '-80',
+  )
   await appearance
     .getByLabel('Selected image presentation')
     .selectOption('cover')

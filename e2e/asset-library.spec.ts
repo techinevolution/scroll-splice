@@ -508,7 +508,7 @@ test('drags built-in and imported assets to canvas points without duplicate plac
 
   await page.getByRole('slider', { name: 'Canvas zoom' }).fill('200')
   await expect(canvas).toHaveAttribute('data-zoom-percent', '200')
-  await canvas.press('Shift+ArrowRight')
+  await canvas.press('Alt+Shift+ArrowRight')
   await expect(canvas).toHaveAttribute('data-viewport-x', '400')
 
   const zoomedCanvasBounds = await canvas.boundingBox()

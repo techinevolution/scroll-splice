@@ -1,4 +1,5 @@
 import {
+  DEFAULT_ELEMENT_OVERFLOW,
   EPISODE_FORMAT_VERSION,
   EPISODE_LOGICAL_WIDTH,
   IDENTITY_ELEMENT_TRANSFORM,
@@ -221,7 +222,7 @@ const syntheticReference = {
 
 const defaultElementGeometry = {
   transform: IDENTITY_ELEMENT_TRANSFORM,
-  overflow: 'constrained',
+  overflow: DEFAULT_ELEMENT_OVERFLOW,
 } as const
 
 function offsetBounds(bounds: ElementBounds, yOffset: number): ElementBounds {
