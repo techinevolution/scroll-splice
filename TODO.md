@@ -68,7 +68,8 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement completion-pass slice 1 without a format bump: optional plane names, grip and Move Left/Right reordering, Bring Forward/Send Backward, and Move to Plane.
 - [x] Implement completion-pass slice 2 without a format bump: create and edit independent text wording, color, size, weight, and alignment over existing balloon assets.
 - [x] Implement completion-pass slice 3: chrome-free same-document Reader Preview and unsaved confirmation for Reset Demo while preserving the explicit saved slot.
-- [x] Exercise the documented blank-episode-to-preview creator story, pass 270 unit tests across 13 files, typecheck, lint, production build, and all 7 Playwright stories, then visually inspect and index the public-safe July 16 editor screenshot and Reader Preview. Publication remains a separate verified git step.
+- [x] Exercise the documented blank-episode-to-preview creator story, pass 270 unit tests across 13 files, typecheck, lint, production build, and all 7 Playwright stories, then visually inspect and index the public-safe July 16 editor screenshot and Reader Preview.
+- [x] Publish creator-completion feature commit `cb1f28443f7b1045d139879a2bba7b03edf25856` to `main` and verify local/remote equality immediately after the push.
 - [ ] Later built-in artwork polish: replace or repair the visible white seam in the original Oval and Rounded balloon outlines; do not block current creator work on it.
 - [ ] Polish the minimap's visible aspect distortion without changing its shared logical geometry or blocking the current workflow.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.

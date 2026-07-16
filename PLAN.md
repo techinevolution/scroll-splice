@@ -388,7 +388,7 @@ Explicitly deferred from this goal: operating-system file drop, Layers-panel dro
 
 ## Implemented `/goal`: creator completion pass
 
-**Status:** Katherine authorized these three ordered, separately testable slices on July 15. They are implemented without a format bump and locally validated through 270 unit tests across 13 files, strict typecheck, ESLint, production build, all 7 Playwright Chromium stories, a public-safe 1440 × 900 screenshot, and visual inspection of both the editor and Reader Preview. This status does not claim publication; record a commit and remote equality only after the passing work is pushed and verified.
+**Status:** Katherine authorized these three ordered, separately testable slices on July 15. They are implemented without a format bump and validated through 270 unit tests across 13 files, strict typecheck, ESLint, production build, all 7 Playwright Chromium stories, a public-safe 1440 × 900 screenshot, and visual inspection of both the editor and Reader Preview. Feature commit `cb1f28443f7b1045d139879a2bba7b03edf25856` was published to `main` July 16, and local/remote equality was verified immediately after the push.
 
 ### End-to-end creator story
 
@@ -549,12 +549,12 @@ Treat these as bounded options rather than a mandatory queue, and begin only the
 8. Local history, one explicit save/reopen slot, blank New Episode, and minimal File/Edit menus. **Complete, validated, and human-tested.**
 9. Direct placement and foundational appearance: drag-to-canvas, format-v5 opacity, vertical two-stop gradient/fade, tiled texture presentation, and five restrained blend modes. **Complete, validated, and published in `7768daa`.**
 10. Deterministic WEBTOON slice planning and export after upload verification.
-11. Plane optional names/reordering plus explicit element stacking and Move to Plane. **Implemented and locally validated as creator completion pass slice 1; publication pending.**
+11. Plane optional names/reordering plus explicit element stacking and Move to Plane. **Implemented, validated, and published in `cb1f284`.**
 12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete, validated, and published July 15 in `fdd4ead`.**
 13. Asset-to-canvas drag. **Folded into current item 9; click-to-place remains the accessible fallback.**
 14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional gate below is satisfied.
-15. Basic independent text creation and editing over existing balloon assets. **Implemented and locally validated as creator completion pass slice 2; publication pending.**
-16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented and locally validated as creator completion pass slice 3; publication pending.**
+15. Basic independent text creation and editing over existing balloon assets. **Implemented, validated, and published in `cb1f284`.**
+16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented, validated, and published in `cb1f284`.**
 
 Stop immediately if optional product work threatens validation, the scheduled submission runway, or the minimum editor experience.
 
@@ -636,7 +636,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass is implemented and locally validated with the complete current regression suite, all seven Playwright stories, and indexed visual evidence; do not claim publication until the push is verified. Production export, deployment, advanced transforms, and other later slices remain separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass passes the complete current regression suite, all seven Playwright stories, and indexed visual evidence and was published in `cb1f28443f7b1045d139879a2bba7b03edf25856`. Production export, deployment, advanced transforms, and other later slices remain separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

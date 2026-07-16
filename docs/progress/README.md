@@ -152,4 +152,5 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Local validation passes 270 unit tests across 13 files, strict typecheck, ESLint, production build, and the complete 7-of-7 Playwright Chromium suite. Visual inspection also confirmed Reader Preview at a representative desktop size. The passing build retains Vite's non-blocking advisory for its 637.55 kB minified JavaScript chunk.
 - File: 1440 × 900 PNG, 143,201 bytes.
 - SHA-256: `05da8ce3c827e474506927f4d556b70ac277ef7b78dbfba8875b370903f6185c`.
+- The implementation, documentation, and screenshot were published in feature commit `cb1f28443f7b1045d139879a2bba7b03edf25856`; local and remote `main` matched immediately after the push.
 - WEBTOON export, OpenAI/OAuth, Finder drop, autosave/recovery, source deletion, masks, crop, rotation, and compound balloon/tail editing remain deferred. This checkpoint does not imply deployment or Devpost submission.
