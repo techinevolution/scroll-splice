@@ -1,0 +1,78 @@
+import { describe, expect, it } from 'vitest'
+
+import {
+  DEFAULT_SPEECH_BALLOON_TAIL,
+  getSpeechBalloonPath,
+  normalizeSpeechBalloonTail,
+} from './speechBalloonGeometry'
+
+describe('speech balloon geometry', () => {
+  it('builds one closed outline with an integrated bottom tail', () => {
+    const result = getSpeechBalloonPath(
+      { x: 100, y: 200, width: 300, height: 180 },
+      80,
+      DEFAULT_SPEECH_BALLOON_TAIL,
+    )
+
+    expect(result?.pathData).toContain('M 180 200')
+    expect(result?.pathData).toContain('L 352 430.4')
+    expect(result?.pathData.endsWith('Z')).toBe(true)
+    expect(result?.visualBounds).toMatchObject({ x: 100, y: 200, width: 300 })
+    expect(result?.visualBounds.height).toBeCloseTo(230.4)
+  })
+
+  it('supports every tail side and expands visual bounds to include its tip', () => {
+    const sides = ['top', 'right', 'bottom', 'left'] as const
+    const tips = {
+      top: { x: 0.5, y: -0.5 },
+      right: { x: 1.5, y: 0.5 },
+      bottom: { x: 0.5, y: 1.5 },
+      left: { x: -0.5, y: 0.5 },
+    }
+
+    for (const side of sides) {
+      const result = getSpeechBalloonPath(
+        { x: 0, y: 0, width: 100, height: 80 },
+        20,
+        { ...DEFAULT_SPEECH_BALLOON_TAIL, side, tip: tips[side] },
+      )
+      expect(result?.pathData).toContain('L')
+      expect(result?.visualBounds.width).toBeGreaterThanOrEqual(100)
+      expect(result?.visualBounds.height).toBeGreaterThanOrEqual(80)
+    }
+  })
+
+  it('clamps recoverable tail controls and rejects nonfinite values', () => {
+    expect(
+      normalizeSpeechBalloonTail({
+        enabled: true,
+        side: 'left',
+        anchor: 9,
+        width: -2,
+        tip: { x: -9, y: 9 },
+      }),
+    ).toEqual({
+      enabled: true,
+      side: 'left',
+      anchor: 0.9,
+      width: 0.04,
+      tip: { x: -1, y: 2 },
+    })
+    expect(
+      normalizeSpeechBalloonTail({
+        ...DEFAULT_SPEECH_BALLOON_TAIL,
+        anchor: Number.NaN,
+      }),
+    ).toBeUndefined()
+  })
+
+  it('can render the body without a tail', () => {
+    const result = getSpeechBalloonPath(
+      { x: 5, y: 6, width: 80, height: 50 },
+      12,
+      { ...DEFAULT_SPEECH_BALLOON_TAIL, enabled: false },
+    )
+
+    expect(result?.visualBounds).toEqual({ x: 5, y: 6, width: 80, height: 50 })
+  })
+})

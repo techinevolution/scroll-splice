@@ -11,6 +11,7 @@ import {
 
 import { useEditorStore } from '../app/store'
 import {
+  MAX_ASSET_DISPLAY_NAME_LENGTH,
   MAX_CREATOR_CATEGORY_NAME_LENGTH,
   ASSET_DRAG_MIME_TYPE,
   getBuiltInAssetsByCategory,
@@ -67,7 +68,7 @@ const CATEGORY_COPY: Readonly<
   },
   'speech-balloons': {
     title: 'Speech Balloons',
-    note: 'Original ready-made balloons. Text and tail editing are later tools.',
+    note: 'Add an editable balloon with fitted text, or use an original ready-made graphic.',
   },
   decorations: {
     title: 'Decorations',
@@ -112,9 +113,33 @@ export function AssetPanel() {
   const createCreatorCategory = useEditorStore(
     (state) => state.createCreatorAssetCategory,
   )
+  const renameCreatorCategory = useEditorStore(
+    (state) => state.renameCreatorAssetCategory,
+  )
+  const deleteCreatorCategory = useEditorStore(
+    (state) => state.deleteCreatorAssetCategory,
+  )
+  const reorderCreatorCategory = useEditorStore(
+    (state) => state.reorderCreatorAssetCategory,
+  )
   const importImageAsset = useEditorStore((state) => state.importImageAsset)
+  const renameImportedImageAsset = useEditorStore(
+    (state) => state.renameImportedImageAsset,
+  )
+  const moveImportedImageAsset = useEditorStore(
+    (state) => state.moveImportedImageAsset,
+  )
+  const replaceImportedImageAsset = useEditorStore(
+    (state) => state.replaceImportedImageAsset,
+  )
+  const deleteImportedImageAsset = useEditorStore(
+    (state) => state.deleteImportedImageAsset,
+  )
   const placeBuiltInAsset = useEditorStore((state) => state.placeBuiltInAsset)
   const placeImportedAsset = useEditorStore((state) => state.placeImportedAsset)
+  const createSpeechBalloonElement = useEditorStore(
+    (state) => state.createSpeechBalloonElement,
+  )
   const [activeCategoryId, setActiveCategoryId] =
     useState<AssetLibraryCategoryId>('uploads')
   const [selectedCreatorCategoryId, setSelectedCreatorCategoryId] = useState<
@@ -141,16 +166,31 @@ export function AssetPanel() {
         : [],
     [activeCategoryId],
   )
+  const selectedCreatorCategory = creatorCategories.find(
+    ({ id }) => id === selectedCreatorCategoryId,
+  )
+  const effectiveSelectedCreatorCategoryId =
+    selectedCreatorCategory?.id ?? null
   const visibleImportedImages = useMemo(() => {
-    if (activeCategoryId !== 'my-library' || selectedCreatorCategoryId === null) {
+    if (
+      activeCategoryId !== 'my-library' ||
+      effectiveSelectedCreatorCategoryId === null
+    ) {
       return importedImages
     }
 
     return importedImages.filter(
       ({ creatorCategoryId }) =>
-        creatorCategoryId === selectedCreatorCategoryId,
+        creatorCategoryId === effectiveSelectedCreatorCategoryId,
     )
-  }, [activeCategoryId, importedImages, selectedCreatorCategoryId])
+  }, [
+    activeCategoryId,
+    effectiveSelectedCreatorCategoryId,
+    importedImages,
+  ])
+  const selectedCreatorCategoryIndex = selectedCreatorCategory
+    ? creatorCategories.findIndex(({ id }) => id === selectedCreatorCategory.id)
+    : -1
 
   useEffect(() => {
     if (!assetPanelOpen) return
@@ -197,8 +237,57 @@ export function AssetPanel() {
 
     await importImageAsset(
       file,
-      activeCategoryId === 'my-library' ? selectedCreatorCategoryId : null,
+      activeCategoryId === 'my-library'
+        ? effectiveSelectedCreatorCategoryId
+        : null,
     )
+  }
+
+  const handleRenameCategory = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!selectedCreatorCategory) return
+
+    const formData = new FormData(event.currentTarget)
+    const requestedName = formData.get('categoryName')
+
+    if (typeof requestedName !== 'string') return
+
+    await renameCreatorCategory(
+      selectedCreatorCategory.id,
+      requestedName,
+    )
+  }
+
+  const handleDeleteCategory = async () => {
+    if (!selectedCreatorCategory) return
+
+    const containedAssetCount = importedImages.filter(
+      ({ creatorCategoryId }) =>
+        creatorCategoryId === selectedCreatorCategory.id,
+    ).length
+    const confirmed = window.confirm(
+      containedAssetCount > 0
+        ? `Delete “${selectedCreatorCategory.name}”? Its ${containedAssetCount} reusable ${containedAssetCount === 1 ? 'asset' : 'assets'} will move to Uploads.`
+        : `Delete empty category “${selectedCreatorCategory.name}”?`,
+    )
+
+    if (!confirmed) return
+
+    const deleted = await deleteCreatorCategory(selectedCreatorCategory.id)
+    if (deleted) setSelectedCreatorCategoryId(null)
+  }
+
+  const handleRenameImportedSource = async (
+    event: FormEvent<HTMLFormElement>,
+    assetId: string,
+  ) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+    const requestedName = formData.get('sourceName')
+
+    if (typeof requestedName === 'string') {
+      await renameImportedImageAsset(assetId, requestedName)
+    }
   }
 
   const startAssetDrag = (
@@ -340,7 +429,7 @@ export function AssetPanel() {
                 <button
                   className="creator-category-chip"
                   type="button"
-                  aria-pressed={selectedCreatorCategoryId === null}
+                  aria-pressed={effectiveSelectedCreatorCategoryId === null}
                   onClick={() => setSelectedCreatorCategoryId(null)}
                 >
                   All
@@ -350,7 +439,9 @@ export function AssetPanel() {
                     className="creator-category-chip"
                     type="button"
                     key={category.id}
-                    aria-pressed={selectedCreatorCategoryId === category.id}
+                    aria-pressed={
+                      effectiveSelectedCreatorCategoryId === category.id
+                    }
                     title={category.name}
                     onClick={() => setSelectedCreatorCategoryId(category.id)}
                   >
@@ -358,6 +449,74 @@ export function AssetPanel() {
                   </button>
                 ))}
               </div>
+
+              {selectedCreatorCategory ? (
+                <section
+                  className="creator-category-management"
+                  aria-label={`Manage ${selectedCreatorCategory.name}`}
+                >
+                  <form onSubmit={handleRenameCategory}>
+                    <label>
+                      <span>Category name</span>
+                      <input
+                        key={`${selectedCreatorCategory.id}:${selectedCreatorCategory.name}`}
+                        name="categoryName"
+                        type="text"
+                        maxLength={MAX_CREATOR_CATEGORY_NAME_LENGTH}
+                        defaultValue={selectedCreatorCategory.name}
+                        disabled={assetLibraryBusy}
+                      />
+                    </label>
+                    <button
+                      type="submit"
+                      disabled={assetLibraryBusy}
+                    >
+                      Rename
+                    </button>
+                  </form>
+                  <div className="creator-category-management-actions">
+                    <button
+                      type="button"
+                      disabled={
+                        assetLibraryBusy || selectedCreatorCategoryIndex <= 0
+                      }
+                      onClick={() =>
+                        void reorderCreatorCategory(
+                          selectedCreatorCategory.id,
+                          selectedCreatorCategoryIndex - 1,
+                        )
+                      }
+                    >
+                      Move left
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        assetLibraryBusy ||
+                        selectedCreatorCategoryIndex < 0 ||
+                        selectedCreatorCategoryIndex >=
+                          creatorCategories.length - 1
+                      }
+                      onClick={() =>
+                        void reorderCreatorCategory(
+                          selectedCreatorCategory.id,
+                          selectedCreatorCategoryIndex + 1,
+                        )
+                      }
+                    >
+                      Move right
+                    </button>
+                    <button
+                      className="creator-category-delete"
+                      type="button"
+                      disabled={assetLibraryBusy}
+                      onClick={() => void handleDeleteCategory()}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </section>
+              ) : null}
             </>
           ) : null}
 
@@ -365,7 +524,8 @@ export function AssetPanel() {
             <label className="asset-upload-control" htmlFor={uploadInputId}>
               <strong>Upload image</strong>
               <span>
-                {activeCategoryId === 'my-library' && selectedCreatorCategoryId
+                {activeCategoryId === 'my-library' &&
+                effectiveSelectedCreatorCategoryId
                   ? 'The source will be saved in the selected category.'
                   : 'The source will be saved in Uploads.'}
               </span>
@@ -386,6 +546,42 @@ export function AssetPanel() {
 
           {builtInAssets.length > 0 ? (
             <div className="asset-grid" aria-label={`${activeCategory.title} assets`}>
+              {activeCategoryId === 'speech-balloons' ? (
+                <button
+                  className="asset-card"
+                  type="button"
+                  aria-label="Add editable balloon"
+                  data-testid="add-editable-balloon"
+                  disabled={!canPlaceAsset}
+                  onClick={() => createSpeechBalloonElement()}
+                >
+                  <span className="asset-card-preview">
+                    <svg
+                      viewBox="0 0 360 250"
+                      role="img"
+                      aria-label="Editable speech balloon preview"
+                    >
+                      <path
+                        d="M58 28h244a34 34 0 0 1 34 34v104a34 34 0 0 1-34 34H244l34 38-72-38H58a34 34 0 0 1-34-34V62a34 34 0 0 1 34-34Z"
+                        fill="#fff"
+                        stroke="#211a2b"
+                        strokeWidth="10"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M100 92h160M84 126h192M112 160h136"
+                        fill="none"
+                        stroke="#211a2b"
+                        strokeWidth="8"
+                        strokeLinecap="round"
+                        opacity="0.55"
+                      />
+                    </svg>
+                  </span>
+                  <strong>Editable balloon</strong>
+                  <small>Text + tail controls</small>
+                </button>
+              ) : null}
               {builtInAssets.map((asset) => (
                 <button
                   className="asset-card"
@@ -424,35 +620,122 @@ export function AssetPanel() {
           visibleImportedImages.length > 0 ? (
             <div className="asset-grid" aria-label="Imported assets">
               {visibleImportedImages.map((asset) => (
-                <button
-                  className="asset-card"
-                  type="button"
+                <article
+                  className="asset-card imported-asset-card"
                   key={asset.id}
-                  aria-label={`Add ${asset.displayName}`}
-                  disabled={!canPlaceAsset}
-                  draggable={canPlaceAsset}
-                  onClick={(event) =>
-                    activateAssetCard(event, () => placeImportedAsset(asset.id))
-                  }
-                  onDragStart={(event) =>
-                    startAssetDrag(event, {
-                      kind: 'imported',
-                      assetId: asset.id,
-                    })
-                  }
-                  onDragEnd={finishAssetDrag}
                 >
-                  <span className="asset-card-preview">
-                    <img src={asset.sourceUrl} alt="" draggable={false} />
-                  </span>
-                  <strong>{asset.displayName}</strong>
-                  <small>
-                    {getAssetDimensionsLabel(
-                      asset.intrinsicWidth,
-                      asset.intrinsicHeight,
-                    )}
-                  </small>
-                </button>
+                  <button
+                    className="imported-asset-place"
+                    type="button"
+                    aria-label={`Add ${asset.displayName}`}
+                    disabled={!canPlaceAsset}
+                    draggable={canPlaceAsset}
+                    onClick={(event) =>
+                      activateAssetCard(event, () =>
+                        placeImportedAsset(asset.id),
+                      )
+                    }
+                    onDragStart={(event) =>
+                      startAssetDrag(event, {
+                        kind: 'imported',
+                        assetId: asset.id,
+                      })
+                    }
+                    onDragEnd={finishAssetDrag}
+                  >
+                    <span className="asset-card-preview">
+                      <img src={asset.sourceUrl} alt="" draggable={false} />
+                    </span>
+                    <strong>{asset.displayName}</strong>
+                    <small>
+                      {getAssetDimensionsLabel(
+                        asset.intrinsicWidth,
+                        asset.intrinsicHeight,
+                      )}
+                    </small>
+                  </button>
+                  <details className="imported-asset-management">
+                    <summary>Manage source</summary>
+                    <form
+                      className="imported-asset-rename"
+                      onSubmit={(event) =>
+                        void handleRenameImportedSource(event, asset.id)
+                      }
+                    >
+                      <label>
+                        <span>Name</span>
+                        <input
+                          key={`${asset.id}:${asset.displayName}`}
+                          name="sourceName"
+                          type="text"
+                          maxLength={MAX_ASSET_DISPLAY_NAME_LENGTH}
+                          defaultValue={asset.displayName}
+                          disabled={assetLibraryBusy}
+                        />
+                      </label>
+                      <button type="submit" disabled={assetLibraryBusy}>
+                        Rename
+                      </button>
+                    </form>
+                    <label className="imported-asset-destination">
+                      <span>Category</span>
+                      <select
+                        value={asset.creatorCategoryId ?? ''}
+                        disabled={assetLibraryBusy}
+                        onChange={(event) =>
+                          void moveImportedImageAsset(
+                            asset.id,
+                            event.currentTarget.value || null,
+                          )
+                        }
+                      >
+                        <option value="">Uploads</option>
+                        {creatorCategories.map((category) => (
+                          <option value={category.id} key={category.id}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="imported-asset-replace">
+                      <span>Replace image</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp"
+                        disabled={assetLibraryBusy}
+                        onChange={(event) => {
+                          const input = event.currentTarget
+                          const file = input.files?.[0]
+
+                          if (file) {
+                            void replaceImportedImageAsset(
+                              asset.id,
+                              file,
+                            ).finally(() => {
+                              input.value = ''
+                            })
+                          }
+                        }}
+                      />
+                    </label>
+                    <button
+                      className="imported-asset-delete"
+                      type="button"
+                      disabled={assetLibraryBusy}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            `Delete reusable source “${asset.displayName}”? Placed or saved references will block this action.`,
+                          )
+                        ) {
+                          void deleteImportedImageAsset(asset.id)
+                        }
+                      }}
+                    >
+                      Delete source
+                    </button>
+                  </details>
+                </article>
               ))}
             </div>
           ) : null}
@@ -460,7 +743,8 @@ export function AssetPanel() {
           {(activeCategoryId === 'uploads' || activeCategoryId === 'my-library') &&
           visibleImportedImages.length === 0 ? (
             <p className="asset-empty-state">
-              {activeCategoryId === 'my-library' && selectedCreatorCategoryId
+              {activeCategoryId === 'my-library' &&
+              effectiveSelectedCreatorCategoryId
                 ? 'This category is empty. Upload its first reusable image.'
                 : 'No uploaded images yet.'}
             </p>

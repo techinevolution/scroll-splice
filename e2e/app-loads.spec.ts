@@ -1,6 +1,19 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 async function resetDemoSafely(page: Page) {
+  const inspector = page.getByRole('complementary', {
+    name: 'Episode overview and layers',
+  })
+  const inspectorWasOverlaying =
+    (await inspector.count()) > 0 &&
+    (await page.evaluate(() =>
+      window.matchMedia('(width <= 1120px)').matches,
+    ))
+
+  if (inspectorWasOverlaying) {
+    await page.getByRole('button', { name: 'Close inspector' }).click()
+  }
+
   const isDirty =
     (await page.getByTestId('episode-heading').getAttribute('data-dirty')) ===
     'true'
@@ -17,6 +30,10 @@ async function resetDemoSafely(page: Page) {
 
   if (isDirty) {
     expect(dialogMessage).toBe('Discard unsaved changes and reset the demo?')
+  }
+
+  if (inspectorWasOverlaying) {
+    await page.getByRole('button', { name: 'Show inspector' }).click()
   }
 }
 
@@ -1182,6 +1199,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(contentPlane2).toHaveAttribute('aria-pressed', 'true')
   await expect(firstTitleLayer).toHaveAttribute('aria-pressed', 'true')
 
+  await page.keyboard.down('Alt')
   await page.mouse.move(titlePoint.x, titlePoint.y)
   await page.mouse.down()
   await page.mouse.move(
@@ -1190,6 +1208,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     { steps: 5 },
   )
   await page.mouse.up()
+  await page.keyboard.up('Alt')
   await expect(selectionStatus).toContainText(/x (129|130) · y 216/)
 
   await resetDemoSafely(page)

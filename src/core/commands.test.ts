@@ -7,8 +7,10 @@ import {
 import {
   BACKGROUND_COLOR_REGION_GENERATOR_ID,
   DEFAULT_EPISODE_HEIGHT_INCREMENT,
+  MAX_ELEMENT_NAME_LENGTH,
   MIN_ELEMENT_SIZE,
   SYNTHETIC_SHAPE_GENERATOR_ID,
+  alignElement,
   createBackgroundColorRegion,
   createImageElement,
   createLayerPlane,
@@ -16,18 +18,22 @@ import {
   createTextElement,
   deleteElement,
   deleteEmptyLayerPlane,
+  duplicateElement,
   extendEpisodeHeight,
   getEpisodeContentBottom,
   MIN_EPISODE_LOGICAL_HEIGHT,
   moveElement,
   moveElementInStack,
   moveElementToLayerPlane,
+  nudgeElement,
   reorderLayerPlane,
   resizeElement,
   resizeEpisodeHeight,
   setBaseColor,
   setCompositionGroupVisibility,
   setElementBlendMode,
+  setElementLocked,
+  setElementName,
   setElementOpacity,
   setElementVisibility,
   setEpisodeName,
@@ -35,9 +41,13 @@ import {
   setLayerPlaneName,
   setLayerPlaneVisibility,
   setShapeFill,
+  toggleElementLocked,
+  updateShapeElementStyle,
   updateTextElement,
 } from './commands'
 import {
+  DEFAULT_IMAGE_FRAME,
+  IDENTITY_ELEMENT_TRANSFORM,
   getBackgroundBaseLayerPlane,
   getEffectiveEpisodeBaseColor,
   getLayerPlanesForGroup,
@@ -85,6 +95,122 @@ describe('setEpisodeName', () => {
     expect(
       setEpisodeName(buildWeekEpisode, `  ${buildWeekEpisode.name}  `),
     ).toBe(buildWeekEpisode)
+  })
+})
+
+describe('element identity and locking', () => {
+  const elementId = 'beat-01-stillness-background'
+
+  it('stores a trimmed element name within the editor limit', () => {
+    const renamed = setElementName(
+      buildWeekEpisode,
+      elementId,
+      '  Opening panel  ',
+    )
+
+    expect(renamed.elements.find(({ id }) => id === elementId)?.name).toBe(
+      'Opening panel',
+    )
+    expect(setElementName(renamed, elementId, ' Opening panel ')).toBe(
+      renamed,
+    )
+    expect(setElementName(buildWeekEpisode, elementId, '   ')).toBe(
+      buildWeekEpisode,
+    )
+    expect(
+      setElementName(
+        buildWeekEpisode,
+        elementId,
+        'a'.repeat(MAX_ELEMENT_NAME_LENGTH + 1),
+      ),
+    ).toBe(buildWeekEpisode)
+    expect(setElementName(buildWeekEpisode, 'missing', 'Name')).toBe(
+      buildWeekEpisode,
+    )
+  })
+
+  it('sets and toggles the lock without changing element identity', () => {
+    const locked = setElementLocked(buildWeekEpisode, elementId, true)
+    const lockedElement = locked.elements.find(({ id }) => id === elementId)
+
+    expect(lockedElement).toMatchObject({ id: elementId, locked: true })
+    expect(setElementLocked(locked, elementId, true)).toBe(locked)
+    expect(toggleElementLocked(locked, elementId)).not.toBe(locked)
+    expect(
+      toggleElementLocked(locked, elementId).elements.find(
+        ({ id }) => id === elementId,
+      )?.locked,
+    ).toBe(false)
+    expect(toggleElementLocked(buildWeekEpisode, 'missing')).toBe(
+      buildWeekEpisode,
+    )
+  })
+
+  it('blocks locked geometry, stacking, plane movement, and deletion', () => {
+    const locked = setElementLocked(buildWeekEpisode, elementId, true)
+    const element = locked.elements.find(({ id }) => id === elementId)
+
+    if (!element) {
+      throw new Error('Missing lock-semantics fixture element')
+    }
+
+    expect(
+      moveElement(locked, elementId, {
+        x: element.bounds.x + 10,
+        y: element.bounds.y + 10,
+      }),
+    ).toBe(locked)
+    expect(
+      resizeElement(locked, elementId, {
+        ...element.bounds,
+        width: element.bounds.width - 20,
+        height: element.bounds.height - 20,
+      }),
+    ).toBe(locked)
+    expect(moveElementInStack(locked, elementId, 'forward')).toBe(locked)
+    expect(
+      moveElementToLayerPlane(
+        locked,
+        elementId,
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      ),
+    ).toBe(locked)
+    expect(deleteElement(locked, elementId)).toBe(locked)
+  })
+
+  it('keeps visibility, appearance, naming, and text editing available while locked', () => {
+    const lockedShape = setElementLocked(buildWeekEpisode, elementId, true)
+    const hidden = setElementVisibility(lockedShape, elementId, false)
+    const faded = setElementOpacity(lockedShape, elementId, 0.4)
+    const recolored = setShapeFill(lockedShape, elementId, {
+      kind: 'solid',
+      color: '#123456',
+    })
+    const renamed = setElementName(lockedShape, elementId, 'Locked panel')
+    const textId = 'beat-01-stillness-title'
+    const lockedText = setElementLocked(buildWeekEpisode, textId, true)
+    const text = lockedText.elements.find(({ id }) => id === textId)
+
+    if (!text || text.type !== 'text') {
+      throw new Error('Missing lock-semantics text fixture')
+    }
+
+    const updatedText = updateTextElement(lockedText, textId, {
+      text: 'Stillness, revised',
+      fill: '#112233',
+      fontSize: 44,
+      fontWeight: 600,
+      align: 'left',
+    })
+
+    expect(hidden).not.toBe(lockedShape)
+    expect(faded).not.toBe(lockedShape)
+    expect(recolored).not.toBe(lockedShape)
+    expect(renamed).not.toBe(lockedShape)
+    expect(updatedText).not.toBe(lockedText)
+    expect(
+      updatedText.elements.find(({ id }) => id === textId),
+    ).toMatchObject({ locked: true, text: 'Stillness, revised' })
   })
 })
 
@@ -269,6 +395,176 @@ describe('moveElement', () => {
     expect(moveElement(buildWeekEpisode, 'missing', { x: 0, y: 0 })).toBe(
       buildWeekEpisode,
     )
+  })
+})
+
+describe('nudgeElement and alignElement', () => {
+  const elementId = 'beat-01-stillness-accent-2'
+
+  it('nudges by a logical delta and clamps at the episode edges', () => {
+    const element = buildWeekEpisode.elements.find(({ id }) => id === elementId)
+
+    if (!element) {
+      throw new Error('Missing nudge fixture element')
+    }
+
+    const nudged = nudgeElement(buildWeekEpisode, elementId, { x: 7, y: -9 })
+    const nudgedElement = nudged.elements.find(({ id }) => id === elementId)
+    const clamped = nudgeElement(nudged, elementId, {
+      x: -99_000,
+      y: -99_000,
+    })
+
+    expect(nudgedElement?.bounds).toMatchObject({
+      x: element.bounds.x + 7,
+      y: element.bounds.y - 9,
+    })
+    expect(clamped.elements.find(({ id }) => id === elementId)?.bounds).toMatchObject({
+      x: 0,
+      y: 0,
+    })
+    expect(nudgeElement(buildWeekEpisode, elementId, { x: Number.NaN, y: 1 })).toBe(
+      buildWeekEpisode,
+    )
+    expect(nudgeElement(buildWeekEpisode, 'missing', { x: 1, y: 1 })).toBe(
+      buildWeekEpisode,
+    )
+  })
+
+  it('aligns independently on every episode axis', () => {
+    const element = buildWeekEpisode.elements.find(({ id }) => id === elementId)
+
+    if (!element) {
+      throw new Error('Missing alignment fixture element')
+    }
+
+    const centered = alignElement(buildWeekEpisode, elementId, {
+      horizontal: 'center',
+      vertical: 'middle',
+    })
+    const bottomRight = alignElement(centered, elementId, {
+      horizontal: 'right',
+      vertical: 'bottom',
+    })
+    const topLeft = alignElement(bottomRight, elementId, {
+      horizontal: 'left',
+      vertical: 'top',
+    })
+
+    expect(centered.elements.find(({ id }) => id === elementId)?.bounds).toMatchObject({
+      x: (buildWeekEpisode.logicalWidth - element.bounds.width) / 2,
+      y: (buildWeekEpisode.logicalHeight - element.bounds.height) / 2,
+    })
+    expect(bottomRight.elements.find(({ id }) => id === elementId)?.bounds).toMatchObject({
+      x: buildWeekEpisode.logicalWidth - element.bounds.width,
+      y: buildWeekEpisode.logicalHeight - element.bounds.height,
+    })
+    expect(topLeft.elements.find(({ id }) => id === elementId)?.bounds).toMatchObject({
+      x: 0,
+      y: 0,
+    })
+    expect(alignElement(buildWeekEpisode, elementId, {})).toBe(buildWeekEpisode)
+    expect(
+      alignElement(buildWeekEpisode, elementId, {
+        horizontal: 'diagonal' as never,
+      }),
+    ).toBe(buildWeekEpisode)
+  })
+
+  it('delegates lock enforcement to geometry movement', () => {
+    const locked = setElementLocked(buildWeekEpisode, elementId, true)
+
+    expect(nudgeElement(locked, elementId, { x: 1, y: 1 })).toBe(locked)
+    expect(
+      alignElement(locked, elementId, {
+        horizontal: 'center',
+        vertical: 'middle',
+      }),
+    ).toBe(locked)
+  })
+})
+
+describe('duplicateElement', () => {
+  const elementId = 'beat-01-stillness-background'
+
+  it('creates one offset, top-stacked copy with a deterministic stable ID', () => {
+    const source = buildWeekEpisode.elements.find(({ id }) => id === elementId)
+
+    if (!source) {
+      throw new Error('Missing duplicate fixture element')
+    }
+
+    const duplicated = duplicateElement(buildWeekEpisode, elementId)
+    const duplicate = duplicated.elements.at(-1)
+    const repeated = duplicateElement(duplicated, elementId)
+    const expectedZIndex =
+      Math.max(
+        ...buildWeekEpisode.elements
+          .filter(({ layerPlaneId }) => layerPlaneId === source.layerPlaneId)
+          .map(({ zIndex }) => zIndex),
+      ) + 1
+
+    expect(duplicate).toMatchObject({
+      ...source,
+      id: `${elementId}-copy-1`,
+      name: `${source.name} copy`,
+      bounds: {
+        ...source.bounds,
+        x: source.bounds.x + 24,
+        y: source.bounds.y + 24,
+      },
+      zIndex: expectedZIndex,
+    })
+    expect(duplicate?.zIndex).toBe(expectedZIndex)
+    expect(repeated.elements.at(-1)?.id).toBe(`${elementId}-copy-2`)
+  })
+
+  it('clamps the copy and preserves a source lock without mutating the source', () => {
+    const locked = setElementLocked(buildWeekEpisode, elementId, true)
+    const source = locked.elements.find(({ id }) => id === elementId)
+
+    if (!source) {
+      throw new Error('Missing locked duplicate fixture element')
+    }
+
+    const duplicated = duplicateElement(locked, elementId, {
+      x: 99_000,
+      y: 99_000,
+    })
+    const duplicate = duplicated.elements.at(-1)
+
+    expect(duplicate).toMatchObject({
+      id: `${elementId}-copy-1`,
+      locked: true,
+      bounds: {
+        x: buildWeekEpisode.logicalWidth - source.bounds.width,
+        y: buildWeekEpisode.logicalHeight - source.bounds.height,
+      },
+    })
+    expect(locked.elements.find(({ id }) => id === elementId)).toBe(source)
+  })
+
+  it('returns the original document for missing elements or invalid offsets', () => {
+    expect(duplicateElement(buildWeekEpisode, 'missing')).toBe(buildWeekEpisode)
+    expect(
+      duplicateElement(buildWeekEpisode, elementId, {
+        x: Number.POSITIVE_INFINITY,
+        y: 0,
+      }),
+    ).toBe(buildWeekEpisode)
+  })
+
+  it('keeps generated copy names within the element-name limit', () => {
+    const renamed = setElementName(
+      buildWeekEpisode,
+      elementId,
+      'a'.repeat(MAX_ELEMENT_NAME_LENGTH),
+    )
+    const duplicated = duplicateElement(renamed, elementId)
+    const duplicateName = duplicated.elements.at(-1)?.name
+
+    expect(duplicateName).toHaveLength(MAX_ELEMENT_NAME_LENGTH)
+    expect(duplicateName?.endsWith(' copy')).toBe(true)
   })
 })
 
@@ -686,6 +982,59 @@ describe('element appearance commands', () => {
     ).toBe(buildWeekEpisode)
   })
 
+  it('updates rectangle and ellipse outline geometry without replacing bounds', () => {
+    const shape = buildWeekEpisode.elements.find(
+      (element) => element.type === 'shape',
+    )
+
+    if (!shape || shape.type !== 'shape') {
+      throw new Error('The shape appearance fixture is missing.')
+    }
+
+    const ellipse = updateShapeElementStyle(buildWeekEpisode, shape.id, {
+      shape: 'ellipse',
+      stroke: '#123456',
+      strokeWidth: 7,
+      cornerRadius: 24,
+    })
+    const outlined = ellipse.elements.find(({ id }) => id === shape.id)
+
+    expect(outlined).toMatchObject({
+      type: 'shape',
+      shape: 'ellipse',
+      stroke: '#123456',
+      strokeWidth: 7,
+      bounds: shape.bounds,
+    })
+    expect(outlined).toHaveProperty('cornerRadius', undefined)
+
+    const rectangle = updateShapeElementStyle(ellipse, shape.id, {
+      shape: 'rectangle',
+      stroke: null,
+      strokeWidth: 0,
+      cornerRadius: 10_000,
+    })
+    expect(rectangle.elements.find(({ id }) => id === shape.id)).toMatchObject({
+      type: 'shape',
+      shape: 'rectangle',
+      cornerRadius: Math.min(shape.bounds.width, shape.bounds.height) / 2,
+      bounds: shape.bounds,
+    })
+    expect(rectangle.elements.find(({ id }) => id === shape.id)).toHaveProperty(
+      'stroke',
+      undefined,
+    )
+
+    expect(
+      updateShapeElementStyle(buildWeekEpisode, shape.id, {
+        shape: 'rectangle',
+        stroke: '#000000',
+        strokeWidth: -1,
+        cornerRadius: 0,
+      }),
+    ).toBe(buildWeekEpisode)
+  })
+
   it('changes image presentation only for an image element', () => {
     const withImage = createImageElement(buildWeekEpisode, {
       layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
@@ -859,6 +1208,8 @@ describe('createSyntheticShapeElement', () => {
       fill: { kind: 'solid', color: '#7048B8' },
       opacity: 1,
       blendMode: 'normal',
+      transform: IDENTITY_ELEMENT_TRANSFORM,
+      overflow: 'constrained',
       visible: true,
       locked: false,
       zIndex: Math.max(...planeZIndexes) + 1,
@@ -883,6 +1234,43 @@ describe('createSyntheticShapeElement', () => {
     expect(first.elements.at(-1)?.zIndex).toBe(0)
     expect(second.elements.at(-1)?.id).toBe('synthetic-shape-2')
     expect(second.elements.at(-1)?.zIndex).toBe(1)
+  })
+
+  it('creates rectangle or ellipse panels with optional stroke and corner styling', () => {
+    const ellipseDocument = createSyntheticShapeElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Spotlight panel',
+      shape: 'ellipse',
+      fill: '#F8E7B0',
+      stroke: '#24192F',
+      strokeWidth: 6,
+      cornerRadius: 999,
+      bounds: { x: 100, y: 200, width: 300, height: 180 },
+    })
+    const ellipse = ellipseDocument.elements.at(-1)
+    const roundedDocument = createSyntheticShapeElement(ellipseDocument, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Rounded panel',
+      shape: 'rectangle',
+      fill: '#FFFFFF',
+      stroke: '#000000',
+      bounds: { x: 40, y: 480, width: 200, height: 100 },
+      cornerRadius: 18,
+    })
+
+    expect(ellipse).toMatchObject({
+      shape: 'ellipse',
+      fill: { kind: 'solid', color: '#F8E7B0' },
+      stroke: '#24192F',
+      strokeWidth: 6,
+      cornerRadius: 90,
+    })
+    expect(roundedDocument.elements.at(-1)).toMatchObject({
+      shape: 'rectangle',
+      stroke: '#000000',
+      strokeWidth: 2,
+      cornerRadius: 18,
+    })
   })
 
   it('clamps oversized bounds to the episode', () => {
@@ -937,6 +1325,28 @@ describe('createSyntheticShapeElement', () => {
         name: '   ',
       }),
     ).toBe(buildWeekEpisode)
+    expect(
+      createSyntheticShapeElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        shape: 'triangle' as never,
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createSyntheticShapeElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        stroke: '#000000',
+        strokeWidth: -1,
+      }),
+    ).toBe(buildWeekEpisode)
+    expect(
+      createSyntheticShapeElement(buildWeekEpisode, {
+        ...validInput,
+        layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+        cornerRadius: Number.NaN,
+      }),
+    ).toBe(buildWeekEpisode)
   })
 })
 
@@ -980,11 +1390,14 @@ describe('createImageElement', () => {
       zIndex: Math.max(...planeZIndexes) + 1,
       opacity: 1,
       blendMode: 'normal',
+      transform: IDENTITY_ELEMENT_TRANSFORM,
+      overflow: 'constrained',
       assetReference: {
         kind: 'built-in',
         assetId: 'speech-bubble-rounded',
       },
       presentation: 'single',
+      frame: DEFAULT_IMAGE_FRAME,
     })
   })
 
@@ -1104,6 +1517,8 @@ describe('createBackgroundColorRegion', () => {
       fill: { kind: 'solid', color: '#332255' },
       opacity: 1,
       blendMode: 'normal',
+      transform: IDENTITY_ELEMENT_TRANSFORM,
+      overflow: 'constrained',
       visible: true,
       locked: false,
       zIndex: 0,

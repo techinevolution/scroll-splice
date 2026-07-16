@@ -7,13 +7,25 @@ export interface ExportProfile {
   readonly verification: ExportProfileVerification
   readonly outputWidthPx: number
   readonly maxSliceHeightPx: number
+  readonly maxSliceBytes: number
+  readonly maxTotalBytes: number
+  readonly maxFileCount: number
+  readonly acceptedMediaTypes: readonly ExportMediaType[]
 }
+
+export type ExportMediaType = 'image/png' | 'image/jpeg'
 
 export const WEBTOON_CANVAS_OBSERVED_PROFILE = {
   id: 'webtoon-canvas-2026-07-13-observed',
   verification: 'form-observed',
   outputWidthPx: 800,
   maxSliceHeightPx: 1280,
+  // The form says 2 MB / 50 MB but does not state decimal vs binary units.
+  // Use conservative decimal values until the harmless upload test verifies it.
+  maxSliceBytes: 2_000_000,
+  maxTotalBytes: 50_000_000,
+  maxFileCount: 100,
+  acceptedMediaTypes: ['image/png', 'image/jpeg'],
 } as const satisfies ExportProfile
 
 /**

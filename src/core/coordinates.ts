@@ -27,10 +27,19 @@ export interface HorizontalSnapResult {
   readonly snapped: boolean
 }
 
+export interface ElementSnapResult {
+  readonly position: LogicalPosition
+  readonly snappedX: boolean
+  readonly snappedY: boolean
+  readonly guideX?: number
+  readonly guideY?: number
+}
+
 export const MIN_ZOOM_FACTOR = 0.5
 export const MAX_ZOOM_FACTOR = 2
 export const DEFAULT_ZOOM_FACTOR = 1
 export const CENTER_SNAP_THRESHOLD_PX = 8
+export const ELEMENT_SNAP_THRESHOLD_PX = 8
 
 export function clientPointToEpisodePosition(
   clientPoint: LogicalPosition,
@@ -316,24 +325,65 @@ export function getMinimapViewportBox2D(
     return { x: 0, y: 0, width: 0, height: 0 }
   }
 
-  const scaleX =
-    minimapPixelDimensions.width / episodeLogicalDimensions.width
-  const scaleY =
-    minimapPixelDimensions.height / episodeLogicalDimensions.height
+  const episodeRect = getMinimapEpisodeRect(
+    episodeLogicalDimensions,
+    minimapPixelDimensions,
+  )
+  const scale = episodeRect.width / episodeLogicalDimensions.width
   const width = clamp(
-    viewport.width * scaleX,
+    viewport.width * scale,
     0,
-    minimapPixelDimensions.width,
+    episodeRect.width,
   )
   const height = clamp(
-    viewport.height * scaleY,
+    viewport.height * scale,
     0,
-    minimapPixelDimensions.height,
+    episodeRect.height,
   )
 
   return {
-    x: clamp(viewport.x * scaleX, 0, minimapPixelDimensions.width - width),
-    y: clamp(viewport.y * scaleY, 0, minimapPixelDimensions.height - height),
+    x: clamp(
+      episodeRect.x + viewport.x * scale,
+      episodeRect.x,
+      episodeRect.x + episodeRect.width - width,
+    ),
+    y: clamp(
+      episodeRect.y + viewport.y * scale,
+      episodeRect.y,
+      episodeRect.y + episodeRect.height - height,
+    ),
+    width,
+    height,
+  }
+}
+
+/**
+ * Fits the full episode into the minimap without changing its aspect ratio.
+ * Any unused space is centered as letterboxing around this returned rect.
+ */
+export function getMinimapEpisodeRect(
+  episodeLogicalDimensions: LogicalDimensions,
+  minimapPixelDimensions: LogicalDimensions,
+): MinimapViewportRect {
+  if (
+    episodeLogicalDimensions.width <= 0 ||
+    episodeLogicalDimensions.height <= 0 ||
+    minimapPixelDimensions.width <= 0 ||
+    minimapPixelDimensions.height <= 0
+  ) {
+    return { x: 0, y: 0, width: 0, height: 0 }
+  }
+
+  const scale = Math.min(
+    minimapPixelDimensions.width / episodeLogicalDimensions.width,
+    minimapPixelDimensions.height / episodeLogicalDimensions.height,
+  )
+  const width = episodeLogicalDimensions.width * scale
+  const height = episodeLogicalDimensions.height * scale
+
+  return {
+    x: (minimapPixelDimensions.width - width) / 2,
+    y: (minimapPixelDimensions.height - height) / 2,
     width,
     height,
   }
@@ -355,6 +405,10 @@ export function minimapPointerToViewportPosition(
     return { x: 0, y: 0 }
   }
 
+  const episodeRect = getMinimapEpisodeRect(
+    episodeLogicalDimensions,
+    minimapPixelDimensions,
+  )
   const viewportBox = getMinimapViewportBox2D(
     {
       x: 0,
@@ -368,17 +422,26 @@ export function minimapPointerToViewportPosition(
     x: viewportBox.width / 2,
     y: viewportBox.height / 2,
   }
+  const scale = episodeRect.width / episodeLogicalDimensions.width
   const requestedPosition = {
     x:
-      ((clamp(pointerPixelPosition.x, 0, minimapPixelDimensions.width) -
+      (clamp(
+        pointerPixelPosition.x,
+        episodeRect.x,
+        episodeRect.x + episodeRect.width,
+      ) -
+        episodeRect.x -
         pointerOffset.x) /
-        minimapPixelDimensions.width) *
-      episodeLogicalDimensions.width,
+      scale,
     y:
-      ((clamp(pointerPixelPosition.y, 0, minimapPixelDimensions.height) -
+      (clamp(
+        pointerPixelPosition.y,
+        episodeRect.y,
+        episodeRect.y + episodeRect.height,
+      ) -
+        episodeRect.y -
         pointerOffset.y) /
-        minimapPixelDimensions.height) *
-      episodeLogicalDimensions.height,
+      scale,
   }
 
   return clampViewportPosition(
@@ -469,4 +532,163 @@ export function getEpisodeCenterSnap(
   return Math.abs(requestedX - centeredX) <= thresholdLogicalUnits
     ? { x: centeredX, snapped: true }
     : { x: requestedX, snapped: false }
+}
+
+interface AxisSnapCandidate {
+  readonly position: number
+  readonly guide: number
+}
+
+function getClosestAxisSnap(
+  requestedPosition: number,
+  candidates: readonly AxisSnapCandidate[],
+  maximumPosition: number,
+  thresholdLogicalUnits: number,
+): { readonly position: number; readonly guide?: number } {
+  let closest:
+    | (AxisSnapCandidate & { readonly distance: number })
+    | undefined
+
+  for (const candidate of candidates) {
+    if (
+      !Number.isFinite(candidate.position) ||
+      !Number.isFinite(candidate.guide) ||
+      candidate.position < 0 ||
+      candidate.position > maximumPosition
+    ) {
+      continue
+    }
+
+    const distance = Math.abs(candidate.position - requestedPosition)
+
+    if (
+      distance <= thresholdLogicalUnits &&
+      (closest === undefined || distance < closest.distance)
+    ) {
+      closest = { ...candidate, distance }
+    }
+  }
+
+  return closest
+    ? { position: closest.position, guide: closest.guide }
+    : { position: requestedPosition }
+}
+
+/**
+ * Snaps an element to the episode edges/center and to nearby element edges,
+ * centers, and adjacent boundaries. The returned guide coordinates are in
+ * episode logical units so every renderer can draw the same alignment hint.
+ */
+export function getElementSnap(
+  requestedPosition: LogicalPosition,
+  elementDimensions: LogicalDimensions,
+  episodeDimensions: LogicalDimensions,
+  nearbyBounds: readonly ElementBounds[],
+  viewScale: number,
+  thresholdPixels = ELEMENT_SNAP_THRESHOLD_PX,
+): ElementSnapResult {
+  if (
+    !Number.isFinite(requestedPosition.x) ||
+    !Number.isFinite(requestedPosition.y) ||
+    !Number.isFinite(elementDimensions.width) ||
+    !Number.isFinite(elementDimensions.height) ||
+    !Number.isFinite(episodeDimensions.width) ||
+    !Number.isFinite(episodeDimensions.height) ||
+    !Number.isFinite(viewScale) ||
+    !Number.isFinite(thresholdPixels) ||
+    elementDimensions.width <= 0 ||
+    elementDimensions.height <= 0 ||
+    episodeDimensions.width <= 0 ||
+    episodeDimensions.height <= 0 ||
+    viewScale <= 0 ||
+    thresholdPixels < 0
+  ) {
+    return {
+      position: requestedPosition,
+      snappedX: false,
+      snappedY: false,
+    }
+  }
+
+  const { width, height } = elementDimensions
+  const thresholdLogicalUnits = thresholdPixels / viewScale
+  const horizontalCandidates: AxisSnapCandidate[] = [
+    { position: 0, guide: 0 },
+    {
+      position: (episodeDimensions.width - width) / 2,
+      guide: episodeDimensions.width / 2,
+    },
+    {
+      position: episodeDimensions.width - width,
+      guide: episodeDimensions.width,
+    },
+  ]
+  const verticalCandidates: AxisSnapCandidate[] = [
+    { position: 0, guide: 0 },
+    {
+      position: (episodeDimensions.height - height) / 2,
+      guide: episodeDimensions.height / 2,
+    },
+    {
+      position: episodeDimensions.height - height,
+      guide: episodeDimensions.height,
+    },
+  ]
+
+  for (const bounds of nearbyBounds) {
+    if (
+      !Number.isFinite(bounds.x) ||
+      !Number.isFinite(bounds.y) ||
+      !Number.isFinite(bounds.width) ||
+      !Number.isFinite(bounds.height) ||
+      bounds.width <= 0 ||
+      bounds.height <= 0
+    ) {
+      continue
+    }
+
+    const right = bounds.x + bounds.width
+    const bottom = bounds.y + bounds.height
+    const centerX = bounds.x + bounds.width / 2
+    const centerY = bounds.y + bounds.height / 2
+
+    horizontalCandidates.push(
+      { position: bounds.x, guide: bounds.x },
+      { position: centerX - width / 2, guide: centerX },
+      { position: right - width, guide: right },
+      { position: bounds.x - width, guide: bounds.x },
+      { position: right, guide: right },
+    )
+    verticalCandidates.push(
+      { position: bounds.y, guide: bounds.y },
+      { position: centerY - height / 2, guide: centerY },
+      { position: bottom - height, guide: bottom },
+      { position: bounds.y - height, guide: bounds.y },
+      { position: bottom, guide: bottom },
+    )
+  }
+
+  const horizontal = getClosestAxisSnap(
+    requestedPosition.x,
+    horizontalCandidates,
+    Math.max(episodeDimensions.width - width, 0),
+    thresholdLogicalUnits,
+  )
+  const vertical = getClosestAxisSnap(
+    requestedPosition.y,
+    verticalCandidates,
+    Math.max(episodeDimensions.height - height, 0),
+    thresholdLogicalUnits,
+  )
+
+  return {
+    position: {
+      x: horizontal.position,
+      y: vertical.position,
+    },
+    snappedX: horizontal.guide !== undefined,
+    snappedY: vertical.guide !== undefined,
+    ...(horizontal.guide === undefined ? {} : { guideX: horizontal.guide }),
+    ...(vertical.guide === undefined ? {} : { guideY: vertical.guide }),
+  }
 }

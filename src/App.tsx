@@ -10,7 +10,11 @@ import { useEditorStore } from './app/store'
 import { AppMenuBar } from './components/AppMenuBar'
 import { AssetPanel } from './components/AssetPanel'
 import { CompositionGroupControls } from './components/CompositionGroupControls'
+import { ExportDialog } from './components/ExportDialog'
+import { HelpDialog } from './components/HelpDialog'
+import { ProjectManagerDialog } from './components/ProjectManagerDialog'
 import { ReaderPreview } from './components/ReaderPreview'
+import { RecoveryBanner } from './components/RecoveryBanner'
 import { SelectedElementAppearanceControls } from './components/SelectedElementAppearanceControls'
 import { MAX_EPISODE_NAME_LENGTH } from './core/commands'
 import { EditorCanvas } from './editor/EditorCanvas'
@@ -35,6 +39,7 @@ function constrainEpisodeNameDraft(value: string): string {
 }
 
 function SelectionStatus() {
+  const selectedElementIds = useEditorStore((state) => state.selectedElementIds)
   const selectedElement = useEditorStore((state) =>
     state.episode.elements.find(
       ({ id }) => id === state.selectedElementId,
@@ -55,7 +60,7 @@ function SelectionStatus() {
       data-height={bounds?.height ?? ''}
     >
       {selectedElement && bounds
-        ? `${selectedElement.name} · x ${Math.round(bounds.x)} · y ${Math.round(bounds.y)} · w ${Math.round(bounds.width)} · h ${Math.round(bounds.height)}`
+        ? `${selectedElementIds.length > 1 ? `${selectedElementIds.length} selected · primary: ` : ''}${selectedElement.name} · x ${Math.round(bounds.x)} · y ${Math.round(bounds.y)} · w ${Math.round(bounds.width)} · h ${Math.round(bounds.height)}`
         : 'Nothing selected'}
     </span>
   )
@@ -63,6 +68,8 @@ function SelectionStatus() {
 
 export function App() {
   const episodeName = useEditorStore((state) => state.episode.name)
+  const episodeId = useEditorStore((state) => state.episode.id)
+  const currentRevision = useEditorStore((state) => state.currentRevision)
   const canUndo = useEditorStore((state) => state.canUndo)
   const canRedo = useEditorStore((state) => state.canRedo)
   const canReopen = useEditorStore((state) => state.hasSavedEpisode)
@@ -70,6 +77,15 @@ export function App() {
     (state) => state.hasUnsavedChanges,
   )
   const documentStatus = useEditorStore((state) => state.documentStatus)
+  const currentProjectId = useEditorStore((state) => state.currentProjectId)
+  const recentProjects = useEditorStore((state) => state.recentProjects)
+  const projectLibraryBusy = useEditorStore(
+    (state) => state.projectLibraryBusy,
+  )
+  const recoveryAvailable = useEditorStore(
+    (state) => state.recoveryAvailable,
+  )
+  const recoveryMessage = useEditorStore((state) => state.recoveryMessage)
   const initializeAssetLibrary = useEditorStore(
     (state) => state.initializeAssetLibrary,
   )
@@ -77,16 +93,46 @@ export function App() {
   const undo = useEditorStore((state) => state.undo)
   const redo = useEditorStore((state) => state.redo)
   const reopenEpisode = useEditorStore((state) => state.reopenEpisode)
+  const openLocalProject = useEditorStore((state) => state.openLocalProject)
+  const deleteLocalProject = useEditorStore(
+    (state) => state.deleteLocalProject,
+  )
+  const refreshRecentProjects = useEditorStore(
+    (state) => state.refreshRecentProjects,
+  )
+  const importPortableProject = useEditorStore(
+    (state) => state.importPortableProject,
+  )
+  const restoreRecovery = useEditorStore((state) => state.restoreRecovery)
+  const discardRecovery = useEditorStore((state) => state.discardRecovery)
+  const flushRecovery = useEditorStore((state) => state.flushRecovery)
   const newEpisode = useEditorStore((state) => state.newEpisode)
   const resetEpisode = useEditorStore((state) => state.resetEpisode)
   const [isEditingEpisodeName, setIsEditingEpisodeName] = useState(false)
   const [episodeNameDraft, setEpisodeNameDraft] = useState(episodeName)
   const [readerPreviewOpen, setReaderPreviewOpen] = useState(false)
+  const [isInspectorOpen, setIsInspectorOpen] = useState(true)
+  const [helpOpen, setHelpOpen] = useState(false)
+  const [projectManagerOpen, setProjectManagerOpen] = useState(false)
+  const [exportDialogOpen, setExportDialogOpen] = useState(false)
   const episodeNameInputRef = useRef<HTMLInputElement>(null)
+  const inspectorToggleRef = useRef<HTMLButtonElement>(null)
+  const portableImportInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     void initializeAssetLibrary()
   }, [initializeAssetLibrary])
+
+  useEffect(() => {
+    const handleLifecycleBoundary = () => flushRecovery()
+
+    window.addEventListener('pagehide', handleLifecycleBoundary)
+    window.addEventListener('beforeunload', handleLifecycleBoundary)
+    return () => {
+      window.removeEventListener('pagehide', handleLifecycleBoundary)
+      window.removeEventListener('beforeunload', handleLifecycleBoundary)
+    }
+  }, [flushRecovery])
 
   useEffect(() => {
     if (isEditingEpisodeName) {
@@ -133,7 +179,7 @@ export function App() {
     }
   }
 
-  const saveFromUi = () => {
+  const commitPendingDocumentEdits = () => {
     const activePlaneNameInput = document.querySelector<HTMLInputElement>(
       '[data-testid="active-layer-plane-name"]',
     )
@@ -148,8 +194,16 @@ export function App() {
     if (isEditingEpisodeName) {
       commitEpisodeNameEdit()
     }
+  }
 
+  const saveFromUi = () => {
+    commitPendingDocumentEdits()
     useEditorStore.getState().saveEpisode()
+  }
+
+  const saveAsFromUi = () => {
+    commitPendingDocumentEdits()
+    useEditorStore.getState().saveEpisodeAs()
   }
 
   const confirmDiscard = (message: string) =>
@@ -165,12 +219,107 @@ export function App() {
   }
 
   const reopenSavedEpisode = () => {
-    if (!confirmDiscard('Discard unsaved changes and reopen the last save?')) {
+    if (
+      !confirmDiscard(
+        'Discard unsaved changes and reopen the current saved project?',
+      )
+    ) {
       return
     }
 
     cancelEpisodeNameEdit()
     reopenEpisode()
+  }
+
+  const showLocalProjects = () => {
+    refreshRecentProjects()
+    setProjectManagerOpen(true)
+  }
+
+  const openSelectedProject = (projectId: string) => {
+    if (
+      !confirmDiscard(
+        'Discard unsaved changes and open the selected local project?',
+      )
+    ) {
+      return
+    }
+
+    cancelEpisodeNameEdit()
+    if (openLocalProject(projectId)) setProjectManagerOpen(false)
+  }
+
+  const deleteSelectedProject = (projectId: string, name: string) => {
+    if (
+      !window.confirm(
+        `Delete “${name}” from this browser? This cannot be undone.`,
+      )
+    ) {
+      return
+    }
+
+    deleteLocalProject(projectId)
+  }
+
+  const choosePortableProject = () => {
+    portableImportInputRef.current?.click()
+  }
+
+  const handlePortableProjectSelection = async () => {
+    const input = portableImportInputRef.current
+    const file = input?.files?.[0]
+
+    if (!file || !input) return
+    input.value = ''
+
+    if (
+      !confirmDiscard(
+        'Discard unsaved changes and import the selected portable project?',
+      )
+    ) {
+      return
+    }
+
+    cancelEpisodeNameEdit()
+    await importPortableProject(file)
+  }
+
+  const downloadPortableProject = async () => {
+    commitPendingDocumentEdits()
+    const result = await useEditorStore.getState().exportPortableProject()
+
+    if (!result) return
+
+    const sourceUrl = URL.createObjectURL(result.blob)
+    const anchor = document.createElement('a')
+    anchor.href = sourceUrl
+    anchor.download = result.fileName
+    anchor.click()
+    window.setTimeout(() => URL.revokeObjectURL(sourceUrl), 1_000)
+  }
+
+  const restoreRecoveredWork = () => {
+    if (
+      !confirmDiscard(
+        'Discard the currently open changes and restore the recovery snapshot?',
+      )
+    ) {
+      return
+    }
+
+    cancelEpisodeNameEdit()
+    restoreRecovery()
+  }
+
+  const discardRecoveredWork = () => {
+    if (
+      recoveryAvailable &&
+      !window.confirm('Discard this crash-recovery snapshot permanently?')
+    ) {
+      return
+    }
+
+    discardRecovery()
   }
 
   const openReaderPreview = () => {
@@ -185,6 +334,19 @@ export function App() {
     setReaderPreviewOpen(false)
   }, [])
 
+  const closeProjectManager = useCallback(() => {
+    setProjectManagerOpen(false)
+  }, [])
+
+  const closeExportDialog = useCallback(() => {
+    setExportDialogOpen(false)
+  }, [])
+
+  const closeInspectorAndRestoreFocus = useCallback(() => {
+    setIsInspectorOpen(false)
+    window.requestAnimationFrame(() => inspectorToggleRef.current?.focus())
+  }, [])
+
   const resetDemo = () => {
     if (!confirmDiscard('Discard unsaved changes and reset the demo?')) {
       return
@@ -196,11 +358,12 @@ export function App() {
 
   useEffect(() => {
     const handleApplicationShortcut = (event: globalThis.KeyboardEvent) => {
-      if (readerPreviewOpen) {
-        return
-      }
-
-      if (!(event.metaKey || event.ctrlKey) || event.altKey) {
+      if (
+        readerPreviewOpen ||
+        projectManagerOpen ||
+        exportDialogOpen ||
+        helpOpen
+      ) {
         return
       }
 
@@ -211,9 +374,27 @@ export function App() {
         (target instanceof HTMLElement && target.isContentEditable)
       const key = event.key.toLowerCase()
 
+      if (!isEditable && (key === 'delete' || key === 'backspace')) {
+        const state = useEditorStore.getState()
+
+        if (state.selectedElementId) {
+          event.preventDefault()
+          state.deleteElement(state.selectedElementId)
+        }
+        return
+      }
+
+      if (!(event.metaKey || event.ctrlKey) || event.altKey) {
+        return
+      }
+
       if (key === 's') {
         event.preventDefault()
-        saveFromUi()
+        if (event.shiftKey) {
+          saveAsFromUi()
+        } else {
+          saveFromUi()
+        }
         return
       }
 
@@ -231,6 +412,13 @@ export function App() {
       } else if (key === 'y' && event.ctrlKey && !event.metaKey) {
         event.preventDefault()
         redo()
+      } else if (key === 'd') {
+        const state = useEditorStore.getState()
+
+        if (state.selectedElementId) {
+          event.preventDefault()
+          state.duplicateElement(state.selectedElementId)
+        }
       }
     }
 
@@ -238,19 +426,59 @@ export function App() {
     return () => window.removeEventListener('keydown', handleApplicationShortcut)
   })
 
+  useEffect(() => {
+    if (!isInspectorOpen || readerPreviewOpen || helpOpen) {
+      return
+    }
+
+    const handleInspectorEscape = (event: globalThis.KeyboardEvent) => {
+      const target = event.target
+      const isEditable =
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target instanceof HTMLSelectElement ||
+        (target instanceof HTMLElement && target.isContentEditable)
+
+      if (
+        event.key !== 'Escape' ||
+        event.defaultPrevented ||
+        isEditable ||
+        !window.matchMedia('(width <= 1120px)').matches
+      ) {
+        return
+      }
+
+      event.preventDefault()
+      closeInspectorAndRestoreFocus()
+    }
+
+    window.addEventListener('keydown', handleInspectorEscape)
+    return () => window.removeEventListener('keydown', handleInspectorEscape)
+  }, [closeInspectorAndRestoreFocus, helpOpen, isInspectorOpen, readerPreviewOpen])
+
   return (
-    <main className="app-shell">
+    <main
+      className={`app-shell${isInspectorOpen ? '' : ' is-inspector-closed'}`}
+    >
       <header className="app-header">
         <AppMenuBar
           canUndo={canUndo}
           canRedo={canRedo}
           canReopen={canReopen}
+          isInspectorOpen={isInspectorOpen}
           onNewEpisode={startNewEpisode}
+          onOpenLocalProject={showLocalProjects}
           onSave={saveFromUi}
+          onSaveAs={saveAsFromUi}
           onReopen={reopenSavedEpisode}
+          onImportProject={choosePortableProject}
+          onExportProject={() => void downloadPortableProject()}
+          onExportEpisodeImages={() => setExportDialogOpen(true)}
           onUndo={undo}
           onRedo={redo}
           onReaderPreview={openReaderPreview}
+          onToggleInspector={() => setIsInspectorOpen((isOpen) => !isOpen)}
+          onOpenHelp={() => setHelpOpen(true)}
         />
 
         <div className="brand-lockup">
@@ -308,19 +536,72 @@ export function App() {
           </div>
         </div>
 
-        <button
-          className="reset-button"
-          type="button"
-          onClick={resetDemo}
-        >
-          Reset demo
-        </button>
+        <div className="header-actions">
+          <button
+            ref={inspectorToggleRef}
+            className="inspector-toggle"
+            type="button"
+            aria-label={isInspectorOpen ? 'Hide inspector' : 'Show inspector'}
+            aria-expanded={isInspectorOpen}
+            aria-controls="episode-inspector"
+            title={isInspectorOpen ? 'Hide inspector' : 'Show inspector'}
+            onClick={() => setIsInspectorOpen((isOpen) => !isOpen)}
+          >
+            <span aria-hidden="true">▥</span>
+          </button>
+          <button
+            className="reset-button"
+            type="button"
+            onClick={resetDemo}
+          >
+            Reset demo
+          </button>
+        </div>
       </header>
 
-      <aside className="inspector" aria-label="Episode overview and layers">
-        <EpisodeMinimap />
-        <LayersPanel />
-      </aside>
+      <RecoveryBanner
+        recovery={recoveryAvailable}
+        message={recoveryMessage}
+        onRestore={restoreRecoveredWork}
+        onDiscard={discardRecoveredWork}
+      />
+
+      <input
+        ref={portableImportInputRef}
+        className="sr-only"
+        type="file"
+        tabIndex={-1}
+        accept=".scrollsplice,application/vnd.scrollsplice.project+json"
+        aria-label="Import portable ScrollSplice project"
+        onChange={() => void handlePortableProjectSelection()}
+      />
+
+      {isInspectorOpen ? (
+        <>
+          <button
+            className="inspector-scrim"
+            type="button"
+            aria-label="Dismiss inspector overlay"
+            onClick={closeInspectorAndRestoreFocus}
+          />
+          <aside
+            className="inspector"
+            id="episode-inspector"
+            aria-label="Episode overview and layers"
+          >
+            <button
+              className="inspector-close"
+              type="button"
+              aria-label="Close inspector"
+              onClick={closeInspectorAndRestoreFocus}
+            >
+              ×
+            </button>
+            <EpisodeMinimap />
+            <LayersPanel />
+          </aside>
+        </>
+      ) : null}
 
       <div className="workspace">
         <AssetPanel />
@@ -354,6 +635,23 @@ export function App() {
 
       {readerPreviewOpen ? (
         <ReaderPreview onClose={closeReaderPreview} />
+      ) : null}
+      {helpOpen ? <HelpDialog onClose={() => setHelpOpen(false)} /> : null}
+      {projectManagerOpen ? (
+        <ProjectManagerDialog
+          projects={recentProjects}
+          currentProjectId={currentProjectId}
+          busy={projectLibraryBusy}
+          onOpen={openSelectedProject}
+          onDelete={deleteSelectedProject}
+          onClose={closeProjectManager}
+        />
+      ) : null}
+      {exportDialogOpen ? (
+        <ExportDialog
+          key={`${episodeId}-${currentRevision}`}
+          onClose={closeExportDialog}
+        />
       ) : null}
     </main>
   )

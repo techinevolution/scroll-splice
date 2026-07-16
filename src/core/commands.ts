@@ -4,29 +4,48 @@ import {
   type LogicalPosition,
 } from './coordinates'
 import {
+  clampEpisodeElementGeometry,
+  isValidImageCrop,
+  isValidImageMask,
+  normalizeElementTransform,
+} from './elementGeometry'
+import {
+  DEFAULT_IMAGE_FRAME,
   ELEMENT_BLEND_MODES,
+  IDENTITY_ELEMENT_TRANSFORM,
   getBackgroundBaseLayerPlane,
   getLayerPlaneById,
   getLayerPlanesForGroup,
   type CompositionGroup,
   type ElementBounds,
   type ElementBlendMode,
+  type ElementOverflow,
+  type ElementTransform,
   type EpisodeDocument,
   type EpisodeElement,
   type ImageAssetReference,
+  type ImageCrop,
   type ImageElement,
+  type ImageFrame,
   type OrdinaryLayerPlane,
   type ShapeFill,
   type ShapeFillStop,
   type ShapeElement,
+  type SpeechBalloonElement,
+  type SpeechBalloonTail,
   type TextElement,
 } from './episode'
+import {
+  DEFAULT_SPEECH_BALLOON_TAIL,
+  normalizeSpeechBalloonTail,
+} from './speechBalloonGeometry'
 
 export const DEFAULT_EPISODE_HEIGHT_INCREMENT = 1280
 export const MIN_EPISODE_LOGICAL_HEIGHT = 1280
 export const MIN_ELEMENT_SIZE = 24
 export const MAX_EPISODE_NAME_LENGTH = 60
 export const MAX_LAYER_PLANE_NAME_LENGTH = 32
+export const MAX_ELEMENT_NAME_LENGTH = 80
 export const MAX_TEXT_CONTENT_LENGTH = 2000
 export const MAX_TEXT_FONT_SIZE = 200
 export const SYNTHETIC_SHAPE_GENERATOR_ID =
@@ -34,14 +53,28 @@ export const SYNTHETIC_SHAPE_GENERATOR_ID =
 export const BACKGROUND_COLOR_REGION_GENERATOR_ID =
   'scrollsplice-background-color-region-v1'
 export const TEXT_ELEMENT_GENERATOR_ID = 'scrollsplice-editor-text-v1'
+export const SPEECH_BALLOON_GENERATOR_ID =
+  'scrollsplice-editable-speech-balloon-v1'
 
 const MIN_TEXT_FONT_SIZE = 8
 
 export interface CreateSyntheticShapeElementInput {
   readonly layerPlaneId: string
   readonly name: string
+  readonly shape?: ShapeElement['shape']
   readonly fill: string
+  readonly stroke?: string
+  readonly strokeWidth?: number
+  readonly cornerRadius?: number
   readonly bounds: ElementBounds
+}
+
+export type HorizontalElementAlignment = 'left' | 'center' | 'right'
+export type VerticalElementAlignment = 'top' | 'middle' | 'bottom'
+
+export interface ElementAlignment {
+  readonly horizontal?: HorizontalElementAlignment
+  readonly vertical?: VerticalElementAlignment
 }
 
 export interface CreateBackgroundColorRegionInput {
@@ -76,6 +109,36 @@ export interface UpdateTextElementInput {
   readonly align: TextElement['align']
 }
 
+export interface CreateSpeechBalloonElementInput {
+  readonly layerPlaneId: string
+  readonly bounds: ElementBounds
+  readonly text?: string
+}
+
+export interface UpdateSpeechBalloonElementInput {
+  readonly text: string
+  readonly fill: string
+  readonly stroke: string
+  readonly strokeWidth: number
+  readonly cornerRadius: number
+  readonly textFill: string
+  readonly fontFamily: string
+  readonly fontWeight: SpeechBalloonElement['fontWeight']
+  readonly lineHeight: number
+  readonly align: SpeechBalloonElement['align']
+  readonly padding: number
+  readonly minFontSize: number
+  readonly maxFontSize: number
+  readonly tail: SpeechBalloonTail
+}
+
+export interface UpdateShapeElementStyleInput {
+  readonly shape: ShapeElement['shape']
+  readonly stroke: string | null
+  readonly strokeWidth: number
+  readonly cornerRadius: number
+}
+
 export function setEpisodeName(
   document: EpisodeDocument,
   requestedName: string,
@@ -91,6 +154,110 @@ export function setEpisodeName(
   }
 
   return { ...document, name }
+}
+
+export function setElementName(
+  document: EpisodeDocument,
+  elementId: string,
+  requestedName: string,
+): EpisodeDocument {
+  const name = requestedName.trim()
+
+  if (name.length === 0 || name.length > MAX_ELEMENT_NAME_LENGTH) {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) =>
+    element.name === name ? element : { ...element, name },
+  )
+}
+
+export function setElementLocked(
+  document: EpisodeDocument,
+  elementId: string,
+  locked: boolean,
+): EpisodeDocument {
+  return replaceElement(document, elementId, (element) =>
+    element.locked === locked ? element : { ...element, locked },
+  )
+}
+
+export function toggleElementLocked(
+  document: EpisodeDocument,
+  elementId: string,
+): EpisodeDocument {
+  return replaceElement(document, elementId, (element) => ({
+    ...element,
+    locked: !element.locked,
+  }))
+}
+
+export function setElementTransform(
+  document: EpisodeDocument,
+  elementId: string,
+  requestedTransform: ElementTransform,
+): EpisodeDocument {
+  const transform = normalizeElementTransform(requestedTransform)
+
+  if (!transform) {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) => {
+    if (element.locked) {
+      return element
+    }
+
+    const bounds = clampEpisodeElementGeometry(
+      element,
+      element.bounds,
+      transform,
+      element.overflow,
+      { width: document.logicalWidth, height: document.logicalHeight },
+    )
+
+    if (!bounds) {
+      return element
+    }
+
+    return areElementTransformsEqual(element.transform, transform) &&
+      areElementBoundsEqual(element.bounds, bounds)
+      ? element
+      : { ...element, bounds, transform }
+  })
+}
+
+export function setElementOverflow(
+  document: EpisodeDocument,
+  elementId: string,
+  overflow: ElementOverflow,
+): EpisodeDocument {
+  if (overflow !== 'constrained' && overflow !== 'bleed') {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) => {
+    if (element.locked) {
+      return element
+    }
+
+    const bounds = clampEpisodeElementGeometry(
+      element,
+      element.bounds,
+      element.transform,
+      overflow,
+      { width: document.logicalWidth, height: document.logicalHeight },
+    )
+
+    if (!bounds) {
+      return element
+    }
+
+    return element.overflow === overflow &&
+      areElementBoundsEqual(element.bounds, bounds)
+      ? element
+      : { ...element, bounds, overflow }
+  })
 }
 
 export function extendEpisodeHeight(
@@ -162,14 +329,18 @@ export function moveElement(
       return element
     }
 
-    const position = clampElementPosition(
-      requestedPosition,
-      element.bounds,
-      document.logicalWidth,
-      document.logicalHeight,
+    const bounds = clampEpisodeElementGeometry(
+      element,
+      { ...element.bounds, ...requestedPosition },
+      element.transform,
+      element.overflow,
+      { width: document.logicalWidth, height: document.logicalHeight },
     )
 
-    if (position.x === element.bounds.x && position.y === element.bounds.y) {
+    if (
+      !bounds ||
+      (bounds.x === element.bounds.x && bounds.y === element.bounds.y)
+    ) {
       return element
     }
 
@@ -177,14 +348,133 @@ export function moveElement(
 
     return {
       ...element,
-      bounds: {
-        ...element.bounds,
-        ...position,
-      },
+      bounds,
     }
   })
 
   return changed ? { ...document, elements } : document
+}
+
+export function nudgeElement(
+  document: EpisodeDocument,
+  elementId: string,
+  delta: LogicalPosition,
+): EpisodeDocument {
+  const element = document.elements.find(({ id }) => id === elementId)
+
+  if (!element || !Number.isFinite(delta.x) || !Number.isFinite(delta.y)) {
+    return document
+  }
+
+  return moveElement(document, elementId, {
+    x: element.bounds.x + delta.x,
+    y: element.bounds.y + delta.y,
+  })
+}
+
+export function alignElement(
+  document: EpisodeDocument,
+  elementId: string,
+  alignment: ElementAlignment,
+): EpisodeDocument {
+  const element = document.elements.find(({ id }) => id === elementId)
+  const { horizontal, vertical } = alignment
+
+  if (
+    !element ||
+    (horizontal === undefined && vertical === undefined) ||
+    (horizontal !== undefined &&
+      horizontal !== 'left' &&
+      horizontal !== 'center' &&
+      horizontal !== 'right') ||
+    (vertical !== undefined &&
+      vertical !== 'top' &&
+      vertical !== 'middle' &&
+      vertical !== 'bottom')
+  ) {
+    return document
+  }
+
+  const x =
+    horizontal === 'left'
+      ? 0
+      : horizontal === 'center'
+        ? (document.logicalWidth - element.bounds.width) / 2
+        : horizontal === 'right'
+          ? document.logicalWidth - element.bounds.width
+          : element.bounds.x
+  const y =
+    vertical === 'top'
+      ? 0
+      : vertical === 'middle'
+        ? (document.logicalHeight - element.bounds.height) / 2
+        : vertical === 'bottom'
+          ? document.logicalHeight - element.bounds.height
+          : element.bounds.y
+
+  return moveElement(document, elementId, { x, y })
+}
+
+export function duplicateElement(
+  document: EpisodeDocument,
+  elementId: string,
+  offset: LogicalPosition = { x: 24, y: 24 },
+): EpisodeDocument {
+  const element = document.elements.find(({ id }) => id === elementId)
+
+  if (
+    !element ||
+    !areFinitePositiveBounds(element.bounds) ||
+    !Number.isFinite(offset.x) ||
+    !Number.isFinite(offset.y) ||
+    !Number.isFinite(document.logicalWidth) ||
+    !Number.isFinite(document.logicalHeight) ||
+    document.logicalWidth <= 0 ||
+    document.logicalHeight <= 0
+  ) {
+    return document
+  }
+
+  const { id } = createElementId(document, `${element.id}-copy`)
+  const bounds = clampEpisodeElementGeometry(
+    element,
+    {
+      ...element.bounds,
+      x: element.bounds.x + offset.x,
+      y: element.bounds.y + offset.y,
+    },
+    element.transform,
+    element.overflow,
+    { width: document.logicalWidth, height: document.logicalHeight },
+  )
+
+  if (!bounds) {
+    return document
+  }
+  const highestZIndex = document.elements.reduce(
+    (highest, candidate) =>
+      candidate.layerPlaneId === element.layerPlaneId
+        ? Math.max(highest, candidate.zIndex)
+        : highest,
+    -1,
+  )
+  const copySuffix = ' copy'
+  const duplicateName = `${element.name}${copySuffix}`
+  const duplicate: EpisodeElement = {
+    ...element,
+    id,
+    name:
+      duplicateName.length <= MAX_ELEMENT_NAME_LENGTH
+        ? duplicateName
+        : `${element.name.slice(
+            0,
+            MAX_ELEMENT_NAME_LENGTH - copySuffix.length,
+          )}${copySuffix}`,
+    bounds,
+    zIndex: highestZIndex + 1,
+  }
+
+  return { ...document, elements: [...document.elements, duplicate] }
 }
 
 export function resizeElement(
@@ -224,14 +514,22 @@ export function resizeElement(
       requestedBounds.height,
       document.logicalHeight,
     )
-    const bounds = {
+    const requestedGeometry = {
       x: horizontal.start,
       y: vertical.start,
       width: horizontal.size,
       height: vertical.size,
     }
+    const bounds = clampEpisodeElementGeometry(
+      element,
+      requestedGeometry,
+      element.transform,
+      element.overflow,
+      { width: document.logicalWidth, height: document.logicalHeight },
+    )
 
     if (
+      !bounds ||
       bounds.x === element.bounds.x &&
       bounds.y === element.bounds.y &&
       bounds.width === element.bounds.width &&
@@ -243,7 +541,9 @@ export function resizeElement(
     return {
       ...document,
       elements: document.elements.map((candidate) =>
-        candidate.id === element.id ? { ...candidate, bounds } : candidate,
+        candidate.id === element.id
+          ? withResizedElementBounds(candidate, bounds)
+          : candidate,
       ),
     }
   }
@@ -296,11 +596,19 @@ export function resizeElement(
     document.logicalWidth,
     document.logicalHeight,
   )
-  const bounds = { ...position, width, height }
+  const requestedGeometry = { ...position, width, height }
+  const bounds = clampEpisodeElementGeometry(
+    element,
+    requestedGeometry,
+    element.transform,
+    element.overflow,
+    { width: document.logicalWidth, height: document.logicalHeight },
+  )
   const fontSize =
     element.type === 'text' ? element.fontSize * scale : undefined
 
   if (
+    !bounds ||
     bounds.x === element.bounds.x &&
     bounds.y === element.bounds.y &&
     bounds.width === element.bounds.width &&
@@ -314,11 +622,7 @@ export function resizeElement(
     ...document,
     elements: document.elements.map((candidate) =>
       candidate.id === element.id
-        ? {
-            ...candidate,
-            bounds,
-            ...(candidate.type === 'text' ? { fontSize } : {}),
-          }
+        ? withResizedElementBounds(candidate, bounds, fontSize)
         : candidate,
     ),
   }
@@ -351,6 +655,56 @@ function resizeFreeformAxis(
   }
 }
 
+function withResizedElementBounds(
+  element: EpisodeElement,
+  bounds: ElementBounds,
+  textFontSize?: number,
+): EpisodeElement {
+  if (element.type === 'text') {
+    return {
+      ...element,
+      bounds,
+      ...(textFontSize !== undefined ? { fontSize: textFontSize } : {}),
+    }
+  }
+
+  if (element.type === 'speech-balloon') {
+    return {
+      ...element,
+      bounds,
+      cornerRadius: Math.min(
+        element.cornerRadius,
+        bounds.width / 2,
+        bounds.height / 2,
+      ),
+      padding: Math.min(
+        element.padding,
+        Math.max(0, Math.min(bounds.width, bounds.height) / 2 - 1),
+      ),
+    }
+  }
+
+  if (element.type === 'image' && element.frame.mask.kind === 'rectangle') {
+    return {
+      ...element,
+      bounds,
+      frame: {
+        ...element.frame,
+        mask: {
+          ...element.frame.mask,
+          cornerRadius: Math.min(
+            element.frame.mask.cornerRadius,
+            bounds.width / 2,
+            bounds.height / 2,
+          ),
+        },
+      },
+    }
+  }
+
+  return { ...element, bounds }
+}
+
 function areFinitePositiveBounds(bounds: ElementBounds): boolean {
   return (
     Number.isFinite(bounds.x) &&
@@ -375,7 +729,8 @@ export function isElementFreeformResizable(
 ): boolean {
   return (
     isBackgroundColorRegion(element) ||
-    (element.type === 'image' && element.presentation === 'tile')
+    element.type === 'speech-balloon' ||
+    (element.type === 'image' && element.presentation !== 'single')
   )
 }
 
@@ -453,6 +808,59 @@ export function setShapeFill(
   })
 }
 
+export function updateShapeElementStyle(
+  document: EpisodeDocument,
+  elementId: string,
+  input: UpdateShapeElementStyleInput,
+): EpisodeDocument {
+  const stroke = input.stroke?.trim() || undefined
+
+  if (
+    (input.shape !== 'rectangle' && input.shape !== 'ellipse') ||
+    !Number.isFinite(input.strokeWidth) ||
+    input.strokeWidth < 0 ||
+    input.strokeWidth > 100 ||
+    !Number.isFinite(input.cornerRadius) ||
+    input.cornerRadius < 0
+  ) {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) => {
+    if (element.type !== 'shape') return element
+
+    const strokeWidth = stroke ? input.strokeWidth : undefined
+    const cornerRadius =
+      input.shape === 'rectangle'
+        ? Math.min(
+            input.cornerRadius,
+            element.bounds.width / 2,
+            element.bounds.height / 2,
+          )
+        : undefined
+
+    if (
+      element.shape === input.shape &&
+      element.stroke === stroke &&
+      element.strokeWidth === strokeWidth &&
+      element.cornerRadius === cornerRadius
+    ) {
+      return element
+    }
+
+    return {
+      ...element,
+      shape: input.shape,
+      ...(stroke
+        ? { stroke, strokeWidth }
+        : { stroke: undefined, strokeWidth: undefined }),
+      ...(cornerRadius === undefined
+        ? { cornerRadius: undefined }
+        : { cornerRadius }),
+    }
+  })
+}
+
 export function setImagePresentation(
   document: EpisodeDocument,
   elementId: string,
@@ -461,7 +869,11 @@ export function setImagePresentation(
     readonly sourceAspectRatio?: number
   } = {},
 ): EpisodeDocument {
-  if (presentation !== 'single' && presentation !== 'tile') {
+  if (
+    presentation !== 'single' &&
+    presentation !== 'tile' &&
+    presentation !== 'cover'
+  ) {
     return document
   }
 
@@ -470,7 +882,7 @@ export function setImagePresentation(
       return element
     }
 
-    if (presentation === 'tile') {
+    if (presentation === 'tile' || presentation === 'cover') {
       return { ...element, presentation }
     }
 
@@ -521,9 +933,57 @@ export function setImagePresentation(
     )
 
     return {
-      ...element,
+      ...withResizedElementBounds(element, {
+        ...position,
+        width,
+        height,
+      }),
       presentation,
-      bounds: { ...position, width, height },
+    } as ImageElement
+  })
+}
+
+export function setImageFrame(
+  document: EpisodeDocument,
+  elementId: string,
+  requestedFrame: ImageFrame,
+): EpisodeDocument {
+  return replaceElement(document, elementId, (element) => {
+    if (element.type !== 'image') {
+      return element
+    }
+
+    const frame = normalizeImageFrame(requestedFrame, element.bounds)
+
+    return !frame || areImageFramesEqual(element.frame, frame)
+      ? element
+      : { ...element, frame }
+  })
+}
+
+export function setImageCrop(
+  document: EpisodeDocument,
+  elementId: string,
+  requestedCrop: ImageCrop,
+): EpisodeDocument {
+  if (!isValidImageCrop(requestedCrop)) {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) => {
+    if (
+      element.type !== 'image' ||
+      areImageCropsEqual(element.frame.crop, requestedCrop)
+    ) {
+      return element
+    }
+
+    return {
+      ...element,
+      frame: {
+        ...element.frame,
+        crop: { ...requestedCrop },
+      },
     }
   })
 }
@@ -532,13 +992,30 @@ export function deleteElement(
   document: EpisodeDocument,
   elementId: string,
 ): EpisodeDocument {
-  const elements = document.elements.filter(
-    (element) => element.id !== elementId,
-  )
+  const element = document.elements.find(({ id }) => id === elementId)
 
-  return elements.length === document.elements.length
-    ? document
-    : { ...document, elements }
+  if (!element || element.locked) {
+    return document
+  }
+
+  const elements = document.elements.filter(
+    (candidate) => candidate.id !== elementId,
+  )
+  const elementGroups = document.elementGroups.flatMap((group) => {
+    if (!group.memberElementIds.includes(elementId)) {
+      return [group]
+    }
+
+    const memberElementIds = group.memberElementIds.filter(
+      (memberElementId) => memberElementId !== elementId,
+    )
+
+    return memberElementIds.length >= 2
+      ? [{ ...group, memberElementIds }]
+      : []
+  })
+
+  return { ...document, elements, elementGroups }
 }
 
 export function moveElementInStack(
@@ -676,13 +1153,24 @@ export function createSyntheticShapeElement(
 ): EpisodeDocument {
   const layerPlane = getLayerPlaneById(document, input.layerPlaneId)
   const name = input.name.trim()
+  const shape = input.shape ?? 'rectangle'
   const fill = input.fill.trim()
+  const stroke = input.stroke?.trim()
 
   if (
     !layerPlane ||
     layerPlane.kind !== 'ordinary' ||
     name.length === 0 ||
-    fill.length === 0
+    name.length > MAX_ELEMENT_NAME_LENGTH ||
+    (shape !== 'rectangle' && shape !== 'ellipse') ||
+    fill.length === 0 ||
+    (input.stroke !== undefined && !stroke) ||
+    (input.strokeWidth !== undefined &&
+      (!stroke ||
+        !Number.isFinite(input.strokeWidth) ||
+        input.strokeWidth < 0)) ||
+    (input.cornerRadius !== undefined &&
+      (!Number.isFinite(input.cornerRadius) || input.cornerRadius < 0))
   ) {
     return document
   }
@@ -693,12 +1181,25 @@ export function createSyntheticShapeElement(
     return document
   }
 
-  return appendSyntheticRectangle(document, {
+  return appendSyntheticShape(document, {
     idPrefix: 'synthetic-shape',
     generatorId: SYNTHETIC_SHAPE_GENERATOR_ID,
     layerPlaneId: layerPlane.id,
     name,
+    shape,
     fill,
+    ...(stroke
+      ? { stroke, strokeWidth: input.strokeWidth ?? 2 }
+      : {}),
+    ...(input.cornerRadius !== undefined
+      ? {
+          cornerRadius: Math.min(
+            input.cornerRadius,
+            bounds.width / 2,
+            bounds.height / 2,
+          ),
+        }
+      : {}),
     bounds,
   })
 }
@@ -747,11 +1248,14 @@ export function createImageElement(
     zIndex: highestZIndex + 1,
     opacity: 1,
     blendMode: 'normal',
+    transform: IDENTITY_ELEMENT_TRANSFORM,
+    overflow: 'constrained',
     assetReference: {
       kind: input.assetReference.kind,
       assetId,
     },
     presentation: 'single',
+    frame: DEFAULT_IMAGE_FRAME,
   }
 
   return { ...document, elements: [...document.elements, element] }
@@ -813,6 +1317,8 @@ export function createTextElement(
     zIndex: highestZIndex + 1,
     opacity: 1,
     blendMode: 'normal',
+    transform: IDENTITY_ELEMENT_TRANSFORM,
+    overflow: 'constrained',
     assetReference: {
       kind: 'synthetic',
       generatorId: TEXT_ELEMENT_GENERATOR_ID,
@@ -871,6 +1377,141 @@ export function updateTextElement(
   return changed ? { ...document, elements } : document
 }
 
+export function createSpeechBalloonElement(
+  document: EpisodeDocument,
+  input: CreateSpeechBalloonElementInput,
+): EpisodeDocument {
+  const layerPlane = getLayerPlaneById(document, input.layerPlaneId)
+  const bounds = clampNewElementBounds(document, input.bounds)
+  const text = (input.text ?? 'Your dialogue').trim()
+
+  if (
+    !layerPlane ||
+    layerPlane.kind !== 'ordinary' ||
+    !bounds ||
+    text.length === 0 ||
+    text.length > MAX_TEXT_CONTENT_LENGTH
+  ) {
+    return document
+  }
+
+  const { id, number } = createElementId(document, 'speech-balloon')
+  const highestZIndex = document.elements.reduce(
+    (highest, element) =>
+      element.layerPlaneId === layerPlane.id
+        ? Math.max(highest, element.zIndex)
+        : highest,
+    -1,
+  )
+  const element: SpeechBalloonElement = {
+    id,
+    name: `Editable balloon ${number}`,
+    layerPlaneId: layerPlane.id,
+    type: 'speech-balloon',
+    bounds,
+    fill: '#FFFFFF',
+    stroke: '#211A2B',
+    strokeWidth: 6,
+    cornerRadius: Math.min(56, bounds.width / 2, bounds.height / 2),
+    text,
+    textFill: '#211A2B',
+    fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+    fontWeight: 600,
+    lineHeight: 1.15,
+    align: 'center',
+    padding: Math.min(24, bounds.width / 4, bounds.height / 4),
+    minFontSize: 12,
+    maxFontSize: 44,
+    tail: DEFAULT_SPEECH_BALLOON_TAIL,
+    visible: true,
+    locked: false,
+    zIndex: highestZIndex + 1,
+    opacity: 1,
+    blendMode: 'normal',
+    transform: IDENTITY_ELEMENT_TRANSFORM,
+    overflow: 'constrained',
+    assetReference: {
+      kind: 'synthetic',
+      generatorId: SPEECH_BALLOON_GENERATOR_ID,
+    },
+  }
+
+  return { ...document, elements: [...document.elements, element] }
+}
+
+export function updateSpeechBalloonElement(
+  document: EpisodeDocument,
+  elementId: string,
+  input: UpdateSpeechBalloonElementInput,
+): EpisodeDocument {
+  const text = input.text.trim()
+  const fill = input.fill.trim()
+  const stroke = input.stroke.trim()
+  const textFill = input.textFill.trim()
+  const fontFamily = input.fontFamily.trim()
+  const tail = normalizeSpeechBalloonTail(input.tail)
+
+  if (
+    text.length === 0 ||
+    text.length > MAX_TEXT_CONTENT_LENGTH ||
+    !fill ||
+    !stroke ||
+    !textFill ||
+    !fontFamily ||
+    !Number.isFinite(input.strokeWidth) ||
+    input.strokeWidth < 0 ||
+    input.strokeWidth > 100 ||
+    !Number.isFinite(input.cornerRadius) ||
+    input.cornerRadius < 0 ||
+    !Number.isFinite(input.lineHeight) ||
+    input.lineHeight < 0.8 ||
+    input.lineHeight > 2.5 ||
+    !isTextFontWeight(input.fontWeight) ||
+    !isTextAlignment(input.align) ||
+    !Number.isFinite(input.padding) ||
+    input.padding < 0 ||
+    !isValidTextFontSize(input.minFontSize) ||
+    !isValidTextFontSize(input.maxFontSize) ||
+    input.maxFontSize < input.minFontSize ||
+    !tail
+  ) {
+    return document
+  }
+
+  return replaceElement(document, elementId, (element) => {
+    if (element.type !== 'speech-balloon') return element
+
+    const padding = Math.min(
+      input.padding,
+      Math.max(0, Math.min(element.bounds.width, element.bounds.height) / 2 - 1),
+    )
+    const cornerRadius = Math.min(
+      input.cornerRadius,
+      element.bounds.width / 2,
+      element.bounds.height / 2,
+    )
+    const next: SpeechBalloonElement = {
+      ...element,
+      text,
+      fill,
+      stroke,
+      strokeWidth: input.strokeWidth,
+      cornerRadius,
+      textFill,
+      fontFamily,
+      fontWeight: input.fontWeight,
+      lineHeight: input.lineHeight,
+      align: input.align,
+      padding,
+      minFontSize: input.minFontSize,
+      maxFontSize: input.maxFontSize,
+      tail,
+    }
+
+    return areSpeechBalloonStylesEqual(element, next) ? element : next
+  })
+}
+
 export function createBackgroundColorRegion(
   document: EpisodeDocument,
   input: CreateBackgroundColorRegionInput,
@@ -898,11 +1539,12 @@ export function createBackgroundColorRegion(
     return document
   }
 
-  return appendSyntheticRectangle(document, {
+  return appendSyntheticShape(document, {
     idPrefix: 'background-color-region',
     generatorId: BACKGROUND_COLOR_REGION_GENERATOR_ID,
     layerPlaneId: layerPlane.id,
     name: (number) => `Background color region ${number}`,
+    shape: 'rectangle',
     fill,
     bounds: {
       x: 0,
@@ -1160,18 +1802,22 @@ function createLayerPlaneId(
   return candidateId
 }
 
-interface AppendSyntheticRectangleInput {
+interface AppendSyntheticShapeInput {
   readonly idPrefix: string
   readonly generatorId: string
   readonly layerPlaneId: string
   readonly name: string | ((number: number) => string)
+  readonly shape: ShapeElement['shape']
   readonly fill: string
+  readonly stroke?: string
+  readonly strokeWidth?: number
+  readonly cornerRadius?: number
   readonly bounds: ElementBounds
 }
 
-function appendSyntheticRectangle(
+function appendSyntheticShape(
   document: EpisodeDocument,
-  input: AppendSyntheticRectangleInput,
+  input: AppendSyntheticShapeInput,
 ): EpisodeDocument {
   const { id, number } = createElementId(document, input.idPrefix)
   const highestZIndex = document.elements.reduce(
@@ -1189,11 +1835,20 @@ function appendSyntheticRectangle(
         : input.name,
     layerPlaneId: input.layerPlaneId,
     type: 'shape',
-    shape: 'rectangle',
+    shape: input.shape,
     bounds: input.bounds,
     fill: { kind: 'solid', color: input.fill },
+    ...(input.stroke !== undefined ? { stroke: input.stroke } : {}),
+    ...(input.strokeWidth !== undefined
+      ? { strokeWidth: input.strokeWidth }
+      : {}),
+    ...(input.cornerRadius !== undefined
+      ? { cornerRadius: input.cornerRadius }
+      : {}),
     opacity: 1,
     blendMode: 'normal',
+    transform: IDENTITY_ELEMENT_TRANSFORM,
+    overflow: 'constrained',
     visible: true,
     locked: false,
     zIndex: highestZIndex + 1,
@@ -1224,6 +1879,138 @@ function replaceElement(
   })
 
   return changed ? { ...document, elements } : document
+}
+
+function normalizeImageFrame(
+  frame: ImageFrame,
+  bounds: ElementBounds,
+): ImageFrame | undefined {
+  if (!frame || !isValidImageMask(frame.mask) || !isValidImageCrop(frame.crop)) {
+    return undefined
+  }
+
+  const border = frame.border
+
+  if (
+    border !== undefined &&
+    (typeof border.color !== 'string' ||
+      border.color.trim().length === 0 ||
+      !Number.isFinite(border.width) ||
+      border.width < 0)
+  ) {
+    return undefined
+  }
+
+  const mask =
+    frame.mask.kind === 'rectangle'
+      ? {
+          kind: 'rectangle' as const,
+          cornerRadius: Math.min(
+            frame.mask.cornerRadius,
+            bounds.width / 2,
+            bounds.height / 2,
+          ),
+        }
+      : {
+          kind: 'polygon' as const,
+          points: frame.mask.points.map((point) => ({ ...point })),
+        }
+
+  return {
+    mask,
+    crop: { ...frame.crop },
+    ...(border
+      ? { border: { color: border.color.trim(), width: border.width } }
+      : {}),
+  }
+}
+
+function areElementTransformsEqual(
+  first: ElementTransform,
+  second: ElementTransform,
+): boolean {
+  return (
+    first.rotationDegrees === second.rotationDegrees &&
+    first.flipX === second.flipX &&
+    first.flipY === second.flipY
+  )
+}
+
+function areElementBoundsEqual(
+  first: ElementBounds,
+  second: ElementBounds,
+): boolean {
+  return (
+    first.x === second.x &&
+    first.y === second.y &&
+    first.width === second.width &&
+    first.height === second.height
+  )
+}
+
+function areImageCropsEqual(first: ImageCrop, second: ImageCrop): boolean {
+  return (
+    first.focusX === second.focusX &&
+    first.focusY === second.focusY &&
+    first.zoom === second.zoom
+  )
+}
+
+function areImageFramesEqual(first: ImageFrame, second: ImageFrame): boolean {
+  if (
+    !areImageCropsEqual(first.crop, second.crop) ||
+    first.mask.kind !== second.mask.kind ||
+    first.border?.color !== second.border?.color ||
+    first.border?.width !== second.border?.width
+  ) {
+    return false
+  }
+
+  if (first.mask.kind === 'rectangle' && second.mask.kind === 'rectangle') {
+    return first.mask.cornerRadius === second.mask.cornerRadius
+  }
+
+  if (first.mask.kind !== 'polygon' || second.mask.kind !== 'polygon') {
+    return false
+  }
+
+  const secondPoints = second.mask.points
+
+  return (
+    first.mask.points.length === secondPoints.length &&
+    first.mask.points.every(
+      (point, index) =>
+        point.x === secondPoints[index]?.x &&
+        point.y === secondPoints[index]?.y,
+    )
+  )
+}
+
+function areSpeechBalloonStylesEqual(
+  first: SpeechBalloonElement,
+  second: SpeechBalloonElement,
+): boolean {
+  return (
+    first.text === second.text &&
+    first.fill === second.fill &&
+    first.stroke === second.stroke &&
+    first.strokeWidth === second.strokeWidth &&
+    first.cornerRadius === second.cornerRadius &&
+    first.textFill === second.textFill &&
+    first.fontFamily === second.fontFamily &&
+    first.fontWeight === second.fontWeight &&
+    first.lineHeight === second.lineHeight &&
+    first.align === second.align &&
+    first.padding === second.padding &&
+    first.minFontSize === second.minFontSize &&
+    first.maxFontSize === second.maxFontSize &&
+    first.tail.enabled === second.tail.enabled &&
+    first.tail.side === second.tail.side &&
+    first.tail.anchor === second.tail.anchor &&
+    first.tail.width === second.tail.width &&
+    first.tail.tip.x === second.tail.tip.x &&
+    first.tail.tip.y === second.tail.tip.y
+  )
 }
 
 function normalizeShapeFill(value: unknown): ShapeFill | undefined {

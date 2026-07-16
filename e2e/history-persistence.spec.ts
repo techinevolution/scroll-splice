@@ -14,7 +14,7 @@ async function openApplicationMenu(page: Page, name: 'File' | 'Edit') {
 async function useApplicationMenuItem(
   page: Page,
   menuName: 'File' | 'Edit',
-  itemName: 'New Episode' | 'Save' | 'Reopen' | 'Undo' | 'Redo',
+  itemName: 'New Episode' | 'Save' | 'Reopen Current' | 'Undo' | 'Redo',
 ) {
   const menu = await openApplicationMenu(page, menuName)
   const item = menu.getByRole('menuitem', { name: itemName, exact: true })
@@ -81,11 +81,16 @@ test('preserves a saved episode and keeps history inside one document', async ({
   const fileMenu = await openApplicationMenu(page, 'File')
   await expect(fileMenu.getByRole('menuitem')).toHaveText([
     'New Episode',
+    'Open Local Project…',
     'Save',
-    'Reopen',
+    'Save As…',
+    'Reopen Current',
+    'Import Project…',
+    'Export Project File…',
+    'Export Episode Images…',
   ])
   await expect(
-    fileMenu.getByRole('menuitem', { name: 'Reopen', exact: true }),
+    fileMenu.getByRole('menuitem', { name: 'Reopen Current', exact: true }),
   ).toBeDisabled()
   await page.keyboard.press('Escape')
   await expect(fileTrigger).toHaveAttribute('aria-expanded', 'false')
@@ -212,8 +217,8 @@ test('preserves a saved episode and keeps history inside one document', async ({
 
   await acceptDiscardDialog(
     page,
-    'Discard unsaved changes and reopen the last save?',
-    () => useApplicationMenuItem(page, 'File', 'Reopen'),
+    'Discard unsaved changes and reopen the current saved project?',
+    () => useApplicationMenuItem(page, 'File', 'Reopen Current'),
   )
 
   await expect(documentStatus).toHaveText('Reopened saved episode')
@@ -265,8 +270,8 @@ test('preserves a saved episode and keeps history inside one document', async ({
 
   await acceptDiscardDialog(
     page,
-    'Discard unsaved changes and reopen the last save?',
-    () => useApplicationMenuItem(page, 'File', 'Reopen'),
+    'Discard unsaved changes and reopen the current saved project?',
+    () => useApplicationMenuItem(page, 'File', 'Reopen Current'),
   )
 
   await expect(documentStatus).toHaveText('Reopened saved episode')

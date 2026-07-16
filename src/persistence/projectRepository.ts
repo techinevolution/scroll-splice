@@ -1,13 +1,25 @@
 import {
   BACKGROUND_COLOR_REGION_GENERATOR_ID,
   MAX_EPISODE_NAME_LENGTH,
+  MAX_TEXT_CONTENT_LENGTH,
+  MAX_TEXT_FONT_SIZE,
   MIN_EPISODE_LOGICAL_HEIGHT,
+  SPEECH_BALLOON_GENERATOR_ID,
 } from '../core/commands'
 import {
+  getElementVisualBounds,
+  isValidImageCrop,
+  isValidImageMask,
+  normalizeElementTransform,
+} from '../core/elementGeometry'
+import {
+  APPEARANCE_EPISODE_FORMAT_VERSION,
   COMPOSITION_GROUPS,
+  DEFAULT_IMAGE_FRAME,
   ELEMENT_BLEND_MODES,
   EPISODE_FORMAT_VERSION,
   EPISODE_LOGICAL_WIDTH,
+  IDENTITY_ELEMENT_TRANSFORM,
   IMAGE_EPISODE_FORMAT_VERSION,
   LEGACY_EPISODE_FORMAT_VERSION,
   type AssetReference,
@@ -15,14 +27,24 @@ import {
   type CompositionGroupVisibility,
   type ElementBounds,
   type ElementBlendMode,
+  type ElementGroup,
+  type ElementOverflow,
+  type ElementTransform,
   type EpisodeDocument,
   type EpisodeElement,
+  type ImageCrop,
+  type ImageFrame,
+  type ImageFrameBorder,
+  type ImageMask,
   type LayerPlane,
   type ShapeElement,
   type ShapeFill,
   type ShapeFillStop,
+  type SpeechBalloonElement,
+  type SpeechBalloonTail,
   type TextElement,
 } from '../core/episode'
+import { normalizeSpeechBalloonTail } from '../core/speechBalloonGeometry'
 
 export const PROJECT_STORAGE_FORMAT_VERSION = 1 as const
 export const PROJECT_STORAGE_KEY = 'scrollsplice.project.last.v1'
@@ -87,6 +109,7 @@ type RecordValue = Readonly<Record<string, unknown>>
 type SupportedEpisodeFormatVersion =
   | typeof LEGACY_EPISODE_FORMAT_VERSION
   | typeof IMAGE_EPISODE_FORMAT_VERSION
+  | typeof APPEARANCE_EPISODE_FORMAT_VERSION
   | typeof EPISODE_FORMAT_VERSION
 
 /**
@@ -204,6 +227,7 @@ export function parseEpisodeDocument(
   if (
     value.formatVersion !== LEGACY_EPISODE_FORMAT_VERSION &&
     value.formatVersion !== IMAGE_EPISODE_FORMAT_VERSION &&
+    value.formatVersion !== APPEARANCE_EPISODE_FORMAT_VERSION &&
     value.formatVersion !== EPISODE_FORMAT_VERSION
   ) {
     return typeof value.formatVersion === 'number'
@@ -273,15 +297,28 @@ export function parseEpisodeDocument(
     return corruptEpisode('The saved episode contains duplicate element IDs.')
   }
 
+  const elementGroups =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? parseElementGroups(value.elementGroups, elementIds)
+      : []
+
+  if (!elementGroups) {
+    return corruptEpisode('The saved episode contains invalid element groups.')
+  }
+
   for (const element of validElements) {
     const layerPlane = layerPlaneById.get(element.layerPlaneId)
-    const { x, y, width, height } = element.bounds
+    const visualBounds = getElementVisualBounds(element)
 
     if (
       !layerPlane ||
       layerPlane.kind !== 'ordinary' ||
-      x + width > EPISODE_LOGICAL_WIDTH + BOUNDS_TOLERANCE ||
-      y + height > logicalHeight + BOUNDS_TOLERANCE
+      !visualBounds ||
+      !isElementGeometryValid(
+        visualBounds,
+        element.overflow,
+        logicalHeight,
+      )
     ) {
       return corruptEpisode(
         'The saved episode contains an out-of-bounds or unassigned element.',
@@ -300,6 +337,7 @@ export function parseEpisodeDocument(
       compositionGroupVisibility,
       layerPlanes: validLayerPlanes,
       elements: validElements,
+      elementGroups,
     },
   }
 }
@@ -447,16 +485,24 @@ function parseEpisodeElement(
   const id = readNonEmptyString(value.id)
   const name = readNonEmptyString(value.name)
   const layerPlaneId = readNonEmptyString(value.layerPlaneId)
-  const bounds = parseElementBounds(value.bounds)
+  const bounds = parseElementBounds(value.bounds, sourceFormatVersion)
   const assetReference = parseAssetReference(
     value.assetReference,
     sourceFormatVersion,
   )
   const zIndex = value.zIndex
   const appearance =
-    sourceFormatVersion === EPISODE_FORMAT_VERSION
+    hasAppearanceFields(sourceFormatVersion)
       ? parseElementAppearance(value)
       : { opacity: 1, blendMode: 'normal' as const }
+  const transform =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? parseElementTransform(value.transform)
+      : IDENTITY_ELEMENT_TRANSFORM
+  const overflow =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? parseElementOverflow(value.overflow)
+      : 'constrained'
 
   if (
     !id ||
@@ -465,6 +511,8 @@ function parseEpisodeElement(
     !bounds ||
     !assetReference ||
     !appearance ||
+    !transform ||
+    !overflow ||
     typeof value.visible !== 'boolean' ||
     typeof value.locked !== 'boolean' ||
     !Number.isInteger(zIndex) ||
@@ -482,6 +530,8 @@ function parseEpisodeElement(
     locked: value.locked,
     zIndex: zIndex as number,
     ...appearance,
+    transform,
+    overflow,
     assetReference,
   }
 
@@ -494,6 +544,13 @@ function parseEpisodeElement(
   }
 
   if (
+    value.type === 'speech-balloon' &&
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+  ) {
+    return parseSpeechBalloonElement(value, common)
+  }
+
+  if (
     value.type !== 'image' ||
     sourceFormatVersion === LEGACY_EPISODE_FORMAT_VERSION ||
     (assetReference.kind !== 'built-in' &&
@@ -503,12 +560,21 @@ function parseEpisodeElement(
   }
 
   const presentation =
-    sourceFormatVersion === EPISODE_FORMAT_VERSION
+    hasAppearanceFields(sourceFormatVersion)
       ? value.presentation
       : 'single'
+  const frame =
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+      ? parseImageFrame(value.frame, bounds)
+      : DEFAULT_IMAGE_FRAME
+  const validPresentation =
+    presentation === 'single' ||
+    presentation === 'tile' ||
+    (sourceFormatVersion === EPISODE_FORMAT_VERSION &&
+      presentation === 'cover')
 
-  return presentation === 'single' || presentation === 'tile'
-    ? { ...common, type: 'image', assetReference, presentation }
+  return validPresentation && frame
+    ? { ...common, type: 'image', assetReference, presentation, frame }
     : undefined
 }
 
@@ -526,14 +592,14 @@ function parseShapeElement(
   sourceFormatVersion: SupportedEpisodeFormatVersion,
 ): ShapeElement | undefined {
   const fill =
-    sourceFormatVersion === EPISODE_FORMAT_VERSION
+    hasAppearanceFields(sourceFormatVersion)
       ? parseShapeFill(value.fill)
       : parseLegacySolidShapeFill(value.fill)
   const stroke = value.stroke
   const strokeWidth = value.strokeWidth
   const cornerRadius = value.cornerRadius
   const legacyOpacity =
-    sourceFormatVersion === EPISODE_FORMAT_VERSION
+    hasAppearanceFields(sourceFormatVersion)
       ? undefined
       : value.opacity
 
@@ -674,7 +740,318 @@ function parseTextElement(
   }
 }
 
-function parseElementBounds(value: unknown): ElementBounds | undefined {
+function parseSpeechBalloonElement(
+  value: RecordValue,
+  common: Omit<
+    SpeechBalloonElement,
+    | 'type'
+    | 'fill'
+    | 'stroke'
+    | 'strokeWidth'
+    | 'cornerRadius'
+    | 'text'
+    | 'textFill'
+    | 'fontFamily'
+    | 'fontWeight'
+    | 'lineHeight'
+    | 'align'
+    | 'padding'
+    | 'minFontSize'
+    | 'maxFontSize'
+    | 'tail'
+  >,
+): SpeechBalloonElement | undefined {
+  const fill = readNonEmptyString(value.fill)
+  const stroke = readNonEmptyString(value.stroke)
+  const textFill = readNonEmptyString(value.textFill)
+  const fontFamily = readNonEmptyString(value.fontFamily)
+  const tail = parseSpeechBalloonTail(value.tail)
+  const bodyMinimum = Math.min(common.bounds.width, common.bounds.height)
+
+  if (
+    common.assetReference.kind !== 'synthetic' ||
+    common.assetReference.generatorId !== SPEECH_BALLOON_GENERATOR_ID ||
+    typeof value.text !== 'string' ||
+    value.text.trim().length === 0 ||
+    value.text.length > MAX_TEXT_CONTENT_LENGTH ||
+    !fill ||
+    !stroke ||
+    !textFill ||
+    !fontFamily ||
+    !isFiniteNonNegativeNumber(value.strokeWidth) ||
+    value.strokeWidth > 100 ||
+    !isFiniteNonNegativeNumber(value.cornerRadius) ||
+    value.cornerRadius > bodyMinimum / 2 ||
+    (value.fontWeight !== 400 &&
+      value.fontWeight !== 600 &&
+      value.fontWeight !== 700) ||
+    !isFiniteNumber(value.lineHeight) ||
+    value.lineHeight < 0.8 ||
+    value.lineHeight > 2.5 ||
+    (value.align !== 'left' &&
+      value.align !== 'center' &&
+      value.align !== 'right') ||
+    !isFiniteNonNegativeNumber(value.padding) ||
+    value.padding * 2 >= bodyMinimum ||
+    !isFiniteNumber(value.minFontSize) ||
+    value.minFontSize < 8 ||
+    value.minFontSize > MAX_TEXT_FONT_SIZE ||
+    !isFiniteNumber(value.maxFontSize) ||
+    value.maxFontSize < value.minFontSize ||
+    value.maxFontSize > MAX_TEXT_FONT_SIZE ||
+    !tail
+  ) {
+    return undefined
+  }
+
+  return {
+    ...common,
+    type: 'speech-balloon',
+    fill,
+    stroke,
+    strokeWidth: value.strokeWidth,
+    cornerRadius: value.cornerRadius,
+    text: value.text.trim(),
+    textFill,
+    fontFamily,
+    fontWeight: value.fontWeight,
+    lineHeight: value.lineHeight,
+    align: value.align,
+    padding: value.padding,
+    minFontSize: value.minFontSize,
+    maxFontSize: value.maxFontSize,
+    tail,
+  }
+}
+
+function parseSpeechBalloonTail(value: unknown): SpeechBalloonTail | undefined {
+  if (!isRecord(value) || !isRecord(value.tip)) return undefined
+
+  const candidate: SpeechBalloonTail = {
+    enabled: value.enabled as boolean,
+    side: value.side as SpeechBalloonTail['side'],
+    anchor: value.anchor as number,
+    width: value.width as number,
+    tip: { x: value.tip.x as number, y: value.tip.y as number },
+  }
+  const normalized = normalizeSpeechBalloonTail(candidate)
+
+  return normalized &&
+    normalized.enabled === value.enabled &&
+    normalized.side === value.side &&
+    normalized.anchor === value.anchor &&
+    normalized.width === value.width &&
+    normalized.tip.x === value.tip.x &&
+    normalized.tip.y === value.tip.y
+    ? normalized
+    : undefined
+}
+
+function parseElementTransform(value: unknown): ElementTransform | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  if (
+    !isFiniteNumber(value.rotationDegrees) ||
+    typeof value.flipX !== 'boolean' ||
+    typeof value.flipY !== 'boolean'
+  ) {
+    return undefined
+  }
+
+  const transform = normalizeElementTransform({
+    rotationDegrees: value.rotationDegrees,
+    flipX: value.flipX,
+    flipY: value.flipY,
+  })
+
+  return transform?.rotationDegrees === value.rotationDegrees
+    ? transform
+    : undefined
+}
+
+function parseElementOverflow(value: unknown): ElementOverflow | undefined {
+  return value === 'constrained' || value === 'bleed' ? value : undefined
+}
+
+function parseImageFrame(
+  value: unknown,
+  bounds: ElementBounds,
+): ImageFrame | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const mask = parseImageMask(value.mask, bounds)
+  const crop = parseImageCrop(value.crop)
+  const border = parseImageFrameBorder(value.border)
+
+  if (!mask || !crop || (value.border !== undefined && !border)) {
+    return undefined
+  }
+
+  return {
+    mask,
+    crop,
+    ...(border ? { border } : {}),
+  }
+}
+
+function parseImageMask(
+  value: unknown,
+  bounds: ElementBounds,
+): ImageMask | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  if (value.kind === 'rectangle') {
+    const cornerRadius = value.cornerRadius
+
+    return isFiniteNonNegativeNumber(cornerRadius) &&
+      cornerRadius <= Math.min(bounds.width, bounds.height) / 2
+      ? { kind: 'rectangle', cornerRadius }
+      : undefined
+  }
+
+  if (value.kind !== 'polygon' || !Array.isArray(value.points)) {
+    return undefined
+  }
+
+  const points = value.points.map((point) => {
+    if (!isRecord(point) || !isFiniteNumber(point.x) || !isFiniteNumber(point.y)) {
+      return undefined
+    }
+
+    return { x: point.x, y: point.y }
+  })
+
+  if (points.some((point) => point === undefined)) {
+    return undefined
+  }
+
+  const mask: ImageMask = {
+    kind: 'polygon',
+    points: points as NonNullable<(typeof points)[number]>[],
+  }
+
+  return isValidImageMask(mask) ? mask : undefined
+}
+
+function parseImageCrop(value: unknown): ImageCrop | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const crop: ImageCrop = {
+    focusX: value.focusX as number,
+    focusY: value.focusY as number,
+    zoom: value.zoom as number,
+  }
+
+  return isValidImageCrop(crop) ? crop : undefined
+}
+
+function parseImageFrameBorder(
+  value: unknown,
+): ImageFrameBorder | undefined {
+  if (!isRecord(value)) {
+    return undefined
+  }
+
+  const color = readNonEmptyString(value.color)
+
+  return color && isFiniteNonNegativeNumber(value.width)
+    ? { color, width: value.width }
+    : undefined
+}
+
+function parseElementGroups(
+  value: unknown,
+  elementIds: ReadonlySet<string>,
+): readonly ElementGroup[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const groups: ElementGroup[] = []
+  const groupIds = new Set<string>()
+  const groupedElementIds = new Set<string>()
+
+  for (const candidate of value) {
+    if (!isRecord(candidate)) {
+      return undefined
+    }
+
+    const id = readNonEmptyString(candidate.id)
+    const memberElementIds = candidate.memberElementIds
+
+    if (
+      !id ||
+      groupIds.has(id) ||
+      !Array.isArray(memberElementIds) ||
+      memberElementIds.length < 2
+    ) {
+      return undefined
+    }
+
+    const members = memberElementIds.map(readNonEmptyString)
+    const uniqueMembers = new Set(members)
+
+    if (
+      members.some((memberId) => memberId === undefined) ||
+      uniqueMembers.size !== members.length ||
+      members.some(
+        (memberId) =>
+          !elementIds.has(memberId as string) ||
+          groupedElementIds.has(memberId as string),
+      )
+    ) {
+      return undefined
+    }
+
+    const validMembers = members as string[]
+    groupIds.add(id)
+    validMembers.forEach((memberId) => groupedElementIds.add(memberId))
+    groups.push({ id, memberElementIds: validMembers })
+  }
+
+  return groups
+}
+
+function isElementGeometryValid(
+  visualBounds: ElementBounds,
+  overflow: ElementOverflow,
+  episodeLogicalHeight: number,
+): boolean {
+  const right = visualBounds.x + visualBounds.width
+  const bottom = visualBounds.y + visualBounds.height
+
+  return overflow === 'constrained'
+    ? visualBounds.x >= -BOUNDS_TOLERANCE &&
+        visualBounds.y >= -BOUNDS_TOLERANCE &&
+        right <= EPISODE_LOGICAL_WIDTH + BOUNDS_TOLERANCE &&
+        bottom <= episodeLogicalHeight + BOUNDS_TOLERANCE
+    : right > 0 &&
+        bottom > 0 &&
+        visualBounds.x < EPISODE_LOGICAL_WIDTH &&
+        visualBounds.y < episodeLogicalHeight
+}
+
+function hasAppearanceFields(
+  sourceFormatVersion: SupportedEpisodeFormatVersion,
+): boolean {
+  return (
+    sourceFormatVersion === APPEARANCE_EPISODE_FORMAT_VERSION ||
+    sourceFormatVersion === EPISODE_FORMAT_VERSION
+  )
+}
+
+function parseElementBounds(
+  value: unknown,
+  sourceFormatVersion: SupportedEpisodeFormatVersion,
+): ElementBounds | undefined {
   if (!isRecord(value)) {
     return undefined
   }
@@ -682,9 +1059,9 @@ function parseElementBounds(value: unknown): ElementBounds | undefined {
   const { x, y, width, height } = value
 
   return isFiniteNumber(x) &&
-    x >= 0 &&
+    (sourceFormatVersion === EPISODE_FORMAT_VERSION || x >= 0) &&
     isFiniteNumber(y) &&
-    y >= 0 &&
+    (sourceFormatVersion === EPISODE_FORMAT_VERSION || y >= 0) &&
     isFiniteNumber(width) &&
     width > 0 &&
     isFiniteNumber(height) &&

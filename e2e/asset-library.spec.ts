@@ -167,7 +167,7 @@ function createTransparentPng(width = 240, height = 160): Buffer {
 
 async function useFileMenuItem(
   page: Page,
-  itemName: 'New Episode' | 'Save' | 'Reopen',
+  itemName: 'New Episode' | 'Save' | 'Reopen Current',
 ) {
   const fileTrigger = page.getByRole('button', { name: 'File', exact: true })
   await fileTrigger.click()
@@ -189,7 +189,7 @@ async function acceptDiscardDialog(page: Page, action: () => Promise<void>) {
 
   await action()
   expect(dialogMessage).toBe(
-    'Discard unsaved changes and reopen the last save?',
+    'Discard unsaved changes and reopen the current saved project?',
   )
 }
 
@@ -412,7 +412,7 @@ test('places reusable assets and preserves their local sources across the docume
   await expect(importedAsset).toBeVisible()
 
   await page.getByRole('button', { name: 'Close Asset Library' }).click()
-  await acceptDiscardDialog(page, () => useFileMenuItem(page, 'Reopen'))
+  await acceptDiscardDialog(page, () => useFileMenuItem(page, 'Reopen Current'))
   await expect(documentStatus).toHaveText('Reopened saved episode')
   await expect(builtInRow).toBeVisible()
   await expect(uploadedRow).toBeVisible()
@@ -727,7 +727,7 @@ test('edits opacity, gradients, tiled textures, and blend modes through save and
   )
 
   await page.getByLabel('Selected element opacity percent').fill('80')
-  await acceptDiscardDialog(page, () => useFileMenuItem(page, 'Reopen'))
+  await acceptDiscardDialog(page, () => useFileMenuItem(page, 'Reopen Current'))
   await imageRow.click()
   await expect(canvas).toHaveAttribute('data-selected-opacity', '0.7')
   await expect(canvas).toHaveAttribute(

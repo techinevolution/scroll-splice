@@ -5,6 +5,7 @@ import {
   buildWeekEpisode,
 } from './fixtures/buildWeekEpisode'
 import {
+  setAssetReferenceStorageForTesting,
   setAssetRepositoryForTesting,
   useEditorStore,
 } from './store'
@@ -14,6 +15,7 @@ import {
   revokeRuntimeImportedImages,
   type AssetLibrarySnapshot,
   type AssetLibrarySnapshotTransform,
+  type AssetReferenceStorage,
   type AssetRepository,
   type BrowserImageFile,
   type LoadAssetLibraryResult,
@@ -120,6 +122,22 @@ class MemoryAssetRepository implements AssetRepository {
   }
 }
 
+class MemoryReferenceStorage implements AssetReferenceStorage {
+  readonly values = new Map<string, string>()
+
+  getItem(key: string): string | null {
+    return this.values.get(key) ?? null
+  }
+
+  setItem(key: string, value: string): void {
+    this.values.set(key, value)
+  }
+
+  removeItem(key: string): void {
+    this.values.delete(key)
+  }
+}
+
 function createNamedPngFile(
   name = 'transparent-overlay.png',
   width = 320,
@@ -151,6 +169,7 @@ describe('editor store', () => {
       useEditorStore.getState().importedImageAssets,
     )
     setAssetRepositoryForTesting(undefined)
+    setAssetReferenceStorageForTesting(undefined)
     useEditorStore.setState({
       assetLibraryStatus: 'idle',
       assetLibraryBusy: false,
@@ -165,6 +184,12 @@ describe('editor store', () => {
     const state = useEditorStore.getState()
     useEditorStore.setState({
       hasSavedEpisode: false,
+      currentProjectId: null,
+      reopenProjectId: null,
+      recentProjects: [],
+      projectLibraryBusy: false,
+      recoveryAvailable: null,
+      recoveryMessage: null,
       savedRevision: state.currentRevision,
       hasUnsavedChanges: false,
       documentStatus: 'Demo ready · not saved',
@@ -184,6 +209,7 @@ describe('editor store', () => {
       importedImageAssets: [],
     })
     setAssetRepositoryForTesting(undefined)
+    setAssetReferenceStorageForTesting(undefined)
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
   })
@@ -294,6 +320,156 @@ describe('editor store', () => {
     expect(useEditorStore.getState().activeLayerPlaneId).toBe(
       BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
     )
+  })
+
+  it('shift-selects, groups, and moves multiple elements with one history step', () => {
+    const candidates = useEditorStore
+      .getState()
+      .episode.elements.filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      )
+      .slice(0, 2)
+    const first = candidates[0]
+    const second = candidates[1]
+    if (!first || !second) throw new Error('Fixture needs two panel elements.')
+
+    useEditorStore.getState().selectElement(first.id)
+    useEditorStore.getState().selectElement(second.id, false, true)
+    expect(useEditorStore.getState().selectedElementIds).toEqual([
+      first.id,
+      second.id,
+    ])
+
+    const beforeGroupHistory = useEditorStore.getState().historyPast.length
+    expect(useEditorStore.getState().groupSelectedElements()).toBe(true)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeGroupHistory + 1,
+    )
+
+    useEditorStore.getState().selectElement(null)
+    useEditorStore.getState().selectElement(first.id)
+    expect(useEditorStore.getState().selectedElementIds).toEqual([
+      first.id,
+      second.id,
+    ])
+
+    const beforeMove = new Map(
+      useEditorStore
+        .getState()
+        .episode.elements.filter(({ id }) => id === first.id || id === second.id)
+        .map((element) => [element.id, element.bounds.y]),
+    )
+    const beforeMoveHistory = useEditorStore.getState().historyPast.length
+    expect(useEditorStore.getState().moveSelectedStoryBeat('down')).toBe(true)
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      beforeMoveHistory + 1,
+    )
+    for (const element of useEditorStore.getState().episode.elements) {
+      const priorY = beforeMove.get(element.id)
+      if (priorY !== undefined) expect(element.bounds.y).toBe(priorY + 128)
+    }
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().selectedElementIds).toEqual([
+      first.id,
+      second.id,
+    ])
+  })
+
+  it('applies lock, duplicate, plane move, and delete to a selected group atomically', () => {
+    const candidates = useEditorStore
+      .getState()
+      .episode.elements.filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      )
+      .slice(0, 2)
+    const first = candidates[0]
+    const second = candidates[1]
+    if (!first || !second) throw new Error('Fixture needs two panel elements.')
+
+    useEditorStore.getState().selectElement(first.id)
+    useEditorStore.getState().selectElement(second.id, false, true)
+    expect(useEditorStore.getState().groupSelectedElements()).toBe(true)
+    const afterGroupHistory = useEditorStore.getState().historyPast.length
+
+    useEditorStore.getState().toggleElementLocked(second.id)
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.filter(({ id }) => id === first.id || id === second.id)
+        .every(({ locked }) => locked),
+    ).toBe(true)
+    expect(useEditorStore.getState().historyPast).toHaveLength(afterGroupHistory + 1)
+
+    useEditorStore.getState().toggleElementLocked(second.id)
+    const beforeDuplicateCount = useEditorStore.getState().episode.elements.length
+    expect(useEditorStore.getState().duplicateElement(second.id)).toBe(true)
+    const duplicateIds = useEditorStore.getState().selectedElementIds
+    expect(duplicateIds).toHaveLength(2)
+    expect(useEditorStore.getState().episode.elements).toHaveLength(
+      beforeDuplicateCount + 2,
+    )
+
+    const duplicatePrimary = useEditorStore.getState().selectedElementId
+    if (!duplicatePrimary) throw new Error('Duplicate should remain selected.')
+    useEditorStore
+      .getState()
+      .moveElementToLayerPlane(
+        duplicatePrimary,
+        BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+      )
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.filter(({ id }) => duplicateIds.includes(id))
+        .every(
+          ({ layerPlaneId }) =>
+            layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.backgroundFree,
+        ),
+    ).toBe(true)
+
+    useEditorStore.getState().deleteElement(duplicatePrimary)
+    expect(useEditorStore.getState().episode.elements).toHaveLength(
+      beforeDuplicateCount,
+    )
+    expect(useEditorStore.getState().selectedElementIds).toEqual([])
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      afterGroupHistory + 5,
+    )
+  })
+
+  it('moves populated-plane contents to an explicit destination in one step', () => {
+    const sourceId = BUILD_WEEK_LAYER_PLANE_IDS.contentPanels
+    const targetId = BUILD_WEEK_LAYER_PLANE_IDS.contentText
+    const sourceElementIds = useEditorStore
+      .getState()
+      .episode.elements.filter(({ layerPlaneId }) => layerPlaneId === sourceId)
+      .map(({ id }) => id)
+    const beforeHistory = useEditorStore.getState().historyPast.length
+
+    useEditorStore.getState().setActiveCompositionGroup('content')
+    useEditorStore.getState().setActiveLayerPlane(sourceId)
+    useEditorStore.getState().deleteLayerPlane(sourceId, {
+      kind: 'move-elements',
+      targetLayerPlaneId: targetId,
+    })
+
+    const moved = useEditorStore.getState()
+    expect(moved.episode.layerPlanes.some(({ id }) => id === sourceId)).toBe(false)
+    expect(
+      moved.episode.elements
+        .filter(({ id }) => sourceElementIds.includes(id))
+        .every(({ layerPlaneId }) => layerPlaneId === targetId),
+    ).toBe(true)
+    expect(moved.activeLayerPlaneId).toBe(targetId)
+    expect(moved.historyPast).toHaveLength(beforeHistory + 1)
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore.getState().episode.layerPlanes.some(({ id }) => id === sourceId),
+    ).toBe(true)
   })
 
   it('appends and selects a new ordinary plane in the active group', () => {
@@ -898,6 +1074,179 @@ describe('editor store', () => {
     expect(repository.snapshot?.importedImages).toHaveLength(1)
   })
 
+  it('renames, reorders, and deletes creator categories without losing their assets', async () => {
+    stubImageRuntime(320, 180)
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    const effectsId = await useEditorStore
+      .getState()
+      .createCreatorAssetCategory('Effects')
+    const panelsId = await useEditorStore
+      .getState()
+      .createCreatorAssetCategory('Panels')
+
+    if (!effectsId || !panelsId) throw new Error('Missing category fixtures.')
+
+    await useEditorStore
+      .getState()
+      .importImageAsset(createNamedPngFile(), effectsId)
+    await expect(
+      useEditorStore
+        .getState()
+        .renameCreatorAssetCategory(effectsId, 'Atmosphere'),
+    ).resolves.toBe(true)
+    await expect(
+      useEditorStore
+        .getState()
+        .reorderCreatorAssetCategory(panelsId, 0),
+    ).resolves.toBe(true)
+
+    expect(
+      useEditorStore
+        .getState()
+        .creatorAssetCategories.map(({ name }) => name),
+    ).toEqual(['Panels', 'Atmosphere'])
+
+    await expect(
+      useEditorStore.getState().deleteCreatorAssetCategory(effectsId),
+    ).resolves.toBe(true)
+    expect(useEditorStore.getState().creatorAssetCategories).toEqual([
+      expect.objectContaining({ id: panelsId, name: 'Panels' }),
+    ])
+    expect(useEditorStore.getState().importedImageAssets[0]).toMatchObject({
+      creatorCategoryId: null,
+    })
+    expect(repository.snapshot?.importedImages[0]).toMatchObject({
+      creatorCategoryId: null,
+    })
+  })
+
+  it('renames, moves, replaces, and reference-safely deletes an imported source', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn(async () => ({ width: 320, height: 180, close: vi.fn() })),
+    )
+    vi.spyOn(URL, 'createObjectURL')
+      .mockReturnValueOnce('blob:scrollsplice-original')
+      .mockReturnValueOnce('blob:scrollsplice-replacement')
+    const revoke = vi
+      .spyOn(URL, 'revokeObjectURL')
+      .mockImplementation(() => undefined)
+    const repository = new MemoryAssetRepository()
+    const referenceStorage = new MemoryReferenceStorage()
+    setAssetRepositoryForTesting(repository)
+    setAssetReferenceStorageForTesting(referenceStorage)
+    await useEditorStore.getState().initializeAssetLibrary()
+    const categoryId = await useEditorStore
+      .getState()
+      .createCreatorAssetCategory('Effects')
+
+    if (!categoryId) throw new Error('Missing category fixture.')
+
+    const original = createNamedPngFile('original.png')
+    await useEditorStore.getState().importImageAsset(original)
+    const assetId = useEditorStore.getState().importedImageAssets[0]?.id
+
+    if (!assetId) throw new Error('Missing imported source fixture.')
+
+    await expect(
+      useEditorStore
+        .getState()
+        .renameImportedImageAsset(assetId, 'Hero overlay'),
+    ).resolves.toBe(true)
+    await expect(
+      useEditorStore
+        .getState()
+        .moveImportedImageAsset(assetId, categoryId),
+    ).resolves.toBe(true)
+
+    const replacement = createNamedPngFile('replacement.png')
+    await expect(
+      useEditorStore
+        .getState()
+        .replaceImportedImageAsset(assetId, replacement),
+    ).resolves.toBe(true)
+
+    expect(useEditorStore.getState().importedImageAssets[0]).toMatchObject({
+      id: assetId,
+      displayName: 'Hero overlay',
+      creatorCategoryId: categoryId,
+      sourceBlob: replacement,
+      sourceUrl: 'blob:scrollsplice-replacement',
+    })
+    expect(revoke).toHaveBeenCalledWith('blob:scrollsplice-original')
+
+    expect(useEditorStore.getState().placeImportedAsset(assetId)).toBe(true)
+    await expect(
+      useEditorStore.getState().deleteImportedImageAsset(assetId),
+    ).resolves.toBe(false)
+    const placedId = useEditorStore.getState().selectedElementId
+
+    if (!placedId) throw new Error('Missing placed source fixture.')
+    useEditorStore.getState().deleteElement(placedId)
+    await expect(
+      useEditorStore.getState().deleteImportedImageAsset(assetId),
+    ).resolves.toBe(true)
+    expect(useEditorStore.getState().importedImageAssets).toHaveLength(0)
+    expect(repository.snapshot?.importedImages).toHaveLength(0)
+  })
+
+  it('imports and places one Finder-dropped image beneath its logical pointer', async () => {
+    stubImageRuntime(1_200, 600)
+    const repository = new MemoryAssetRepository()
+    setAssetRepositoryForTesting(repository)
+    await useEditorStore.getState().initializeAssetLibrary()
+    const beforeElementCount = useEditorStore.getState().episode.elements.length
+    const beforeHistoryCount = useEditorStore.getState().historyPast.length
+    const file = createNamedPngFile('finder-drop.png', 1_200, 600)
+
+    await expect(
+      useEditorStore
+        .getState()
+        .importAndPlaceImageAsset(file, { x: 600, y: 1_000 }),
+    ).resolves.toBe(true)
+
+    const state = useEditorStore.getState()
+    const imported = state.importedImageAssets[0]
+    expect(state.importedImageAssets).toHaveLength(1)
+    expect(state.episode.elements).toHaveLength(beforeElementCount + 1)
+    expect(state.historyPast).toHaveLength(beforeHistoryCount + 1)
+    expect(state.episode.elements.at(-1)).toMatchObject({
+      type: 'image',
+      bounds: { x: 320, y: 880, width: 480, height: 240 },
+      assetReference: { kind: 'imported', assetId: imported?.id },
+    })
+  })
+
+  it('drops an internal asset onto a different ordinary plane in one history step', () => {
+    const beforeHistoryCount = useEditorStore.getState().historyPast.length
+
+    expect(
+      useEditorStore.getState().placeDraggedAssetOnPlane(
+        {
+          kind: 'built-in',
+          assetId: 'builtin-decoration-radiance-v1',
+        },
+        BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      ),
+    ).toBe(true)
+
+    const state = useEditorStore.getState()
+    expect(state.activeLayerPlaneId).toBe(
+      BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+    )
+    expect(state.historyPast).toHaveLength(beforeHistoryCount + 1)
+    expect(state.episode.elements.at(-1)).toMatchObject({
+      type: 'image',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      assetReference: {
+        kind: 'built-in',
+        assetId: 'builtin-decoration-radiance-v1',
+      },
+    })
+  })
+
   it('places built-in images proportionally at viewport center through history', () => {
     useEditorStore.getState().setViewportY(1_000)
     const beforeCount = useEditorStore.getState().episode.elements.length
@@ -1187,6 +1536,172 @@ describe('editor store', () => {
     expect(state.episode.elements).not.toContainEqual(
       expect.objectContaining({ id: 'synthetic-shape-1' }),
     )
+  })
+
+  it('coordinates element naming and lock semantics through history', () => {
+    const elementId = 'beat-01-stillness-background'
+    useEditorStore.getState().selectElement(elementId)
+    const initialHistoryCount = useEditorStore.getState().historyPast.length
+
+    useEditorStore.getState().setElementName(elementId, 'Opening panel')
+    useEditorStore.getState().toggleElementLocked(elementId)
+
+    const lockedState = useEditorStore.getState()
+    expect(
+      lockedState.episode.elements.find(({ id }) => id === elementId),
+    ).toMatchObject({ name: 'Opening panel', locked: true })
+    expect(lockedState.historyPast).toHaveLength(initialHistoryCount + 2)
+
+    const lockedHistoryCount = lockedState.historyPast.length
+    expect(
+      useEditorStore.getState().nudgeSelectedElement({ x: 10, y: 10 }),
+    ).toBe(false)
+    expect(
+      useEditorStore.getState().alignSelectedElement({ horizontal: 'center' }),
+    ).toBe(false)
+    useEditorStore.getState().deleteElement(elementId)
+
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      lockedHistoryCount,
+    )
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === elementId),
+    ).toBe(true)
+
+    useEditorStore.getState().setElementVisibility(elementId, false)
+    useEditorStore.getState().setElementOpacity(elementId, 0.35)
+    expect(
+      useEditorStore.getState().episode.elements.find(({ id }) => id === elementId),
+    ).toMatchObject({ locked: true, visible: false, opacity: 0.35 })
+
+    useEditorStore.getState().setElementLocked(elementId, false)
+    expect(
+      useEditorStore.getState().episode.elements.find(({ id }) => id === elementId)
+        ?.locked,
+    ).toBe(false)
+  })
+
+  it('duplicates once per history step and restores its stable ID on redo', () => {
+    const elementId = 'beat-01-stillness-background'
+    useEditorStore.getState().selectElement(elementId)
+    const initialHistoryCount = useEditorStore.getState().historyPast.length
+
+    expect(
+      useEditorStore.getState().duplicateElement(elementId, { x: 12, y: 16 }),
+    ).toBe(true)
+
+    const duplicatedState = useEditorStore.getState()
+    const duplicateId = `${elementId}-copy-1`
+    const source = duplicatedState.episode.elements.find(
+      ({ id }) => id === elementId,
+    )
+    if (!source) {
+      throw new Error('Missing duplicate source element')
+    }
+    expect(duplicatedState.selectedElementId).toBe(duplicateId)
+    expect(duplicatedState.historyPast).toHaveLength(initialHistoryCount + 1)
+    expect(
+      duplicatedState.episode.elements.find(({ id }) => id === duplicateId)?.bounds,
+    ).toMatchObject({
+      x: source.bounds.x + 12,
+      y: source.bounds.y + 16,
+    })
+
+    useEditorStore.getState().undo()
+    expect(useEditorStore.getState().selectedElementId).toBe(elementId)
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === duplicateId),
+    ).toBe(false)
+
+    useEditorStore.getState().redo()
+    expect(useEditorStore.getState().selectedElementId).toBe(duplicateId)
+    expect(
+      useEditorStore
+        .getState()
+        .episode.elements.some(({ id }) => id === duplicateId),
+    ).toBe(true)
+  })
+
+  it('nudges and aligns the selection as separate undoable commands', () => {
+    const elementId = 'beat-01-stillness-accent-2'
+    const original = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === elementId)
+
+    if (!original) {
+      throw new Error('Missing precision-controls fixture element')
+    }
+
+    useEditorStore.getState().selectElement(elementId)
+    const initialHistoryCount = useEditorStore.getState().historyPast.length
+
+    expect(
+      useEditorStore.getState().nudgeSelectedElement({ x: 5, y: -3 }),
+    ).toBe(true)
+    expect(
+      useEditorStore.getState().alignSelectedElement({
+        horizontal: 'center',
+        vertical: 'bottom',
+      }),
+    ).toBe(true)
+
+    const aligned = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === elementId)
+    expect(aligned?.bounds).toMatchObject({
+      x: (buildWeekEpisode.logicalWidth - original.bounds.width) / 2,
+      y: buildWeekEpisode.logicalHeight - original.bounds.height,
+    })
+    expect(useEditorStore.getState().historyPast).toHaveLength(
+      initialHistoryCount + 2,
+    )
+
+    useEditorStore.getState().undo()
+    expect(
+      useEditorStore.getState().episode.elements.find(({ id }) => id === elementId)
+        ?.bounds,
+    ).toMatchObject({
+      x: original.bounds.x + 5,
+      y: original.bounds.y - 3,
+    })
+
+    useEditorStore.getState().selectElement(null)
+    expect(useEditorStore.getState().nudgeSelectedElement({ x: 1, y: 1 })).toBe(
+      false,
+    )
+    expect(
+      useEditorStore.getState().alignSelectedElement({ horizontal: 'left' }),
+    ).toBe(false)
+  })
+
+  it('places styled rectangle or ellipse panels through the shared shape command', () => {
+    useEditorStore.getState().setActiveCompositionGroup('content')
+    useEditorStore
+      .getState()
+      .setActiveLayerPlane(BUILD_WEEK_LAYER_PLANE_IDS.contentPanels)
+
+    useEditorStore.getState().placeSyntheticAsset({
+      name: 'Oval inset',
+      shape: 'ellipse',
+      fill: '#F0E5FF',
+      stroke: '#291B38',
+      strokeWidth: 5,
+      cornerRadius: 30,
+    })
+
+    expect(useEditorStore.getState().episode.elements.at(-1)).toMatchObject({
+      id: 'synthetic-shape-1',
+      name: 'Oval inset',
+      shape: 'ellipse',
+      fill: { kind: 'solid', color: '#F0E5FF' },
+      stroke: '#291B38',
+      strokeWidth: 5,
+      cornerRadius: 30,
+    })
   })
 
   it('undoes and redoes synthetic creation with its stable ID and selection', () => {
@@ -1831,6 +2346,9 @@ describe('editor store', () => {
       setItem: (key: string, value: string) => {
         values.set(key, value)
       },
+      removeItem: (key: string) => {
+        values.delete(key)
+      },
     }
 
     Object.defineProperty(globalThis, 'window', {
@@ -1856,8 +2374,11 @@ describe('editor store', () => {
       expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
 
       useEditorStore.getState().saveEpisode()
-      expect(values.size).toBe(1)
+      expect(values.has('scrollsplice.projects.v1')).toBe(true)
+      expect(values.has('scrollsplice.project.last.v1')).toBe(true)
       expect(useEditorStore.getState().hasSavedEpisode).toBe(true)
+      expect(useEditorStore.getState().currentProjectId).toBeTruthy()
+      expect(useEditorStore.getState().recentProjects).toHaveLength(1)
       expect(useEditorStore.getState().hasUnsavedChanges).toBe(false)
       expect(useEditorStore.getState().documentStatus).toBe('Saved locally')
 

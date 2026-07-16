@@ -69,5 +69,6 @@ export function createBlankEpisode(episodeId: string): EpisodeDocument {
     },
     layerPlanes,
     elements: [],
+    elementGroups: [],
   }
 }

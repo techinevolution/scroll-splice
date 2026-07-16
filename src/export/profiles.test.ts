@@ -13,6 +13,10 @@ describe('WEBTOON_CANVAS_OBSERVED_PROFILE', () => {
       verification: 'form-observed',
       outputWidthPx: 800,
       maxSliceHeightPx: 1280,
+      maxSliceBytes: 2_000_000,
+      maxTotalBytes: 50_000_000,
+      maxFileCount: 100,
+      acceptedMediaTypes: ['image/png', 'image/jpeg'],
     })
   })
 })

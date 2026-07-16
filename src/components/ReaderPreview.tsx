@@ -9,6 +9,10 @@ import {
 import { useEditorStore } from '../app/store'
 import { resolveImageAsset } from '../assets/runtime'
 import {
+  getCoverCropRect,
+  getImageMaskPath,
+} from '../core/elementGeometry'
+import {
   compareElementsByRenderOrder,
   getEffectiveEpisodeBaseColor,
   isElementEffectivelyVisible,
@@ -16,8 +20,11 @@ import {
   type EpisodeElement,
   type ImageElement,
   type ShapeElement,
+  type SpeechBalloonElement,
   type TextElement,
 } from '../core/episode'
+import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
+import { getSpeechBalloonTextLayout } from '../core/speechBalloonLayout'
 import { useAssetImage } from '../editor/useAssetImage'
 import {
   getTilePatternScale,
@@ -95,6 +102,77 @@ function getElementVisualStyle(element: EpisodeElement): CSSProperties {
   }
 }
 
+function getSvgElementTransform(element: EpisodeElement): string {
+  const centerX = element.bounds.x + element.bounds.width / 2
+  const centerY = element.bounds.y + element.bounds.height / 2
+  const scaleX = element.transform.flipX ? -1 : 1
+  const scaleY = element.transform.flipY ? -1 : 1
+
+  return `translate(${centerX} ${centerY}) rotate(${element.transform.rotationDegrees}) scale(${scaleX} ${scaleY}) translate(${-centerX} ${-centerY})`
+}
+
+function ReaderImageMaskDefinition({
+  element,
+  clipId,
+}: {
+  readonly element: ImageElement
+  readonly clipId: string
+}) {
+  const path = getImageMaskPath(element.frame, element.bounds)
+
+  if (!path) return null
+
+  return (
+    <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+      {path.kind === 'rectangle' ? (
+        <rect
+          x={path.bounds.x}
+          y={path.bounds.y}
+          width={path.bounds.width}
+          height={path.bounds.height}
+          rx={path.cornerRadius}
+        />
+      ) : (
+        <polygon
+          points={path.points.map(({ x, y }) => `${x},${y}`).join(' ')}
+        />
+      )}
+    </clipPath>
+  )
+}
+
+function ReaderImageFrameBorder({
+  element,
+}: {
+  readonly element: ImageElement
+}) {
+  const path = getImageMaskPath(element.frame, element.bounds)
+  const border = element.frame.border
+
+  if (!path || !border || border.width <= 0) return null
+
+  return path.kind === 'rectangle' ? (
+    <rect
+      x={path.bounds.x}
+      y={path.bounds.y}
+      width={path.bounds.width}
+      height={path.bounds.height}
+      rx={path.cornerRadius}
+      fill="none"
+      stroke={border.color}
+      strokeWidth={border.width}
+    />
+  ) : (
+    <polygon
+      points={path.points.map(({ x, y }) => `${x},${y}`).join(' ')}
+      fill="none"
+      stroke={border.color}
+      strokeWidth={border.width}
+      strokeLinejoin="round"
+    />
+  )
+}
+
 function ShapeGradientDefinition({
   element,
   definitionId,
@@ -165,6 +243,61 @@ function ReaderTextElement({ element }: { readonly element: TextElement }) {
   )
 }
 
+function ReaderSpeechBalloon({
+  element,
+}: {
+  readonly element: SpeechBalloonElement
+}) {
+  const path = getSpeechBalloonPath(
+    element.bounds,
+    element.cornerRadius,
+    element.tail,
+  )
+  const layout = getSpeechBalloonTextLayout(element)
+
+  if (!path) return null
+
+  return (
+    <>
+      <path
+        d={path.pathData}
+        fill={element.fill}
+        stroke={element.stroke}
+        strokeWidth={element.strokeWidth}
+        strokeLinejoin="round"
+      />
+      <foreignObject
+        x={element.bounds.x}
+        y={element.bounds.y}
+        width={element.bounds.width}
+        height={element.bounds.height}
+        overflow="hidden"
+      >
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            boxSizing: 'border-box',
+            display: 'flex',
+            alignItems: 'center',
+            padding: element.padding,
+            overflow: 'hidden',
+            color: element.textFill,
+            fontFamily: element.fontFamily,
+            fontSize: layout.fontSize,
+            fontWeight: element.fontWeight,
+            lineHeight: element.lineHeight,
+            textAlign: element.align,
+            whiteSpace: 'pre-wrap',
+          }}
+        >
+          <div style={{ width: '100%' }}>{layout.lines.join('\n')}</div>
+        </div>
+      </foreignObject>
+    </>
+  )
+}
+
 function MissingImagePlaceholder({ bounds }: { readonly bounds: ElementBounds }) {
   return (
     <g data-reader-image-placeholder="true">
@@ -194,6 +327,7 @@ function ReaderImageElement({
   const { bounds } = element
   const imageIsReady = status === 'ready' && image !== null
   const patternId = `${definitionId}-pattern`
+  const clipId = `${definitionId}-clip`
   const patternScale = imageIsReady
     ? getTilePatternScale(
         image.naturalWidth || image.width,
@@ -206,9 +340,22 @@ function ReaderImageElement({
   const tileHeight = imageIsReady
     ? (image.naturalHeight || image.height) * patternScale
     : 1
+  const coverCrop = imageIsReady
+    ? getCoverCropRect(
+        {
+          width: image.naturalWidth || image.width,
+          height: image.naturalHeight || image.height,
+        },
+        { width: bounds.width, height: bounds.height },
+        element.frame.crop,
+      )
+    : undefined
 
   return (
     <>
+      <defs>
+        <ReaderImageMaskDefinition element={element} clipId={clipId} />
+      </defs>
       {imageIsReady && element.presentation === 'tile' ? (
         <defs>
           <pattern
@@ -232,33 +379,56 @@ function ReaderImageElement({
         </defs>
       ) : null}
 
-      <g
-        data-reader-image-status={status}
-        data-reader-image-presentation={element.presentation}
-      >
-        {imageIsReady ? (
-          element.presentation === 'tile' ? (
-            <rect
-              x={bounds.x}
-              y={bounds.y}
-              width={bounds.width}
-              height={bounds.height}
-              fill={`url(#${patternId})`}
-            />
+      <g clipPath={`url(#${clipId})`}>
+        <g
+          data-reader-image-status={status}
+          data-reader-image-presentation={element.presentation}
+          data-reader-image-mask={element.frame.mask.kind}
+        >
+          {imageIsReady ? (
+            element.presentation === 'tile' ? (
+              <rect
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                fill={`url(#${patternId})`}
+              />
+            ) : element.presentation === 'cover' && coverCrop ? (
+              <svg
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                viewBox={`${coverCrop.x} ${coverCrop.y} ${coverCrop.width} ${coverCrop.height}`}
+                preserveAspectRatio="none"
+                overflow="hidden"
+              >
+                <image
+                  href={image.src}
+                  x="0"
+                  y="0"
+                  width={image.naturalWidth || image.width}
+                  height={image.naturalHeight || image.height}
+                  preserveAspectRatio="none"
+                />
+              </svg>
+            ) : (
+              <image
+                href={image.src}
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                preserveAspectRatio="none"
+              />
+            )
           ) : (
-            <image
-              href={image.src}
-              x={bounds.x}
-              y={bounds.y}
-              width={bounds.width}
-              height={bounds.height}
-              preserveAspectRatio="none"
-            />
-          )
-        ) : (
-          <MissingImagePlaceholder bounds={bounds} />
-        )}
+            <MissingImagePlaceholder bounds={bounds} />
+          )}
+        </g>
       </g>
+      <ReaderImageFrameBorder element={element} />
     </>
   )
 }
@@ -283,7 +453,11 @@ function ReaderElement({
       data-reader-element-type={element.type}
       data-opacity={element.opacity}
       data-blend-mode={element.blendMode}
+      data-rotation={element.transform.rotationDegrees}
+      data-flip-x={element.transform.flipX}
+      data-flip-y={element.transform.flipY}
       opacity={element.opacity}
+      transform={getSvgElementTransform(element)}
       style={getElementVisualStyle(element)}
     >
       {element.type === 'shape' ? (
@@ -328,6 +502,10 @@ function ReaderElement({
           sourceUrl={imageSourceUrl}
           definitionId={definitionId}
         />
+      ) : null}
+
+      {element.type === 'speech-balloon' ? (
+        <ReaderSpeechBalloon element={element} />
       ) : null}
     </g>
   )

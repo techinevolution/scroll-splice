@@ -1,6 +1,7 @@
 import {
   EPISODE_FORMAT_VERSION,
   EPISODE_LOGICAL_WIDTH,
+  IDENTITY_ELEMENT_TRANSFORM,
   type AssetReference,
   type ElementBounds,
   type EpisodeDocument,
@@ -218,6 +219,11 @@ const syntheticReference = {
   generatorId: 'scrollsplice-build-week-fixture-v1',
 } as const satisfies AssetReference
 
+const defaultElementGeometry = {
+  transform: IDENTITY_ELEMENT_TRANSFORM,
+  overflow: 'constrained',
+} as const
+
 function offsetBounds(bounds: ElementBounds, yOffset: number): ElementBounds {
   return {
     ...bounds,
@@ -255,6 +261,7 @@ function createBeatElements(
     cornerRadius: 32,
     opacity: 1,
     blendMode: 'normal',
+    ...defaultElementGeometry,
     visible: true,
     locked: false,
     zIndex: baseZIndex,
@@ -271,6 +278,7 @@ function createBeatElements(
     fill: solidFill(accent.fill),
     opacity: accent.opacity ?? 1,
     blendMode: 'normal',
+    ...defaultElementGeometry,
     cornerRadius: accent.cornerRadius,
     visible: true,
     locked: false,
@@ -298,6 +306,7 @@ function createBeatElements(
     align: 'center',
     opacity: 1,
     blendMode: 'normal',
+    ...defaultElementGeometry,
     visible: true,
     locked: false,
     zIndex: baseZIndex + 3,
@@ -324,6 +333,7 @@ function createBeatElements(
     align: 'center',
     opacity: 1,
     blendMode: 'normal',
+    ...defaultElementGeometry,
     visible: true,
     locked: false,
     zIndex: baseZIndex + 4,
@@ -352,4 +362,5 @@ export const buildWeekEpisode: EpisodeDocument = {
   },
   layerPlanes: buildWeekLayerPlanes,
   elements: BUILD_WEEK_BEATS.flatMap(createBeatElements),
+  elementGroups: [],
 }

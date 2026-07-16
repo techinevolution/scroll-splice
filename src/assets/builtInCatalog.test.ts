@@ -66,4 +66,20 @@ describe('built-in asset catalog', () => {
       expect(svg).not.toMatch(/<rect[^>]+width="100%"[^>]+height="100%"/i)
     }
   })
+
+  it('draws the simple balloons as one continuous outlined shape', () => {
+    for (const assetId of [
+      'builtin-speech-balloon-oval-v1',
+      'builtin-speech-balloon-rounded-v1',
+    ]) {
+      const asset = BUILT_IN_ASSETS.find(({ id }) => id === assetId)
+
+      expect(asset).toBeDefined()
+      const svg = decodeSvgSource(asset?.source ?? '')
+
+      expect(svg.match(/<path\b/g)).toHaveLength(1)
+      expect(svg).not.toContain('stroke="#fff"')
+      expect(svg).toContain('stroke="#211a2b"')
+    }
+  })
 })

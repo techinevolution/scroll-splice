@@ -1,8 +1,21 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type DragEvent,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react'
 
 import { useEditorStore } from '../app/store'
+import {
+  ASSET_DRAG_MIME_TYPE,
+  parseAssetDragPayload,
+} from '../assets/dragPayload'
 import { resolveImageAsset } from '../assets/runtime'
 import { VisibilityIcon } from '../components/VisibilityIcon'
+import { isElementFreeformResizable } from '../core/commands'
 import {
   COMPOSITION_GROUPS,
   COMPOSITION_GROUP_LABELS,
@@ -10,6 +23,7 @@ import {
   getLayerPlaneById,
   getLayerPlanesForGroup,
   isElementEffectivelyVisible,
+  type ElementBounds,
 } from '../core/episode'
 import { LayerPlaneTabs } from './LayerPlaneTabs'
 
@@ -73,6 +87,132 @@ function TextIcon() {
   )
 }
 
+function LockIcon({ locked }: { readonly locked: boolean }) {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="5" y="10" width="14" height="10" rx="2" />
+      {locked ? (
+        <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+      ) : (
+        <path d="M16 10V7a4 4 0 0 0-7.6-1.7" />
+      )}
+    </svg>
+  )
+}
+
+function ShapeIcon() {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect x="3" y="4" width="13" height="12" rx="1" />
+      <circle cx="16" cy="15" r="5" />
+    </svg>
+  )
+}
+
+function CommitNumberInput({
+  label,
+  value,
+  minimum,
+  onCommit,
+}: {
+  readonly label: string
+  readonly value: number
+  readonly minimum?: number
+  readonly onCommit: (value: number) => void
+}) {
+  const [draft, setDraft] = useState(String(Math.round(value)))
+
+  const commit = () => {
+    const nextValue = Number(draft)
+
+    if (Number.isFinite(nextValue) && (minimum === undefined || nextValue >= minimum)) {
+      onCommit(nextValue)
+    } else {
+      setDraft(String(Math.round(value)))
+    }
+  }
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      event.preventDefault()
+      event.currentTarget.blur()
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      setDraft(String(Math.round(value)))
+      event.currentTarget.blur()
+    }
+  }
+
+  return (
+    <label>
+      <span>{label}</span>
+      <input
+        type="number"
+        aria-label={`Selected element ${label}`}
+        min={minimum}
+        step="1"
+        value={draft}
+        onChange={(event) => setDraft(event.currentTarget.value)}
+        onBlur={commit}
+        onKeyDown={handleKeyDown}
+      />
+    </label>
+  )
+}
+
+function CommitTextInput({
+  value,
+  maximumLength,
+  onCommit,
+}: {
+  readonly value: string
+  readonly maximumLength: number
+  readonly onCommit: (value: string) => string
+}) {
+  const [draft, setDraft] = useState(value)
+
+  const commit = () => setDraft(onCommit(draft))
+
+  return (
+    <input
+      value={draft}
+      maxLength={maximumLength}
+      onChange={(event) => setDraft(event.currentTarget.value)}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault()
+          event.currentTarget.blur()
+        } else if (event.key === 'Escape') {
+          event.preventDefault()
+          setDraft(value)
+          event.currentTarget.blur()
+        }
+      }}
+    />
+  )
+}
+
 export function LayersPanel() {
   const elements = useEditorStore((state) => state.episode.elements)
   const episode = useEditorStore((state) => state.episode)
@@ -86,9 +226,32 @@ export function LayersPanel() {
     (state) => state.activeLayerPlaneId,
   )
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
+  const selectedElementIds = useEditorStore((state) => state.selectedElementIds)
   const selectElement = useEditorStore((state) => state.selectElement)
+  const selectAllInActivePlane = useEditorStore(
+    (state) => state.selectAllInActivePlane,
+  )
+  const groupSelectedElements = useEditorStore(
+    (state) => state.groupSelectedElements,
+  )
+  const ungroupSelectedElements = useEditorStore(
+    (state) => state.ungroupSelectedElements,
+  )
+  const moveSelectedStoryBeat = useEditorStore(
+    (state) => state.moveSelectedStoryBeat,
+  )
   const deleteLayerPlane = useEditorStore((state) => state.deleteLayerPlane)
   const deleteElement = useEditorStore((state) => state.deleteElement)
+  const setElementName = useEditorStore((state) => state.setElementName)
+  const toggleElementLocked = useEditorStore(
+    (state) => state.toggleElementLocked,
+  )
+  const duplicateElement = useEditorStore((state) => state.duplicateElement)
+  const alignSelectedElement = useEditorStore(
+    (state) => state.alignSelectedElement,
+  )
+  const moveElement = useEditorStore((state) => state.moveElement)
+  const resizeElement = useEditorStore((state) => state.resizeElement)
   const openAssetPanel = useEditorStore((state) => state.openAssetPanel)
   const createBackgroundColorRegion = useEditorStore(
     (state) => state.createBackgroundColorRegion,
@@ -105,13 +268,30 @@ export function LayersPanel() {
     (state) => state.moveElementToLayerPlane,
   )
   const createTextElement = useEditorStore((state) => state.createTextElement)
+  const placeDraggedAssetOnPlane = useEditorStore(
+    (state) => state.placeDraggedAssetOnPlane,
+  )
+  const reportAssetDropError = useEditorStore(
+    (state) => state.reportAssetDropError,
+  )
   const selectedLayerRef = useRef<HTMLButtonElement>(null)
   const layersListRef = useRef<HTMLUListElement>(null)
   const [showColorRegionForm, setShowColorRegionForm] = useState(false)
+  const [showShapeForm, setShowShapeForm] = useState(false)
+  const [assetListDropActive, setAssetListDropActive] = useState(false)
   const [colorRegionFill, setColorRegionFill] = useState('#7B5CC7')
   const [colorRegionStart, setColorRegionStart] = useState('0')
   const [colorRegionHeight, setColorRegionHeight] = useState('1280')
   const [moveTargetPlaneId, setMoveTargetPlaneId] = useState('')
+  const [planeDeleteTargetId, setPlaneDeleteTargetId] = useState('')
+  const [shapeKind, setShapeKind] = useState<'rectangle' | 'ellipse'>(
+    'rectangle',
+  )
+  const [shapeName, setShapeName] = useState('Panel')
+  const [shapeFill, setShapeFill] = useState('#FFFFFF')
+  const [shapeStroke, setShapeStroke] = useState('#211A2B')
+  const [shapeStrokeWidth, setShapeStrokeWidth] = useState('8')
+  const [shapeCornerRadius, setShapeCornerRadius] = useState('0')
   const activeLayerPlane = getLayerPlaneById(episode, activeLayerPlaneId)
   const activeGroupLayerPlanes = getLayerPlanesForGroup(
     episode,
@@ -129,6 +309,23 @@ export function LayersPanel() {
     () => elements.find(({ id }) => id === selectedElementId),
     [elements, selectedElementId],
   )
+  const selectedElements = useMemo(
+    () => elements.filter(({ id }) => selectedElementIds.includes(id)),
+    [elements, selectedElementIds],
+  )
+  const selectedGroup = selectedElement
+    ? episode.elementGroups.find(({ memberElementIds }) =>
+        memberElementIds.includes(selectedElement.id),
+      )
+    : undefined
+  const selectedContainsGroupedElement = selectedElements.some((element) =>
+    episode.elementGroups.some(({ memberElementIds }) =>
+      memberElementIds.includes(element.id),
+    ),
+  )
+  const canGroupSelection =
+    selectedElements.length >= 2 && !selectedContainsGroupedElement
+  const selectionHasLockedElement = selectedElements.some(({ locked }) => locked)
   const localStackElements = useMemo(
     () =>
       elements
@@ -162,12 +359,13 @@ export function LayersPanel() {
   )
   const availableMoveTargets = useMemo(
     () =>
-      selectedElement
+      selectedElements.length > 0
         ? ordinaryPlaneOptions.filter(
-            ({ id }) => id !== selectedElement.layerPlaneId,
+            ({ id }) =>
+              !selectedElements.every(({ layerPlaneId }) => layerPlaneId === id),
           )
         : [],
-    [ordinaryPlaneOptions, selectedElement],
+    [ordinaryPlaneOptions, selectedElements],
   )
   const resolvedMoveTargetPlaneId = availableMoveTargets.some(
     ({ id }) => id === moveTargetPlaneId,
@@ -188,6 +386,19 @@ export function LayersPanel() {
     activeLayerPlane?.kind === 'ordinary' &&
     orderedElements.length === 0 &&
     activeGroupLayerPlanes.length > 1
+  const populatedPlaneMoveTargets = activeGroupLayerPlanes.filter(
+    ({ id, kind }) => id !== activeLayerPlaneId && kind === 'ordinary',
+  )
+  const resolvedPlaneDeleteTargetId = populatedPlaneMoveTargets.some(
+    ({ id }) => id === planeDeleteTargetId,
+  )
+    ? planeDeleteTargetId
+    : (populatedPlaneMoveTargets[0]?.id ?? '')
+  const canDeletePopulatedPlane =
+    activeLayerPlane?.kind === 'ordinary' &&
+    orderedElements.length > 0 &&
+    activeGroupLayerPlanes.length > 1 &&
+    orderedElements.every(({ locked }) => !locked)
   const deleteExplanation =
     activeLayerPlane?.kind === 'base'
       ? 'Background plane 1 is pinned and cannot be deleted.'
@@ -233,6 +444,117 @@ export function LayersPanel() {
     }
   }
 
+  const handleCreateShape = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const strokeWidth = Number(shapeStrokeWidth)
+    const cornerRadius = Number(shapeCornerRadius)
+
+    if (
+      shapeName.trim() === '' ||
+      !Number.isFinite(strokeWidth) ||
+      strokeWidth < 0 ||
+      !Number.isFinite(cornerRadius) ||
+      cornerRadius < 0
+    ) {
+      return
+    }
+
+    useEditorStore.getState().placeSyntheticAsset({
+      name: shapeName,
+      shape: shapeKind,
+      fill: shapeFill,
+      stroke: shapeStroke,
+      strokeWidth,
+      cornerRadius,
+    })
+    setShowShapeForm(false)
+  }
+
+  const updateSelectedBounds = (
+    property: keyof ElementBounds,
+    value: number,
+  ) => {
+    if (!selectedElement || selectedElement.locked) return
+
+    if (property === 'x' || property === 'y') {
+      moveElement(selectedElement.id, {
+        x: property === 'x' ? value : selectedElement.bounds.x,
+        y: property === 'y' ? value : selectedElement.bounds.y,
+      })
+      return
+    }
+
+    const aspectRatio = selectedElement.bounds.width / selectedElement.bounds.height
+    const isFreeformResizable = isElementFreeformResizable(selectedElement)
+    const bounds =
+      property === 'width'
+        ? {
+            ...selectedElement.bounds,
+            width: value,
+            height: isFreeformResizable
+              ? selectedElement.bounds.height
+              : value / aspectRatio,
+          }
+        : {
+            ...selectedElement.bounds,
+            width: isFreeformResizable
+              ? selectedElement.bounds.width
+              : value * aspectRatio,
+            height: value,
+          }
+
+    resizeElement(selectedElement.id, bounds)
+  }
+
+  const handleAssetListDragOver = (event: DragEvent<HTMLUListElement>) => {
+    if (
+      !canHoldElements ||
+      !Array.from(event.dataTransfer.types).includes(ASSET_DRAG_MIME_TYPE)
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    event.dataTransfer.dropEffect = 'copy'
+    setAssetListDropActive(true)
+  }
+
+  const handleAssetListDragLeave = (event: DragEvent<HTMLUListElement>) => {
+    const nextTarget = event.relatedTarget
+
+    if (
+      nextTarget instanceof Node &&
+      event.currentTarget.contains(nextTarget)
+    ) {
+      return
+    }
+
+    setAssetListDropActive(false)
+  }
+
+  const handleAssetListDrop = (event: DragEvent<HTMLUListElement>) => {
+    if (
+      !Array.from(event.dataTransfer.types).includes(ASSET_DRAG_MIME_TYPE)
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    setAssetListDropActive(false)
+    const payload = parseAssetDragPayload(
+      event.dataTransfer.getData(ASSET_DRAG_MIME_TYPE),
+    )
+
+    if (!payload || !canHoldElements || !activeLayerPlane) {
+      reportAssetDropError(
+        'Drop a valid Asset Library item on an ordinary numbered plane.',
+      )
+      return
+    }
+
+    placeDraggedAssetOnPlane(payload, activeLayerPlane.id)
+  }
+
   return (
     <section className="panel-card layers-card" aria-labelledby="layers-heading">
       <header className="panel-heading">
@@ -272,26 +594,36 @@ export function LayersPanel() {
         </label>
       ) : null}
 
-      {canAddColorRegion ? (
+      {canHoldElements ? (
         <div className="plane-element-actions" aria-label={`${planeLabel} add actions`}>
+          {canAddColorRegion ? (
+            <button
+              type="button"
+              aria-expanded={showColorRegionForm}
+              onClick={() => {
+                setColorRegionStart(String(Math.round(viewportY)))
+                setColorRegionHeight(
+                  String(
+                    Math.max(
+                      Math.min(1280, episode.logicalHeight - viewportY),
+                      1,
+                    ),
+                  ),
+                )
+                setShowColorRegionForm((isOpen) => !isOpen)
+              }}
+            >
+              <span aria-hidden="true">▰</span>
+              <span>Color region</span>
+            </button>
+          ) : null}
           <button
             type="button"
-            aria-expanded={showColorRegionForm}
-            onClick={() => {
-              setColorRegionStart(String(Math.round(viewportY)))
-              setColorRegionHeight(
-                String(
-                  Math.max(
-                    Math.min(1280, episode.logicalHeight - viewportY),
-                    1,
-                  ),
-                ),
-              )
-              setShowColorRegionForm((isOpen) => !isOpen)
-            }}
+            aria-expanded={showShapeForm}
+            onClick={() => setShowShapeForm((isOpen) => !isOpen)}
           >
-            <span aria-hidden="true">▰</span>
-            <span>Color region</span>
+            <ShapeIcon />
+            <span>Panel / shape</span>
           </button>
         </div>
       ) : null}
@@ -331,6 +663,72 @@ export function LayersPanel() {
               required
               value={colorRegionHeight}
               onChange={(event) => setColorRegionHeight(event.currentTarget.value)}
+            />
+          </label>
+          <button type="submit">Add</button>
+        </form>
+      ) : null}
+
+      {canHoldElements && showShapeForm ? (
+        <form className="shape-create-form" onSubmit={handleCreateShape}>
+          <label>
+            <span>Type</span>
+            <select
+              value={shapeKind}
+              onChange={(event) =>
+                setShapeKind(
+                  event.currentTarget.value === 'ellipse'
+                    ? 'ellipse'
+                    : 'rectangle',
+                )
+              }
+            >
+              <option value="rectangle">Panel</option>
+              <option value="ellipse">Ellipse</option>
+            </select>
+          </label>
+          <label className="shape-name-field">
+            <span>Name</span>
+            <input
+              value={shapeName}
+              maxLength={80}
+              onChange={(event) => setShapeName(event.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <span>Fill</span>
+            <input
+              type="color"
+              value={shapeFill}
+              onChange={(event) => setShapeFill(event.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <span>Line</span>
+            <input
+              type="color"
+              value={shapeStroke}
+              onChange={(event) => setShapeStroke(event.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <span>Width</span>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              value={shapeStrokeWidth}
+              onChange={(event) => setShapeStrokeWidth(event.currentTarget.value)}
+            />
+          </label>
+          <label>
+            <span>Corners</span>
+            <input
+              type="number"
+              min="0"
+              value={shapeCornerRadius}
+              disabled={shapeKind === 'ellipse'}
+              onChange={(event) => setShapeCornerRadius(event.currentTarget.value)}
             />
           </label>
           <button type="submit">Add</button>
@@ -395,14 +793,36 @@ export function LayersPanel() {
         </div>
       ) : null}
 
+      {orderedElements.length > 0 ? (
+        <div className="layer-selection-tools" aria-label="Layer selection tools">
+          <button type="button" onClick={selectAllInActivePlane}>
+            Select all in plane
+          </button>
+          <span aria-live="polite">
+            {selectedElementIds.length > 1
+              ? `${selectedElementIds.length} selected`
+              : selectedElementIds.length === 1
+                ? '1 selected'
+                : 'None selected'}
+          </span>
+        </div>
+      ) : null}
+
       <ul
         ref={layersListRef}
-        className="layers-list"
+        className={`layers-list${assetListDropActive ? ' is-asset-drop-target' : ''}`}
         aria-label={`${planeLabel} elements`}
         data-testid="layer-elements-list"
+        onDragOver={handleAssetListDragOver}
+        onDragLeave={handleAssetListDragLeave}
+        onDrop={handleAssetListDrop}
       >
         {orderedElements.map((element) => {
-          const isSelected = element.id === selectedElementId
+          const isSelected = selectedElementIds.includes(element.id)
+          const isPrimarySelected = element.id === selectedElementId
+          const elementGroup = episode.elementGroups.find(
+            ({ memberElementIds }) => memberElementIds.includes(element.id),
+          )
           const isEffectivelyVisible = isElementEffectivelyVisible(
             episode,
             element,
@@ -428,6 +848,7 @@ export function LayersPanel() {
               className={`layer-list-item${isEffectivelyVisible ? '' : ' is-hidden'}`}
               key={element.id}
               data-element-type={element.type}
+              data-element-group-id={elementGroup?.id}
               data-image-source-status={
                 element.type === 'image'
                   ? isImageSourceMissing
@@ -437,7 +858,7 @@ export function LayersPanel() {
               }
             >
               <button
-                ref={isSelected ? selectedLayerRef : undefined}
+                ref={isPrimarySelected ? selectedLayerRef : undefined}
                 className={`layer-row${isSelected ? ' is-selected' : ''}`}
                 type="button"
                 aria-pressed={isSelected}
@@ -447,7 +868,9 @@ export function LayersPanel() {
                     ? `${element.name}: image source is missing`
                     : undefined
                 }
-                onClick={() => selectElement(element.id, true)}
+                onClick={(event) =>
+                  selectElement(element.id, true, event.shiftKey)
+                }
               >
                 <span
                   className={`layer-type layer-type-${element.type}`}
@@ -457,10 +880,25 @@ export function LayersPanel() {
                 </span>
                 <span className="layer-name">
                   {element.name}
+                  {elementGroup ? (
+                    <span className="layer-group-badge" title="Grouped element">
+                      G
+                    </span>
+                  ) : null}
                   {isImageSourceMissing ? (
                     <span className="sr-only">, image source missing</span>
                   ) : null}
                 </span>
+              </button>
+              <button
+                className="layer-lock"
+                type="button"
+                aria-label={`${element.locked ? 'Unlock' : 'Lock'} ${element.name}`}
+                aria-pressed={element.locked}
+                title={`${element.locked ? 'Unlock' : 'Lock'} ${element.name}`}
+                onClick={() => toggleElementLocked(element.id)}
+              >
+                <LockIcon locked={element.locked} />
               </button>
               <button
                 className="layer-eye"
@@ -477,8 +915,13 @@ export function LayersPanel() {
               <button
                 className="layer-delete"
                 type="button"
+                disabled={element.locked}
                 aria-label={`Delete ${element.name}`}
-                title={`Delete ${element.name}`}
+                title={
+                  element.locked
+                    ? `Unlock ${element.name} before deleting it`
+                    : `Delete ${element.name}`
+                }
                 onClick={() => deleteElement(element.id)}
               >
                 <TrashIcon />
@@ -488,16 +931,212 @@ export function LayersPanel() {
         })}
       </ul>
 
+      {activeLayerPlane?.kind === 'ordinary' && orderedElements.length > 0 ? (
+        <details className="populated-plane-actions">
+          <summary>Plane options</summary>
+          {activeGroupLayerPlanes.length <= 1 ? (
+            <p>{groupLabel} must keep at least one plane.</p>
+          ) : orderedElements.some(({ locked }) => locked) ? (
+            <p>Unlock every element on this plane before deleting it.</p>
+          ) : (
+            <>
+              <p>
+                Move all {orderedElements.length} elements to another {groupLabel}{' '}
+                plane, or permanently delete them with this plane.
+              </p>
+              <label>
+                <span>Move elements to</span>
+                <select
+                  value={resolvedPlaneDeleteTargetId}
+                  disabled={populatedPlaneMoveTargets.length === 0}
+                  onChange={(event) =>
+                    setPlaneDeleteTargetId(event.currentTarget.value)
+                  }
+                >
+                  {populatedPlaneMoveTargets.length === 0 ? (
+                    <option value="">No ordinary destination plane</option>
+                  ) : null}
+                  {populatedPlaneMoveTargets.map((plane) => (
+                    <option key={plane.id} value={plane.id}>
+                      Plane {plane.order}{plane.name ? ` — ${plane.name}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="populated-plane-action-buttons">
+                <button
+                  type="button"
+                  disabled={!canDeletePopulatedPlane || !resolvedPlaneDeleteTargetId}
+                  onClick={() =>
+                    deleteLayerPlane(activeLayerPlane.id, {
+                      kind: 'move-elements',
+                      targetLayerPlaneId: resolvedPlaneDeleteTargetId,
+                    })
+                  }
+                >
+                  Move &amp; delete plane
+                </button>
+                <button
+                  className="danger-button"
+                  type="button"
+                  disabled={!canDeletePopulatedPlane}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `Delete ${planeLabel} and its ${orderedElements.length} elements? This can be undone.`,
+                      )
+                    ) {
+                      deleteLayerPlane(activeLayerPlane.id, {
+                        kind: 'delete-elements',
+                      })
+                    }
+                  }}
+                >
+                  Delete plane &amp; elements
+                </button>
+              </div>
+            </>
+          )}
+        </details>
+      ) : null}
+
       {selectedElement ? (
         <div
           className="selected-layer-management"
-          aria-label={`${selectedElement.name} layer actions`}
+          aria-label={`${selectedElementIds.length} selected layer action${selectedElementIds.length === 1 ? '' : 's'}`}
           data-testid="selected-layer-management"
         >
+          <div className="selection-organization-actions">
+            <strong>
+              {selectedElementIds.length > 1
+                ? `${selectedElementIds.length} elements selected`
+                : 'Selected element'}
+            </strong>
+            <div>
+              <button
+                type="button"
+                disabled={!canGroupSelection}
+                title={
+                  canGroupSelection
+                    ? 'Keep these elements together for selection and movement'
+                    : 'Select at least two ungrouped elements to group them'
+                }
+                onClick={groupSelectedElements}
+              >
+                Group
+              </button>
+              <button
+                type="button"
+                disabled={!selectedGroup}
+                onClick={ungroupSelectedElements}
+              >
+                Ungroup
+              </button>
+            </div>
+            <div>
+              <button
+                type="button"
+                disabled={selectionHasLockedElement}
+                onClick={() => moveSelectedStoryBeat('up')}
+              >
+                Move up 128
+              </button>
+              <button
+                type="button"
+                disabled={selectionHasLockedElement}
+                onClick={() => moveSelectedStoryBeat('down')}
+              >
+                Move down 128
+              </button>
+            </div>
+          </div>
+
+          <form
+            className="selected-element-name"
+            onSubmit={(event) => {
+              event.preventDefault()
+              event.currentTarget.querySelector('input')?.blur()
+            }}
+          >
+            <label>
+              <span>Name</span>
+              <CommitTextInput
+                key={`${selectedElement.id}-${selectedElement.name}`}
+                value={selectedElement.name}
+                maximumLength={80}
+                onCommit={(name) => {
+                  setElementName(selectedElement.id, name)
+                  return (
+                    useEditorStore
+                      .getState()
+                      .episode.elements.find(({ id }) => id === selectedElement.id)
+                      ?.name ?? selectedElement.name
+                  )
+                }}
+              />
+            </label>
+          </form>
+
+          <div className="selected-element-quick-actions">
+            <button
+              type="button"
+              aria-pressed={selectedElement.locked}
+              onClick={() => toggleElementLocked(selectedElement.id)}
+            >
+              <LockIcon locked={selectedElement.locked} />
+              {selectedElement.locked ? 'Unlock selection' : 'Lock selection'}
+            </button>
+            <button
+              type="button"
+              disabled={selectionHasLockedElement}
+              onClick={() => duplicateElement(selectedElement.id)}
+            >
+              Duplicate selection
+            </button>
+          </div>
+
+          <div className="selected-element-geometry" aria-label="Primary selected element geometry">
+            <CommitNumberInput
+              key={`${selectedElement.id}-x-${selectedElement.bounds.x}`}
+              label="X"
+              value={selectedElement.bounds.x}
+              onCommit={(value) => updateSelectedBounds('x', value)}
+            />
+            <CommitNumberInput
+              key={`${selectedElement.id}-y-${selectedElement.bounds.y}`}
+              label="Y"
+              value={selectedElement.bounds.y}
+              onCommit={(value) => updateSelectedBounds('y', value)}
+            />
+            <CommitNumberInput
+              key={`${selectedElement.id}-width-${selectedElement.bounds.width}`}
+              label="W"
+              value={selectedElement.bounds.width}
+              minimum={24}
+              onCommit={(value) => updateSelectedBounds('width', value)}
+            />
+            <CommitNumberInput
+              key={`${selectedElement.id}-height-${selectedElement.bounds.height}`}
+              label="H"
+              value={selectedElement.bounds.height}
+              minimum={24}
+              onCommit={(value) => updateSelectedBounds('height', value)}
+            />
+          </div>
+
+          <div className="selected-element-align" aria-label="Align selected element">
+            <button type="button" disabled={selectedElement.locked || selectedElementIds.length > 1} onClick={() => alignSelectedElement({ horizontal: 'left' })}>Left</button>
+            <button type="button" disabled={selectedElement.locked || selectedElementIds.length > 1} onClick={() => alignSelectedElement({ horizontal: 'center' })}>Center</button>
+            <button type="button" disabled={selectedElement.locked || selectedElementIds.length > 1} onClick={() => alignSelectedElement({ horizontal: 'right' })}>Right</button>
+            <button type="button" disabled={selectedElement.locked || selectedElementIds.length > 1} onClick={() => alignSelectedElement({ vertical: 'top' })}>Top</button>
+            <button type="button" disabled={selectedElement.locked || selectedElementIds.length > 1} onClick={() => alignSelectedElement({ vertical: 'middle' })}>Middle</button>
+            <button type="button" disabled={selectedElement.locked || selectedElementIds.length > 1} onClick={() => alignSelectedElement({ vertical: 'bottom' })}>Bottom</button>
+          </div>
+
           <div className="selected-layer-stack-actions">
             <button
               type="button"
-              disabled={!canSendSelectedBackward}
+              disabled={!canSendSelectedBackward || selectedElementIds.length > 1}
               aria-label={`Send ${selectedElement.name} backward`}
               title={
                 selectedElement.locked
@@ -514,7 +1153,7 @@ export function LayersPanel() {
             </button>
             <button
               type="button"
-              disabled={!canBringSelectedForward}
+              disabled={!canBringSelectedForward || selectedElementIds.length > 1}
               aria-label={`Bring ${selectedElement.name} forward`}
               title={
                 selectedElement.locked
@@ -548,12 +1187,12 @@ export function LayersPanel() {
               <select
                 value={resolvedMoveTargetPlaneId}
                 disabled={
-                  availableMoveTargets.length === 0 || selectedElement.locked
+                  availableMoveTargets.length === 0 || selectionHasLockedElement
                 }
                 aria-label={`Destination plane for ${selectedElement.name}`}
                 title={
-                  selectedElement.locked
-                    ? 'Unlock this element before moving it to another plane'
+                  selectionHasLockedElement
+                    ? 'Unlock the selection before moving it to another plane'
                     : undefined
                 }
                 data-testid="move-element-plane-select"
@@ -573,11 +1212,11 @@ export function LayersPanel() {
             </label>
             <button
               type="submit"
-              disabled={!resolvedMoveTargetPlaneId || selectedElement.locked}
+              disabled={!resolvedMoveTargetPlaneId || selectionHasLockedElement}
               title={
-                selectedElement.locked
-                  ? 'Unlock this element before moving it to another plane'
-                  : 'Move the selected element to the chosen plane'
+                selectionHasLockedElement
+                  ? 'Unlock the selection before moving it to another plane'
+                  : 'Move the selected elements to the chosen plane'
               }
               data-testid="move-element-plane-submit"
             >
@@ -607,6 +1246,14 @@ export function LayersPanel() {
           >
             <TextIcon />
             <span>Add text</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowShapeForm((isOpen) => !isOpen)}
+            title={`Add a panel or shape to ${planeLabel}`}
+          >
+            <ShapeIcon />
+            <span>Panel</span>
           </button>
         </div>
       ) : null}

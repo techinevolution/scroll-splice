@@ -3,7 +3,7 @@ import { expect, test, type Page } from '@playwright/test'
 async function useMenuItem(
   page: Page,
   menuName: 'File' | 'View',
-  itemName: 'New Episode' | 'Save' | 'Reopen' | 'Reader Preview',
+  itemName: 'New Episode' | 'Save' | 'Reopen Current' | 'Reader Preview',
 ) {
   const trigger = page.getByRole('button', { name: menuName, exact: true })
   await trigger.click()
@@ -232,9 +232,9 @@ test('supports a creator story from blank episode through saved reader preview',
 
   await answerNextDialog(
     page,
-    'Discard unsaved changes and reopen the last save?',
+    'Discard unsaved changes and reopen the current saved project?',
     'accept',
-    () => useMenuItem(page, 'File', 'Reopen'),
+    () => useMenuItem(page, 'File', 'Reopen Current'),
   )
   await expect(
     page.getByRole('button', {

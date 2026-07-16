@@ -8,33 +8,56 @@ import { createBlankEpisode } from '../core/createBlankEpisode'
 import {
   DEFAULT_EPISODE_HEIGHT_INCREMENT,
   MIN_ELEMENT_SIZE,
+  alignElement as alignElementCommand,
   createBackgroundColorRegion as createBackgroundColorRegionCommand,
   createImageElement as createImageElementCommand,
   createLayerPlane as createLayerPlaneCommand,
+  createSpeechBalloonElement as createSpeechBalloonElementCommand,
   createSyntheticShapeElement as createSyntheticShapeElementCommand,
   createTextElement as createTextElementCommand,
-  deleteElement as deleteElementCommand,
   deleteEmptyLayerPlane as deleteEmptyLayerPlaneCommand,
   extendEpisodeHeight as extendEpisodeHeightCommand,
-  moveElement as moveElementCommand,
   moveElementInStack as moveElementInStackCommand,
-  moveElementToLayerPlane as moveElementToLayerPlaneCommand,
   reorderLayerPlane as reorderLayerPlaneCommand,
   resizeElement as resizeElementCommand,
   resizeEpisodeHeight as resizeEpisodeHeightCommand,
   setBaseColor as setBaseColorCommand,
   setCompositionGroupVisibility as setCompositionGroupVisibilityCommand,
   setElementBlendMode as setElementBlendModeCommand,
+  setElementName as setElementNameCommand,
   setElementOpacity as setElementOpacityCommand,
+  setElementOverflow as setElementOverflowCommand,
+  setElementTransform as setElementTransformCommand,
   setElementVisibility as setElementVisibilityCommand,
   setEpisodeName as setEpisodeNameCommand,
   setImagePresentation as setImagePresentationCommand,
+  setImageCrop as setImageCropCommand,
+  setImageFrame as setImageFrameCommand,
   setLayerPlaneName as setLayerPlaneNameCommand,
   setLayerPlaneVisibility as setLayerPlaneVisibilityCommand,
   setShapeFill as setShapeFillCommand,
+  updateShapeElementStyle as updateShapeElementStyleCommand,
+  updateSpeechBalloonElement as updateSpeechBalloonElementCommand,
   updateTextElement as updateTextElementCommand,
+  type ElementAlignment,
+  type UpdateShapeElementStyleInput,
+  type UpdateSpeechBalloonElementInput,
   type UpdateTextElementInput,
 } from '../core/commands'
+import {
+  deleteElementSelection as deleteElementSelectionCommand,
+  duplicateElementSelection as duplicateElementSelectionCommand,
+  getElementGroupByMember,
+  groupElements as groupElementsCommand,
+  moveElementSelection as moveElementSelectionCommand,
+  moveElementSelectionToLayerPlane as moveElementSelectionToLayerPlaneCommand,
+  setElementSelectionLocked as setElementSelectionLockedCommand,
+  ungroupElements as ungroupElementsCommand,
+} from '../core/groupCommands'
+import {
+  deleteLayerPlaneWithDisposition,
+  type PopulatedPlaneDisposition,
+} from '../core/planeCommands'
 import {
   DEFAULT_ZOOM_FACTOR,
   boundsIntersectViewport,
@@ -53,20 +76,27 @@ import {
   type CompositionGroup,
   type ElementBlendMode,
   type ElementBounds,
+  type ElementOverflow,
+  type ElementTransform,
   type EpisodeDocument,
+  type ImageCrop,
   type ImageElement,
+  type ImageFrame,
   type ImageAssetReference,
   type ShapeFill,
+  type ShapeElement,
 } from '../core/episode'
 import {
   ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
   BUILT_IN_ASSETS,
+  checkImportedAssetDeletionSafety,
   createIndexedDbAssetRepository,
   createRuntimeImportedImage,
   importBrowserImage,
   revokeRuntimeImportedImages,
   type AssetLibrarySnapshot,
   type AssetLibrarySnapshotTransform,
+  type AssetReferenceStorage,
   type AssetDragPayload,
   type AssetRepository,
   type BrowserImageFile,
@@ -75,11 +105,29 @@ import {
   type ResolvedImageAsset,
   type RuntimeImportedImage,
 } from '../assets'
-import { isSafeCreatorCategoryName } from '../assets/validation'
+import {
+  isSafeCreatorCategoryName,
+  isSafeDisplayName,
+} from '../assets/validation'
 import {
   createLocalStorageProjectRepository,
   getBrowserLocalStorage,
 } from '../persistence/projectRepository'
+import {
+  createLocalStorageProjectLibraryRepository,
+  type LocalProjectSummary,
+} from '../persistence/projectLibraryRepository'
+import {
+  createDebouncedLocalStorageRecoveryRepository,
+  type DebouncedRecoveryRepository,
+  type RecoveredProject,
+  type RecoveryStorageLike,
+} from '../persistence/recoveryRepository'
+import {
+  parsePortableProject,
+  serializePortableProject,
+} from '../persistence/portableProject'
+import { mergePortableProjectAssets } from '../persistence/portableProjectMerge'
 
 export type AssetLibraryStatus = 'idle' | 'loading' | 'ready' | 'error'
 export type AssetLibraryMessageKind = 'info' | 'success' | 'error'
@@ -97,8 +145,15 @@ interface EditorState {
   readonly canRedo: boolean
   readonly hasUnsavedChanges: boolean
   readonly hasSavedEpisode: boolean
+  readonly currentProjectId: string | null
+  readonly reopenProjectId: string | null
+  readonly recentProjects: readonly LocalProjectSummary[]
+  readonly projectLibraryBusy: boolean
+  readonly recoveryAvailable: RecoveredProject | null
+  readonly recoveryMessage: string | null
   readonly documentStatus: string
   readonly selectedElementId: string | null
+  readonly selectedElementIds: readonly string[]
   readonly liveElementBounds: {
     readonly elementId: string
     readonly bounds: ElementBounds
@@ -123,7 +178,10 @@ interface EditorState {
   readonly setActiveCompositionGroup: (group: CompositionGroup) => void
   readonly setActiveLayerPlane: (layerPlaneId: string) => void
   readonly createLayerPlane: () => void
-  readonly deleteLayerPlane: (layerPlaneId: string) => void
+  readonly deleteLayerPlane: (
+    layerPlaneId: string,
+    disposition?: PopulatedPlaneDisposition,
+  ) => void
   readonly setLayerPlaneName: (layerPlaneId: string, name: string) => void
   readonly reorderLayerPlane: (
     layerPlaneId: string,
@@ -143,7 +201,15 @@ interface EditorState {
   readonly setViewportPosition: (position: LogicalPosition) => void
   readonly setViewportY: (logicalY: number) => void
   readonly panViewport: (logicalDelta: LogicalPosition) => void
-  readonly selectElement: (elementId: string | null, reveal?: boolean) => void
+  readonly selectElement: (
+    elementId: string | null,
+    reveal?: boolean,
+    toggle?: boolean,
+  ) => void
+  readonly selectAllInActivePlane: () => void
+  readonly groupSelectedElements: () => boolean
+  readonly ungroupSelectedElements: () => boolean
+  readonly moveSelectedStoryBeat: (direction: 'up' | 'down') => boolean
   readonly setElementVisibility: (elementId: string, visible: boolean) => void
   readonly setLayerPlaneVisibility: (
     layerPlaneId: string,
@@ -154,7 +220,16 @@ interface EditorState {
     visible: boolean,
   ) => void
   readonly setBaseColor: (color: string) => void
+  readonly setElementName: (elementId: string, name: string) => void
+  readonly setElementLocked: (elementId: string, locked: boolean) => void
+  readonly toggleElementLocked: (elementId: string) => void
   readonly deleteElement: (elementId: string) => void
+  readonly duplicateElement: (
+    elementId: string,
+    offset?: LogicalPosition,
+  ) => boolean
+  readonly nudgeSelectedElement: (delta: LogicalPosition) => boolean
+  readonly alignSelectedElement: (alignment: ElementAlignment) => boolean
   readonly moveElementInStack: (
     elementId: string,
     direction: 'backward' | 'forward',
@@ -165,9 +240,14 @@ interface EditorState {
   ) => void
   readonly placeSyntheticAsset: (input: {
     readonly name: string
+    readonly shape?: ShapeElement['shape']
     readonly fill: string
+    readonly stroke?: string
+    readonly strokeWidth?: number
+    readonly cornerRadius?: number
   }) => void
   readonly createTextElement: () => boolean
+  readonly createSpeechBalloonElement: () => boolean
   readonly createBackgroundColorRegion: (input: {
     readonly fill: string
     readonly startY: number
@@ -195,15 +275,37 @@ interface EditorState {
     elementId: string,
     blendMode: ElementBlendMode,
   ) => void
+  readonly setElementTransform: (
+    elementId: string,
+    transform: ElementTransform,
+  ) => void
+  readonly toggleElementFlip: (
+    elementId: string,
+    axis: 'horizontal' | 'vertical',
+  ) => void
+  readonly setElementOverflow: (
+    elementId: string,
+    overflow: ElementOverflow,
+  ) => void
   readonly setShapeFill: (elementId: string, fill: ShapeFill) => void
+  readonly updateShapeElementStyle: (
+    elementId: string,
+    input: UpdateShapeElementStyleInput,
+  ) => void
   readonly updateTextElement: (
     elementId: string,
     input: UpdateTextElementInput,
+  ) => void
+  readonly updateSpeechBalloonElement: (
+    elementId: string,
+    input: UpdateSpeechBalloonElementInput,
   ) => void
   readonly setImagePresentation: (
     elementId: string,
     presentation: ImageElement['presentation'],
   ) => void
+  readonly setImageFrame: (elementId: string, frame: ImageFrame) => void
+  readonly setImageCrop: (elementId: string, crop: ImageCrop) => void
   readonly toggleMagnet: () => void
   readonly toggleSliceGuides: () => void
   readonly toggleAssetPanel: () => void
@@ -213,28 +315,73 @@ interface EditorState {
   readonly createCreatorAssetCategory: (
     name: string,
   ) => Promise<string | null>
+  readonly renameCreatorAssetCategory: (
+    categoryId: string,
+    name: string,
+  ) => Promise<boolean>
+  readonly deleteCreatorAssetCategory: (
+    categoryId: string,
+  ) => Promise<boolean>
+  readonly reorderCreatorAssetCategory: (
+    categoryId: string,
+    targetIndex: number,
+  ) => Promise<boolean>
   readonly importImageAsset: (
     file: BrowserImageFile,
     creatorCategoryId?: string | null,
   ) => Promise<boolean>
+  readonly importAndPlaceImageAsset: (
+    file: BrowserImageFile,
+    logicalCenter: LogicalPosition,
+  ) => Promise<boolean>
+  readonly renameImportedImageAsset: (
+    assetId: string,
+    name: string,
+  ) => Promise<boolean>
+  readonly moveImportedImageAsset: (
+    assetId: string,
+    creatorCategoryId: string | null,
+  ) => Promise<boolean>
+  readonly replaceImportedImageAsset: (
+    assetId: string,
+    file: BrowserImageFile,
+  ) => Promise<boolean>
+  readonly deleteImportedImageAsset: (assetId: string) => Promise<boolean>
   readonly placeBuiltInAsset: (assetId: string) => boolean
   readonly placeImportedAsset: (assetId: string) => boolean
   readonly placeDraggedAsset: (
     payload: AssetDragPayload,
     logicalCenter: LogicalPosition,
   ) => boolean
+  readonly placeDraggedAssetOnPlane: (
+    payload: AssetDragPayload,
+    layerPlaneId: string,
+  ) => boolean
   readonly reportAssetDropError: (message: string) => void
   readonly undo: () => void
   readonly redo: () => void
-  readonly saveEpisode: () => void
+  readonly saveEpisode: () => boolean
+  readonly saveEpisodeAs: () => boolean
+  readonly openLocalProject: (projectId: string) => boolean
+  readonly deleteLocalProject: (projectId: string) => boolean
+  readonly refreshRecentProjects: () => boolean
   readonly reopenEpisode: () => boolean
   readonly newEpisode: () => void
   readonly resetEpisode: () => void
+  readonly restoreRecovery: () => boolean
+  readonly discardRecovery: () => boolean
+  readonly flushRecovery: () => void
+  readonly exportPortableProject: () => Promise<{
+    readonly blob: Blob
+    readonly fileName: string
+  } | null>
+  readonly importPortableProject: (file: Blob) => Promise<boolean>
 }
 
 interface HistoryCheckpoint {
   readonly episode: EpisodeDocument
   readonly selectedElementId: string | null
+  readonly selectedElementIds: readonly string[]
   readonly activeCompositionGroup: CompositionGroup
   readonly activeLayerPlaneId: string
   readonly revision: number
@@ -250,8 +397,13 @@ const INITIAL_COMPOSITION_GROUP = 'content' as const
 const INITIAL_LAYER_PLANE_ID = BUILD_WEEK_LAYER_PLANE_IDS.contentPanels
 const HISTORY_LIMIT = 100
 const DEFAULT_IMAGE_VIEWPORT_FRACTION = 0.6
+const STORY_BEAT_STEP = 128
 
 let assetRepositoryOverride: AssetRepository | undefined
+let assetReferenceStorageOverride:
+  | AssetReferenceStorage
+  | null
+  | undefined
 
 export function setAssetRepositoryForTesting(
   repository: AssetRepository | undefined,
@@ -259,8 +411,27 @@ export function setAssetRepositoryForTesting(
   assetRepositoryOverride = repository
 }
 
+export function setAssetReferenceStorageForTesting(
+  storage: AssetReferenceStorage | null | undefined,
+): void {
+  assetReferenceStorageOverride = storage
+}
+
 function getAssetRepository(): AssetRepository {
   return assetRepositoryOverride ?? createIndexedDbAssetRepository()
+}
+
+function getAssetReferenceStorage(): AssetReferenceStorage | undefined {
+  if (assetReferenceStorageOverride !== undefined) {
+    return assetReferenceStorageOverride ?? undefined
+  }
+
+  const storage = getBrowserLocalStorage()
+
+  return storage &&
+    typeof (storage as Partial<AssetReferenceStorage>).removeItem === 'function'
+    ? (storage as AssetReferenceStorage)
+    : undefined
 }
 
 type EditorStatePatch = Partial<EditorState>
@@ -308,6 +479,72 @@ async function persistAssetLibraryUpdate(
   return repository.update(transform)
 }
 
+function getLatestAssetLibraryParts(
+  state: EditorState,
+  currentSnapshot: AssetLibrarySnapshot | undefined,
+): {
+  readonly creatorCategories: readonly CreatorAssetCategorySnapshot[]
+  readonly importedImages: readonly ImportedImageSnapshot[]
+} {
+  return {
+    creatorCategories:
+      currentSnapshot?.creatorCategories ?? state.creatorAssetCategories,
+    importedImages:
+      currentSnapshot?.importedImages ??
+      state.importedImageAssets.map(createImportedImageSnapshot),
+  }
+}
+
+function createAssetLibraryRefreshPatch(
+  state: EditorState,
+  snapshot: AssetLibrarySnapshot,
+  successMessage: string,
+): EditorStatePatch {
+  try {
+    return {
+      assetLibraryStatus: 'ready',
+      assetLibraryBusy: false,
+      assetLibraryMessage: successMessage,
+      assetLibraryMessageKind: 'success',
+      creatorAssetCategories: snapshot.creatorCategories,
+      importedImageAssets: synchronizeRuntimeImportedImages(
+        state.importedImageAssets,
+        snapshot.importedImages,
+      ),
+    }
+  } catch {
+    return {
+      assetLibraryStatus: 'ready',
+      assetLibraryBusy: false,
+      assetLibraryMessage:
+        'The library change was saved, but its previews need a reload.',
+      assetLibraryMessageKind: 'error',
+      creatorAssetCategories: snapshot.creatorCategories,
+    }
+  }
+}
+
+function createAssetLibraryMutationFailurePatch(
+  state: EditorState,
+  result: PersistAssetLibraryResult,
+  mutationError: string | undefined,
+  fallbackMessage: string,
+): EditorStatePatch {
+  const message = mutationError ?? (result.ok ? fallbackMessage : result.message)
+
+  return result.ok
+    ? {
+        ...createAssetLibraryRefreshPatch(state, result.snapshot, message),
+        assetLibraryMessage: message,
+        assetLibraryMessageKind: 'error',
+      }
+    : {
+        assetLibraryBusy: false,
+        assetLibraryMessage: message,
+        assetLibraryMessageKind: 'error',
+      }
+}
+
 function synchronizeRuntimeImportedImages(
   currentImages: readonly RuntimeImportedImage[],
   persistedImages: readonly ImportedImageSnapshot[],
@@ -319,16 +556,25 @@ function synchronizeRuntimeImportedImages(
     const synchronized = persistedImages.map((snapshot) => {
       const current = currentById.get(snapshot.id)
 
-      if (current) return current
+      if (current && current.sourceBlob === snapshot.sourceBlob) {
+        return {
+          ...snapshot,
+          sourceUrl: current.sourceUrl,
+        }
+      }
 
       const created = createRuntimeImportedImage(snapshot)
       createdImages.push(created)
       return created
     })
-    const synchronizedIds = new Set(synchronized.map(({ id }) => id))
+    const retainedSourceUrls = new Set(
+      synchronized.map(({ sourceUrl }) => sourceUrl),
+    )
 
     revokeRuntimeImportedImages(
-      currentImages.filter(({ id }) => !synchronizedIds.has(id)),
+      currentImages.filter(
+        ({ sourceUrl }) => !retainedSourceUrls.has(sourceUrl),
+      ),
     )
     return synchronized
   } catch (error) {
@@ -423,6 +669,7 @@ function placeImageAssetInEpisode(
   asset: ResolvedImageAsset,
   assetReference: ImageAssetReference,
   logicalCenter?: LogicalPosition,
+  layerPlaneId: string = state.activeLayerPlaneId,
 ): EpisodeDocument | undefined {
   const bounds = getCenteredImageBounds(
     state,
@@ -436,7 +683,7 @@ function placeImageAssetInEpisode(
   }
 
   return createImageElementCommand(state.episode, {
-    layerPlaneId: state.activeLayerPlaneId,
+    layerPlaneId,
     name: asset.displayName,
     assetReference,
     bounds,
@@ -452,10 +699,11 @@ function createAssetPlacementTransition(
   state: EditorState,
   assetReference: ImageAssetReference,
   logicalCenter?: LogicalPosition,
+  targetLayerPlaneId: string = state.activeLayerPlaneId,
 ): AssetPlacementTransition {
   const activeLayerPlane = getLayerPlaneById(
     state.episode,
-    state.activeLayerPlaneId,
+    targetLayerPlaneId,
   )
 
   if (activeLayerPlane?.kind !== 'ordinary') {
@@ -527,6 +775,7 @@ function createAssetPlacementTransition(
     asset,
     assetReference,
     logicalCenter,
+    targetLayerPlaneId,
   )
 
   if (!episode) {
@@ -549,6 +798,8 @@ function createAssetPlacementTransition(
     placed: true,
     nextState: commitEpisodeChange(state, episode, {
       selectedElementId: createdElement?.id ?? state.selectedElementId,
+      activeCompositionGroup: activeLayerPlane.compositionGroup,
+      activeLayerPlaneId: activeLayerPlane.id,
       liveElementBounds: null,
       assetLibraryMessage: `Placed “${asset.displayName}”.`,
       assetLibraryMessageKind: 'success',
@@ -560,10 +811,68 @@ function createHistoryCheckpoint(state: EditorState): HistoryCheckpoint {
   return {
     episode: state.episode,
     selectedElementId: state.selectedElementId,
+    selectedElementIds: [...state.selectedElementIds],
     activeCompositionGroup: state.activeCompositionGroup,
     activeLayerPlaneId: state.activeLayerPlaneId,
     revision: state.currentRevision,
   }
+}
+
+function getSelectionUnit(
+  episode: EpisodeDocument,
+  elementId: string,
+): readonly string[] {
+  const group = getElementGroupByMember(episode, elementId)
+  const ids = group?.memberElementIds ?? [elementId]
+  const existingIds = new Set(episode.elements.map(({ id }) => id))
+
+  return [elementId, ...ids.filter((id) => id !== elementId)].filter(
+    (id, index, allIds) => existingIds.has(id) && allIds.indexOf(id) === index,
+  )
+}
+
+function getActionSelection(
+  state: EditorState,
+  elementId: string,
+): readonly string[] {
+  return state.selectedElementIds.includes(elementId)
+    ? state.selectedElementIds
+    : getSelectionUnit(state.episode, elementId)
+}
+
+function reconcileSelection(
+  episode: EpisodeDocument,
+  state: EditorState,
+  patch: EditorStatePatch,
+): Pick<EditorState, 'selectedElementId' | 'selectedElementIds'> {
+  const hasPrimary = Object.prototype.hasOwnProperty.call(
+    patch,
+    'selectedElementId',
+  )
+  const hasSelection = Object.prototype.hasOwnProperty.call(
+    patch,
+    'selectedElementIds',
+  )
+  const requestedPrimary = hasPrimary
+    ? (patch.selectedElementId ?? null)
+    : state.selectedElementId
+  const requestedIds = hasSelection
+    ? (patch.selectedElementIds ?? [])
+    : hasPrimary
+      ? requestedPrimary
+        ? [requestedPrimary]
+        : []
+      : state.selectedElementIds
+  const existingIds = new Set(episode.elements.map(({ id }) => id))
+  const selectedElementIds = [...new Set(requestedIds)].filter((id) =>
+    existingIds.has(id),
+  )
+  const selectedElementId =
+    requestedPrimary && selectedElementIds.includes(requestedPrimary)
+      ? requestedPrimary
+      : (selectedElementIds[0] ?? null)
+
+  return { selectedElementId, selectedElementIds }
 }
 
 function isDirtyAtRevision(
@@ -590,9 +899,11 @@ function commitEpisodeChange(
   }
 
   const revision = state.nextRevision
+  const selection = reconcileSelection(episode, state, patch)
 
   return {
     ...patch,
+    ...selection,
     episode,
     historyPast: appendHistoryCheckpoint(
       state.historyPast,
@@ -636,8 +947,15 @@ function reconcileCheckpointContext(
     : undefined
 
   if (selectedElement && selectedGroup) {
+    const selectedElementIds = [...new Set(checkpoint.selectedElementIds)].filter(
+      (id) => episode.elements.some((element) => element.id === id),
+    )
+
     return {
       selectedElementId: selectedElement.id,
+      selectedElementIds: selectedElementIds.includes(selectedElement.id)
+        ? selectedElementIds
+        : [selectedElement.id],
       activeCompositionGroup: selectedGroup,
       activeLayerPlaneId: selectedElement.layerPlaneId,
     }
@@ -651,6 +969,7 @@ function reconcileCheckpointContext(
   if (requestedPlane) {
     return {
       selectedElementId: null,
+      selectedElementIds: [],
       activeCompositionGroup: requestedPlane.compositionGroup,
       activeLayerPlaneId: requestedPlane.id,
     }
@@ -664,6 +983,7 @@ function reconcileCheckpointContext(
 
   return {
     selectedElementId: null,
+    selectedElementIds: [],
     activeCompositionGroup:
       requestedGroupPlane?.compositionGroup ?? fallback.activeCompositionGroup,
     activeLayerPlaneId: requestedGroupPlane?.id ?? fallback.activeLayerPlaneId,
@@ -715,17 +1035,167 @@ function getProjectRepository() {
   return createLocalStorageProjectRepository(getBrowserLocalStorage())
 }
 
-const initialLoadResult = getProjectRepository().loadLast()
-const initialEpisode = initialLoadResult.ok
-  ? initialLoadResult.episode
-  : buildWeekEpisode
+function getProjectLibraryRepository() {
+  return createLocalStorageProjectLibraryRepository(getBrowserLocalStorage())
+}
+
+function getRecoveryStorage(): RecoveryStorageLike | undefined {
+  const storage = getBrowserLocalStorage()
+
+  return storage &&
+    typeof (storage as Partial<RecoveryStorageLike>).removeItem === 'function'
+    ? (storage as RecoveryStorageLike)
+    : undefined
+}
+
+let recoveryRepositoryStorage: RecoveryStorageLike | undefined
+let recoveryRepository: DebouncedRecoveryRepository | undefined
+
+function getRecoveryRepository(): DebouncedRecoveryRepository {
+  const storage = getRecoveryStorage()
+
+  if (!recoveryRepository || storage !== recoveryRepositoryStorage) {
+    recoveryRepository?.dispose()
+    recoveryRepositoryStorage = storage
+    recoveryRepository = createDebouncedLocalStorageRecoveryRepository(storage)
+  }
+
+  return recoveryRepository
+}
+
+function clearRecoverySnapshot(): void {
+  getRecoveryRepository().clear()
+}
+
+function loadInitialProjectState(): {
+  readonly episode: EpisodeDocument
+  readonly currentProjectId: string | null
+  readonly recentProjects: readonly LocalProjectSummary[]
+  readonly documentStatus: string
+  readonly hasSavedEpisode: boolean
+} {
+  const projectLibrary = getProjectLibraryRepository()
+  const migration = projectLibrary.importLegacyLast()
+  const listed = projectLibrary.listRecent()
+
+  if (listed.ok) {
+    const projectId =
+      migration.ok && migration.status === 'imported'
+        ? migration.projectId
+        : listed.projects[0]?.projectId
+    const loaded = projectId ? projectLibrary.load(projectId) : undefined
+
+    if (loaded?.ok) {
+      return {
+        episode: loaded.project.episode,
+        currentProjectId: loaded.project.projectId,
+        recentProjects: listed.projects,
+        documentStatus: 'Opened saved episode',
+        hasSavedEpisode: true,
+      }
+    }
+
+    if (!loaded) {
+      return {
+        episode: buildWeekEpisode,
+        currentProjectId: null,
+        recentProjects: listed.projects,
+        documentStatus: 'Demo ready · not saved',
+        hasSavedEpisode: listed.projects.length > 0,
+      }
+    }
+  }
+
+  const legacy = getProjectRepository().loadLast()
+
+  if (legacy.ok) {
+    return {
+      episode: legacy.episode,
+      currentProjectId: null,
+      recentProjects: listed.ok ? listed.projects : [],
+      documentStatus: 'Opened legacy saved episode',
+      hasSavedEpisode: true,
+    }
+  }
+
+  const failureMessage = !listed.ok
+    ? listed.message
+    : !migration.ok
+      ? migration.message
+      : legacy.reason !== 'not-found' && legacy.reason !== 'storage-unavailable'
+        ? legacy.message
+        : null
+
+  return {
+    episode: buildWeekEpisode,
+    currentProjectId: null,
+    recentProjects: listed.ok ? listed.projects : [],
+    documentStatus: failureMessage
+      ? `${failureMessage} Demo loaded instead.`
+      : 'Demo ready · not saved',
+    hasSavedEpisode: false,
+  }
+}
+
+const initialProjectState = loadInitialProjectState()
+const initialEpisode = initialProjectState.episode
 const initialEditorContext = getDefaultEditorContext(initialEpisode)
-const initialDocumentStatus = initialLoadResult.ok
-  ? 'Opened saved episode'
-  : initialLoadResult.reason === 'not-found' ||
-      initialLoadResult.reason === 'storage-unavailable'
-    ? 'Demo ready · not saved'
-    : `${initialLoadResult.message} Demo loaded instead.`
+const initialRecoveryResult = getRecoveryRepository().load()
+const initialRecovery = initialRecoveryResult.ok
+  ? initialRecoveryResult.recovery
+  : null
+const initialRecoveryMessage =
+  !initialRecoveryResult.ok &&
+  initialRecoveryResult.reason !== 'not-found' &&
+  initialRecoveryResult.reason !== 'storage-unavailable'
+    ? initialRecoveryResult.message
+    : null
+
+function createLoadedEpisodePatch(
+  state: EditorState,
+  episode: EpisodeDocument,
+  input: {
+    readonly currentProjectId: string | null
+    readonly saved: boolean
+    readonly documentStatus: string
+  },
+): EditorStatePatch {
+  const context = getDefaultEditorContext(episode)
+  const viewportDimensions = getViewportLogicalDimensions(
+    episode,
+    state.fitViewportLogicalHeight,
+    DEFAULT_ZOOM_FACTOR,
+  )
+  const revision = state.nextRevision
+
+  return {
+    episode,
+    historyPast: [],
+    historyFuture: [],
+    episodeHeightResizeStart: null,
+    elementOpacityEditStart: null,
+    currentRevision: revision,
+    nextRevision: revision + 1,
+    savedRevision: input.saved ? revision : null,
+    canUndo: false,
+    canRedo: false,
+    hasUnsavedChanges: !input.saved,
+    currentProjectId: input.currentProjectId,
+    documentStatus: input.documentStatus,
+    selectedElementId: null,
+    selectedElementIds: [],
+    liveElementBounds: null,
+    ...context,
+    viewportX: 0,
+    viewportY: 0,
+    viewportLogicalWidth: viewportDimensions.width,
+    viewportLogicalHeight: viewportDimensions.height,
+    zoomFactor: DEFAULT_ZOOM_FACTOR,
+    assetPanelOpen: false,
+    magnetEnabled: true,
+    sliceGuidesVisible: true,
+  }
+}
 
 function getViewportLogicalDimensions(
   episode: EpisodeDocument,
@@ -766,9 +1236,16 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   canUndo: false,
   canRedo: false,
   hasUnsavedChanges: false,
-  hasSavedEpisode: initialLoadResult.ok,
-  documentStatus: initialDocumentStatus,
+  hasSavedEpisode: initialProjectState.hasSavedEpisode,
+  currentProjectId: initialProjectState.currentProjectId,
+  reopenProjectId: initialProjectState.currentProjectId,
+  recentProjects: initialProjectState.recentProjects,
+  projectLibraryBusy: false,
+  recoveryAvailable: initialRecovery,
+  recoveryMessage: initialRecoveryMessage,
+  documentStatus: initialProjectState.documentStatus,
   selectedElementId: null,
+  selectedElementIds: [],
   liveElementBounds: null,
   activeCompositionGroup: initialEditorContext.activeCompositionGroup,
   activeLayerPlaneId: initialEditorContext.activeLayerPlaneId,
@@ -803,6 +1280,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         activeCompositionGroup: group,
         activeLayerPlaneId: firstLayerPlane?.id ?? state.activeLayerPlaneId,
         selectedElementId: null,
+        selectedElementIds: [],
         liveElementBounds: null,
       }
     })
@@ -830,6 +1308,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           selectedElement?.layerPlaneId === layerPlane.id
             ? selectedElement.id
             : null,
+        selectedElementIds:
+          selectedElement?.layerPlaneId === layerPlane.id
+            ? state.selectedElementIds
+            : [],
         liveElementBounds: null,
       }
     })
@@ -856,7 +1338,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  deleteLayerPlane: (layerPlaneId) => {
+  deleteLayerPlane: (layerPlaneId, disposition) => {
     set((state) => {
       const layerPlane = getLayerPlaneById(state.episode, layerPlaneId)
       if (!layerPlane) {
@@ -870,10 +1352,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const deletedIndex = groupLayerPlanes.findIndex(
         ({ id }) => id === layerPlaneId,
       )
-      const episode = deleteEmptyLayerPlaneCommand(
-        state.episode,
-        layerPlaneId,
+      const elementsOnPlane = state.episode.elements.filter(
+        (element) => element.layerPlaneId === layerPlaneId,
       )
+      const episode =
+        elementsOnPlane.length === 0
+          ? deleteEmptyLayerPlaneCommand(state.episode, layerPlaneId)
+          : disposition
+            ? deleteLayerPlaneWithDisposition(
+                state.episode,
+                layerPlaneId,
+                disposition,
+              )
+            : state.episode
 
       if (episode === state.episode || deletedIndex < 0) {
         return state
@@ -881,7 +1372,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
       const previousLayerPlane = groupLayerPlanes[deletedIndex - 1]
       const nextLayerPlane = groupLayerPlanes[deletedIndex + 1]
-      const survivorId = previousLayerPlane?.id ?? nextLayerPlane?.id
+      const survivorId =
+        disposition?.kind === 'move-elements'
+          ? disposition.targetLayerPlaneId
+          : (previousLayerPlane?.id ?? nextLayerPlane?.id)
       const survivor = survivorId
         ? getLayerPlaneById(episode, survivorId)
         : undefined
@@ -893,7 +1387,9 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return commitEpisodeChange(state, episode, {
         activeCompositionGroup: layerPlane.compositionGroup,
         activeLayerPlaneId: survivor.id,
-        selectedElementId: null,
+        ...(elementsOnPlane.length === 0
+          ? { selectedElementId: null, selectedElementIds: [] }
+          : {}),
         liveElementBounds: null,
       })
     })
@@ -1185,10 +1681,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  selectElement: (elementId, reveal = false) => {
+  selectElement: (elementId, reveal = false, toggle = false) => {
     set((state) => {
       if (!elementId) {
-        return { selectedElementId: null, liveElementBounds: null }
+        return {
+          selectedElementId: null,
+          selectedElementIds: [],
+          liveElementBounds: null,
+        }
       }
 
       const element = state.episode.elements.find(({ id }) => id === elementId)
@@ -1197,8 +1697,31 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         : undefined
 
       if (!element || !compositionGroup) {
-        return { selectedElementId: null, liveElementBounds: null }
+        return {
+          selectedElementId: null,
+          selectedElementIds: [],
+          liveElementBounds: null,
+        }
       }
+
+      const selectionUnit = getSelectionUnit(state.episode, element.id)
+      const selectedIds = new Set(state.selectedElementIds)
+      const removeUnit =
+        toggle && selectionUnit.every((id) => selectedIds.has(id))
+      const selectedElementIds = toggle
+        ? removeUnit
+          ? state.selectedElementIds.filter((id) => !selectionUnit.includes(id))
+          : [
+              ...state.selectedElementIds,
+              ...selectionUnit.filter((id) => !selectedIds.has(id)),
+            ]
+        : selectionUnit
+      const selectedElementId = removeUnit
+        ? state.selectedElementId &&
+          selectedElementIds.includes(state.selectedElementId)
+          ? state.selectedElementId
+          : (selectedElementIds[0] ?? null)
+        : element.id
 
       const viewport = getLogicalViewport(state)
       const isVisible = boundsIntersectViewport(element.bounds, viewport)
@@ -1211,7 +1734,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         : { x: state.viewportX, y: state.viewportY }
 
       return {
-        selectedElementId: element.id,
+        selectedElementId,
+        selectedElementIds,
         liveElementBounds: null,
         activeCompositionGroup: compositionGroup,
         activeLayerPlaneId: element.layerPlaneId,
@@ -1219,6 +1743,69 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         viewportY: reveal && !isVisible ? revealedPosition.y : state.viewportY,
       }
     })
+  },
+
+  selectAllInActivePlane: () => {
+    set((state) => {
+      const activePlaneElementIds = state.episode.elements
+        .filter(({ layerPlaneId }) => layerPlaneId === state.activeLayerPlaneId)
+        .map(({ id }) => id)
+      const selectedElementIds = [
+        ...new Set(
+          activePlaneElementIds.flatMap((id) =>
+            getSelectionUnit(state.episode, id),
+          ),
+        ),
+      ]
+
+      return {
+        selectedElementIds,
+        selectedElementId:
+          state.selectedElementId &&
+          selectedElementIds.includes(state.selectedElementId)
+            ? state.selectedElementId
+            : (selectedElementIds[0] ?? null),
+        liveElementBounds: null,
+      }
+    })
+  },
+
+  groupSelectedElements: () => {
+    const state = get()
+    const episode = groupElementsCommand(
+      state.episode,
+      state.selectedElementIds,
+    )
+
+    if (episode === state.episode) return false
+    set(commitEpisodeChange(state, episode))
+    return true
+  },
+
+  ungroupSelectedElements: () => {
+    const state = get()
+    const group = state.selectedElementId
+      ? getElementGroupByMember(state.episode, state.selectedElementId)
+      : undefined
+
+    if (!group) return false
+    const episode = ungroupElementsCommand(state.episode, group.id)
+    if (episode === state.episode) return false
+    set(commitEpisodeChange(state, episode))
+    return true
+  },
+
+  moveSelectedStoryBeat: (direction) => {
+    const state = get()
+    const episode = moveElementSelectionCommand(
+      state.episode,
+      state.selectedElementIds,
+      { x: 0, y: direction === 'up' ? -STORY_BEAT_STEP : STORY_BEAT_STEP },
+    )
+
+    if (episode === state.episode) return false
+    set(commitEpisodeChange(state, episode, { liveElementBounds: null }))
+    return true
   },
 
   setElementVisibility: (elementId, visible) => {
@@ -1269,25 +1856,170 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     )
   },
 
-  deleteElement: (elementId) => {
+  setElementName: (elementId, name) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setElementNameCommand(state.episode, elementId, name),
+      ),
+    )
+  },
+
+  setElementLocked: (elementId, locked) => {
     set((state) => {
-      const episode = deleteElementCommand(state.episode, elementId)
+      const selectedIds = getActionSelection(state, elementId)
+      const episode = setElementSelectionLockedCommand(
+        state.episode,
+        selectedIds,
+        locked,
+      )
 
       if (episode === state.episode) {
         return state
       }
 
       return commitEpisodeChange(state, episode, {
-        selectedElementId:
-          state.selectedElementId === elementId
-            ? null
-            : state.selectedElementId,
         liveElementBounds:
           state.liveElementBounds?.elementId === elementId
             ? null
             : state.liveElementBounds,
       })
     })
+  },
+
+  toggleElementLocked: (elementId) => {
+    set((state) => {
+      const element = state.episode.elements.find(({ id }) => id === elementId)
+      if (!element) return state
+      const selectedIds = getActionSelection(state, elementId)
+      const episode = setElementSelectionLockedCommand(
+        state.episode,
+        selectedIds,
+        !element.locked,
+      )
+
+      if (episode === state.episode) {
+        return state
+      }
+
+      return commitEpisodeChange(state, episode, {
+        liveElementBounds:
+          state.liveElementBounds?.elementId === elementId
+            ? null
+            : state.liveElementBounds,
+      })
+    })
+  },
+
+  deleteElement: (elementId) => {
+    set((state) => {
+      const selectedIds = getActionSelection(state, elementId)
+      const episode = deleteElementSelectionCommand(
+        state.episode,
+        selectedIds,
+      )
+
+      if (episode === state.episode) {
+        return state
+      }
+
+      return commitEpisodeChange(state, episode, {
+        selectedElementId: selectedIds.includes(state.selectedElementId ?? '')
+          ? null
+          : state.selectedElementId,
+        selectedElementIds: state.selectedElementIds.filter(
+          (id) => !selectedIds.includes(id),
+        ),
+        liveElementBounds:
+          state.liveElementBounds?.elementId === elementId
+            ? null
+            : state.liveElementBounds,
+      })
+    })
+  },
+
+  duplicateElement: (elementId, offset) => {
+    const state = get()
+    const selectedIds = getActionSelection(state, elementId)
+    const existingIds = new Set(state.episode.elements.map(({ id }) => id))
+    const episode = duplicateElementSelectionCommand(
+      state.episode,
+      selectedIds,
+      offset,
+    )
+
+    if (episode === state.episode) {
+      return false
+    }
+
+    const createdElements = episode.elements.filter(({ id }) => !existingIds.has(id))
+    const createdElement = createdElements[0]
+    const compositionGroup = createdElement
+      ? getElementCompositionGroup(episode, createdElement)
+      : undefined
+
+    set(
+      commitEpisodeChange(state, episode, {
+        selectedElementId: createdElement?.id ?? state.selectedElementId,
+        selectedElementIds: createdElements.map(({ id }) => id),
+        activeCompositionGroup:
+          compositionGroup ?? state.activeCompositionGroup,
+        activeLayerPlaneId:
+          createdElement?.layerPlaneId ?? state.activeLayerPlaneId,
+        liveElementBounds: null,
+      }),
+    )
+    return true
+  },
+
+  nudgeSelectedElement: (delta) => {
+    const state = get()
+
+    if (state.selectedElementIds.length === 0) {
+      return false
+    }
+
+    const episode = moveElementSelectionCommand(
+      state.episode,
+      state.selectedElementIds,
+      delta,
+    )
+
+    if (episode === state.episode) {
+      return false
+    }
+
+    set(
+      commitEpisodeChange(state, episode, {
+        liveElementBounds: null,
+      }),
+    )
+    return true
+  },
+
+  alignSelectedElement: (alignment) => {
+    const state = get()
+
+    if (!state.selectedElementId) {
+      return false
+    }
+
+    const episode = alignElementCommand(
+      state.episode,
+      state.selectedElementId,
+      alignment,
+    )
+
+    if (episode === state.episode) {
+      return false
+    }
+
+    set(
+      commitEpisodeChange(state, episode, {
+        liveElementBounds: null,
+      }),
+    )
+    return true
   },
 
   moveElementInStack: (elementId, direction) => {
@@ -1305,9 +2037,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         state.episode,
         layerPlaneId,
       )
-      const episode = moveElementToLayerPlaneCommand(
+      const selectedIds = getActionSelection(state, elementId)
+      const episode = moveElementSelectionToLayerPlaneCommand(
         state.episode,
-        elementId,
+        selectedIds,
         layerPlaneId,
       )
 
@@ -1323,19 +2056,31 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         activeCompositionGroup: targetLayerPlane.compositionGroup,
         activeLayerPlaneId: targetLayerPlane.id,
         selectedElementId: elementId,
+        selectedElementIds: selectedIds,
         liveElementBounds: null,
       })
     })
   },
 
-  placeSyntheticAsset: ({ name, fill }) => {
+  placeSyntheticAsset: ({
+    name,
+    shape,
+    fill,
+    stroke,
+    strokeWidth,
+    cornerRadius,
+  }) => {
     set((state) => {
       const width = 150
       const height = 110
       const episode = createSyntheticShapeElementCommand(state.episode, {
         layerPlaneId: state.activeLayerPlaneId,
         name,
+        shape,
         fill,
+        stroke,
+        strokeWidth,
+        cornerRadius,
         bounds: {
           x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
           y: state.viewportY + (state.viewportLogicalHeight - height) / 2,
@@ -1387,6 +2132,39 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return true
   },
 
+  createSpeechBalloonElement: () => {
+    const state = get()
+    const width = Math.min(340, state.episode.logicalWidth - 48)
+    const height = 176
+    const preferredY =
+      state.viewportY + (state.viewportLogicalHeight - height) / 2
+    const episode = createSpeechBalloonElementCommand(state.episode, {
+      layerPlaneId: state.activeLayerPlaneId,
+      text: 'Your dialogue',
+      bounds: {
+        x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
+        y: Math.min(
+          preferredY,
+          state.episode.logicalHeight - height * 1.28,
+        ),
+        width,
+        height,
+      },
+    })
+
+    if (episode === state.episode) return false
+
+    const createdElement = episode.elements.at(-1)
+    set(
+      commitEpisodeChange(state, episode, {
+        selectedElementId: createdElement?.id ?? state.selectedElementId,
+        selectedElementIds: createdElement ? [createdElement.id] : [],
+        liveElementBounds: null,
+      }),
+    )
+    return true
+  },
+
   createBackgroundColorRegion: ({ fill, startY, height }) => {
     const state = get()
     const episode = createBackgroundColorRegionCommand(state.episode, {
@@ -1412,18 +2190,30 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   },
 
   moveElement: (elementId, logicalPosition) => {
-    set((state) =>
-      commitEpisodeChange(
+    set((state) => {
+      const element = state.episode.elements.find(({ id }) => id === elementId)
+      if (!element) return state
+      const selectedIds = getActionSelection(state, elementId)
+      const episode = moveElementSelectionCommand(
+        state.episode,
+        selectedIds,
+        {
+          x: logicalPosition.x - element.bounds.x,
+          y: logicalPosition.y - element.bounds.y,
+        },
+      )
+
+      return commitEpisodeChange(
         state,
-        moveElementCommand(state.episode, elementId, logicalPosition),
+        episode,
         {
           liveElementBounds:
             state.liveElementBounds?.elementId === elementId
               ? null
               : state.liveElementBounds,
         },
-      ),
-    )
+      )
+    })
   },
 
   resizeElement: (elementId, logicalBounds) => {
@@ -1638,6 +2428,44 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     )
   },
 
+  setElementTransform: (elementId, transform) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setElementTransformCommand(state.episode, elementId, transform),
+      ),
+    )
+  },
+
+  toggleElementFlip: (elementId, axis) => {
+    set((state) => {
+      const element = state.episode.elements.find(
+        ({ id }) => id === elementId,
+      )
+
+      if (!element) return state
+
+      return commitEpisodeChange(
+        state,
+        setElementTransformCommand(state.episode, elementId, {
+          ...element.transform,
+          ...(axis === 'horizontal'
+            ? { flipX: !element.transform.flipX }
+            : { flipY: !element.transform.flipY }),
+        }),
+      )
+    })
+  },
+
+  setElementOverflow: (elementId, overflow) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setElementOverflowCommand(state.episode, elementId, overflow),
+      ),
+    )
+  },
+
   setShapeFill: (elementId, fill) => {
     set((state) =>
       commitEpisodeChange(
@@ -1647,11 +2475,29 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     )
   },
 
+  updateShapeElementStyle: (elementId, input) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        updateShapeElementStyleCommand(state.episode, elementId, input),
+      ),
+    )
+  },
+
   updateTextElement: (elementId, input) => {
     set((state) =>
       commitEpisodeChange(
         state,
         updateTextElementCommand(state.episode, elementId, input),
+      ),
+    )
+  },
+
+  updateSpeechBalloonElement: (elementId, input) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        updateSpeechBalloonElementCommand(state.episode, elementId, input),
       ),
     )
   },
@@ -1685,6 +2531,24 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ),
       )
     })
+  },
+
+  setImageFrame: (elementId, frame) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setImageFrameCommand(state.episode, elementId, frame),
+      ),
+    )
+  },
+
+  setImageCrop: (elementId, crop) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        setImageCropCommand(state.episode, elementId, crop),
+      ),
+    )
   },
 
   toggleMagnet: () => {
@@ -1966,6 +2830,269 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return category.id
   },
 
+  renameCreatorAssetCategory: async (categoryId, requestedName) => {
+    const state = get()
+    const name = requestedName.trim()
+    const category = state.creatorAssetCategories.find(
+      ({ id }) => id === categoryId,
+    )
+
+    if (
+      state.assetLibraryStatus !== 'ready' ||
+      state.assetLibraryBusy ||
+      !category
+    ) {
+      set({
+        assetLibraryMessage: category
+          ? 'Wait for the current Asset Library change to finish.'
+          : 'That creator category is no longer available.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (!isSafeCreatorCategoryName(name)) {
+      set({
+        assetLibraryMessage:
+          'Enter a category name between 1 and 40 characters.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: `Renaming “${category.name}”…`,
+      assetLibraryMessageKind: 'info',
+    })
+
+    let mutationError: string | undefined
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latest = getLatestAssetLibraryParts(state, currentSnapshot)
+          const currentCategory = latest.creatorCategories.find(
+            ({ id }) => id === categoryId,
+          )
+
+          if (!currentCategory) {
+            mutationError = 'That creator category was removed in another tab.'
+          } else if (
+            latest.creatorCategories.some(
+              (candidate) =>
+                candidate.id !== categoryId &&
+                candidate.name.toLocaleLowerCase() === name.toLocaleLowerCase(),
+            )
+          ) {
+            mutationError = 'A category with that name already exists.'
+          }
+
+          const creatorCategories = mutationError
+            ? latest.creatorCategories
+            : latest.creatorCategories.map((candidate) =>
+                candidate.id === categoryId
+                  ? { ...candidate, name }
+                  : candidate,
+              )
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            creatorCategories,
+            latest.importedImages,
+          )
+        },
+      )
+    } catch {
+      result = { ok: false, message: 'The category could not be renamed.' }
+    }
+
+    if (!result.ok || mutationError) {
+      set(
+        createAssetLibraryMutationFailurePatch(
+          state,
+          result,
+          mutationError,
+          'The category could not be renamed.',
+        ),
+      )
+      return false
+    }
+
+    set(createAssetLibraryRefreshPatch(state, result.snapshot, `Renamed category to “${name}”.`))
+    return true
+  },
+
+  deleteCreatorAssetCategory: async (categoryId) => {
+    const state = get()
+    const category = state.creatorAssetCategories.find(
+      ({ id }) => id === categoryId,
+    )
+
+    if (
+      state.assetLibraryStatus !== 'ready' ||
+      state.assetLibraryBusy ||
+      !category
+    ) {
+      set({
+        assetLibraryMessage: category
+          ? 'Wait for the current Asset Library change to finish.'
+          : 'That creator category is no longer available.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: `Removing “${category.name}”…`,
+      assetLibraryMessageKind: 'info',
+    })
+
+    let mutationError: string | undefined
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latest = getLatestAssetLibraryParts(state, currentSnapshot)
+
+          if (!latest.creatorCategories.some(({ id }) => id === categoryId)) {
+            mutationError = 'That creator category was removed in another tab.'
+          }
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            mutationError
+              ? latest.creatorCategories
+              : latest.creatorCategories.filter(({ id }) => id !== categoryId),
+            mutationError
+              ? latest.importedImages
+              : latest.importedImages.map((image) =>
+                  image.creatorCategoryId === categoryId
+                    ? { ...image, creatorCategoryId: null }
+                    : image,
+                ),
+          )
+        },
+      )
+    } catch {
+      result = { ok: false, message: 'The category could not be deleted.' }
+    }
+
+    if (!result.ok || mutationError) {
+      set(
+        createAssetLibraryMutationFailurePatch(
+          state,
+          result,
+          mutationError,
+          'The category could not be deleted.',
+        ),
+      )
+      return false
+    }
+
+    set(
+      createAssetLibraryRefreshPatch(
+        state,
+        result.snapshot,
+        `Deleted “${category.name}”. Its assets are now in Uploads.`,
+      ),
+    )
+    return true
+  },
+
+  reorderCreatorAssetCategory: async (categoryId, requestedTargetIndex) => {
+    const state = get()
+    const category = state.creatorAssetCategories.find(
+      ({ id }) => id === categoryId,
+    )
+
+    if (
+      state.assetLibraryStatus !== 'ready' ||
+      state.assetLibraryBusy ||
+      !category ||
+      !Number.isInteger(requestedTargetIndex)
+    ) {
+      set({
+        assetLibraryMessage: category
+          ? 'That category move is unavailable right now.'
+          : 'That creator category is no longer available.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: `Moving “${category.name}”…`,
+      assetLibraryMessageKind: 'info',
+    })
+
+    let mutationError: string | undefined
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latest = getLatestAssetLibraryParts(state, currentSnapshot)
+          const sourceIndex = latest.creatorCategories.findIndex(
+            ({ id }) => id === categoryId,
+          )
+
+          if (sourceIndex < 0) {
+            mutationError = 'That creator category was removed in another tab.'
+            return createAssetLibrarySnapshot(
+              state,
+              new Date().toISOString(),
+              latest.creatorCategories,
+              latest.importedImages,
+            )
+          }
+
+          const targetIndex = Math.min(
+            Math.max(requestedTargetIndex, 0),
+            latest.creatorCategories.length - 1,
+          )
+          const creatorCategories = [...latest.creatorCategories]
+          const [movedCategory] = creatorCategories.splice(sourceIndex, 1)
+
+          if (movedCategory) creatorCategories.splice(targetIndex, 0, movedCategory)
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            creatorCategories,
+            latest.importedImages,
+          )
+        },
+      )
+    } catch {
+      result = { ok: false, message: 'The category could not be reordered.' }
+    }
+
+    if (!result.ok || mutationError) {
+      set(
+        createAssetLibraryMutationFailurePatch(
+          state,
+          result,
+          mutationError,
+          'The category could not be reordered.',
+        ),
+      )
+      return false
+    }
+
+    set(createAssetLibraryRefreshPatch(state, result.snapshot, `Moved “${category.name}”.`))
+    return true
+  },
+
   importImageAsset: async (file, requestedCreatorCategoryId = null) => {
     const state = get()
     const creatorCategoryId = requestedCreatorCategoryId ?? null
@@ -2147,6 +3274,430 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return true
   },
 
+  importAndPlaceImageAsset: async (file, logicalCenter) => {
+    const state = get()
+    const targetLayerPlane = getLayerPlaneById(
+      state.episode,
+      state.activeLayerPlaneId,
+    )
+
+    if (targetLayerPlane?.kind !== 'ordinary') {
+      set({
+        assetLibraryMessage:
+          'Select a numbered layer plane before dropping an image file.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (!Number.isFinite(logicalCenter.x) || !Number.isFinite(logicalCenter.y)) {
+      set({
+        assetLibraryMessage: 'The canvas drop position is invalid.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    const existingIds = new Set(
+      state.importedImageAssets.map(({ id }) => id),
+    )
+    const targetLayerPlaneId = targetLayerPlane.id
+    const imported = await get().importImageAsset(file, null)
+
+    if (!imported) return false
+
+    const latest = get()
+    const importedImage = latest.importedImageAssets.find(
+      (image) =>
+        !existingIds.has(image.id) && image.sourceBlob === file,
+    )
+
+    if (!importedImage) {
+      set({
+        assetLibraryMessage:
+          'The image was imported, but its new library record could not be identified for placement.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    const transition = createAssetPlacementTransition(
+      latest,
+      { kind: 'imported', assetId: importedImage.id },
+      logicalCenter,
+      targetLayerPlaneId,
+    )
+
+    set(transition.nextState)
+    return transition.placed
+  },
+
+  renameImportedImageAsset: async (assetId, requestedName) => {
+    const state = get()
+    const asset = state.importedImageAssets.find(({ id }) => id === assetId)
+    const name = requestedName.trim()
+
+    if (
+      state.assetLibraryStatus !== 'ready' ||
+      state.assetLibraryBusy ||
+      !asset
+    ) {
+      set({
+        assetLibraryMessage: asset
+          ? 'Wait for the current Asset Library change to finish.'
+          : 'That imported source is no longer available.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    if (!isSafeDisplayName(name)) {
+      set({
+        assetLibraryMessage:
+          'Enter a source name between 1 and 120 characters without control characters.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: `Renaming “${asset.displayName}”…`,
+      assetLibraryMessageKind: 'info',
+    })
+
+    let mutationError: string | undefined
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latest = getLatestAssetLibraryParts(state, currentSnapshot)
+
+          if (!latest.importedImages.some(({ id }) => id === assetId)) {
+            mutationError = 'That source was removed in another tab.'
+          }
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            latest.creatorCategories,
+            mutationError
+              ? latest.importedImages
+              : latest.importedImages.map((image) =>
+                  image.id === assetId ? { ...image, displayName: name } : image,
+                ),
+          )
+        },
+      )
+    } catch {
+      result = { ok: false, message: 'The source could not be renamed.' }
+    }
+
+    if (!result.ok || mutationError) {
+      set(
+        createAssetLibraryMutationFailurePatch(
+          state,
+          result,
+          mutationError,
+          'The source could not be renamed.',
+        ),
+      )
+      return false
+    }
+
+    set(createAssetLibraryRefreshPatch(state, result.snapshot, `Renamed source to “${name}”.`))
+    return true
+  },
+
+  moveImportedImageAsset: async (assetId, creatorCategoryId) => {
+    const state = get()
+    const asset = state.importedImageAssets.find(({ id }) => id === assetId)
+    const targetCategory =
+      creatorCategoryId === null
+        ? null
+        : state.creatorAssetCategories.find(({ id }) => id === creatorCategoryId)
+
+    if (
+      state.assetLibraryStatus !== 'ready' ||
+      state.assetLibraryBusy ||
+      !asset ||
+      (creatorCategoryId !== null && !targetCategory)
+    ) {
+      set({
+        assetLibraryMessage: !asset
+          ? 'That imported source is no longer available.'
+          : 'Choose an available destination category.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: `Moving “${asset.displayName}”…`,
+      assetLibraryMessageKind: 'info',
+    })
+
+    let mutationError: string | undefined
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latest = getLatestAssetLibraryParts(state, currentSnapshot)
+
+          if (!latest.importedImages.some(({ id }) => id === assetId)) {
+            mutationError = 'That source was removed in another tab.'
+          } else if (
+            creatorCategoryId !== null &&
+            !latest.creatorCategories.some(({ id }) => id === creatorCategoryId)
+          ) {
+            mutationError = 'The destination category was removed in another tab.'
+          }
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            latest.creatorCategories,
+            mutationError
+              ? latest.importedImages
+              : latest.importedImages.map((image) =>
+                  image.id === assetId
+                    ? { ...image, creatorCategoryId }
+                    : image,
+                ),
+          )
+        },
+      )
+    } catch {
+      result = { ok: false, message: 'The source could not be moved.' }
+    }
+
+    if (!result.ok || mutationError) {
+      set(
+        createAssetLibraryMutationFailurePatch(
+          state,
+          result,
+          mutationError,
+          'The source could not be moved.',
+        ),
+      )
+      return false
+    }
+
+    const destinationName = targetCategory?.name ?? 'Uploads'
+    set(
+      createAssetLibraryRefreshPatch(
+        state,
+        result.snapshot,
+        `Moved “${asset.displayName}” to ${destinationName}.`,
+      ),
+    )
+    return true
+  },
+
+  replaceImportedImageAsset: async (assetId, file) => {
+    const state = get()
+    const asset = state.importedImageAssets.find(({ id }) => id === assetId)
+
+    if (
+      state.assetLibraryStatus !== 'ready' ||
+      state.assetLibraryBusy ||
+      !asset
+    ) {
+      set({
+        assetLibraryMessage: asset
+          ? 'Wait for the current Asset Library change to finish.'
+          : 'That imported source is no longer available.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: `Checking replacement for “${asset.displayName}”…`,
+      assetLibraryMessageKind: 'info',
+    })
+
+    let imported: Awaited<ReturnType<typeof importBrowserImage>>
+
+    try {
+      imported = await importBrowserImage(file, {
+        creatorCategoryId: asset.creatorCategoryId,
+        createId: () => asset.id,
+      })
+    } catch {
+      imported = {
+        ok: false,
+        reason: 'invalid-file',
+        message: 'The replacement image could not be checked.',
+      }
+    }
+
+    if (!imported.ok) {
+      set({
+        assetLibraryBusy: false,
+        assetLibraryMessage: imported.message,
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    let mutationError: string | undefined
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latest = getLatestAssetLibraryParts(state, currentSnapshot)
+          const latestAsset = latest.importedImages.find(
+            ({ id }) => id === assetId,
+          )
+
+          if (!latestAsset) {
+            mutationError = 'That source was removed in another tab.'
+          }
+
+          const replacement = latestAsset
+            ? {
+                ...imported.image,
+                id: latestAsset.id,
+                displayName: latestAsset.displayName,
+                creatorCategoryId: latestAsset.creatorCategoryId,
+                importedAt: latestAsset.importedAt,
+              }
+            : imported.image
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            latest.creatorCategories,
+            mutationError
+              ? latest.importedImages
+              : latest.importedImages.map((image) =>
+                  image.id === assetId ? replacement : image,
+                ),
+          )
+        },
+      )
+    } catch {
+      result = { ok: false, message: 'The source could not be replaced.' }
+    }
+
+    if (!result.ok || mutationError) {
+      set(
+        createAssetLibraryMutationFailurePatch(
+          state,
+          result,
+          mutationError,
+          'The source could not be replaced.',
+        ),
+      )
+      return false
+    }
+
+    set(
+      createAssetLibraryRefreshPatch(
+        state,
+        result.snapshot,
+        `Replaced “${asset.displayName}” without changing its source ID.`,
+      ),
+    )
+    return true
+  },
+
+  deleteImportedImageAsset: async (assetId) => {
+    const state = get()
+    const asset = state.importedImageAssets.find(({ id }) => id === assetId)
+
+    if (
+      state.assetLibraryStatus !== 'ready' ||
+      state.assetLibraryBusy ||
+      !asset
+    ) {
+      set({
+        assetLibraryMessage: asset
+          ? 'Wait for the current Asset Library change to finish.'
+          : 'That imported source is no longer available.',
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    const deletionSafety = checkImportedAssetDeletionSafety(
+      assetId,
+      state.episode,
+      getAssetReferenceStorage(),
+    )
+
+    if (!deletionSafety.ok) {
+      set({
+        assetLibraryMessage: deletionSafety.message,
+        assetLibraryMessageKind: 'error',
+      })
+      return false
+    }
+
+    set({
+      assetLibraryBusy: true,
+      assetLibraryMessage: `Deleting “${asset.displayName}”…`,
+      assetLibraryMessageKind: 'info',
+    })
+
+    let mutationError: string | undefined
+    let result: PersistAssetLibraryResult
+
+    try {
+      result = await persistAssetLibraryUpdate(
+        getAssetRepository(),
+        (currentSnapshot) => {
+          const latest = getLatestAssetLibraryParts(state, currentSnapshot)
+
+          if (!latest.importedImages.some(({ id }) => id === assetId)) {
+            mutationError = 'That source was removed in another tab.'
+          }
+
+          return createAssetLibrarySnapshot(
+            state,
+            new Date().toISOString(),
+            latest.creatorCategories,
+            mutationError
+              ? latest.importedImages
+              : latest.importedImages.filter(({ id }) => id !== assetId),
+          )
+        },
+      )
+    } catch {
+      result = { ok: false, message: 'The source could not be deleted.' }
+    }
+
+    if (!result.ok || mutationError) {
+      set(
+        createAssetLibraryMutationFailurePatch(
+          state,
+          result,
+          mutationError,
+          'The source could not be deleted.',
+        ),
+      )
+      return false
+    }
+
+    set(
+      createAssetLibraryRefreshPatch(
+        state,
+        result.snapshot,
+        `Deleted reusable source “${asset.displayName}”.`,
+      ),
+    )
+    return true
+  },
+
   placeBuiltInAsset: (assetId) => {
     const state = get()
     const transition = createAssetPlacementTransition(state, {
@@ -2175,6 +3726,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       state,
       { kind: payload.kind, assetId: payload.assetId },
       logicalCenter,
+    )
+
+    set(transition.nextState)
+    return transition.placed
+  },
+
+  placeDraggedAssetOnPlane: (payload, layerPlaneId) => {
+    const state = get()
+    const transition = createAssetPlacementTransition(
+      state,
+      { kind: payload.kind, assetId: payload.assetId },
+      undefined,
+      layerPlaneId,
     )
 
     set(transition.nextState)
@@ -2240,72 +3804,191 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  saveEpisode: () => {
-    const state = get()
-    const result = getProjectRepository().save(state.episode)
-
-    if (!result.ok) {
-      set({ documentStatus: result.message })
-      return
-    }
-
-    set({
-      savedRevision: state.currentRevision,
-      hasSavedEpisode: true,
-      hasUnsavedChanges: false,
-      documentStatus: 'Saved locally',
-    })
-  },
-
-  reopenEpisode: () => {
-    const result = getProjectRepository().loadLast()
+  refreshRecentProjects: () => {
+    const result = getProjectLibraryRepository().listRecent()
 
     if (!result.ok) {
       set({ documentStatus: result.message })
       return false
     }
 
-    set((state) => {
-      const context = getDefaultEditorContext(result.episode)
-      const viewportDimensions = getViewportLogicalDimensions(
-        result.episode,
-        state.fitViewportLogicalHeight,
-        DEFAULT_ZOOM_FACTOR,
-      )
-      const revision = state.nextRevision
+    set({ recentProjects: result.projects })
+    return true
+  },
 
-      return {
-        episode: result.episode,
-        historyPast: [],
-        historyFuture: [],
-        episodeHeightResizeStart: null,
-        elementOpacityEditStart: null,
-        currentRevision: revision,
-        nextRevision: revision + 1,
-        savedRevision: revision,
-        canUndo: false,
-        canRedo: false,
-        hasUnsavedChanges: false,
-        hasSavedEpisode: true,
-        documentStatus: 'Reopened saved episode',
-        selectedElementId: null,
-        liveElementBounds: null,
-        ...context,
-        viewportX: 0,
-        viewportY: 0,
-        viewportLogicalWidth: viewportDimensions.width,
-        viewportLogicalHeight: viewportDimensions.height,
-        zoomFactor: DEFAULT_ZOOM_FACTOR,
-        assetPanelOpen: false,
-        magnetEnabled: true,
-        sliceGuidesVisible: true,
-      }
+  saveEpisode: () => {
+    const state = get()
+    const projectLibrary = getProjectLibraryRepository()
+    const result = state.currentProjectId
+      ? projectLibrary.save(state.currentProjectId, state.episode)
+      : projectLibrary.saveAs(state.episode)
+
+    if (!result.ok) {
+      set({ documentStatus: result.message })
+      return false
+    }
+
+    // The old slot remains a best-effort fail-safe for already-installed
+    // builds. The project library above is the authoritative save.
+    getProjectRepository().save(state.episode)
+    const recent = projectLibrary.listRecent()
+    clearRecoverySnapshot()
+    set({
+      savedRevision: state.currentRevision,
+      currentProjectId: result.projectId,
+      reopenProjectId: result.projectId,
+      recentProjects: recent.ok ? recent.projects : state.recentProjects,
+      hasSavedEpisode: true,
+      hasUnsavedChanges: false,
+      recoveryAvailable: null,
+      recoveryMessage: null,
+      documentStatus: 'Saved locally',
     })
+    return true
+  },
 
+  saveEpisodeAs: () => {
+    const state = get()
+    const projectLibrary = getProjectLibraryRepository()
+    const result = projectLibrary.saveAs(state.episode)
+
+    if (!result.ok) {
+      set({ documentStatus: result.message })
+      return false
+    }
+
+    getProjectRepository().save(state.episode)
+    const recent = projectLibrary.listRecent()
+    clearRecoverySnapshot()
+    set({
+      savedRevision: state.currentRevision,
+      currentProjectId: result.projectId,
+      reopenProjectId: result.projectId,
+      recentProjects: recent.ok ? recent.projects : state.recentProjects,
+      hasSavedEpisode: true,
+      hasUnsavedChanges: false,
+      recoveryAvailable: null,
+      recoveryMessage: null,
+      documentStatus: 'Saved a new local project',
+    })
+    return true
+  },
+
+  openLocalProject: (projectId) => {
+    const projectLibrary = getProjectLibraryRepository()
+    const result = projectLibrary.load(projectId)
+
+    if (!result.ok) {
+      set({ documentStatus: result.message })
+      return false
+    }
+
+    const recent = projectLibrary.listRecent()
+    clearRecoverySnapshot()
+    set((state) => ({
+      ...createLoadedEpisodePatch(state, result.project.episode, {
+        currentProjectId: result.project.projectId,
+        saved: true,
+        documentStatus: `Opened “${result.project.name}”`,
+      }),
+      reopenProjectId: result.project.projectId,
+      recentProjects: recent.ok ? recent.projects : state.recentProjects,
+      hasSavedEpisode: true,
+      recoveryAvailable: null,
+      recoveryMessage: null,
+    }))
+    return true
+  },
+
+  deleteLocalProject: (projectId) => {
+    const state = get()
+    const projectLibrary = getProjectLibraryRepository()
+    const result = projectLibrary.delete(projectId)
+
+    if (!result.ok) {
+      set({ documentStatus: result.message })
+      return false
+    }
+
+    const recentResult = projectLibrary.listRecent()
+    const recentProjects = recentResult.ok
+      ? recentResult.projects
+      : state.recentProjects.filter((project) => project.projectId !== projectId)
+    const deletedCurrent = state.currentProjectId === projectId
+    const reopenProjectId =
+      state.reopenProjectId === projectId
+        ? (recentProjects[0]?.projectId ?? null)
+        : state.reopenProjectId
+
+    set({
+      currentProjectId: deletedCurrent ? null : state.currentProjectId,
+      reopenProjectId,
+      recentProjects,
+      hasSavedEpisode: reopenProjectId !== null,
+      savedRevision: deletedCurrent ? null : state.savedRevision,
+      hasUnsavedChanges: deletedCurrent ? true : state.hasUnsavedChanges,
+      documentStatus: deletedCurrent
+        ? 'Deleted local project · current episode is now unsaved'
+        : 'Deleted local project',
+    })
+    return true
+  },
+
+  reopenEpisode: () => {
+    const state = get()
+    const projectId = state.currentProjectId ?? state.reopenProjectId
+
+    if (projectId) {
+      const projectLibrary = getProjectLibraryRepository()
+      const result = projectLibrary.load(projectId)
+
+      if (!result.ok) {
+        set({ documentStatus: result.message })
+        return false
+      }
+
+      const recent = projectLibrary.listRecent()
+      clearRecoverySnapshot()
+      set((currentState) => ({
+        ...createLoadedEpisodePatch(currentState, result.project.episode, {
+          currentProjectId: projectId,
+          saved: true,
+          documentStatus: 'Reopened saved episode',
+        }),
+        reopenProjectId: projectId,
+        recentProjects: recent.ok
+          ? recent.projects
+          : currentState.recentProjects,
+        hasSavedEpisode: true,
+        recoveryAvailable: null,
+        recoveryMessage: null,
+      }))
+      return true
+    }
+
+    const legacy = getProjectRepository().loadLast()
+
+    if (!legacy.ok) {
+      set({ documentStatus: legacy.message })
+      return false
+    }
+
+    clearRecoverySnapshot()
+    set((currentState) => ({
+      ...createLoadedEpisodePatch(currentState, legacy.episode, {
+        currentProjectId: null,
+        saved: true,
+        documentStatus: 'Reopened legacy saved episode',
+      }),
+      hasSavedEpisode: true,
+      recoveryAvailable: null,
+      recoveryMessage: null,
+    }))
     return true
   },
 
   newEpisode: () => {
+    clearRecoverySnapshot()
     set((state) => {
       const episode = createBlankEpisode(createEpisodeId())
       const context = getDefaultEditorContext(episode)
@@ -2328,8 +4011,12 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         canUndo: false,
         canRedo: false,
         hasUnsavedChanges: true,
+        currentProjectId: null,
+        recoveryAvailable: null,
+        recoveryMessage: null,
         documentStatus: 'New episode · not saved',
         selectedElementId: null,
+        selectedElementIds: [],
         liveElementBounds: null,
         ...context,
         viewportX: 0,
@@ -2367,6 +4054,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         hasUnsavedChanges: true,
         documentStatus: 'Demo reset · unsaved changes',
         selectedElementId: null,
+        selectedElementIds: [],
         liveElementBounds: null,
         activeCompositionGroup: INITIAL_COMPOSITION_GROUP,
         activeLayerPlaneId: INITIAL_LAYER_PLANE_ID,
@@ -2381,4 +4069,148 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       }
     })
   },
+
+  restoreRecovery: () => {
+    const state = get()
+    const recovery = state.recoveryAvailable
+
+    if (!recovery) return false
+
+    const recoveryProjectExists =
+      recovery.projectId !== null &&
+      state.recentProjects.some(
+        ({ projectId }) => projectId === recovery.projectId,
+      )
+    const projectId = recoveryProjectExists ? recovery.projectId : null
+
+    set((currentState) => ({
+      ...createLoadedEpisodePatch(currentState, recovery.episode, {
+        currentProjectId: projectId,
+        saved: false,
+        documentStatus: 'Restored crash recovery · save to keep it',
+      }),
+      reopenProjectId: projectId ?? currentState.reopenProjectId,
+      hasSavedEpisode:
+        projectId !== null || currentState.reopenProjectId !== null,
+      recoveryAvailable: null,
+      recoveryMessage: null,
+    }))
+    return true
+  },
+
+  discardRecovery: () => {
+    const result = getRecoveryRepository().clear()
+
+    if (!result.ok) {
+      set({ recoveryMessage: result.message })
+      return false
+    }
+
+    set({
+      recoveryAvailable: null,
+      recoveryMessage: null,
+      documentStatus: 'Discarded crash recovery',
+    })
+    return true
+  },
+
+  flushRecovery: () => {
+    getRecoveryRepository().flush()
+  },
+
+  exportPortableProject: async () => {
+    const state = get()
+    const loadedAssets = await getAssetRepository().load()
+    const savedAt = new Date().toISOString()
+
+    if (!loadedAssets.ok && loadedAssets.reason !== 'not-found') {
+      set({ documentStatus: loadedAssets.message })
+      return null
+    }
+
+    const assetLibrary = loadedAssets.ok
+      ? loadedAssets.snapshot
+      : createAssetLibrarySnapshot(state, savedAt)
+
+    const result = await serializePortableProject(state.episode, assetLibrary)
+
+    if (!result.ok) {
+      set({ documentStatus: result.message })
+      return null
+    }
+
+    set({ documentStatus: 'Portable project ready to download' })
+    return { blob: result.blob, fileName: result.fileName }
+  },
+
+  importPortableProject: async (file) => {
+    const parsed = await parsePortableProject(file)
+
+    if (!parsed.ok) {
+      set({ documentStatus: parsed.message })
+      return false
+    }
+
+    const state = get()
+    const savedAt = new Date().toISOString()
+    let merged: ReturnType<typeof mergePortableProjectAssets> | undefined
+    let updateResult: Awaited<ReturnType<AssetRepository['update']>>
+
+    try {
+      updateResult = await getAssetRepository().update((currentSnapshot) => {
+        const current =
+          currentSnapshot ?? createAssetLibrarySnapshot(state, savedAt)
+        merged = mergePortableProjectAssets(
+          current,
+          parsed.assetLibrary,
+          parsed.episode,
+          savedAt,
+        )
+        return merged.assetLibrary
+      })
+    } catch {
+      set({ documentStatus: 'The portable project assets could not be merged.' })
+      return false
+    }
+
+    if (!updateResult.ok || !merged) {
+      set({
+        documentStatus: updateResult.ok
+          ? 'The portable project merge did not produce an episode.'
+          : updateResult.message,
+      })
+      return false
+    }
+
+    clearRecoverySnapshot()
+    set((currentState) => ({
+      ...createLoadedEpisodePatch(currentState, merged!.episode, {
+        currentProjectId: null,
+        saved: false,
+        documentStatus:
+          merged!.remappedAssetCount + merged!.remappedCategoryCount > 0
+            ? 'Imported portable project safely · conflicting library IDs were remapped'
+            : 'Imported portable project · save to add it to local projects',
+      }),
+      ...createAssetLibraryRefreshPatch(
+        currentState,
+        updateResult.snapshot,
+        'Portable asset library merged.',
+      ),
+      currentProjectId: null,
+      hasSavedEpisode: currentState.reopenProjectId !== null,
+      recoveryAvailable: null,
+      recoveryMessage: null,
+    }))
+    return true
+  },
 }))
+
+useEditorStore.subscribe((state, previousState) => {
+  if (
+    state.episode !== previousState.episode &&
+    state.hasUnsavedChanges
+  ) {
+    getRecoveryRepository().save(state.currentProjectId, state.episode)
+  }
+})

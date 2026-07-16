@@ -12,6 +12,8 @@ import {
   Group,
   Image as KonvaImage,
   Layer,
+  Line,
+  Path,
   Rect,
   Stage,
   Text,
@@ -31,18 +33,27 @@ import {
 import {
   boundsIntersectViewport,
   clientPointToEpisodePosition,
-  clampElementPosition,
   getFitScale,
-  getEpisodeCenterSnap,
+  getElementSnap,
   getVerticalScrollProgress,
   getViewportScale,
 } from '../core/coordinates'
+import {
+  clampElementGeometry,
+  getCoverCropRect,
+  getElementVisualBounds,
+} from '../core/elementGeometry'
 import {
   compareElementsByRenderOrder,
   getEffectiveEpisodeBaseColor,
   isElementEffectivelyVisible,
   type EpisodeElement,
+  type ImageElement,
+  type ImageMask,
+  type SpeechBalloonElement,
 } from '../core/episode'
+import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
+import { getSpeechBalloonTextLayout } from '../core/speechBalloonLayout'
 import {
   WEBTOON_CANVAS_OBSERVED_PROFILE,
   getCandidateLogicalSliceBoundaries,
@@ -80,11 +91,13 @@ interface ElementNodeProps {
   readonly element: EpisodeElement
   readonly imageSourceUrl?: string
   readonly isSelected: boolean
+  readonly isPrimarySelected: boolean
   readonly episodeLogicalWidth: number
   readonly episodeLogicalHeight: number
   readonly magnetEnabled: boolean
+  readonly nearbyBounds: readonly EpisodeElement['bounds'][]
   readonly viewScale: number
-  readonly onSelect: (elementId: string) => void
+  readonly onSelect: (elementId: string, toggle: boolean) => void
   readonly onMove: (elementId: string, x: number, y: number) => void
   readonly onResize: (
     elementId: string,
@@ -95,14 +108,15 @@ interface ElementNodeProps {
     bounds: EpisodeElement['bounds'],
   ) => void
   readonly onClearPreview: (elementId?: string) => void
-  readonly onSnapChange: (snapped: boolean) => void
+  readonly onSnapChange: (guides: {
+    readonly x?: number
+    readonly y?: number
+  } | null) => void
 }
 
 interface ImageElementVisualProps {
+  readonly element: ImageElement
   readonly sourceUrl?: string
-  readonly width: number
-  readonly height: number
-  readonly presentation: 'single' | 'tile'
 }
 
 const IMAGE_PLACEHOLDER_LABELS = {
@@ -113,22 +127,108 @@ const IMAGE_PLACEHOLDER_LABELS = {
   Record<Exclude<AssetImageStatus, 'ready'>, string>
 >
 
+function addImageMaskPath(
+  context: Konva.Context,
+  mask: ImageMask,
+  width: number,
+  height: number,
+) {
+  context.beginPath()
+
+  if (mask.kind === 'polygon') {
+    const first = mask.points[0]
+
+    if (!first) return
+
+    context.moveTo(first.x * width, first.y * height)
+    mask.points.slice(1).forEach((point) => {
+      context.lineTo(point.x * width, point.y * height)
+    })
+    context.closePath()
+    return
+  }
+
+  const radius = Math.min(mask.cornerRadius, width / 2, height / 2)
+
+  if (radius <= 0) {
+    context.rect(0, 0, width, height)
+    return
+  }
+
+  context.moveTo(radius, 0)
+  context.lineTo(width - radius, 0)
+  context.quadraticCurveTo(width, 0, width, radius)
+  context.lineTo(width, height - radius)
+  context.quadraticCurveTo(width, height, width - radius, height)
+  context.lineTo(radius, height)
+  context.quadraticCurveTo(0, height, 0, height - radius)
+  context.lineTo(0, radius)
+  context.quadraticCurveTo(0, 0, radius, 0)
+  context.closePath()
+}
+
+function ImageFrameBorderVisual({
+  element,
+}: {
+  readonly element: ImageElement
+}) {
+  const { bounds, frame } = element
+
+  if (!frame.border || frame.border.width <= 0) return null
+
+  if (frame.mask.kind === 'polygon') {
+    return (
+      <Line
+        points={frame.mask.points.flatMap((point) => [
+          point.x * bounds.width,
+          point.y * bounds.height,
+        ])}
+        closed
+        fillEnabled={false}
+        stroke={frame.border.color}
+        strokeWidth={frame.border.width}
+        lineJoin="round"
+        listening={false}
+      />
+    )
+  }
+
+  return (
+    <Rect
+      width={bounds.width}
+      height={bounds.height}
+      cornerRadius={Math.min(
+        frame.mask.cornerRadius,
+        bounds.width / 2,
+        bounds.height / 2,
+      )}
+      fillEnabled={false}
+      stroke={frame.border.color}
+      strokeWidth={frame.border.width}
+      listening={false}
+    />
+  )
+}
+
 function ImageElementVisual({
+  element,
   sourceUrl,
-  width,
-  height,
-  presentation,
 }: ImageElementVisualProps) {
   const { image, status } = useAssetImage(sourceUrl)
+  const { bounds, frame, presentation } = element
+  const width = bounds.width
+  const height = bounds.height
 
   if (status === 'ready' && image) {
+    let imageVisual
+
     if (presentation === 'tile') {
       const patternScale = getTilePatternScale(
         image.naturalWidth || image.width,
         image.naturalHeight || image.height,
       )
 
-      return (
+      imageVisual = (
         <Rect
           width={width}
           height={height}
@@ -139,40 +239,119 @@ function ImageElementVisual({
           perfectDrawEnabled={false}
         />
       )
+    } else if (presentation === 'cover') {
+      const crop = getCoverCropRect(
+        {
+          width: image.naturalWidth || image.width,
+          height: image.naturalHeight || image.height,
+        },
+        { width, height },
+        frame.crop,
+      )
+
+      imageVisual = crop ? (
+        <KonvaImage
+          image={image}
+          width={width}
+          height={height}
+          cropX={crop.x}
+          cropY={crop.y}
+          cropWidth={crop.width}
+          cropHeight={crop.height}
+        />
+      ) : null
+    } else {
+      imageVisual = (
+        <KonvaImage image={image} width={width} height={height} />
+      )
     }
 
     return (
-      <KonvaImage
-        image={image}
-        width={width}
-        height={height}
-      />
+      <Group>
+        <Group
+          clipFunc={(context) =>
+            addImageMaskPath(context, frame.mask, width, height)
+          }
+        >
+          {imageVisual}
+        </Group>
+        <ImageFrameBorderVisual element={element} />
+      </Group>
     )
   }
 
   const placeholderStatus = status === 'ready' ? 'error' : status
 
   return (
-    <Group
-      name={`image-placeholder image-placeholder-${placeholderStatus}`}
-    >
-      <Rect
-        width={width}
-        height={height}
-        fill="#29233A"
-        stroke="#AFA6C8"
-        strokeWidth={2}
-        dash={[10, 7]}
+    <Group>
+      <Group
+        name={`image-placeholder image-placeholder-${placeholderStatus}`}
+        clipFunc={(context) =>
+          addImageMaskPath(context, frame.mask, width, height)
+        }
+      >
+        <Rect
+          width={width}
+          height={height}
+          fill="#29233A"
+          stroke="#AFA6C8"
+          strokeWidth={2}
+          dash={[10, 7]}
+        />
+        <Text
+          width={width}
+          height={height}
+          padding={12}
+          text={IMAGE_PLACEHOLDER_LABELS[placeholderStatus]}
+          fill="#D8D2E8"
+          fontSize={Math.min(24, Math.max(12, height / 5))}
+          align="center"
+          verticalAlign="middle"
+          listening={false}
+        />
+      </Group>
+      <ImageFrameBorderVisual element={element} />
+    </Group>
+  )
+}
+
+function SpeechBalloonVisual({
+  element,
+}: {
+  readonly element: SpeechBalloonElement
+}) {
+  const path = getSpeechBalloonPath(
+    { x: 0, y: 0, width: element.bounds.width, height: element.bounds.height },
+    element.cornerRadius,
+    element.tail,
+  )
+  const layout = getSpeechBalloonTextLayout(element)
+
+  if (!path) return null
+
+  return (
+    <Group data-testid={`editable-balloon-${element.id}`}>
+      <Path
+        data={path.pathData}
+        fill={element.fill}
+        stroke={element.stroke}
+        strokeWidth={element.strokeWidth}
+        lineJoin="round"
       />
       <Text
-        width={width}
-        height={height}
-        padding={12}
-        text={IMAGE_PLACEHOLDER_LABELS[placeholderStatus]}
-        fill="#D8D2E8"
-        fontSize={Math.min(24, Math.max(12, height / 5))}
-        align="center"
+        width={element.bounds.width}
+        height={element.bounds.height}
+        padding={element.padding}
+        text={layout.lines.join('\n')}
+        fill={element.textFill}
+        fontFamily={element.fontFamily}
+        fontSize={layout.fontSize}
+        fontStyle={toKonvaFontStyle(element.fontWeight)}
+        lineHeight={element.lineHeight}
+        align={element.align}
         verticalAlign="middle"
+        wrap="none"
+        ellipsis={!layout.fits}
         listening={false}
       />
     </Group>
@@ -183,9 +362,11 @@ function ElementNode({
   element,
   imageSourceUrl,
   isSelected,
+  isPrimarySelected,
   episodeLogicalWidth,
   episodeLogicalHeight,
   magnetEnabled,
+  nearbyBounds,
   viewScale,
   onSelect,
   onMove,
@@ -198,7 +379,9 @@ function ElementNode({
   const nodeRef = useRef<Konva.Group>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const isFreeformResizable = isElementFreeformResizable(element)
-  const isResizable = isSelected && !element.locked
+  const isResizable = isPrimarySelected && !element.locked
+  const flipScaleX = element.transform.flipX ? -1 : 1
+  const flipScaleY = element.transform.flipY ? -1 : 1
 
   useEffect(() => {
     const node = nodeRef.current
@@ -212,43 +395,93 @@ function ElementNode({
     transformer.moveToTop()
     transformer.forceUpdate()
     transformer.getLayer()?.batchDraw()
-  }, [bounds.height, bounds.width, isFreeformResizable, isResizable])
+  }, [
+    bounds.height,
+    bounds.width,
+    element.transform.flipX,
+    element.transform.flipY,
+    element.transform.rotationDegrees,
+    isFreeformResizable,
+    isResizable,
+  ])
 
   useEffect(
     () => () => onClearPreview(element.id),
     [element.id, onClearPreview],
   )
 
-  const getTransformedBounds = (node: Konva.Node) => ({
-    x: node.x(),
-    y: node.y(),
-    width: bounds.width * Math.abs(node.scaleX()),
-    height: bounds.height * Math.abs(node.scaleY()),
-  })
+  const getTransformedBounds = (node: Konva.Node) => {
+    const width = bounds.width * Math.abs(node.scaleX())
+    const height = bounds.height * Math.abs(node.scaleY())
+    const requestedBounds = {
+      x: node.x() - width / 2,
+      y: node.y() - height / 2,
+      width,
+      height,
+    }
+
+    return (
+      clampElementGeometry(
+        requestedBounds,
+        element.transform,
+        element.overflow,
+        { width: episodeLogicalWidth, height: episodeLogicalHeight },
+      ) ?? requestedBounds
+    )
+  }
 
   const constrainDrag = (
     node: Konva.Node,
     bypassMagnet: boolean,
   ) => {
-    const requestedX = node.x()
-    const centerSnap =
+    const requestedPosition = {
+      x: node.x() - bounds.width / 2,
+      y: node.y() - bounds.height / 2,
+    }
+    const snap =
       magnetEnabled && !bypassMagnet
-        ? getEpisodeCenterSnap(
-            requestedX,
-            bounds.width,
-            episodeLogicalWidth,
+        ? getElementSnap(
+            requestedPosition,
+            { width: bounds.width, height: bounds.height },
+            {
+              width: episodeLogicalWidth,
+              height: episodeLogicalHeight,
+            },
+            nearbyBounds,
             viewScale,
           )
-        : { x: requestedX, snapped: false }
-    const position = clampElementPosition(
-      { x: centerSnap.x, y: node.y() },
-      bounds,
-      episodeLogicalWidth,
-      episodeLogicalHeight,
-    )
+        : {
+            position: requestedPosition,
+            snappedX: false,
+            snappedY: false,
+          }
+    const snappedPosition =
+      element.overflow === 'bleed'
+        ? {
+            x: snap.snappedX ? snap.position.x : requestedPosition.x,
+            y: snap.snappedY ? snap.position.y : requestedPosition.y,
+          }
+        : snap.position
+    const clampedBounds = clampElementGeometry(
+      { ...bounds, ...snappedPosition },
+      element.transform,
+      element.overflow,
+      { width: episodeLogicalWidth, height: episodeLogicalHeight },
+    ) ?? { ...bounds, ...requestedPosition }
+    const position = { x: clampedBounds.x, y: clampedBounds.y }
 
-    node.position(position)
-    onSnapChange(centerSnap.snapped)
+    node.position({
+      x: position.x + bounds.width / 2,
+      y: position.y + bounds.height / 2,
+    })
+    onSnapChange(
+      snap.snappedX || snap.snappedY
+        ? {
+            ...(snap.guideX === undefined ? {} : { x: snap.guideX }),
+            ...(snap.guideY === undefined ? {} : { y: snap.guideY }),
+          }
+        : null,
+    )
 
     return position
   }
@@ -259,17 +492,24 @@ function ElementNode({
         ref={nodeRef}
         id={element.id}
         name={`episode-element episode-element-${element.type}`}
-        x={bounds.x}
-        y={bounds.y}
+        x={bounds.x + bounds.width / 2}
+        y={bounds.y + bounds.height / 2}
+        offsetX={bounds.width / 2}
+        offsetY={bounds.height / 2}
+        rotation={element.transform.rotationDegrees}
+        scaleX={flipScaleX}
+        scaleY={flipScaleY}
         listening={element.opacity > 0}
-        draggable={element.opacity > 0 && isSelected && !element.locked}
+        draggable={
+          element.opacity > 0 && isPrimarySelected && !element.locked
+        }
         onMouseDown={(event) => {
           event.cancelBubble = true
-          onSelect(element.id)
+          onSelect(element.id, event.evt.shiftKey)
         }}
         onTouchStart={(event) => {
           event.cancelBubble = true
-          onSelect(element.id)
+          onSelect(element.id, false)
         }}
         onDragMove={(event) => {
           const position = constrainDrag(
@@ -287,7 +527,7 @@ function ElementNode({
             event.evt?.altKey ?? false,
           )
           onMove(element.id, position.x, position.y)
-          onSnapChange(false)
+          onSnapChange(null)
         }}
         onTransform={(event) => {
           onPreviewBounds(element.id, getTransformedBounds(event.target))
@@ -296,8 +536,11 @@ function ElementNode({
           const node = event.target
           const requestedBounds = getTransformedBounds(node)
 
-          node.scale({ x: 1, y: 1 })
-          node.position({ x: bounds.x, y: bounds.y })
+          node.scale({ x: flipScaleX, y: flipScaleY })
+          node.position({
+            x: bounds.x + bounds.width / 2,
+            y: bounds.y + bounds.height / 2,
+          })
           onResize(element.id, requestedBounds)
         }}
         onMouseEnter={(event) => {
@@ -358,11 +601,13 @@ function ElementNode({
 
           {element.type === 'image' ? (
             <ImageElementVisual
+              element={element}
               sourceUrl={imageSourceUrl}
-              width={bounds.width}
-              height={bounds.height}
-              presentation={element.presentation}
             />
+          ) : null}
+
+          {element.type === 'speech-balloon' ? (
+            <SpeechBalloonVisual element={element} />
           ) : null}
         </Group>
 
@@ -421,6 +666,7 @@ export function EditorCanvas() {
     (state) => state.importedImageAssets,
   )
   const selectedElementId = useEditorStore((state) => state.selectedElementId)
+  const selectedElementIds = useEditorStore((state) => state.selectedElementIds)
   const viewportX = useEditorStore((state) => state.viewportX)
   const viewportY = useEditorStore((state) => state.viewportY)
   const viewportLogicalWidth = useEditorStore(
@@ -441,6 +687,9 @@ export function EditorCanvas() {
   const panViewport = useEditorStore((state) => state.panViewport)
   const selectElement = useEditorStore((state) => state.selectElement)
   const moveElement = useEditorStore((state) => state.moveElement)
+  const nudgeSelectedElement = useEditorStore(
+    (state) => state.nudgeSelectedElement,
+  )
   const resizeElement = useEditorStore((state) => state.resizeElement)
   const previewElementBounds = useEditorStore(
     (state) => state.previewElementBounds,
@@ -455,10 +704,25 @@ export function EditorCanvas() {
   const placeDraggedAsset = useEditorStore(
     (state) => state.placeDraggedAsset,
   )
+  const importAndPlaceImageAsset = useEditorStore(
+    (state) => state.importAndPlaceImageAsset,
+  )
+  const assetLibraryBusy = useEditorStore((state) => state.assetLibraryBusy)
+  const assetLibraryMessage = useEditorStore(
+    (state) => state.assetLibraryMessage,
+  )
+  const assetLibraryMessageKind = useEditorStore(
+    (state) => state.assetLibraryMessageKind,
+  )
   const reportAssetDropError = useEditorStore(
     (state) => state.reportAssetDropError,
   )
-  const [centerSnapGuideVisible, setCenterSnapGuideVisible] = useState(false)
+  const [alignmentGuides, setAlignmentGuides] = useState<{
+    readonly x?: number
+    readonly y?: number
+  } | null>(null)
+  const [externalFileDropActive, setExternalFileDropActive] = useState(false)
+  const [showFileDropFeedback, setShowFileDropFeedback] = useState(false)
   const { elementRef, size } = useElementSize<HTMLDivElement>()
 
   const stageWidth = Math.max(size.width, 1)
@@ -514,7 +778,7 @@ export function EditorCanvas() {
           (element) =>
             isElementEffectivelyVisible(episode, element) &&
             boundsIntersectViewport(
-              element.bounds,
+              getElementVisualBounds(element) ?? element.bounds,
               {
                 x: viewportX - RENDER_BUFFER,
                 y: viewportY - RENDER_BUFFER,
@@ -552,6 +816,17 @@ export function EditorCanvas() {
       ),
     [episode.elements, importedImageAssets],
   )
+  const nearbySnapBounds = useMemo(
+    () =>
+      episode.elements
+        .filter(
+          (candidate) =>
+            !selectedElementIds.includes(candidate.id) &&
+            isElementEffectivelyVisible(episode, candidate),
+        )
+        .map((candidate) => candidate.bounds),
+    [episode, selectedElementIds],
+  )
   const imageElementCount = resolvedImageAssets.size
   const visibleImageElementCount = visibleElements.filter(
     ({ type }) => type === 'image',
@@ -568,6 +843,20 @@ export function EditorCanvas() {
     event.preventDefault()
     const isHorizontal = event.key === 'ArrowLeft' || event.key === 'ArrowRight'
     const direction = event.key === 'ArrowDown' || event.key === 'ArrowRight' ? 1 : -1
+
+    if (
+      selectedElementId &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      nudgeSelectedElement({
+        x: isHorizontal ? direction * (event.shiftKey ? 10 : 1) : 0,
+        y: isHorizontal ? 0 : direction * (event.shiftKey ? 10 : 1),
+      })
+    ) {
+      return
+    }
+
     const distance = isHorizontal
       ? viewportLogicalWidth * (event.shiftKey ? 0.8 : 0.12)
       : viewportLogicalHeight * (event.shiftKey ? 0.8 : 0.12)
@@ -581,6 +870,9 @@ export function EditorCanvas() {
   const hasAssetDragPayload = (event: ReactDragEvent<HTMLDivElement>) =>
     Array.from(event.dataTransfer.types).includes(ASSET_DRAG_MIME_TYPE)
 
+  const hasExternalFiles = (event: ReactDragEvent<HTMLDivElement>) =>
+    Array.from(event.dataTransfer.types).includes('Files')
+
   const isCanvasChromeDropTarget = (target: EventTarget | null) =>
     target instanceof Element &&
     Boolean(
@@ -590,28 +882,80 @@ export function EditorCanvas() {
     )
 
   const handleAssetDragOver = (event: ReactDragEvent<HTMLDivElement>) => {
+    const isInternalAsset = hasAssetDragPayload(event)
+    const isExternalFile = hasExternalFiles(event)
+
+    if (!isInternalAsset && !isExternalFile) return
+
+    event.preventDefault()
+    const isChromeTarget = isCanvasChromeDropTarget(event.target)
+    event.dataTransfer.dropEffect = isChromeTarget ? 'none' : 'copy'
+    setExternalFileDropActive(isExternalFile && !isChromeTarget)
+  }
+
+  const handleAssetDragLeave = (event: ReactDragEvent<HTMLDivElement>) => {
+    const nextTarget = event.relatedTarget
+
     if (
-      !hasAssetDragPayload(event) ||
-      isCanvasChromeDropTarget(event.target)
+      nextTarget instanceof Node &&
+      event.currentTarget.contains(nextTarget)
     ) {
       return
     }
 
-    event.preventDefault()
-    event.dataTransfer.dropEffect = 'copy'
+    setExternalFileDropActive(false)
+  }
+
+  const getDropLogicalCenter = (event: ReactDragEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+
+    return clientPointToEpisodePosition(
+      { x: event.clientX, y: event.clientY },
+      { x: bounds.left, y: bounds.top },
+      { x: groupX, y: -viewportY * viewScale },
+      viewScale,
+    )
   }
 
   const handleAssetDrop = (event: ReactDragEvent<HTMLDivElement>) => {
-    if (!hasAssetDragPayload(event)) {
-      return
-    }
+    const isInternalAsset = hasAssetDragPayload(event)
+    const isExternalFile = hasExternalFiles(event)
+
+    if (!isInternalAsset && !isExternalFile) return
 
     event.preventDefault()
+    setExternalFileDropActive(false)
 
     if (isCanvasChromeDropTarget(event.target)) {
       reportAssetDropError(
         'Drop the asset on the episode itself, not a canvas control.',
       )
+      return
+    }
+
+    const logicalCenter = getDropLogicalCenter(event)
+
+    if (
+      !logicalCenter ||
+      logicalCenter.x < 0 ||
+      logicalCenter.x > episode.logicalWidth ||
+      logicalCenter.y < 0 ||
+      logicalCenter.y > episode.logicalHeight
+    ) {
+      reportAssetDropError('Drop the asset inside the episode canvas.')
+      return
+    }
+
+    if (isExternalFile) {
+      const files = Array.from(event.dataTransfer.files)
+      setShowFileDropFeedback(true)
+
+      if (files.length !== 1 || !files[0]) {
+        reportAssetDropError('Drop one PNG, JPEG, or WebP image at a time.')
+        return
+      }
+
+      void importAndPlaceImageAsset(files[0], logicalCenter)
       return
     }
 
@@ -623,25 +967,6 @@ export function EditorCanvas() {
       reportAssetDropError(
         'Only valid items from the ScrollSplice Asset Library can be dropped here.',
       )
-      return
-    }
-
-    const bounds = event.currentTarget.getBoundingClientRect()
-    const logicalCenter = clientPointToEpisodePosition(
-      { x: event.clientX, y: event.clientY },
-      { x: bounds.left, y: bounds.top },
-      { x: groupX, y: -viewportY * viewScale },
-      viewScale,
-    )
-
-    if (
-      !logicalCenter ||
-      logicalCenter.x < 0 ||
-      logicalCenter.x > episode.logicalWidth ||
-      logicalCenter.y < 0 ||
-      logicalCenter.y > episode.logicalHeight
-    ) {
-      reportAssetDropError('Drop the asset inside the episode canvas.')
       return
     }
 
@@ -667,18 +992,30 @@ export function EditorCanvas() {
         data-slice-guide-count={sliceBoundaries.length}
         data-visible-slice-guide-count={visibleSliceBoundaries.length}
         data-selected-element-id={selectedElement?.id ?? ''}
+        data-selected-element-count={selectedElementIds.length}
         data-selected-x={selectedElement?.bounds.x ?? ''}
         data-selected-y={selectedElement?.bounds.y ?? ''}
         data-selected-width={selectedElement?.bounds.width ?? ''}
         data-selected-height={selectedElement?.bounds.height ?? ''}
         data-selected-opacity={selectedElement?.opacity ?? ''}
         data-selected-blend-mode={selectedElement?.blendMode ?? ''}
+        data-selected-rotation={
+          selectedElement?.transform.rotationDegrees ?? ''
+        }
+        data-selected-flip-x={selectedElement?.transform.flipX ?? ''}
+        data-selected-flip-y={selectedElement?.transform.flipY ?? ''}
+        data-selected-overflow={selectedElement?.overflow ?? ''}
         data-selected-fill-kind={
           selectedElement?.type === 'shape' ? selectedElement.fill.kind : ''
         }
         data-selected-image-presentation={
           selectedElement?.type === 'image'
             ? selectedElement.presentation
+            : ''
+        }
+        data-selected-image-mask={
+          selectedElement?.type === 'image'
+            ? selectedElement.frame.mask.kind
             : ''
         }
         data-image-element-count={imageElementCount}
@@ -696,7 +1033,9 @@ export function EditorCanvas() {
         aria-label="Episode editing canvas. Use the mouse wheel, trackpad, or arrow keys to move through the episode."
         tabIndex={0}
         onKeyDown={handleKeyboardNavigation}
+        onDragEnter={handleAssetDragOver}
         onDragOver={handleAssetDragOver}
+        onDragLeave={handleAssetDragLeave}
         onDrop={handleAssetDrop}
       >
         <Stage
@@ -743,12 +1082,16 @@ export function EditorCanvas() {
                   imageSourceUrl={
                     resolvedImageAssets.get(element.id)?.sourceUrl
                   }
-                  isSelected={element.id === selectedElementId}
+                  isSelected={selectedElementIds.includes(element.id)}
+                  isPrimarySelected={element.id === selectedElementId}
                   episodeLogicalWidth={episode.logicalWidth}
                   episodeLogicalHeight={episode.logicalHeight}
                   magnetEnabled={magnetEnabled}
+                  nearbyBounds={nearbySnapBounds}
                   viewScale={viewScale}
-                  onSelect={(elementId) => selectElement(elementId)}
+                  onSelect={(elementId, toggle) =>
+                    selectElement(elementId, false, toggle)
+                  }
                   onMove={(elementId, x, y) =>
                     moveElement(elementId, { x, y })
                   }
@@ -757,7 +1100,7 @@ export function EditorCanvas() {
                   }
                   onPreviewBounds={previewElementBounds}
                   onClearPreview={clearElementBoundsPreview}
-                  onSnapChange={setCenterSnapGuideVisible}
+                  onSnapChange={setAlignmentGuides}
                 />
               ))}
             </Group>
@@ -778,19 +1121,55 @@ export function EditorCanvas() {
             />
           ))}
 
-          {centerSnapGuideVisible ? (
+          {alignmentGuides?.x !== undefined ? (
             <div
               className="center-snap-guide"
-              data-testid="center-snap-guide"
+              data-testid={
+                Math.abs(
+                  alignmentGuides.x - episode.logicalWidth / 2,
+                ) < 0.000001
+                  ? 'center-snap-guide'
+                  : 'vertical-alignment-guide'
+              }
+              data-guide-axis="vertical"
               style={{
-                left:
-                  groupX + (episode.logicalWidth * viewScale) / 2,
+                left: groupX + alignmentGuides.x * viewScale,
+              }}
+            />
+          ) : null}
+
+          {alignmentGuides?.y !== undefined ? (
+            <div
+              className="horizontal-snap-guide"
+              data-testid="horizontal-alignment-guide"
+              style={{
+                left: groupX,
+                top: (alignmentGuides.y - viewportY) * viewScale,
+                width: episode.logicalWidth * viewScale,
               }}
             />
           ) : null}
         </div>
 
         <CanvasBaseColorControl />
+
+        {externalFileDropActive ? (
+          <div className="canvas-file-drop-prompt" aria-hidden="true">
+            <strong>Drop to import and place</strong>
+            <span>PNG, JPEG, or WebP · saved locally with source alpha</span>
+          </div>
+        ) : null}
+
+        {showFileDropFeedback && assetLibraryMessage ? (
+          <div
+            className={`canvas-file-drop-status${assetLibraryMessageKind === 'error' ? ' is-error' : ''}`}
+            role={assetLibraryMessageKind === 'error' ? 'alert' : 'status'}
+            aria-live="polite"
+          >
+            {assetLibraryBusy ? 'Working… ' : ''}
+            {assetLibraryMessage}
+          </div>
+        ) : null}
 
         {isAtEpisodeEnd ? <EpisodeHeightControls viewScale={viewScale} /> : null}
       </div>

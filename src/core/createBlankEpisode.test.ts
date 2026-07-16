@@ -14,7 +14,7 @@ import {
 } from './episode'
 
 describe('createBlankEpisode', () => {
-  it('creates the minimal editable format-v3 episode from an injected ID', () => {
+  it('creates the minimal editable current-format episode from an injected ID', () => {
     const episode = createBlankEpisode('episode-new-123')
 
     expect(episode).toEqual({
@@ -60,6 +60,7 @@ describe('createBlankEpisode', () => {
         },
       ],
       elements: [],
+      elementGroups: [],
     })
   })
 

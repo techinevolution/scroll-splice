@@ -10,6 +10,10 @@ import {
 } from 'react'
 
 import { useEditorStore } from '../app/store'
+import {
+  ASSET_DRAG_MIME_TYPE,
+  parseAssetDragPayload,
+} from '../assets/dragPayload'
 import { VisibilityIcon } from '../components/VisibilityIcon'
 import {
   COMPOSITION_GROUP_LABELS,
@@ -56,6 +60,12 @@ export function LayerPlaneTabs() {
   const reorderLayerPlane = useEditorStore(
     (state) => state.reorderLayerPlane,
   )
+  const placeDraggedAssetOnPlane = useEditorStore(
+    (state) => state.placeDraggedAssetOnPlane,
+  )
+  const reportAssetDropError = useEditorStore(
+    (state) => state.reportAssetDropError,
+  )
   const scrollportRef = useRef<HTMLDivElement>(null)
   const tabListRef = useRef<HTMLDivElement>(null)
   const planeNameInputRef = useRef<HTMLInputElement>(null)
@@ -63,6 +73,9 @@ export function LayerPlaneTabs() {
   const [overflowState, setOverflowState] = useState(INITIAL_OVERFLOW_STATE)
   const [draggedPlaneId, setDraggedPlaneId] = useState<string | null>(null)
   const [dropIntent, setDropIntent] = useState<DropIntent | null>(null)
+  const [assetDropTargetId, setAssetDropTargetId] = useState<string | null>(
+    null,
+  )
   const layerPlanes = useMemo(
     () => getLayerPlanesForGroup(episode, activeCompositionGroup),
     [activeCompositionGroup, episode],
@@ -217,10 +230,24 @@ export function LayerPlaneTabs() {
     event: DragEvent<HTMLDivElement>,
     targetLayerPlaneId: string,
   ) => {
-    const sourcePlane = layerPlanes.find(({ id }) => id === draggedPlaneId)
     const targetPlane = layerPlanes.find(
       ({ id }) => id === targetLayerPlaneId,
     )
+    const isAssetDrop = Array.from(event.dataTransfer.types).includes(
+      ASSET_DRAG_MIME_TYPE,
+    )
+
+    if (isAssetDrop) {
+      if (targetPlane?.kind !== 'ordinary') return
+
+      event.preventDefault()
+      event.dataTransfer.dropEffect = 'copy'
+      setAssetDropTargetId(targetLayerPlaneId)
+      setDropIntent(null)
+      return
+    }
+
+    const sourcePlane = layerPlanes.find(({ id }) => id === draggedPlaneId)
 
     if (
       !sourcePlane ||
@@ -252,6 +279,33 @@ export function LayerPlaneTabs() {
     event: DragEvent<HTMLDivElement>,
     targetLayerPlaneId: string,
   ) => {
+    const targetPlane = layerPlanes.find(
+      ({ id }) => id === targetLayerPlaneId,
+    )
+    const isAssetDrop = Array.from(event.dataTransfer.types).includes(
+      ASSET_DRAG_MIME_TYPE,
+    )
+
+    if (isAssetDrop) {
+      event.preventDefault()
+      const payload = parseAssetDragPayload(
+        event.dataTransfer.getData(ASSET_DRAG_MIME_TYPE),
+      )
+
+      if (!payload || targetPlane?.kind !== 'ordinary') {
+        reportAssetDropError(
+          'Drop a valid Asset Library item on an ordinary numbered plane.',
+        )
+      } else {
+        placeDraggedAssetOnPlane(payload, targetLayerPlaneId)
+      }
+
+      setDraggedPlaneId(null)
+      setDropIntent(null)
+      setAssetDropTargetId(null)
+      return
+    }
+
     event.preventDefault()
 
     const sourceIndex = layerPlanes.findIndex(
@@ -261,7 +315,7 @@ export function LayerPlaneTabs() {
       ({ id }) => id === targetLayerPlaneId,
     )
     const sourcePlane = layerPlanes[sourceIndex]
-    const targetPlane = layerPlanes[targetIndex]
+    const reorderTargetPlane = layerPlanes[targetIndex]
     const position =
       dropIntent?.targetId === targetLayerPlaneId
         ? dropIntent.position
@@ -270,7 +324,7 @@ export function LayerPlaneTabs() {
     if (
       draggedPlaneId &&
       sourcePlane?.kind === 'ordinary' &&
-      targetPlane?.kind === 'ordinary' &&
+      reorderTargetPlane?.kind === 'ordinary' &&
       sourceIndex !== targetIndex
     ) {
       let finalIndex = targetIndex + (position === 'after' ? 1 : 0)
@@ -285,6 +339,7 @@ export function LayerPlaneTabs() {
 
     setDraggedPlaneId(null)
     setDropIntent(null)
+    setAssetDropTargetId(null)
   }
 
   const handleDragLeave = (
@@ -302,11 +357,15 @@ export function LayerPlaneTabs() {
     setDropIntent((currentIntent) =>
       currentIntent?.targetId === targetLayerPlaneId ? null : currentIntent,
     )
+    setAssetDropTargetId((currentTargetId) =>
+      currentTargetId === targetLayerPlaneId ? null : currentTargetId,
+    )
   }
 
   const clearDragState = () => {
     setDraggedPlaneId(null)
     setDropIntent(null)
+    setAssetDropTargetId(null)
   }
 
   return (
@@ -342,7 +401,7 @@ export function LayerPlaneTabs() {
 
               return (
                 <div
-                  className={`layer-plane-tab${isActive ? ' is-active' : ''}${layerPlane.visible ? '' : ' is-hidden'}${draggedPlaneId === layerPlane.id ? ' is-dragging' : ''}${planeDropIntent ? ` is-drop-${planeDropIntent.position}` : ''}`}
+                  className={`layer-plane-tab${isActive ? ' is-active' : ''}${layerPlane.visible ? '' : ' is-hidden'}${draggedPlaneId === layerPlane.id ? ' is-dragging' : ''}${planeDropIntent ? ` is-drop-${planeDropIntent.position}` : ''}${assetDropTargetId === layerPlane.id ? ' is-asset-drop-target' : ''}`}
                   data-layer-plane-id={layerPlane.id}
                   data-drop-position={planeDropIntent?.position}
                   key={layerPlane.id}

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   CENTER_SNAP_THRESHOLD_PX,
+  ELEMENT_SNAP_THRESHOLD_PX,
   boundsIntersectViewport,
   boundsIntersectVerticalViewport,
   clientPointToEpisodePosition,
@@ -13,8 +14,10 @@ import {
   clampZoomFactor,
   getFitScale,
   getEpisodeCenterSnap,
+  getElementSnap,
   getLogicalViewportDimensions,
   getLogicalViewportHeight,
+  getMinimapEpisodeRect,
   getMinimapViewportBox,
   getMinimapViewportBox2D,
   getVerticalScrollProgress,
@@ -171,9 +174,9 @@ describe('viewport coordinates', () => {
     const viewport = { x: 200, y: 920, width: 400, height: 920 }
 
     expect(getMinimapViewportBox2D(viewport, episode, minimap)).toEqual({
-      x: 50,
+      x: 90,
       y: 46,
-      width: 100,
+      width: 20,
       height: 46,
     })
     expect(
@@ -190,9 +193,37 @@ describe('viewport coordinates', () => {
         minimap,
         episode,
         { width: viewport.width, height: viewport.height },
-        { x: 25, y: 10 },
+        { x: 5, y: 10 },
       ),
     ).toEqual({ x: 300, y: 1_000 })
+  })
+
+  it('letterboxes the episode and clamps minimap navigation to fitted geometry', () => {
+    const episode = { width: 800, height: 4_600 }
+    const wideMinimap = { width: 200, height: 230 }
+
+    expect(getMinimapEpisodeRect(episode, wideMinimap)).toEqual({
+      x: 80,
+      y: 0,
+      width: 40,
+      height: 230,
+    })
+    expect(
+      minimapPointerToViewportPosition(
+        { x: 0, y: 115 },
+        wideMinimap,
+        episode,
+        { width: 400, height: 920 },
+      ),
+    ).toEqual({ x: 0, y: 1_840 })
+    expect(
+      minimapPointerToViewportPosition(
+        { x: 200, y: 115 },
+        wideMinimap,
+        episode,
+        { width: 400, height: 920 },
+      ),
+    ).toEqual({ x: 400, y: 1_840 })
   })
 
   it('reports scroll progress over the navigable range so the bottom is 100%', () => {
@@ -252,5 +283,124 @@ describe('element coordinates', () => {
     expect(
       getEpisodeCenterSnap(10, 100, 800, 1, -CENTER_SNAP_THRESHOLD_PX),
     ).toEqual({ x: 10, snapped: false })
+  })
+
+  it('snaps independently to episode edges and center guides', () => {
+    expect(
+      getElementSnap(
+        { x: 326, y: 4 },
+        { width: 150, height: 100 },
+        { width: 800, height: 4_600 },
+        [],
+        1,
+      ),
+    ).toEqual({
+      position: { x: 325, y: 0 },
+      snappedX: true,
+      snappedY: true,
+      guideX: 400,
+      guideY: 0,
+    })
+
+    expect(
+      getElementSnap(
+        { x: 646, y: 4_496 },
+        { width: 150, height: 100 },
+        { width: 800, height: 4_600 },
+        [],
+        1,
+      ),
+    ).toEqual({
+      position: { x: 650, y: 4_500 },
+      snappedX: true,
+      snappedY: true,
+      guideX: 800,
+      guideY: 4_600,
+    })
+  })
+
+  it('aligns or places an element beside nearby element bounds', () => {
+    const nearby = [{ x: 100, y: 300, width: 200, height: 180 }]
+
+    expect(
+      getElementSnap(
+        { x: 104, y: 342 },
+        { width: 120, height: 96 },
+        { width: 800, height: 4_600 },
+        nearby,
+        1,
+      ),
+    ).toEqual({
+      position: { x: 100, y: 342 },
+      snappedX: true,
+      snappedY: true,
+      guideX: 100,
+      guideY: 390,
+    })
+
+    expect(
+      getElementSnap(
+        { x: 304, y: 484 },
+        { width: 120, height: 96 },
+        { width: 800, height: 4_600 },
+        nearby,
+        1,
+      ),
+    ).toEqual({
+      position: { x: 300, y: 480 },
+      snappedX: true,
+      snappedY: true,
+      guideX: 300,
+      guideY: 480,
+    })
+  })
+
+  it('keeps snap tolerance pixel-stable across zoom and ignores invalid bounds', () => {
+    const requested = { x: 113, y: 526 }
+    const nearby = [
+      { x: 100, y: 500, width: 200, height: 100 },
+      { x: Number.NaN, y: 0, width: 10, height: 10 },
+    ]
+
+    expect(
+      getElementSnap(
+        requested,
+        { width: 80, height: 80 },
+        { width: 800, height: 4_600 },
+        nearby,
+        0.5,
+      ),
+    ).toMatchObject({
+      position: { x: 100, y: 520 },
+      snappedX: true,
+      snappedY: true,
+    })
+    expect(
+      getElementSnap(
+        requested,
+        { width: 80, height: 80 },
+        { width: 800, height: 4_600 },
+        nearby,
+        2,
+      ),
+    ).toEqual({
+      position: requested,
+      snappedX: false,
+      snappedY: false,
+    })
+    expect(
+      getElementSnap(
+        requested,
+        { width: 0, height: 80 },
+        { width: 800, height: 4_600 },
+        nearby,
+        1,
+        -ELEMENT_SNAP_THRESHOLD_PX,
+      ),
+    ).toEqual({
+      position: requested,
+      snappedX: false,
+      snappedY: false,
+    })
   })
 })

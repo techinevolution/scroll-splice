@@ -45,7 +45,7 @@ export const BUILT_IN_ASSETS = [
     intrinsicWidth: 360,
     intrinsicHeight: 250,
     body:
-      '<ellipse cx="180" cy="105" rx="158" ry="84" fill="#fff" stroke="#211a2b" stroke-width="10"/><path d="M232 177c22 17 40 34 53 55-31-11-57-27-77-48" fill="#fff" stroke="#211a2b" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M225 177c-5 4-11 7-17 9" stroke="#fff" stroke-width="12" stroke-linecap="round"/>',
+      '<path d="M180 21c87 0 158 38 158 84 0 34-37 63-90 76 18 15 34 32 48 52-32-10-61-25-85-43-10 1-20 1-31 1-87 0-158-39-158-86s71-84 158-84Z" fill="#fff" stroke="#211a2b" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>',
   }),
   defineBuiltIn({
     id: 'builtin-speech-balloon-rounded-v1',
@@ -54,7 +54,7 @@ export const BUILT_IN_ASSETS = [
     intrinsicWidth: 360,
     intrinsicHeight: 250,
     body:
-      '<rect x="24" y="24" width="312" height="166" rx="48" fill="#fff" stroke="#211a2b" stroke-width="10"/><path d="M104 183c-8 20-21 38-40 52 31-3 58-15 78-42" fill="#fff" stroke="#211a2b" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M106 183c10 5 22 9 36 10" stroke="#fff" stroke-width="12" stroke-linecap="round"/>',
+      '<path d="M72 24h216c27 0 48 21 48 48v70c0 27-21 48-48 48H145c-20 22-47 37-81 45 19-17 33-32 42-45H72c-27 0-48-21-48-48V72c0-27 21-48 48-48Z" fill="#fff" stroke="#211a2b" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>',
   }),
   defineBuiltIn({
     id: 'builtin-speech-balloon-cloud-v1',

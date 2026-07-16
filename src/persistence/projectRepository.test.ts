@@ -7,7 +7,10 @@ import {
 import { BACKGROUND_COLOR_REGION_GENERATOR_ID } from '../core/commands'
 import { createBlankEpisode } from '../core/createBlankEpisode'
 import {
+  APPEARANCE_EPISODE_FORMAT_VERSION,
+  DEFAULT_IMAGE_FRAME,
   EPISODE_FORMAT_VERSION,
+  IDENTITY_ELEMENT_TRANSFORM,
   IMAGE_EPISODE_FORMAT_VERSION,
   LEGACY_EPISODE_FORMAT_VERSION,
   type EpisodeDocument,
@@ -38,8 +41,25 @@ function cloneEpisode(): MutableRecord {
   return JSON.parse(JSON.stringify(buildWeekEpisode)) as MutableRecord
 }
 
-function cloneVersion4Episode(): MutableRecord {
+function cloneVersion5Episode(): MutableRecord {
   const episode = cloneEpisode()
+  episode.formatVersion = APPEARANCE_EPISODE_FORMAT_VERSION
+  delete episode.elementGroups
+
+  for (const element of readRecordArray(episode, 'elements')) {
+    delete element.transform
+    delete element.overflow
+
+    if (element.type === 'image') {
+      delete element.frame
+    }
+  }
+
+  return episode
+}
+
+function cloneVersion4Episode(): MutableRecord {
+  const episode = cloneVersion5Episode()
   episode.formatVersion = IMAGE_EPISODE_FORMAT_VERSION
 
   for (const element of readRecordArray(episode, 'elements')) {
@@ -129,11 +149,19 @@ function appendImageElement(
       locked: false,
       zIndex: 100,
       assetReference,
-      ...(episode.formatVersion === EPISODE_FORMAT_VERSION
+      ...(episode.formatVersion === EPISODE_FORMAT_VERSION ||
+      episode.formatVersion === APPEARANCE_EPISODE_FORMAT_VERSION
         ? {
             opacity: 1,
             blendMode: 'normal',
             presentation: 'single',
+            ...(episode.formatVersion === EPISODE_FORMAT_VERSION
+              ? {
+                  transform: IDENTITY_ELEMENT_TRANSFORM,
+                  overflow: 'constrained',
+                  frame: DEFAULT_IMAGE_FRAME,
+                }
+              : {}),
           }
         : {}),
     },
@@ -141,7 +169,7 @@ function appendImageElement(
 }
 
 describe('local project repository', () => {
-  it('round-trips the current v5 episode through one versioned slot', () => {
+  it('round-trips the current v6 episode through one versioned slot', () => {
     const storage = new MemoryStorage()
     const repository = createLocalStorageProjectRepository(
       storage,
@@ -354,7 +382,7 @@ describe('parseEpisodeDocument', () => {
     })
   })
 
-  it('accepts a legacy v3 shape-and-text document and upgrades it to v5', () => {
+  it('accepts a legacy v3 shape-and-text document and upgrades it to v6', () => {
     const result = parseEpisodeDocument(cloneLegacyEpisode())
 
     expect(result).toMatchObject({
@@ -426,8 +454,48 @@ describe('parseEpisodeDocument', () => {
     })
   })
 
+  it('upgrades v5 appearance documents with deterministic v6 geometry defaults', () => {
+    const episode = cloneVersion5Episode()
+    appendImageElement(episode, {
+      kind: 'imported',
+      assetId: 'upload-v5',
+    })
+
+    const result = parseEpisodeDocument(episode)
+
+    if (!result.ok) {
+      throw new Error('The v5 geometry fixture did not migrate.')
+    }
+
+    expect(result.episode.formatVersion).toBe(EPISODE_FORMAT_VERSION)
+    expect(result.episode.elementGroups).toEqual([])
+    expect(result.episode.elements).not.toHaveLength(0)
+    expect(
+      result.episode.elements.every(
+        (element) =>
+          element.transform.rotationDegrees === 0 &&
+          !element.transform.flipX &&
+          !element.transform.flipY &&
+          element.overflow === 'constrained',
+      ),
+    ).toBe(true)
+    expect(result.episode.elements).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          transform: IDENTITY_ELEMENT_TRANSFORM,
+          overflow: 'constrained',
+        }),
+        expect.objectContaining({
+          id: 'fixture-image-1',
+          presentation: 'single',
+          frame: DEFAULT_IMAGE_FRAME,
+        }),
+      ]),
+    )
+  })
+
   it('accepts and preserves a strict v5 vertical two-stop gradient', () => {
-    const episode = cloneEpisode()
+    const episode = cloneVersion5Episode()
     const shape = readRecordArray(episode, 'elements').find(
       (element) => element.type === 'shape',
     )
@@ -461,7 +529,7 @@ describe('parseEpisodeDocument', () => {
   })
 
   it('rejects a v5 gradient on an ordinary non-Background shape', () => {
-    const episode = cloneEpisode()
+    const episode = cloneVersion5Episode()
     const shape = readRecordArray(episode, 'elements').find(
       (element) => element.type === 'shape',
     )
@@ -582,29 +650,29 @@ describe('parseEpisodeDocument', () => {
         generatorId: '',
       }
     }],
-    ['missing v5 opacity', (episode: MutableRecord) => {
+    ['missing current opacity', (episode: MutableRecord) => {
       const element = readRecordArray(episode, 'elements')[0]
       if (!element) throw new Error('Missing fixture element.')
       delete element.opacity
     }],
-    ['out-of-range v5 opacity', (episode: MutableRecord) => {
+    ['out-of-range current opacity', (episode: MutableRecord) => {
       const element = readRecordArray(episode, 'elements')[0]
       if (!element) throw new Error('Missing fixture element.')
       element.opacity = 1.1
     }],
-    ['invalid v5 blend mode', (episode: MutableRecord) => {
+    ['invalid current blend mode', (episode: MutableRecord) => {
       const element = readRecordArray(episode, 'elements')[0]
       if (!element) throw new Error('Missing fixture element.')
       element.blendMode = 'difference'
     }],
-    ['legacy string fill in v5', (episode: MutableRecord) => {
+    ['legacy string fill in the current format', (episode: MutableRecord) => {
       const shape = readRecordArray(episode, 'elements').find(
         (element) => element.type === 'shape',
       )
       if (!shape) throw new Error('Missing fixture shape.')
       shape.fill = '#123456'
     }],
-    ['invalid v5 gradient stop opacity', (episode: MutableRecord) => {
+    ['invalid current gradient stop opacity', (episode: MutableRecord) => {
       const shape = readRecordArray(episode, 'elements').find(
         (element) => element.type === 'shape',
       )
@@ -626,7 +694,7 @@ describe('parseEpisodeDocument', () => {
   })
 
   it('rejects a v5 image without a valid presentation', () => {
-    const episode = cloneEpisode()
+    const episode = cloneVersion5Episode()
     appendImageElement(episode, {
       kind: 'imported',
       assetId: 'upload-1',
@@ -646,7 +714,7 @@ describe('parseEpisodeDocument', () => {
   })
 
   it('accepts a tiled v5 image with strict appearance fields', () => {
-    const episode = cloneEpisode()
+    const episode = cloneVersion5Episode()
     appendImageElement(episode, {
       kind: 'imported',
       assetId: 'upload-1',
@@ -673,6 +741,130 @@ describe('parseEpisodeDocument', () => {
           }),
         ]),
       },
+    })
+  })
+
+  it('accepts v6 cover, polygon frame, transform, bleed, and flat groups', () => {
+    const episode = cloneEpisode()
+    appendImageElement(episode, {
+      kind: 'imported',
+      assetId: 'upload-v6',
+    })
+    const image = readRecordArray(episode, 'elements').at(-1)
+    const groupedElements = readRecordArray(episode, 'elements').slice(0, 2)
+
+    if (!image || !groupedElements[0] || !groupedElements[1]) {
+      throw new Error('Missing v6 fixtures.')
+    }
+
+    image.presentation = 'cover'
+    image.transform = { rotationDegrees: 15, flipX: true, flipY: false }
+    image.overflow = 'bleed'
+    image.frame = {
+      mask: {
+        kind: 'polygon',
+        points: [
+          { x: 0, y: 0 },
+          { x: 1, y: 0.2 },
+          { x: 0.8, y: 1 },
+          { x: 0.1, y: 0.8 },
+        ],
+      },
+      crop: { focusX: 0.2, focusY: 0.8, zoom: 2 },
+      border: { color: '#FFFFFF', width: 3 },
+    }
+    episode.elementGroups = [
+      {
+        id: 'group-1',
+        memberElementIds: [groupedElements[0].id, groupedElements[1].id],
+      },
+    ]
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: true,
+      episode: {
+        formatVersion: EPISODE_FORMAT_VERSION,
+        elementGroups: episode.elementGroups,
+        elements: expect.arrayContaining([
+          expect.objectContaining({
+            id: 'fixture-image-1',
+            presentation: 'cover',
+            transform: image.transform,
+            overflow: 'bleed',
+            frame: image.frame,
+          }),
+        ]),
+      },
+    })
+  })
+
+  it('accepts a v6 bleed element with bounds outside the output that still intersects', () => {
+    const episode = cloneEpisode()
+    const element = readRecordArray(episode, 'elements')[0]
+
+    if (!element) throw new Error('Missing v6 bleed fixture.')
+    readRecord(element.bounds).x = -100
+    element.overflow = 'bleed'
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({ ok: true })
+  })
+
+  it.each([
+    ['missing transform', (episode: MutableRecord) => {
+      const element = readRecordArray(episode, 'elements')[0]
+      if (!element) throw new Error('Missing v6 element.')
+      delete element.transform
+    }],
+    ['non-normalized rotation', (episode: MutableRecord) => {
+      const element = readRecordArray(episode, 'elements')[0]
+      if (!element) throw new Error('Missing v6 element.')
+      readRecord(element.transform).rotationDegrees = 180
+    }],
+    ['invalid overflow', (episode: MutableRecord) => {
+      const element = readRecordArray(episode, 'elements')[0]
+      if (!element) throw new Error('Missing v6 element.')
+      element.overflow = 'anywhere'
+    }],
+    ['missing element groups', (episode: MutableRecord) => {
+      delete episode.elementGroups
+    }],
+    ['group with a missing element', (episode: MutableRecord) => {
+      const element = readRecordArray(episode, 'elements')[0]
+      if (!element) throw new Error('Missing v6 group fixture.')
+      episode.elementGroups = [
+        {
+          id: 'bad-group',
+          memberElementIds: [element.id, 'missing-element'],
+        },
+      ]
+    }],
+    ['cover image without a valid frame', (episode: MutableRecord) => {
+      appendImageElement(episode, {
+        kind: 'imported',
+        assetId: 'upload-invalid-frame',
+      })
+      const image = readRecordArray(episode, 'elements').at(-1)
+      if (!image) throw new Error('Missing v6 image fixture.')
+      image.presentation = 'cover'
+      image.frame = {
+        mask: {
+          kind: 'polygon',
+          points: [
+            { x: 0, y: 0 },
+            { x: 0.5, y: 0.5 },
+            { x: 1, y: 1 },
+          ],
+        },
+        crop: { focusX: 0.5, focusY: 0.5, zoom: 1 },
+      }
+    }],
+  ])('rejects v6 %s', (_description, mutate) => {
+    const episode = cloneEpisode()
+    mutate(episode)
+
+    expect(parseEpisodeDocument(episode)).toMatchObject({
+      ok: false,
+      reason: 'corrupt',
     })
   })
 })

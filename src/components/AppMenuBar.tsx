@@ -11,18 +11,32 @@ export interface AppMenuBarProps {
   readonly canUndo: boolean
   readonly canRedo: boolean
   readonly canReopen: boolean
+  readonly isInspectorOpen: boolean
   readonly onNewEpisode: () => void
+  readonly onOpenLocalProject: () => void
   readonly onSave: () => void
+  readonly onSaveAs: () => void
   readonly onReopen: () => void
+  readonly onImportProject: () => void
+  readonly onExportProject: () => void
+  readonly onExportEpisodeImages: () => void
   readonly onUndo: () => void
   readonly onRedo: () => void
   readonly onReaderPreview: () => void
+  readonly onToggleInspector: () => void
+  readonly onOpenHelp: () => void
 }
 
-type MenuName = 'file' | 'edit' | 'view'
+type MenuName = 'file' | 'edit' | 'view' | 'window' | 'help'
 type MenuFocusTarget = 'first' | 'last'
 
-const MENU_NAMES: readonly MenuName[] = ['file', 'edit', 'view']
+const MENU_NAMES: readonly MenuName[] = [
+  'file',
+  'edit',
+  'view',
+  'window',
+  'help',
+]
 
 interface MenuItemDefinition {
   readonly label: string
@@ -46,21 +60,33 @@ export function AppMenuBar({
   canUndo,
   canRedo,
   canReopen,
+  isInspectorOpen,
   onNewEpisode,
+  onOpenLocalProject,
   onSave,
+  onSaveAs,
   onReopen,
+  onImportProject,
+  onExportProject,
+  onExportEpisodeImages,
   onUndo,
   onRedo,
   onReaderPreview,
+  onToggleInspector,
+  onOpenHelp,
 }: AppMenuBarProps) {
   const componentId = useId()
   const rootRef = useRef<HTMLElement>(null)
   const fileTriggerRef = useRef<HTMLButtonElement>(null)
   const editTriggerRef = useRef<HTMLButtonElement>(null)
   const viewTriggerRef = useRef<HTMLButtonElement>(null)
+  const windowTriggerRef = useRef<HTMLButtonElement>(null)
+  const helpTriggerRef = useRef<HTMLButtonElement>(null)
   const fileMenuRef = useRef<HTMLDivElement>(null)
   const editMenuRef = useRef<HTMLDivElement>(null)
   const viewMenuRef = useRef<HTMLDivElement>(null)
+  const windowMenuRef = useRef<HTMLDivElement>(null)
+  const helpMenuRef = useRef<HTMLDivElement>(null)
   const requestedFocusRef = useRef<MenuFocusTarget>('first')
   const [openMenu, setOpenMenu] = useState<MenuName | null>(null)
 
@@ -70,17 +96,25 @@ export function AppMenuBar({
   const editMenuId = `${componentId}-edit-menu`
   const viewTriggerId = `${componentId}-view-trigger`
   const viewMenuId = `${componentId}-view-menu`
+  const windowTriggerId = `${componentId}-window-trigger`
+  const windowMenuId = `${componentId}-window-menu`
+  const helpTriggerId = `${componentId}-help-trigger`
+  const helpMenuId = `${componentId}-help-menu`
 
   const getTrigger = (menu: MenuName) => {
     if (menu === 'file') return fileTriggerRef.current
     if (menu === 'edit') return editTriggerRef.current
-    return viewTriggerRef.current
+    if (menu === 'view') return viewTriggerRef.current
+    if (menu === 'window') return windowTriggerRef.current
+    return helpTriggerRef.current
   }
 
   const getMenu = (menu: MenuName) => {
     if (menu === 'file') return fileMenuRef.current
     if (menu === 'edit') return editMenuRef.current
-    return viewMenuRef.current
+    if (menu === 'view') return viewMenuRef.current
+    if (menu === 'window') return windowMenuRef.current
+    return helpMenuRef.current
   }
 
   useEffect(() => {
@@ -220,8 +254,13 @@ export function AppMenuBar({
 
   const fileItems: readonly MenuItemDefinition[] = [
     { label: 'New Episode', action: onNewEpisode },
+    { label: 'Open Local Project…', action: onOpenLocalProject },
     { label: 'Save', action: onSave },
-    { label: 'Reopen', disabled: !canReopen, action: onReopen },
+    { label: 'Save As…', action: onSaveAs },
+    { label: 'Reopen Current', disabled: !canReopen, action: onReopen },
+    { label: 'Import Project…', action: onImportProject },
+    { label: 'Export Project File…', action: onExportProject },
+    { label: 'Export Episode Images…', action: onExportEpisodeImages },
   ]
   const editItems: readonly MenuItemDefinition[] = [
     { label: 'Undo', disabled: !canUndo, action: onUndo },
@@ -229,6 +268,15 @@ export function AppMenuBar({
   ]
   const viewItems: readonly MenuItemDefinition[] = [
     { label: 'Reader Preview', action: onReaderPreview },
+  ]
+  const windowItems: readonly MenuItemDefinition[] = [
+    {
+      label: isInspectorOpen ? 'Hide Inspector' : 'Show Inspector',
+      action: onToggleInspector,
+    },
+  ]
+  const helpItems: readonly MenuItemDefinition[] = [
+    { label: 'Shortcuts & About', action: onOpenHelp },
   ]
 
   const renderMenu = (
@@ -358,6 +406,60 @@ export function AppMenuBar({
           viewMenuId,
           viewMenuRef,
           viewItems,
+        )}
+      </div>
+
+      <div className="app-menu-group">
+        <button
+          ref={windowTriggerRef}
+          className="app-menu-trigger"
+          id={windowTriggerId}
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={openMenu === 'window'}
+          aria-controls={windowMenuId}
+          onClick={() =>
+            openMenu === 'window'
+              ? setOpenMenu(null)
+              : openMenuAndFocus('window', 'first')
+          }
+          onKeyDown={(event) => handleTriggerKeyDown(event, 'window')}
+        >
+          Window
+        </button>
+        {renderMenu(
+          'window',
+          windowTriggerId,
+          windowMenuId,
+          windowMenuRef,
+          windowItems,
+        )}
+      </div>
+
+      <div className="app-menu-group">
+        <button
+          ref={helpTriggerRef}
+          className="app-menu-trigger"
+          id={helpTriggerId}
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={openMenu === 'help'}
+          aria-controls={helpMenuId}
+          onClick={() =>
+            openMenu === 'help'
+              ? setOpenMenu(null)
+              : openMenuAndFocus('help', 'first')
+          }
+          onKeyDown={(event) => handleTriggerKeyDown(event, 'help')}
+        >
+          Help
+        </button>
+        {renderMenu(
+          'help',
+          helpTriggerId,
+          helpMenuId,
+          helpMenuRef,
+          helpItems,
         )}
       </div>
     </nav>

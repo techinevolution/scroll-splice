@@ -1,6 +1,7 @@
 export const LEGACY_EPISODE_FORMAT_VERSION = 3 as const
 export const IMAGE_EPISODE_FORMAT_VERSION = 4 as const
-export const EPISODE_FORMAT_VERSION = 5 as const
+export const APPEARANCE_EPISODE_FORMAT_VERSION = 5 as const
+export const EPISODE_FORMAT_VERSION = 6 as const
 export const EPISODE_LOGICAL_WIDTH = 800 as const
 
 export const ELEMENT_BLEND_MODES = [
@@ -58,6 +59,20 @@ export interface ElementBounds {
   readonly height: number
 }
 
+export interface ElementTransform {
+  readonly rotationDegrees: number
+  readonly flipX: boolean
+  readonly flipY: boolean
+}
+
+export type ElementOverflow = 'constrained' | 'bleed'
+
+export const IDENTITY_ELEMENT_TRANSFORM = {
+  rotationDegrees: 0,
+  flipX: false,
+  flipY: false,
+} as const satisfies ElementTransform
+
 export interface SyntheticAssetReference {
   readonly kind: 'synthetic'
   readonly generatorId: string
@@ -91,6 +106,8 @@ interface EpisodeElementBase {
   readonly zIndex: number
   readonly opacity: number
   readonly blendMode: ElementBlendMode
+  readonly transform: ElementTransform
+  readonly overflow: ElementOverflow
   readonly assetReference: AssetReference
 }
 
@@ -132,13 +149,95 @@ export interface TextElement extends EpisodeElementBase {
   readonly align: 'left' | 'center' | 'right'
 }
 
+export type SpeechBalloonTailSide = 'top' | 'right' | 'bottom' | 'left'
+
+export interface SpeechBalloonTail {
+  readonly enabled: boolean
+  readonly side: SpeechBalloonTailSide
+  /** Position along the selected body edge, from 0 to 1. */
+  readonly anchor: number
+  /** Tail-base width as a fraction of the selected body edge. */
+  readonly width: number
+  /** Tail tip in body-normalized coordinates; it may extend outside 0...1. */
+  readonly tip: NormalizedPoint
+}
+
+export interface SpeechBalloonElement extends EpisodeElementBase {
+  readonly type: 'speech-balloon'
+  readonly fill: string
+  readonly stroke: string
+  readonly strokeWidth: number
+  readonly cornerRadius: number
+  readonly text: string
+  readonly textFill: string
+  readonly fontFamily: string
+  readonly fontWeight: 400 | 600 | 700
+  readonly lineHeight: number
+  readonly align: 'left' | 'center' | 'right'
+  readonly padding: number
+  readonly minFontSize: number
+  readonly maxFontSize: number
+  readonly tail: SpeechBalloonTail
+}
+
 export interface ImageElement extends EpisodeElementBase {
   readonly type: 'image'
   readonly assetReference: ImageAssetReference
-  readonly presentation: 'single' | 'tile'
+  readonly presentation: ImagePresentation
+  readonly frame: ImageFrame
 }
 
-export type EpisodeElement = ShapeElement | TextElement | ImageElement
+export type ImagePresentation = 'single' | 'tile' | 'cover'
+
+export interface NormalizedPoint {
+  readonly x: number
+  readonly y: number
+}
+
+export interface RectangleImageMask {
+  readonly kind: 'rectangle'
+  readonly cornerRadius: number
+}
+
+export interface PolygonImageMask {
+  readonly kind: 'polygon'
+  readonly points: readonly NormalizedPoint[]
+}
+
+export type ImageMask = RectangleImageMask | PolygonImageMask
+
+export interface ImageCrop {
+  readonly focusX: number
+  readonly focusY: number
+  readonly zoom: number
+}
+
+export interface ImageFrameBorder {
+  readonly color: string
+  readonly width: number
+}
+
+export interface ImageFrame {
+  readonly mask: ImageMask
+  readonly crop: ImageCrop
+  readonly border?: ImageFrameBorder
+}
+
+export const DEFAULT_IMAGE_FRAME = {
+  mask: { kind: 'rectangle', cornerRadius: 0 },
+  crop: { focusX: 0.5, focusY: 0.5, zoom: 1 },
+} as const satisfies ImageFrame
+
+export type EpisodeElement =
+  | ShapeElement
+  | TextElement
+  | ImageElement
+  | SpeechBalloonElement
+
+export interface ElementGroup {
+  readonly id: string
+  readonly memberElementIds: readonly string[]
+}
 
 export interface EpisodeDocument {
   readonly id: string
@@ -149,6 +248,7 @@ export interface EpisodeDocument {
   readonly compositionGroupVisibility: CompositionGroupVisibility
   readonly layerPlanes: readonly LayerPlane[]
   readonly elements: readonly EpisodeElement[]
+  readonly elementGroups: readonly ElementGroup[]
 }
 
 const COMPOSITION_GROUP_RENDER_ORDER = {

@@ -8,6 +8,10 @@ import {
   type LogicalPosition,
 } from '../core/coordinates'
 import {
+  getCoverCropRect,
+  getImageMaskPath,
+} from '../core/elementGeometry'
+import {
   compareElementsByRenderOrder,
   getEffectiveEpisodeBaseColor,
   isElementEffectivelyVisible,
@@ -15,7 +19,9 @@ import {
   type EpisodeElement,
   type ImageElement,
   type ShapeElement,
+  type SpeechBalloonElement,
 } from '../core/episode'
+import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
 import { useAssetImage } from '../editor/useAssetImage'
 import {
   getTilePatternScale,
@@ -38,6 +44,84 @@ interface MinimapImageElementProps {
   readonly definitionId: string
 }
 
+function getSvgElementTransform(
+  element: EpisodeElement,
+  bounds: ElementBounds = element.bounds,
+): string {
+  const centerX = bounds.x + bounds.width / 2
+  const centerY = bounds.y + bounds.height / 2
+  const scaleX = element.transform.flipX ? -1 : 1
+  const scaleY = element.transform.flipY ? -1 : 1
+
+  return `translate(${centerX} ${centerY}) rotate(${element.transform.rotationDegrees}) scale(${scaleX} ${scaleY}) translate(${-centerX} ${-centerY})`
+}
+
+function SvgImageMaskDefinition({
+  element,
+  bounds,
+  clipId,
+}: {
+  readonly element: ImageElement
+  readonly bounds: ElementBounds
+  readonly clipId: string
+}) {
+  const path = getImageMaskPath(element.frame, bounds)
+
+  if (!path) return null
+
+  return (
+    <clipPath id={clipId} clipPathUnits="userSpaceOnUse">
+      {path.kind === 'rectangle' ? (
+        <rect
+          x={path.bounds.x}
+          y={path.bounds.y}
+          width={path.bounds.width}
+          height={path.bounds.height}
+          rx={path.cornerRadius}
+        />
+      ) : (
+        <polygon
+          points={path.points.map(({ x, y }) => `${x},${y}`).join(' ')}
+        />
+      )}
+    </clipPath>
+  )
+}
+
+function SvgImageFrameBorder({
+  element,
+  bounds,
+}: {
+  readonly element: ImageElement
+  readonly bounds: ElementBounds
+}) {
+  const path = getImageMaskPath(element.frame, bounds)
+  const border = element.frame.border
+
+  if (!path || !border || border.width <= 0) return null
+
+  return path.kind === 'rectangle' ? (
+    <rect
+      x={path.bounds.x}
+      y={path.bounds.y}
+      width={path.bounds.width}
+      height={path.bounds.height}
+      rx={path.cornerRadius}
+      fill="none"
+      stroke={border.color}
+      strokeWidth={border.width}
+    />
+  ) : (
+    <polygon
+      points={path.points.map(({ x, y }) => `${x},${y}`).join(' ')}
+      fill="none"
+      stroke={border.color}
+      strokeWidth={border.width}
+      strokeLinejoin="round"
+    />
+  )
+}
+
 function MinimapImageElement({
   element,
   bounds,
@@ -47,6 +131,7 @@ function MinimapImageElement({
 }: MinimapImageElementProps) {
   const { image, status } = useAssetImage(sourceUrl)
   const patternId = `${definitionId}-pattern`
+  const clipId = `${definitionId}-clip`
   const imageIsReady = status === 'ready' && image !== null
   const patternScale = imageIsReady
     ? getTilePatternScale(
@@ -60,9 +145,26 @@ function MinimapImageElement({
   const tileHeight = imageIsReady
     ? (image.naturalHeight || image.height) * patternScale
     : 1
+  const coverCrop = imageIsReady
+    ? getCoverCropRect(
+        {
+          width: image.naturalWidth || image.width,
+          height: image.naturalHeight || image.height,
+        },
+        { width: bounds.width, height: bounds.height },
+        element.frame.crop,
+      )
+    : undefined
 
   return (
     <>
+      <defs>
+        <SvgImageMaskDefinition
+          element={element}
+          bounds={bounds}
+          clipId={clipId}
+        />
+      </defs>
       {imageIsReady && element.presentation === 'tile' ? (
         <defs>
           <pattern
@@ -86,64 +188,75 @@ function MinimapImageElement({
         </defs>
       ) : null}
 
-      <g
-        data-element-id={element.id}
-        data-image-status={status}
-        data-opacity={element.opacity}
-        data-blend-mode={element.blendMode}
-        data-image-presentation={element.presentation}
-        opacity={element.opacity}
-        style={{ mixBlendMode: toCssMixBlendMode(element.blendMode) }}
-      >
-        {imageIsReady ? (
-          element.presentation === 'tile' ? (
-            <rect
-              x={bounds.x}
-              y={bounds.y}
-              width={bounds.width}
-              height={bounds.height}
-              fill={`url(#${patternId})`}
-            />
+      <g clipPath={`url(#${clipId})`}>
+        <g
+          data-element-id={element.id}
+          data-image-status={status}
+          data-opacity={element.opacity}
+          data-blend-mode={element.blendMode}
+          data-image-presentation={element.presentation}
+          data-image-mask={element.frame.mask.kind}
+          opacity={element.opacity}
+          style={{ mixBlendMode: toCssMixBlendMode(element.blendMode) }}
+        >
+          {imageIsReady ? (
+            element.presentation === 'tile' ? (
+              <rect
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                fill={`url(#${patternId})`}
+              />
+            ) : element.presentation === 'cover' && coverCrop ? (
+              <svg
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                viewBox={`${coverCrop.x} ${coverCrop.y} ${coverCrop.width} ${coverCrop.height}`}
+                preserveAspectRatio="none"
+                overflow="hidden"
+              >
+                <image
+                  href={image.src}
+                  x="0"
+                  y="0"
+                  width={image.naturalWidth || image.width}
+                  height={image.naturalHeight || image.height}
+                  preserveAspectRatio="none"
+                />
+              </svg>
+            ) : (
+              <image
+                href={image.src}
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                preserveAspectRatio="none"
+              />
+            )
           ) : (
-            <image
-              href={image.src}
-              x={bounds.x}
-              y={bounds.y}
-              width={bounds.width}
-              height={bounds.height}
-              preserveAspectRatio="none"
-            />
-          )
-        ) : (
-          <>
-            <rect
-              x={bounds.x}
-              y={bounds.y}
-              width={bounds.width}
-              height={bounds.height}
-              fill="#29233A"
-            />
-            <path
-              d={`M ${bounds.x} ${bounds.y} L ${bounds.x + bounds.width} ${bounds.y + bounds.height} M ${bounds.x + bounds.width} ${bounds.y} L ${bounds.x} ${bounds.y + bounds.height}`}
-              fill="none"
-              stroke="#AFA6C8"
-              strokeWidth="6"
-            />
-          </>
-        )}
-
-        {!isSelected ? (
-          <rect
-            x={bounds.x}
-            y={bounds.y}
-            width={bounds.width}
-            height={bounds.height}
-            fill="none"
-            stroke="#746A8D"
-            strokeWidth="2"
-          />
-        ) : null}
+            <>
+              <rect
+                x={bounds.x}
+                y={bounds.y}
+                width={bounds.width}
+                height={bounds.height}
+                fill="#29233A"
+              />
+              <path
+                d={`M ${bounds.x} ${bounds.y} L ${bounds.x + bounds.width} ${bounds.y + bounds.height} M ${bounds.x + bounds.width} ${bounds.y} L ${bounds.x} ${bounds.y + bounds.height}`}
+                fill="none"
+                stroke="#AFA6C8"
+                strokeWidth="6"
+              />
+            </>
+          )}
+        </g>
       </g>
+      <SvgImageFrameBorder element={element} bounds={bounds} />
 
       {isSelected ? (
         <rect
@@ -196,6 +309,55 @@ function ShapeGradientDefinition({
   )
 }
 
+function MinimapSpeechBalloon({
+  element,
+  bounds,
+  isSelected,
+}: {
+  readonly element: SpeechBalloonElement
+  readonly bounds: ElementBounds
+  readonly isSelected: boolean
+}) {
+  const path = getSpeechBalloonPath(bounds, element.cornerRadius, element.tail)
+
+  if (!path) return null
+
+  return (
+    <>
+      <path
+        data-element-id={element.id}
+        data-element-type="speech-balloon"
+        d={path.pathData}
+        fill={element.fill}
+        stroke={element.stroke}
+        strokeWidth={element.strokeWidth}
+        opacity={element.opacity}
+        style={{ mixBlendMode: toCssMixBlendMode(element.blendMode) }}
+        strokeLinejoin="round"
+      />
+      <rect
+        x={bounds.x + bounds.width * 0.24}
+        y={bounds.y + bounds.height * 0.42}
+        width={bounds.width * 0.52}
+        height={Math.max(bounds.height * 0.1, 8)}
+        rx="4"
+        fill={element.textFill}
+        opacity={element.opacity * 0.75}
+      />
+      {isSelected ? (
+        <path
+          data-selection-outline-for={element.id}
+          d={path.pathData}
+          fill="none"
+          stroke="#65E4FF"
+          strokeWidth="12"
+          strokeLinejoin="round"
+        />
+      ) : null}
+    </>
+  )
+}
+
 function MinimapElement({
   element,
   bounds,
@@ -206,12 +368,18 @@ function MinimapElement({
   const visualStyle = {
     mixBlendMode: toCssMixBlendMode(element.blendMode),
   }
+  const elementTransform = getSvgElementTransform(element, bounds)
 
   if (element.type === 'text') {
     const textPreviewHeight = Math.max(bounds.height * 0.38, 12)
 
     return (
-      <>
+      <g
+        transform={elementTransform}
+        data-rotation={element.transform.rotationDegrees}
+        data-flip-x={element.transform.flipX}
+        data-flip-y={element.transform.flipY}
+      >
         <g
           data-element-id={element.id}
           data-opacity={element.opacity}
@@ -242,19 +410,43 @@ function MinimapElement({
             strokeWidth="12"
           />
         ) : null}
-      </>
+      </g>
     )
   }
 
   if (element.type === 'image') {
     return (
-      <MinimapImageElement
-        element={element}
-        bounds={bounds}
-        sourceUrl={imageSourceUrl}
-        isSelected={isSelected}
-        definitionId={definitionId}
-      />
+      <g
+        transform={elementTransform}
+        data-rotation={element.transform.rotationDegrees}
+        data-flip-x={element.transform.flipX}
+        data-flip-y={element.transform.flipY}
+      >
+        <MinimapImageElement
+          element={element}
+          bounds={bounds}
+          sourceUrl={imageSourceUrl}
+          isSelected={isSelected}
+          definitionId={definitionId}
+        />
+      </g>
+    )
+  }
+
+  if (element.type === 'speech-balloon') {
+    return (
+      <g
+        transform={elementTransform}
+        data-rotation={element.transform.rotationDegrees}
+        data-flip-x={element.transform.flipX}
+        data-flip-y={element.transform.flipY}
+      >
+        <MinimapSpeechBalloon
+          element={element}
+          bounds={bounds}
+          isSelected={isSelected}
+        />
+      </g>
     )
   }
 
@@ -265,7 +457,12 @@ function MinimapElement({
 
   if (element.shape === 'ellipse') {
     return (
-      <>
+      <g
+        transform={elementTransform}
+        data-rotation={element.transform.rotationDegrees}
+        data-flip-x={element.transform.flipX}
+        data-flip-y={element.transform.flipY}
+      >
         <ShapeGradientDefinition
           element={element}
           definitionId={definitionId}
@@ -300,12 +497,17 @@ function MinimapElement({
             strokeWidth="12"
           />
         ) : null}
-      </>
+      </g>
     )
   }
 
   return (
-    <>
+    <g
+      transform={elementTransform}
+      data-rotation={element.transform.rotationDegrees}
+      data-flip-x={element.transform.flipX}
+      data-flip-y={element.transform.flipY}
+    >
       <ShapeGradientDefinition
         element={element}
         definitionId={definitionId}
@@ -342,7 +544,7 @@ function MinimapElement({
           strokeWidth="12"
         />
       ) : null}
-    </>
+    </g>
   )
 }
 
@@ -406,9 +608,14 @@ export function EpisodeMinimap() {
     beginDrag: boolean,
   ) => {
     const bounds = event.currentTarget.getBoundingClientRect()
-    const pointerX = event.clientX - bounds.left
-    const pointerY = event.clientY - bounds.top
-    const minimapDimensions = { width: bounds.width, height: bounds.height }
+    const pointerX =
+      event.clientX - bounds.left - event.currentTarget.clientLeft
+    const pointerY =
+      event.clientY - bounds.top - event.currentTarget.clientTop
+    const minimapDimensions = {
+      width: event.currentTarget.clientWidth,
+      height: event.currentTarget.clientHeight,
+    }
     const episodeDimensions = {
       width: episode.logicalWidth,
       height: episode.logicalHeight,
@@ -514,6 +721,7 @@ export function EpisodeMinimap() {
         data-image-element-count={resolvedImageAssets.size}
         data-visible-image-element-count={visibleImageElementCount}
         data-missing-image-element-count={missingImageElementCount}
+        data-aspect-fit="contain"
         onKeyDown={handleKeyDown}
         onPointerDown={(event) => navigateFromPointer(event, true)}
         onPointerMove={(event) => {
@@ -533,10 +741,26 @@ export function EpisodeMinimap() {
       >
         <svg
           viewBox={`0 0 ${episode.logicalWidth} ${episode.logicalHeight}`}
-          preserveAspectRatio="none"
+          preserveAspectRatio="xMidYMid meet"
           style={{ isolation: 'isolate' }}
           aria-hidden="true"
         >
+          <defs>
+            <pattern
+              id="minimap-transparency-grid"
+              width="80"
+              height="80"
+              patternUnits="userSpaceOnUse"
+            >
+              <rect width="80" height="80" fill="#d9d4df" />
+              <path d="M0 0h40v40H0ZM40 40h40v40H40Z" fill="#eeeaf1" />
+            </pattern>
+          </defs>
+          <rect
+            width={episode.logicalWidth}
+            height={episode.logicalHeight}
+            fill="url(#minimap-transparency-grid)"
+          />
           {baseColor ? (
             <rect
               data-testid="minimap-base"
