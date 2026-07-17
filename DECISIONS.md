@@ -310,6 +310,14 @@ Consequences: Bump the episode document to format v4 and implement one explicit 
 
 Validation record: 214 unit tests across 11 files, strict typecheck, ESLint, production build, four Chromium stories, responsive overlay checks at 1440 × 900, 1280 × 720, and 1024 × 768, and the public-safe `docs/progress/2026-07-15-persistent-asset-library.png` visual checkpoint pass. The focused upload story samples underlying canvas pixels to prove source alpha, then verifies uploaded-image resize through undo/redo, Save, reload, and Reopen. Katherine authorized publication of the complete passing stack to `main`; feature commit `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7` was published July 15 and verified as both local and remote `main` immediately after the push.
 
+## 2026-07-16: Merge My Library into Uploads
+
+Decision: Remove the redundant **My Library** rail destination. **Uploads** is the single personal asset-library drawer and contains **All**, **Unsorted**, and creator-named category filters. Uploading while a creator category is selected stores the source there; uploading from All or Unsorted stores it in Unsorted. Built-in Speech Balloons, Decorations, and Splatters remain separate fixed rail destinations.
+
+Reason: Uploads and My Library exposed the same imported-source records, so the distinction felt like duplicate navigation rather than two useful tools. One drawer matches the creator's mental model while preserving every category-management and reusable-source capability.
+
+Consequences: The rail has four bounded destinations. Category deletion and explicit source moves return assets to Unsorted. The underlying `AssetRepository`, stable source IDs, image bytes, placed elements, save/reopen behavior, and portable project format do not change.
+
 ## 2026-07-15: Approve direct placement and a bounded format-v5 appearance model
 
 Decision: Make the next creator-workflow `/goal` five separately testable slices: native Asset Library drag-to-canvas placement; a format-v5 shared opacity foundation; vertical two-stop Background gradients/fades; repeated texture presentation for imported images; and exactly Normal, Multiply, Screen, Overlay, and Soft Light blend modes. Clicking an asset remains the accessible viewport-centered fallback. Real PNG/JPEG/WebP import, unchanged local source storage, per-pixel alpha, and ordinary Background-plane image placement are already implemented and must be preserved rather than rebuilt. Background plane 1 remains the pinned color-only base; imported background photos belong on ordinary Background planes 2 and later.

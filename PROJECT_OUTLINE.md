@@ -103,7 +103,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Large main editing canvas on the left.
 - Full-height right sidebar reaching the top of the window, with the minimap above the layers panel.
 - Narrow left **Add** rail that opens an **Asset Library** drawer without permanently taking space from the story canvas.
-- A fixed implemented rail for **Uploads**, **Speech Balloons**, **Decorations**, **Splatters**, and **My Library**. Creator-named categories live inside My Library; add **AI Generated** only when that future mode actually exists.
+- A fixed implemented rail for **Uploads**, **Speech Balloons**, **Decorations**, and **Splatters**. Uploads contains **All**, **Unsorted**, and creator-named category filters; add **AI Generated** only when that future mode actually exists.
 - Fixed **Background**, **Content**, and **Foreground** composition-group controls centered above the story canvas without persistent instruction copy competing for that bar.
 - Episode title and reset/project controls aligned over the canvas rather than consuming the top of the right inspector. The title text itself is the edit target, with no permanent pencil, input border, or cursor until clicked. Its label and inline input keep the same anchored footprint so entering edit mode does not shift the header. Enter or leaving the field saves, Escape cancels, blank titles are rejected, and the field follows WEBTOON's observed 60-character limit.
 - Clear controls for project, episode, import, preview, save, and export.
@@ -158,7 +158,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 ### 5. Add rail and Asset Library
 
 - Keep the collapsed left rail visible as a compact set of category buttons and open the selected category in the Asset Library drawer.
-- Use **Uploads** for all creator-imported files; use separate fixed categories for built-in speech balloons, decorations, and splatters, plus creator-named categories inside **My Library**.
+- Use **Uploads** for all creator-imported files, with **All**, **Unsorted**, and creator-named filters inside its drawer; use separate fixed rail categories for built-in speech balloons, decorations, and splatters.
 - Show asset thumbnails and names inside the selected category.
 - Collapse the drawer to preserve canvas space, and prefer overlay behavior when display width is constrained.
 - Clicking an asset creates an independently editable element centered in the current viewport on the active numbered plane, and native internal drag-to-canvas placement creates the same element beneath the pointer. The click path remains the accessible fallback.

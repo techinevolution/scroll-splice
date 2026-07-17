@@ -227,8 +227,14 @@ test('places reusable assets and preserves their local sources across the docume
   ).toHaveAttribute('data-image-status', 'ready')
 
   await page
-    .getByRole('button', { name: 'My Library', exact: true })
+    .getByRole('button', { name: 'Uploads', exact: true })
     .click()
+  await expect(
+    page.getByRole('button', { name: 'All', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.getByRole('button', { name: 'Unsorted', exact: true }),
+  ).toBeVisible()
   const categoryName = page.getByLabel('New category name')
   await expect(categoryName).toBeEnabled()
   await categoryName.fill('Effects')
@@ -242,6 +248,11 @@ test('places reusable assets and preserves their local sources across the docume
     mimeType: 'image/png',
     buffer: createTransparentPng(),
   })
+  await expect(importedAsset).toBeVisible()
+  await page.getByRole('button', { name: 'Unsorted', exact: true }).click()
+  await expect(importedAsset).toHaveCount(0)
+  await expect(page.getByText('No unsorted images yet.')).toBeVisible()
+  await creatorCategory.click()
   await expect(importedAsset).toBeVisible()
 
   // This compositing proof intentionally relies on the initial fit-width view:
@@ -393,7 +404,7 @@ test('places reusable assets and preserves their local sources across the docume
   )
 
   await page
-    .getByRole('button', { name: 'My Library', exact: true })
+    .getByRole('button', { name: 'Uploads', exact: true })
     .click()
   await expect(creatorCategory).toBeVisible()
   await creatorCategory.click()
@@ -406,7 +417,7 @@ test('places reusable assets and preserves their local sources across the docume
   await expect(uploadedRow).toHaveCount(0)
 
   await page
-    .getByRole('button', { name: 'My Library', exact: true })
+    .getByRole('button', { name: 'Uploads', exact: true })
     .click()
   await expect(creatorCategory).toHaveAttribute('aria-pressed', 'true')
   await expect(importedAsset).toBeVisible()
@@ -428,7 +439,7 @@ test('places reusable assets and preserves their local sources across the docume
   )
 
   await page
-    .getByRole('button', { name: 'My Library', exact: true })
+    .getByRole('button', { name: 'Uploads', exact: true })
     .click()
   await expect(creatorCategory).toHaveAttribute('aria-pressed', 'true')
   await expect(importedAsset).toBeVisible()
@@ -751,7 +762,6 @@ test('keeps the Asset Library as a responsive overlay beside its 58px rail', asy
     'Speech Balloons',
     'Decorations',
     'Splatters',
-    'My Library',
   ]
 
   for (const viewport of [

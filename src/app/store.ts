@@ -3001,7 +3001,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       createAssetLibraryRefreshPatch(
         state,
         result.snapshot,
-        `Deleted “${category.name}”. Its assets are now in Uploads.`,
+        `Deleted “${category.name}”. Its assets are now in Unsorted.`,
       ),
     )
     return true
@@ -3118,7 +3118,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     ) {
       set({
         assetLibraryMessage:
-          'Choose an existing My Library category before uploading.',
+          'Choose an existing Uploads category before uploading.',
         assetLibraryMessageKind: 'error',
       })
       return false
@@ -3488,7 +3488,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return false
     }
 
-    const destinationName = targetCategory?.name ?? 'Uploads'
+    const destinationName = targetCategory?.name ?? 'Unsorted'
     set(
       createAssetLibraryRefreshPatch(
         state,

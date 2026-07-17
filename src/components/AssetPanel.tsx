@@ -21,10 +21,12 @@ import {
 } from '../assets'
 import { getLayerPlaneById } from '../core/episode'
 
-type AssetLibraryCategoryId =
-  | 'uploads'
-  | BuiltInAssetCategoryId
-  | 'my-library'
+type AssetLibraryCategoryId = 'uploads' | BuiltInAssetCategoryId
+
+type UploadFilter =
+  | { readonly kind: 'all' }
+  | { readonly kind: 'unsorted' }
+  | { readonly kind: 'category'; readonly categoryId: string }
 
 const ASSET_LIBRARY_CATEGORIES = [
   { id: 'uploads', label: 'Uploads', accessibleLabel: 'Uploads', icon: '⇧' },
@@ -46,12 +48,6 @@ const ASSET_LIBRARY_CATEGORIES = [
     accessibleLabel: 'Splatters',
     icon: '✺',
   },
-  {
-    id: 'my-library',
-    label: 'My Library',
-    accessibleLabel: 'My Library',
-    icon: '▦',
-  },
 ] as const satisfies readonly {
   readonly id: AssetLibraryCategoryId
   readonly label: string
@@ -64,7 +60,7 @@ const CATEGORY_COPY: Readonly<
 > = {
   uploads: {
     title: 'Uploads',
-    note: 'PNG, JPEG, or WebP source files stay in this browser for reuse.',
+    note: 'Upload once, then organize reusable PNG, JPEG, or WebP images into your own categories.',
   },
   'speech-balloons': {
     title: 'Speech Balloons',
@@ -77,10 +73,6 @@ const CATEGORY_COPY: Readonly<
   splatters: {
     title: 'Splatters',
     note: 'Transparent ink effects that can sit above or behind comic art.',
-  },
-  'my-library': {
-    title: 'My Library',
-    note: 'Create personal categories, then upload reusable images into them.',
   },
 }
 
@@ -142,9 +134,9 @@ export function AssetPanel() {
   )
   const [activeCategoryId, setActiveCategoryId] =
     useState<AssetLibraryCategoryId>('uploads')
-  const [selectedCreatorCategoryId, setSelectedCreatorCategoryId] = useState<
-    string | null
-  >(null)
+  const [uploadFilter, setUploadFilter] = useState<UploadFilter>({
+    kind: 'all',
+  })
   const [categoryNameDraft, setCategoryNameDraft] = useState('')
   const uploadInputId = useId()
   const categoryNameInputId = useId()
@@ -166,28 +158,22 @@ export function AssetPanel() {
         : [],
     [activeCategoryId],
   )
-  const selectedCreatorCategory = creatorCategories.find(
-    ({ id }) => id === selectedCreatorCategoryId,
-  )
-  const effectiveSelectedCreatorCategoryId =
-    selectedCreatorCategory?.id ?? null
-  const visibleImportedImages = useMemo(() => {
-    if (
-      activeCategoryId !== 'my-library' ||
-      effectiveSelectedCreatorCategoryId === null
-    ) {
-      return importedImages
-    }
-
-    return importedImages.filter(
-      ({ creatorCategoryId }) =>
-        creatorCategoryId === effectiveSelectedCreatorCategoryId,
-    )
-  }, [
-    activeCategoryId,
-    effectiveSelectedCreatorCategoryId,
-    importedImages,
-  ])
+  const selectedCreatorCategory =
+    uploadFilter.kind === 'category'
+      ? creatorCategories.find(({ id }) => id === uploadFilter.categoryId)
+      : undefined
+  const effectiveUploadFilter: UploadFilter =
+    uploadFilter.kind === 'category' && !selectedCreatorCategory
+      ? { kind: 'all' }
+      : uploadFilter
+  const visibleImportedImages =
+    effectiveUploadFilter.kind === 'all'
+      ? importedImages
+      : importedImages.filter(({ creatorCategoryId }) =>
+          effectiveUploadFilter.kind === 'unsorted'
+            ? creatorCategoryId === null
+            : creatorCategoryId === effectiveUploadFilter.categoryId,
+        )
   const selectedCreatorCategoryIndex = selectedCreatorCategory
     ? creatorCategories.findIndex(({ id }) => id === selectedCreatorCategory.id)
     : -1
@@ -228,7 +214,7 @@ export function AssetPanel() {
 
     if (createdCategoryId) {
       setCategoryNameDraft('')
-      setSelectedCreatorCategoryId(createdCategoryId)
+      setUploadFilter({ kind: 'category', categoryId: createdCategoryId })
     }
   }
 
@@ -237,8 +223,8 @@ export function AssetPanel() {
 
     await importImageAsset(
       file,
-      activeCategoryId === 'my-library'
-        ? effectiveSelectedCreatorCategoryId
+      effectiveUploadFilter.kind === 'category'
+        ? effectiveUploadFilter.categoryId
         : null,
     )
   }
@@ -274,7 +260,7 @@ export function AssetPanel() {
     if (!confirmed) return
 
     const deleted = await deleteCreatorCategory(selectedCreatorCategory.id)
-    if (deleted) setSelectedCreatorCategoryId(null)
+    if (deleted) setUploadFilter({ kind: 'unsorted' })
   }
 
   const handleRenameImportedSource = async (
@@ -392,7 +378,7 @@ export function AssetPanel() {
               : 'Select a numbered plane before placing an asset.'}
           </p>
 
-          {activeCategoryId === 'my-library' ? (
+          {activeCategoryId === 'uploads' ? (
             <>
               <form
                 className="creator-category-form"
@@ -429,10 +415,18 @@ export function AssetPanel() {
                 <button
                   className="creator-category-chip"
                   type="button"
-                  aria-pressed={effectiveSelectedCreatorCategoryId === null}
-                  onClick={() => setSelectedCreatorCategoryId(null)}
+                  aria-pressed={effectiveUploadFilter.kind === 'all'}
+                  onClick={() => setUploadFilter({ kind: 'all' })}
                 >
                   All
+                </button>
+                <button
+                  className="creator-category-chip"
+                  type="button"
+                  aria-pressed={effectiveUploadFilter.kind === 'unsorted'}
+                  onClick={() => setUploadFilter({ kind: 'unsorted' })}
+                >
+                  Unsorted
                 </button>
                 {creatorCategories.map((category) => (
                   <button
@@ -440,10 +434,16 @@ export function AssetPanel() {
                     type="button"
                     key={category.id}
                     aria-pressed={
-                      effectiveSelectedCreatorCategoryId === category.id
+                      effectiveUploadFilter.kind === 'category' &&
+                      effectiveUploadFilter.categoryId === category.id
                     }
                     title={category.name}
-                    onClick={() => setSelectedCreatorCategoryId(category.id)}
+                    onClick={() =>
+                      setUploadFilter({
+                        kind: 'category',
+                        categoryId: category.id,
+                      })
+                    }
                   >
                     {category.name}
                   </button>
@@ -520,14 +520,13 @@ export function AssetPanel() {
             </>
           ) : null}
 
-          {activeCategoryId === 'uploads' || activeCategoryId === 'my-library' ? (
+          {activeCategoryId === 'uploads' ? (
             <label className="asset-upload-control" htmlFor={uploadInputId}>
               <strong>Upload image</strong>
               <span>
-                {activeCategoryId === 'my-library' &&
-                effectiveSelectedCreatorCategoryId
+                {effectiveUploadFilter.kind === 'category'
                   ? 'The source will be saved in the selected category.'
-                  : 'The source will be saved in Uploads.'}
+                  : 'The source will be saved in Unsorted.'}
               </span>
               <input
                 id={uploadInputId}
@@ -616,8 +615,7 @@ export function AssetPanel() {
             </div>
           ) : null}
 
-          {(activeCategoryId === 'uploads' || activeCategoryId === 'my-library') &&
-          visibleImportedImages.length > 0 ? (
+          {activeCategoryId === 'uploads' && visibleImportedImages.length > 0 ? (
             <div className="asset-grid" aria-label="Imported assets">
               {visibleImportedImages.map((asset) => (
                 <article
@@ -689,7 +687,7 @@ export function AssetPanel() {
                           )
                         }
                       >
-                        <option value="">Uploads</option>
+                        <option value="">Unsorted</option>
                         {creatorCategories.map((category) => (
                           <option value={category.id} key={category.id}>
                             {category.name}
@@ -740,13 +738,13 @@ export function AssetPanel() {
             </div>
           ) : null}
 
-          {(activeCategoryId === 'uploads' || activeCategoryId === 'my-library') &&
-          visibleImportedImages.length === 0 ? (
+          {activeCategoryId === 'uploads' && visibleImportedImages.length === 0 ? (
             <p className="asset-empty-state">
-              {activeCategoryId === 'my-library' &&
-              effectiveSelectedCreatorCategoryId
+              {effectiveUploadFilter.kind === 'category'
                 ? 'This category is empty. Upload its first reusable image.'
-                : 'No uploaded images yet.'}
+                : effectiveUploadFilter.kind === 'unsorted'
+                  ? 'No unsorted images yet.'
+                  : 'No uploaded images yet.'}
             </p>
           ) : null}
 

@@ -60,6 +60,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Publish the implemented, validated, and screenshot-documented Asset Library stack—Uploads, original Speech Balloons, Decorations, Splatters, creator categories, image placement, proportional resize, atomic local source persistence, and v3-to-v4 opening—to `main` in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; local and remote heads matched after the July 15 push.
 - [x] Implement and browser-test the July 15 review corrections: top-level menus above the Asset Library, compact visible **Decor** rail text, and active-category toggle-close.
 - [x] Publish the validated review corrections and public-safe `2026-07-15-menu-and-asset-rail-polish.png` evidence to `main` in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`; local and remote heads matched after the push.
+- [x] Merge the redundant My Library rail destination into Uploads; keep one personal-library drawer with **All**, **Unsorted**, and creator-named filters.
 - [x] Implement and validate native Asset Library drag-to-canvas placement through the shared pan/zoom coordinate seam while preserving click-to-place as the accessible fallback.
 - [x] Implement and validate the bounded v3/v4-to-v5 appearance transition plus universal element opacity, one-step slider history, zero-opacity Layers recovery, and multiplicative source alpha.
 - [x] Implement and validate a Background color region's vertical two-stop color/alpha fill for both gradients and fades, with matching canvas and minimap output.
