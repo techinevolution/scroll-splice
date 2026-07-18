@@ -225,7 +225,7 @@ test('supports a creator story from blank episode through saved reader preview',
   )
   await expect(
     page.getByRole('button', {
-      name: 'Edit episode title: Signal in the Fog',
+      name: 'Edit episode title: The Light We Planted',
       exact: true,
     }),
   ).toBeVisible()

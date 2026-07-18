@@ -18,20 +18,23 @@ import {
 } from './buildWeekEpisode'
 
 describe('buildWeekEpisode', () => {
-  it('contains six original story beats made only from shapes and text', () => {
+  it('contains six original story beats with matching generated story art', () => {
     expect(BUILD_WEEK_BEATS).toHaveLength(6)
-    expect(buildWeekEpisode.elements).toHaveLength(30)
+    expect(buildWeekEpisode.elements).toHaveLength(36)
     expect(buildWeekEpisode.elements.filter(({ type }) => type === 'shape')).toHaveLength(
       18,
     )
     expect(buildWeekEpisode.elements.filter(({ type }) => type === 'text')).toHaveLength(
       12,
     )
+    expect(buildWeekEpisode.elements.filter(({ type }) => type === 'image')).toHaveLength(
+      6,
+    )
 
     for (const beat of BUILD_WEEK_BEATS) {
       expect(
         buildWeekEpisode.elements.filter(({ id }) => id.startsWith(`${beat.id}-`)),
-      ).toHaveLength(5)
+      ).toHaveLength(6)
     }
   })
 
@@ -63,7 +66,7 @@ describe('buildWeekEpisode', () => {
           getLayerPlaneById(buildWeekEpisode, layerPlaneId)?.compositionGroup ===
           'foreground',
       ),
-    ).toHaveLength(12)
+    ).toHaveLength(18)
     expect(
       buildWeekEpisode.elements.every(({ layerPlaneId }) =>
         Boolean(getLayerPlaneById(buildWeekEpisode, layerPlaneId)),
@@ -131,7 +134,7 @@ describe('buildWeekEpisode', () => {
         ({ layerPlaneId }) =>
           layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
       ),
-    ).toHaveLength(12)
+    ).toHaveLength(18)
   })
 
   it('renders by fixed group, then plane, then local stacking order', () => {
@@ -145,7 +148,7 @@ describe('buildWeekEpisode', () => {
 
     expect(orderedGroups).toEqual([
       ...Array(18).fill('content'),
-      ...Array(12).fill('foreground'),
+      ...Array(18).fill('foreground'),
     ])
 
     for (const compositionGroup of COMPOSITION_GROUPS) {
@@ -255,8 +258,10 @@ describe('buildWeekEpisode', () => {
     expect(restored).toEqual(buildWeekEpisode)
     expect(serialized).not.toMatch(/root\s*&\s*table/i)
     expect(
-      buildWeekEpisode.elements.every(
-        ({ assetReference }) => assetReference.kind === 'synthetic',
+      buildWeekEpisode.elements.filter(({ type }) => type === 'image').every(
+        ({ assetReference }) =>
+          assetReference.kind === 'built-in' &&
+          assetReference.assetId.startsWith('demo-light-we-planted-panel-'),
       ),
     ).toBe(true)
   })

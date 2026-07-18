@@ -88,6 +88,9 @@ function cloneVersion4Episode(): MutableRecord {
 function cloneLegacyEpisode(): MutableRecord {
   const episode = cloneVersion4Episode()
   episode.formatVersion = LEGACY_EPISODE_FORMAT_VERSION
+  episode.elements = readRecordArray(episode, 'elements').filter(
+    ({ type }) => type !== 'image',
+  )
   return episode
 }
 

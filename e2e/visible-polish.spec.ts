@@ -43,7 +43,7 @@ test('fits minimap geometry and exposes constrained inspector and help controls'
 
   expect(workspaceBounds.x + workspaceBounds.width).toBeGreaterThan(1000)
   expect(minimapBaseBounds.width / minimapBaseBounds.height).toBeCloseTo(
-    800 / 4_600,
+    800 / 7_360,
     2,
   )
   expect(minimapBaseBounds.width).toBeLessThan(minimapBounds.width - 8)

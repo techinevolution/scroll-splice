@@ -1,5 +1,6 @@
 import {
   DEFAULT_ELEMENT_OVERFLOW,
+  DEFAULT_IMAGE_FRAME,
   EPISODE_FORMAT_VERSION,
   EPISODE_LOGICAL_WIDTH,
   IDENTITY_ELEMENT_TRANSFORM,
@@ -7,6 +8,7 @@ import {
   type ElementBounds,
   type EpisodeDocument,
   type EpisodeElement,
+  type ImageElement,
   type LayerPlane,
   type ShapeFill,
   type ShapeElement,
@@ -15,7 +17,7 @@ import {
 
 const TOP_MARGIN = 120
 const BOTTOM_MARGIN = 160
-const BEAT_HEIGHT = 620
+const BEAT_HEIGHT = 1080
 const BEAT_GAP = 120
 const BEAT_X = 40
 const BEAT_WIDTH = 720
@@ -35,6 +37,7 @@ interface FixtureBeat {
   readonly panelColor: string
   readonly titleColor: string
   readonly captionColor: string
+  readonly imageAssetId: string
   readonly accents: readonly [FixtureShape, FixtureShape]
 }
 
@@ -46,6 +49,7 @@ export const BUILD_WEEK_BEATS = [
     panelColor: '#211934',
     titleColor: '#F7F1FF',
     captionColor: '#C8B9E1',
+    imageAssetId: 'demo-light-we-planted-panel-01',
     accents: [
       {
         shape: 'ellipse',
@@ -67,6 +71,7 @@ export const BUILD_WEEK_BEATS = [
     panelColor: '#14273D',
     titleColor: '#EDF7FF',
     captionColor: '#B8D1E5',
+    imageAssetId: 'demo-light-we-planted-panel-02',
     accents: [
       {
         shape: 'rectangle',
@@ -88,6 +93,7 @@ export const BUILD_WEEK_BEATS = [
     panelColor: '#143734',
     titleColor: '#ECFFFA',
     captionColor: '#B7DCD5',
+    imageAssetId: 'demo-light-we-planted-panel-03',
     accents: [
       {
         shape: 'rectangle',
@@ -110,6 +116,7 @@ export const BUILD_WEEK_BEATS = [
     panelColor: '#3B2430',
     titleColor: '#FFF2F7',
     captionColor: '#E3C0CC',
+    imageAssetId: 'demo-light-we-planted-panel-04',
     accents: [
       {
         shape: 'rectangle',
@@ -132,6 +139,7 @@ export const BUILD_WEEK_BEATS = [
     panelColor: '#352A13',
     titleColor: '#FFF9E8',
     captionColor: '#E4D2A0',
+    imageAssetId: 'demo-light-we-planted-panel-05',
     accents: [
       {
         shape: 'ellipse',
@@ -152,6 +160,7 @@ export const BUILD_WEEK_BEATS = [
     panelColor: '#362449',
     titleColor: '#FFF4FF',
     captionColor: '#DDC8E8',
+    imageAssetId: 'demo-light-we-planted-panel-06',
     accents: [
       {
         shape: 'rectangle',
@@ -341,7 +350,32 @@ function createBeatElements(
     assetReference: syntheticReference,
   }
 
-  return [panel, ...accents, title, caption]
+  const storyPanel: ImageElement = {
+    id: beat.id + '-story-image',
+    name: layerPrefix + ' · Story art',
+    layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
+    type: 'image',
+    bounds: {
+      x: BEAT_X,
+      y: yOffset,
+      width: BEAT_WIDTH,
+      height: BEAT_HEIGHT,
+    },
+    presentation: 'single',
+    frame: DEFAULT_IMAGE_FRAME,
+    opacity: 1,
+    blendMode: 'normal',
+    ...defaultElementGeometry,
+    visible: true,
+    locked: false,
+    zIndex: baseZIndex + 3,
+    assetReference: {
+      kind: 'built-in',
+      assetId: beat.imageAssetId,
+    },
+  }
+
+  return [panel, ...accents, title, caption, storyPanel]
 }
 
 const logicalHeight =
@@ -351,9 +385,9 @@ const logicalHeight =
   BOTTOM_MARGIN
 
 export const buildWeekEpisode: EpisodeDocument = {
-  id: 'episode-build-week-signal-in-the-fog',
+  id: 'episode-build-week-the-light-we-planted',
   formatVersion: EPISODE_FORMAT_VERSION,
-  name: 'Signal in the Fog',
+  name: 'The Light We Planted',
   logicalWidth: EPISODE_LOGICAL_WIDTH,
   logicalHeight,
   compositionGroupVisibility: {

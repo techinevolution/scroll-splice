@@ -959,7 +959,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(contentGroup).toHaveAttribute('aria-pressed', 'true')
   await expect(contentPlane1).toHaveAttribute('aria-pressed', 'true')
   await expect(
-    page.getByText('Signal in the Fog', { exact: true }),
+    page.getByText('The Light We Planted', { exact: true }),
   ).toBeVisible()
   await expect(selectionStatus).toHaveText('Nothing selected')
   await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')

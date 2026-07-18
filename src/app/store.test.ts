@@ -221,7 +221,7 @@ describe('editor store', () => {
     )
 
     useEditorStore.getState().setViewportY(99_000)
-    expect(useEditorStore.getState().viewportY).toBe(3_700)
+    expect(useEditorStore.getState().viewportY).toBe(buildWeekEpisode.logicalHeight - 900)
 
     useEditorStore.getState().setViewportY(0)
     useEditorStore
@@ -1340,7 +1340,10 @@ describe('editor store', () => {
 
     const placed = useEditorStore
       .getState()
-      .episode.elements.filter(({ type }) => type === 'image')
+      .episode.elements.filter(
+        ({ type, assetReference }) =>
+          type === 'image' && assetReference.kind === 'imported',
+      )
     expect(placed.map(({ id }) => id)).toEqual([
       'image-element-1',
       'image-element-2',

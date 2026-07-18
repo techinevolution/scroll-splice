@@ -87,7 +87,7 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [ ] The base judge experience remains free and usable without OpenAI login, API credits, or model access.
 - [ ] Only synthetic prompts and references are sent; no Root & Table production art or other private creative material is uploaded.
 - [ ] No API key, OAuth token, reusable provider credential, or private response data appears in the browser bundle, repository, logs, screenshots, or video.
-- [ ] Generated assets record provenance, and the demo distinguishes implemented behavior from the later full-autonomy vision.
+- [x] Generated assets record provenance, and the demo distinguishes implemented behavior from the later full-autonomy vision. The six-panel **The Light We Planted** fixture was generated with OpenAI image generation on July 17 from original text prompts without private or third-party reference art; optimized copies live under public/demo/the-light-we-planted/.
 - [ ] The integration follows current OpenAI terms, usage policies, model availability, and an officially supported authorization path.
 
 ## 5. Working-project requirements
@@ -95,7 +95,7 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [x] The project installs from documented commands on its specified platform.
 - [ ] The project runs consistently and matches the text description and video.
 - [x] README contains verified setup, run, validation, supported-browser, and sample-data instructions.
-- [x] The original **Signal in the Fog** sample is made from code-defined shapes and text, so judges do not need private assets.
+- [x] The default **The Light We Planted** sample combines the existing code-defined fixture elements with six original OpenAI-generated story panels; it contains no private comic art or third-party reference images.
 - [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
 - [x] The published A/B/C and later-published corrective running UIs were visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. Corrective resize handles were additionally exercised at 50%, 100%, and 200% zoom.
 - [x] The historical A/B/C Playwright story completed title validation, plane/element controls, synthetic placement, episode-height changes, freely movable and independently resizable Background regions, magnet snap/bypass, live status `x/y/w/h` and minimap previews, bounded zoom, minimap agreement, and reset. Its synthetic-only paperclip claim applies to that dated checkpoint and is superseded by the persistent Asset Library evidence below.
