@@ -1063,10 +1063,33 @@ export function moveElementInStack(
   const targetIndex =
     direction === 'backward' ? currentIndex - 1 : currentIndex + 1
 
+  return reorderElementInStack(document, elementId, targetIndex)
+}
+
+export function reorderElementInStack(
+  document: EpisodeDocument,
+  elementId: string,
+  targetIndex: number,
+): EpisodeDocument {
+  const element = document.elements.find(({ id }) => id === elementId)
+
+  if (!element || element.locked || !Number.isInteger(targetIndex)) {
+    return document
+  }
+
+  const stack = document.elements
+    .filter(({ layerPlaneId }) => layerPlaneId === element.layerPlaneId)
+    .sort(
+      (first, second) =>
+        first.zIndex - second.zIndex || first.id.localeCompare(second.id),
+    )
+  const currentIndex = stack.findIndex(({ id }) => id === elementId)
+
   if (
     currentIndex < 0 ||
     targetIndex < 0 ||
-    targetIndex >= stack.length
+    targetIndex >= stack.length ||
+    currentIndex === targetIndex
   ) {
     return document
   }

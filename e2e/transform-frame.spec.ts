@@ -14,6 +14,10 @@ test('rotates, flips, crops, masks, and frames an image consistently', async ({
 
   await page.getByRole('button', { name: 'File', exact: true }).click()
   await page.getByRole('menuitem', { name: 'New Episode' }).click()
+  await page.getByRole('button', { name: 'View', exact: true }).click()
+  await page
+    .getByRole('menuitem', { name: 'Show Details Bar', exact: true })
+    .click()
   await page
     .getByRole('button', { name: 'Speech Balloons', exact: true })
     .click()

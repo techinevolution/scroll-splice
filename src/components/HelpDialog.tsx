@@ -71,7 +71,7 @@ export function HelpDialog({ onClose }: HelpDialogProps) {
           </div>
           <div>
             <dt>Nudge selection</dt>
-            <dd>Arrow keys · Shift for 10u</dd>
+            <dd>Arrow keys · Shift for 10px</dd>
           </div>
           <div>
             <dt>Delete selection</dt>

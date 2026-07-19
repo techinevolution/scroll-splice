@@ -12,6 +12,8 @@ export interface AppMenuBarProps {
   readonly canRedo: boolean
   readonly canReopen: boolean
   readonly isInspectorOpen: boolean
+  readonly theme: 'light' | 'dark'
+  readonly showDetailsBar: boolean
   readonly onNewEpisode: () => void
   readonly onOpenLocalProject: () => void
   readonly onSave: () => void
@@ -23,6 +25,8 @@ export interface AppMenuBarProps {
   readonly onUndo: () => void
   readonly onRedo: () => void
   readonly onReaderPreview: () => void
+  readonly onSetTheme: (theme: 'light' | 'dark') => void
+  readonly onToggleDetailsBar: () => void
   readonly onToggleInspector: () => void
   readonly onOpenHelp: () => void
 }
@@ -61,6 +65,8 @@ export function AppMenuBar({
   canRedo,
   canReopen,
   isInspectorOpen,
+  theme,
+  showDetailsBar,
   onNewEpisode,
   onOpenLocalProject,
   onSave,
@@ -72,6 +78,8 @@ export function AppMenuBar({
   onUndo,
   onRedo,
   onReaderPreview,
+  onSetTheme,
+  onToggleDetailsBar,
   onToggleInspector,
   onOpenHelp,
 }: AppMenuBarProps) {
@@ -268,6 +276,20 @@ export function AppMenuBar({
   ]
   const viewItems: readonly MenuItemDefinition[] = [
     { label: 'Reader Preview', action: onReaderPreview },
+    {
+      label: 'Use Light Mode',
+      disabled: theme === 'light',
+      action: () => onSetTheme('light'),
+    },
+    {
+      label: 'Use Dark Mode',
+      disabled: theme === 'dark',
+      action: () => onSetTheme('dark'),
+    },
+    {
+      label: showDetailsBar ? 'Hide Details Bar' : 'Show Details Bar',
+      action: onToggleDetailsBar,
+    },
   ]
   const windowItems: readonly MenuItemDefinition[] = [
     {

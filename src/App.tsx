@@ -21,6 +21,34 @@ import { EditorCanvas } from './editor/EditorCanvas'
 import { LayersPanel } from './layers/LayersPanel'
 import { EpisodeMinimap } from './minimap/EpisodeMinimap'
 
+type AppTheme = 'light' | 'dark'
+
+const THEME_STORAGE_KEY = 'scrollsplice-ui-theme'
+const DETAILS_BAR_STORAGE_KEY = 'scrollsplice-details-bar'
+
+function getInitialTheme(): AppTheme {
+  if (typeof window === 'undefined') return 'dark'
+
+  try {
+    const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+    return storedTheme === 'light' || storedTheme === 'dark'
+      ? storedTheme
+      : 'dark'
+  } catch {
+    return 'dark'
+  }
+}
+
+function getInitialDetailsBarVisibility(): boolean {
+  if (typeof window === 'undefined') return false
+
+  try {
+    return window.localStorage.getItem(DETAILS_BAR_STORAGE_KEY) === 'true'
+  } catch {
+    return false
+  }
+}
+
 function constrainEpisodeNameDraft(value: string): string {
   const trimmedValue = value.trim()
 
@@ -60,7 +88,7 @@ function SelectionStatus() {
       data-height={bounds?.height ?? ''}
     >
       {selectedElement && bounds
-        ? `${selectedElementIds.length > 1 ? `${selectedElementIds.length} selected · primary: ` : ''}${selectedElement.name} · x ${Math.round(bounds.x)} · y ${Math.round(bounds.y)} · w ${Math.round(bounds.width)} · h ${Math.round(bounds.height)}`
+        ? `${selectedElementIds.length > 1 ? `${selectedElementIds.length} selected · ` : ''}x ${Math.round(bounds.x)} · y ${Math.round(bounds.y)} · w ${Math.round(bounds.width)} · h ${Math.round(bounds.height)}`
         : 'Nothing selected'}
     </span>
   )
@@ -111,6 +139,10 @@ export function App() {
   const [isEditingEpisodeName, setIsEditingEpisodeName] = useState(false)
   const [episodeNameDraft, setEpisodeNameDraft] = useState(episodeName)
   const [readerPreviewOpen, setReaderPreviewOpen] = useState(false)
+  const [theme, setTheme] = useState<AppTheme>(getInitialTheme)
+  const [showDetailsBar, setShowDetailsBar] = useState(
+    getInitialDetailsBarVisibility,
+  )
   const [isInspectorOpen, setIsInspectorOpen] = useState(true)
   const [helpOpen, setHelpOpen] = useState(false)
   const [projectManagerOpen, setProjectManagerOpen] = useState(false)
@@ -122,6 +154,25 @@ export function App() {
   useEffect(() => {
     void initializeAssetLibrary()
   }, [initializeAssetLibrary])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+    } catch {
+      // Appearance still works when browser storage is unavailable.
+    }
+  }, [theme])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        DETAILS_BAR_STORAGE_KEY,
+        String(showDetailsBar),
+      )
+    } catch {
+      // The View toggle remains usable for the current session.
+    }
+  }, [showDetailsBar])
 
   useEffect(() => {
     const handleLifecycleBoundary = () => flushRecovery()
@@ -458,7 +509,8 @@ export function App() {
 
   return (
     <main
-      className={`app-shell${isInspectorOpen ? '' : ' is-inspector-closed'}`}
+      className={`app-shell theme-${theme}${isInspectorOpen ? '' : ' is-inspector-closed'}${showDetailsBar ? ' has-details-bar' : ''}`}
+      data-theme={theme}
     >
       <header className="app-header">
         <AppMenuBar
@@ -466,6 +518,8 @@ export function App() {
           canRedo={canRedo}
           canReopen={canReopen}
           isInspectorOpen={isInspectorOpen}
+          theme={theme}
+          showDetailsBar={showDetailsBar}
           onNewEpisode={startNewEpisode}
           onOpenLocalProject={showLocalProjects}
           onSave={saveFromUi}
@@ -477,17 +531,28 @@ export function App() {
           onUndo={undo}
           onRedo={redo}
           onReaderPreview={openReaderPreview}
+          onSetTheme={setTheme}
+          onToggleDetailsBar={() =>
+            setShowDetailsBar((isVisible) => !isVisible)
+          }
           onToggleInspector={() => setIsInspectorOpen((isOpen) => !isOpen)}
           onOpenHelp={() => setHelpOpen(true)}
         />
 
         <div className="brand-lockup">
-          <span className="brand-mark" aria-hidden="true">
-            S
-          </span>
+          <img
+            className="brand-mark"
+            src="/brand/scrollsplice-mark.png?v=2"
+            alt=""
+            aria-hidden="true"
+            data-testid="brand-mark"
+          />
           <div>
             <p>Vertical comic editor</p>
-            <h1>ScrollSplice</h1>
+            <h1 aria-label="ScrollSplice">
+              <span className="brand-name-scroll">Scroll</span>
+              <span className="brand-name-splice">Splice</span>
+            </h1>
           </div>
         </div>
 
@@ -537,6 +602,28 @@ export function App() {
         </div>
 
         <div className="header-actions">
+          <span
+            className={`document-state-indicator${hasUnsavedChanges ? ' is-unsaved' : ''}`}
+            title={
+              hasUnsavedChanges
+                ? `${documentStatus}. Use File > Save to keep these changes.`
+                : documentStatus
+            }
+            aria-label={
+              hasUnsavedChanges
+                ? 'Unsaved changes. Use File, Save to keep them.'
+                : 'All changes saved locally.'
+            }
+          >
+            {hasUnsavedChanges ? 'Unsaved' : 'Saved'}
+          </span>
+          <span
+            className="sr-only"
+            data-testid="document-status"
+            aria-live="polite"
+          >
+            {documentStatus}
+          </span>
           <button
             ref={inspectorToggleRef}
             className="inspector-toggle"
@@ -614,24 +701,20 @@ export function App() {
             </div>
             <CompositionGroupControls />
           </header>
-          <EditorCanvas />
+          <EditorCanvas
+            accentColor={theme === 'light' ? '#16878A' : '#C58A5A'}
+          />
         </section>
       </div>
 
-      <footer className="status-bar">
-        <span
-          className={hasUnsavedChanges ? 'status-unsaved' : 'status-ready'}
-          data-testid="document-status"
-          aria-live="polite"
-        >
-          {documentStatus}
-        </span>
-        <div className="status-selection-area">
-          <SelectionStatus />
-          <SelectedElementAppearanceControls />
-        </div>
-        <span>800u fixed width · local browser project</span>
-      </footer>
+      {showDetailsBar ? (
+        <footer className="status-bar" data-testid="details-bar">
+          <div className="status-selection-area">
+            <SelectionStatus />
+            <SelectedElementAppearanceControls />
+          </div>
+        </footer>
+      ) : null}
 
       {readerPreviewOpen ? (
         <ReaderPreview onClose={closeReaderPreview} />

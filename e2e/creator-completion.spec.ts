@@ -3,7 +3,12 @@ import { expect, test, type Page } from '@playwright/test'
 async function useMenuItem(
   page: Page,
   menuName: 'File' | 'View',
-  itemName: 'New Episode' | 'Save' | 'Reopen Current' | 'Reader Preview',
+  itemName:
+    | 'New Episode'
+    | 'Save'
+    | 'Reopen Current'
+    | 'Reader Preview'
+    | 'Show Details Bar',
 ) {
   const trigger = page.getByRole('button', { name: menuName, exact: true })
   await trigger.click()
@@ -59,6 +64,7 @@ test('supports a creator story from blank episode through saved reader preview',
 
   // A creator begins a fresh episode and gives the workspace a meaningful name.
   await useMenuItem(page, 'File', 'New Episode')
+  await useMenuItem(page, 'View', 'Show Details Bar')
   await editEpisodeTitle(page, 'Moonlit Garden')
 
   // They organize broad visual planes before placing story content.
@@ -120,7 +126,10 @@ test('supports a creator story from blank episode through saved reader preview',
   await page.getByTestId('selected-text-font-weight').selectOption('700')
   await page.getByTestId('selected-text-alignment').selectOption('center')
   await page.getByTestId('selected-text-apply').click()
-  await expect(page.getByTestId('selection-status')).toContainText('Text 1')
+  await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
+    'data-selected-element-id',
+    'text-element-1',
+  )
 
   // Stack controls explain overlap, and Move to Plane reorganizes without
   // forcing the creator to delete and re-place anything.
@@ -175,7 +184,10 @@ test('supports a creator story from blank episode through saved reader preview',
   )
   await page.keyboard.press('Escape')
   await expect(preview).toHaveCount(0)
-  await expect(page.getByTestId('selection-status')).toContainText('Text 1')
+  await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
+    'data-selected-element-id',
+    'text-element-1',
+  )
   await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
     'data-viewport-x',
     editorViewportBeforePreview.x ?? '',

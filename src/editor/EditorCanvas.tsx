@@ -90,6 +90,7 @@ const FREEFORM_RESIZE_ANCHORS = [
 interface ElementNodeProps {
   readonly element: EpisodeElement
   readonly imageSourceUrl?: string
+  readonly accentColor: string
   readonly isSelected: boolean
   readonly isPrimarySelected: boolean
   readonly episodeLogicalWidth: number
@@ -361,6 +362,7 @@ function SpeechBalloonVisual({
 function ElementNode({
   element,
   imageSourceUrl,
+  accentColor,
   isSelected,
   isPrimarySelected,
   episodeLogicalWidth,
@@ -617,11 +619,11 @@ function ElementNode({
             y={-6}
             width={bounds.width + 12}
             height={bounds.height + 12}
-            stroke="#65E4FF"
+            stroke={accentColor}
             strokeWidth={4}
             dash={[12, 7]}
             cornerRadius={8}
-            shadowColor="#65E4FF"
+            shadowColor={accentColor}
             shadowBlur={10}
             strokeScaleEnabled={false}
             listening={false}
@@ -643,9 +645,9 @@ function ElementNode({
           anchorSize={14}
           anchorCornerRadius={3}
           anchorFill="#F7F4FF"
-          anchorStroke="#65E4FF"
+          anchorStroke={accentColor}
           anchorStrokeWidth={2}
-          borderStroke="#65E4FF"
+          borderStroke={accentColor}
           borderStrokeWidth={2}
           borderDash={[8, 5]}
           boundBoxFunc={(oldBox, newBox) =>
@@ -660,7 +662,7 @@ function ElementNode({
   )
 }
 
-export function EditorCanvas() {
+export function EditorCanvas({ accentColor }: { readonly accentColor: string }) {
   const episode = useEditorStore((state) => state.episode)
   const importedImageAssets = useEditorStore(
     (state) => state.importedImageAssets,
@@ -1082,6 +1084,7 @@ export function EditorCanvas() {
                   imageSourceUrl={
                     resolvedImageAssets.get(element.id)?.sourceUrl
                   }
+                  accentColor={accentColor}
                   isSelected={selectedElementIds.includes(element.id)}
                   isPrimarySelected={element.id === selectedElementId}
                   episodeLogicalWidth={episode.logicalWidth}

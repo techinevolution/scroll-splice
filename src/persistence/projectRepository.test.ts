@@ -38,7 +38,34 @@ class MemoryStorage implements StorageLike {
 type MutableRecord = Record<string, unknown>
 
 function cloneEpisode(): MutableRecord {
-  return JSON.parse(JSON.stringify(buildWeekEpisode)) as MutableRecord
+  const episode = JSON.parse(JSON.stringify(buildWeekEpisode)) as MutableRecord
+  const elements = readRecordArray(episode, 'elements')
+
+  episode.elements = [
+    ...elements,
+    {
+      id: 'fixture-shape-1',
+      name: 'Fixture shape',
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      type: 'shape',
+      shape: 'rectangle',
+      bounds: { x: 40, y: 60, width: 200, height: 100 },
+      fill: { kind: 'solid', color: '#123456' },
+      visible: true,
+      locked: false,
+      zIndex: 100,
+      opacity: 1,
+      blendMode: 'normal',
+      transform: IDENTITY_ELEMENT_TRANSFORM,
+      overflow: 'constrained',
+      assetReference: {
+        kind: 'synthetic',
+        generatorId: 'fixture-shape',
+      },
+    },
+  ]
+
+  return episode
 }
 
 function cloneVersion5Episode(): MutableRecord {
@@ -634,9 +661,11 @@ describe('parseEpisodeDocument', () => {
       readRecord(element.bounds).x = 800
     }],
     ['unknown shape type', (episode: MutableRecord) => {
-      const element = readRecordArray(episode, 'elements')[0]
-      if (!element) throw new Error('Missing fixture element.')
-      element.shape = 'triangle'
+      const shape = readRecordArray(episode, 'elements').find(
+        (element) => element.type === 'shape',
+      )
+      if (!shape) throw new Error('Missing fixture shape.')
+      shape.shape = 'triangle'
     }],
     ['invalid text alignment', (episode: MutableRecord) => {
       const text = readRecordArray(episode, 'elements').find(

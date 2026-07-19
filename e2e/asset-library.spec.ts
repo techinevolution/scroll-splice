@@ -179,6 +179,13 @@ async function useFileMenuItem(
   await item.click()
 }
 
+async function showDetailsBar(page: Page) {
+  await page.getByRole('button', { name: 'View', exact: true }).click()
+  await page
+    .getByRole('menuitem', { name: 'Show Details Bar', exact: true })
+    .click()
+}
+
 async function acceptDiscardDialog(page: Page, action: () => Promise<void>) {
   let dialogMessage = ''
 
@@ -198,6 +205,7 @@ test('places reusable assets and preserves their local sources across the docume
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
+  await useFileMenuItem(page, 'New Episode')
 
   const canvas = page.getByTestId('editor-canvas')
   const minimap = page.getByTestId('minimap')
@@ -450,6 +458,7 @@ test('drags built-in and imported assets to canvas points without duplicate plac
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
+  await useFileMenuItem(page, 'New Episode')
 
   const canvas = page.getByTestId('editor-canvas')
   await expect(canvas).toHaveAttribute('data-ready', 'true')
@@ -594,6 +603,7 @@ test('edits opacity, gradients, tiled textures, and blend modes through save and
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await useFileMenuItem(page, 'New Episode')
+  await showDetailsBar(page)
 
   const canvas = page.getByTestId('editor-canvas')
   const minimap = page.getByTestId('minimap')

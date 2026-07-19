@@ -79,9 +79,10 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement bounded format v6 with deterministic v3/v4/v5 defaults, transforms/lock, richer snapping, multi-selection/flat grouping, populated-plane paths, story-beat movement, image masks/crop/frame/bleed, and an atomic fitted editable speech balloon.
 - [x] Implement tall-master and deterministic PNG/JPEG slice rendering with creator-reviewed cuts, observed-profile preflight, and explicit provisional/manual-upload labeling.
 - [x] Create [FEATURE_TEST_SHEET.md](FEATURE_TEST_SHEET.md) as Katherine's coherent end-to-end review story.
-- [x] Finish the combined local closeout: 377 unit tests across 28 files, typecheck, lint, production build, and all 13 Playwright Chromium stories pass; index the editor, Reader Preview, and provisional-export screenshots.
-- [x] Record local feature commit `a26927f` and the still-unpublished state without rewriting the pre-event baseline. No push has been performed.
+- [x] Finish the big feature/UI closeout: 385 unit tests across 29 files, typecheck, lint, production build, and all 15 Playwright Chromium stories pass; index the editor, Reader Preview, provisional export, and matched dark/light release screenshots.
+- [x] Include the previously local completion work, six-image demo, dual interface, layer grips, and editor adapter in one current release without rewriting the pre-event baseline.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
+- [x] Research professional comic and webtoon speech-balloon conventions and record the complete practical editable inventory, composable design rule, and phased implementation path in [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md).
 
 ## Joint — only after the local human-editor completion goal and submission path are stable
 
@@ -92,6 +93,9 @@ Small loose actions only. Product direction and dated implementation work belong
 ## Joint — later, not Build Week scope
 
 - [x] Before the original speech-balloon asset slice: review current Clip Studio guidance and professional lettering conventions; use only a small neutral original set and treat meanings as conventions rather than rules. Text was deferred at that historical checkpoint; independent text and an atomic editable balloon now exist.
+- [ ] After the current completion build and submission path are stable: approve a dedicated editable-balloon preset goal using [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md), beginning with its bounded core preset foundation rather than attempting every relationship and lettering tool in one risky slice.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
 - [ ] After that upload verification and a separate export-slice approval: implement creator-reviewed deterministic slicing and preflight against a verified `ExportProfile`; do not promise that WEBTOON will preserve accepted files without optimization.
 - [ ] Before full autonomous creation: define approved project context, reference-image consent, generation budget, cancellation/recovery behavior, provenance fields, and which editor commands may run without per-action approval.
+
+- [x] Implement the selected Bright Studio light mode and Graphite/Copper dark mode with persistent View controls, a View-toggleable Details Bar, compact Saved/Unsaved header status, and smaller inline-grip layer-plane tabs without removing editor features.

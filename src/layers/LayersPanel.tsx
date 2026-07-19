@@ -19,13 +19,15 @@ import { isElementFreeformResizable } from '../core/commands'
 import {
   COMPOSITION_GROUPS,
   COMPOSITION_GROUP_LABELS,
-  compareElementsByCanvasPosition,
   getLayerPlaneById,
   getLayerPlanesForGroup,
   isElementEffectivelyVisible,
   type ElementBounds,
 } from '../core/episode'
 import { LayerPlaneTabs } from './LayerPlaneTabs'
+
+const LAYER_ELEMENT_DRAG_MIME_TYPE =
+  'application/x-scrollsplice-layer-element'
 
 function TrashIcon() {
   return (
@@ -267,6 +269,9 @@ export function LayersPanel() {
   const moveElementInStack = useEditorStore(
     (state) => state.moveElementInStack,
   )
+  const reorderElementInStack = useEditorStore(
+    (state) => state.reorderElementInStack,
+  )
   const moveElementToLayerPlane = useEditorStore(
     (state) => state.moveElementToLayerPlane,
   )
@@ -295,6 +300,12 @@ export function LayersPanel() {
   const [shapeStroke, setShapeStroke] = useState('#211A2B')
   const [shapeStrokeWidth, setShapeStrokeWidth] = useState('8')
   const [shapeCornerRadius, setShapeCornerRadius] = useState('0')
+  const [draggingElementId, setDraggingElementId] = useState<string | null>(
+    null,
+  )
+  const [elementDropTargetId, setElementDropTargetId] = useState<string | null>(
+    null,
+  )
   const activeLayerPlane = getLayerPlaneById(episode, activeLayerPlaneId)
   const activeGroupLayerPlanes = getLayerPlanesForGroup(
     episode,
@@ -305,7 +316,10 @@ export function LayersPanel() {
     () =>
       elements
         .filter(({ layerPlaneId }) => layerPlaneId === activeLayerPlaneId)
-        .sort(compareElementsByCanvasPosition),
+        .sort(
+          (first, second) =>
+            first.zIndex - second.zIndex || first.id.localeCompare(second.id),
+        ),
     [activeLayerPlaneId, elements],
   )
   const selectedElement = useMemo(
@@ -556,6 +570,46 @@ export function LayersPanel() {
     }
 
     placeDraggedAssetOnPlane(payload, activeLayerPlane.id)
+  }
+
+  const handleElementDragStart = (
+    event: DragEvent<HTMLButtonElement>,
+    elementId: string,
+  ) => {
+    event.stopPropagation()
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData(LAYER_ELEMENT_DRAG_MIME_TYPE, elementId)
+    setDraggingElementId(elementId)
+  }
+
+  const clearElementDrag = () => {
+    setDraggingElementId(null)
+    setElementDropTargetId(null)
+  }
+
+  const handleElementDrop = (
+    event: DragEvent<HTMLLIElement>,
+    targetElementId: string,
+  ) => {
+    const sourceElementId =
+      event.dataTransfer.getData(LAYER_ELEMENT_DRAG_MIME_TYPE) ||
+      draggingElementId
+
+    if (!sourceElementId || sourceElementId === targetElementId) {
+      clearElementDrag()
+      return
+    }
+
+    const targetIndex = localStackElements.findIndex(
+      ({ id }) => id === targetElementId,
+    )
+
+    if (targetIndex >= 0) {
+      event.preventDefault()
+      reorderElementInStack(sourceElementId, targetIndex)
+    }
+
+    clearElementDrag()
   }
 
   return (
@@ -848,7 +902,7 @@ export function LayersPanel() {
 
           return (
             <li
-              className={`layer-list-item${isEffectivelyVisible ? '' : ' is-hidden'}`}
+              className={`layer-list-item${isEffectivelyVisible ? '' : ' is-hidden'}${draggingElementId === element.id ? ' is-dragging' : ''}${elementDropTargetId === element.id ? ' is-element-drop-target' : ''}`}
               key={element.id}
               data-element-type={element.type}
               data-element-group-id={elementGroup?.id}
@@ -859,7 +913,50 @@ export function LayersPanel() {
                     : 'resolved'
                   : undefined
               }
+              onDragOver={(event) => {
+                if (!draggingElementId || draggingElementId === element.id) {
+                  return
+                }
+
+                event.preventDefault()
+                event.stopPropagation()
+                event.dataTransfer.dropEffect = 'move'
+                setElementDropTargetId(element.id)
+              }}
+              onDragLeave={() => {
+                if (elementDropTargetId === element.id) {
+                  setElementDropTargetId(null)
+                }
+              }}
+              onDrop={(event) => handleElementDrop(event, element.id)}
             >
+              <button
+                className="layer-element-drag-grip"
+                type="button"
+                draggable={!element.locked}
+                disabled={element.locked}
+                aria-label={`Reorder ${element.name} in its layer stack`}
+                title={
+                  element.locked
+                    ? `Unlock ${element.name} before reordering it`
+                    : 'Drag to change overlap order · Arrow keys move one step'
+                }
+                onDragStart={(event) =>
+                  handleElementDragStart(event, element.id)
+                }
+                onDragEnd={clearElementDrag}
+                onKeyDown={(event) => {
+                  if (event.key === 'ArrowUp') {
+                    event.preventDefault()
+                    moveElementInStack(element.id, 'backward')
+                  } else if (event.key === 'ArrowDown') {
+                    event.preventDefault()
+                    moveElementInStack(element.id, 'forward')
+                  }
+                }}
+              >
+                <span aria-hidden="true">⠿</span>
+              </button>
               <button
                 ref={isPrimarySelected ? selectedLayerRef : undefined}
                 className={`layer-row${isSelected ? ' is-selected' : ''}`}

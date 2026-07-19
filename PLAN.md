@@ -27,7 +27,7 @@ Implementation status in the current working build:
 5. **Panels, crop, and intentional overflow — implemented as bounded presets:** rectangle/rounded/slant-left/slant-right/diamond image masks, Cover focus/zoom, optional mask-following frame border, and constrained or final-output-clipped **episode-edge** bleed. A masked image remains clipped to its frame. First-class panel breakout is not implemented; the current manual workaround is a separate duplicated unmasked overlay. Arbitrary point editing remains outside this build.
 6. **Text and speech-balloon composition — implemented as one atomic editable balloon element:** automatic fitting, typography/body controls, and editable tail side/anchor/width/tip. Creator template saving remains outside this build.
 7. **Local render/export proof — implemented provisionally:** tall master, creator-reviewed deterministic PNG/JPEG slices, observed-profile preflight, and explicit **not upload-verified / manual upload** labeling.
-8. **Reliability and handoff — locally complete:** 377 unit tests across 28 files, strict typecheck, ESLint, production build, and all 13 Playwright Chromium stories pass. The editor, Reader Preview, and provisional-export screenshots are indexed, and [Feature Test Sheet](FEATURE_TEST_SHEET.md) is ready for Katherine's review. Commit/publication evidence remains separate.
+8. **Reliability and handoff — complete:** 385 unit tests across 29 files, strict typecheck, ESLint, production build, and all 15 Playwright Chromium stories pass. The editor, Reader Preview, provisional export, and matched dark/light release screenshots are indexed; [Feature Test Sheet](FEATURE_TEST_SHEET.md) is ready for Katherine's review.
 
 The locally feasible goal excludes production accounts, OAuth, OpenAI runtime access, cloud sync, external connectors, desktop packaging, automated WEBTOON login/upload/publishing, and any use of private Root & Table material. Those features need their existing network, privacy, credential, platform, or stack decisions before implementation. Public deployment and Devpost evidence remain scheduled work rather than editor features.
 
@@ -462,7 +462,8 @@ Explicitly deferred from this completion pass: deterministic WEBTOON export; Ope
 
 1. **Publish the passing local completion stack:** local validation and public-safe screenshots are complete; record the final commit/push state without rewriting the pre-event baseline.
 2. **Authenticated WEBTOON upload verification:** use harmless unpublished files to establish actual boundary, alpha, order, filename, preview, and recompression behavior. Only then may the observed export profile become upload-verified.
-3. **Optional later editor depth:** creator-saved editable-balloon templates, arbitrary polygon-point editing, row context-menu shortcuts, perspective/freeform distortion, or richer section systems require separate design and are not hidden requirements of this completion pass.
+3. **Optional later editor depth outside lettering:** arbitrary polygon-point editing, row context-menu shortcuts, perspective/freeform distortion, or richer section systems require separate design and are not hidden requirements of this completion pass.
+4. **Research-backed editable-balloon expansion:** the inventory and design rules are now recorded in [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md). Build it as composable presets over the existing atomic balloon: first core bodies/outlines/tails, then source markers and flat balloon relationships, then webtoon styling and creator-saved presets, and finally separate caption/sound-effect tools. This is documented future depth, not a claim that those presets already exist.
 
 ### Submission runway: July 19–21
 
@@ -568,7 +569,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 
 ## Product-slice record and remaining completion queue
 
-Items 1–16 preserve the historical slice record. On July 16 Katherine authorized the remaining locally feasible human-editor queue as one goal rather than requiring another feature choice after every three slices. The combined implementation is recorded in local commit `a26927f`; the full local regression suite, public-safe visual record, and feature sheet are complete. The commit has not been pushed. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
+Items 1–16 preserve the historical slice record. On July 16 Katherine authorized the remaining locally feasible human-editor queue as one goal rather than requiring another feature choice after every three slices. The combined implementation began in commit `a26927f` and is included in the July 19 big feature and UI release; the full regression suite, public-safe visual record, and feature sheet are complete. Stop starting product work after July 18 so July 19–21 remain available for access, evidence, stabilization, and submission:
 
 1. The bounded composition-groups and visibility slice defined above. **Complete.**
 2. The layer-planes and episode-backdrop foundation defined above. **Complete.**
@@ -587,7 +588,7 @@ Items 1–16 preserve the historical slice record. On July 16 Katherine authoriz
 15. Basic independent text creation and editing over existing balloon assets. **Implemented, validated, and published in `cb1f284`.**
 16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented, validated, and published in `cb1f284`.**
 
-Completion-pass additions across the historical items are implemented and locally validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, and atomic editable speech balloons; plus provisional rendering. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 377 unit tests, typecheck, lint, build, and 13 Playwright stories and is recorded in local commit `a26927f`. Do not describe it as published: no push has been performed.
+Completion-pass additions across the historical items are implemented and validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, atomic editable speech balloons, provisional rendering, the six-image default story, dual light/dark appearances, compact element grips, and the versioned editor adapter. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 385 unit tests, typecheck, lint, build, and all 15 Playwright stories and is included in the current big feature/UI release.
 
 Continue through the locally feasible queue while validation remains healthy. Stop immediately if product work threatens the scheduled submission runway or the minimum editor experience.
 
@@ -641,6 +642,14 @@ These questions do not block the human MVP:
 Do not treat an OpenAI/ChatGPT OAuth flow used by a coding harness as automatically approved for a general web application. Verify the supported product path before choosing dependencies or designing the login UI.
 
 ## Validation path
+
+### July 17 editor-adapter slice
+
+- Implement a versioned, JSON-safe episode/editor snapshot.
+- Route precise navigation and editing through stable IDs and existing human commands.
+- Expose a development-only browser bridge for Codex and automated tests.
+- Document the inspect-command-verify-undo workflow and the future OAuth authorization boundary.
+- Validate snapshot serialization, move/undo, rejected guessed IDs, explicit-plane creation, typecheck, lint, unit tests, build, and a live browser command.
 
 These command contracts were verified against the July 13 foundation scaffold and must remain passing as the editor evolves:
 

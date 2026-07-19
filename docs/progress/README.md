@@ -165,7 +165,7 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Contains no Root & Table production artwork, user upload, private creative material, or third-party comic reference.
 - File: 1440 × 900 PNG, 161,742 bytes.
 - SHA-256: `47a4aa54e64e836c792e25ef84e84e5a19ca51e8786b9c1bd0c3c7a9633c5f82`.
-- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` has not been pushed.
+- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` was later included in the July 19 big feature and UI publication.
 
 ## July 16 — Complete Reader Preview
 
@@ -176,7 +176,7 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - Reader Preview is local product evidence, not a WEBTOON preview or public deployment.
 - File: 1440 × 900 PNG, 45,519 bytes.
 - SHA-256: `6a4ab652e790a2e4fd31c364a3dc436e26bf549859218d75c01b1bd3f11ffdb4`.
-- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` has not been pushed.
+- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` was later included in the July 19 big feature and UI publication.
 
 ## July 16 — Provisional local export
 
@@ -187,4 +187,27 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - This image proves that the local UI exists; it does **not** prove WEBTOON acceptance, byte preservation, preview accuracy, or an upload-verified/guaranteed-WEBTOON-ready package. Upload remains manual.
 - File: 1440 × 900 PNG, 197,505 bytes.
 - SHA-256: `c21b04b1298b202bae65040ae0e8701e5c4f839e190bc953dcf1afb4e2e08915`.
-- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` has not been pushed.
+- The complete local stack passes 377 unit tests, typecheck, lint, build, and all 13 Playwright Chromium stories. The matching feature commit `a26927f` was later included in the July 19 big feature and UI publication.
+
+
+## July 19 — Big feature/UI release, dark appearance
+
+![ScrollSplice big feature and UI release in dark mode](2026-07-19-big-feature-ui-dark.png)
+
+- Captured from a fresh bundled-Chromium context at 1440 × 900 after the current big feature/UI release passed its browser gate.
+- Shows the Graphite/Copper dark appearance, the in-repository six-image **The Light We Planted** story, compact draggable Story Art rows, visible inspector, larger scrollable minimap, and the intentionally expanded viewport frame.
+- Contains only original OpenAI-generated story art created for ScrollSplice plus project-owned UI/branding; no Root & Table production art, private upload, or third-party comic reference appears.
+- File: 1440 × 900 PNG, 868,237 bytes.
+- SHA-256: `f2f3df79c46a8b200503dc93bef310124a694b76beeda07d808aa14689cef0f4`.
+
+## July 19 — Big feature/UI release, light appearance
+
+![ScrollSplice big feature and UI release in light mode](2026-07-19-big-feature-ui-light.png)
+
+- Captured from a separate fresh bundled-Chromium context with the same 1440 × 900 viewport, episode, and editor state as the dark evidence.
+- Shows the Bright Studio light appearance without changing document data, layout, story assets, minimap position, or layer organization.
+- Contains only original OpenAI-generated story art created for ScrollSplice plus project-owned UI/branding; no Root & Table production art, private upload, or third-party comic reference appears.
+- File: 1440 × 900 PNG, 869,612 bytes.
+- SHA-256: `1cb823648159d9f44923f8e2c93bfa0d935767875e15f2e5a21dd3501071b0ec`.
+
+The release passes 385 unit tests across 29 files, strict typecheck, ESLint, the production build, and all 15 Playwright Chromium stories. The still images document the two interface appearances; interaction behavior is supported by the automated and hands-on evidence elsewhere in this repository.

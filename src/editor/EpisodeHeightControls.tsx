@@ -69,8 +69,8 @@ export function EpisodeHeightControls({
       <button
         className="episode-height-edge"
         type="button"
-        aria-label={`Resize episode from bottom edge, currently ${Math.round(episodeHeight).toLocaleString()} units`}
-        title="Drag the bottom edge to resize. Arrow keys adjust 10u; Shift adjusts 100u."
+        aria-label={`Resize episode from bottom edge, currently ${Math.round(episodeHeight).toLocaleString()} pixels`}
+        title="Drag the bottom edge to resize. Arrow keys adjust 10px; Shift adjusts 100px."
         onKeyDown={handleResizeKeyDown}
         onPointerDown={(event) => {
           event.preventDefault()
@@ -107,7 +107,7 @@ export function EpisodeHeightControls({
         <button
           className="extend-episode-button"
           type="button"
-          aria-label={`Add scroll space (${DEFAULT_EPISODE_HEIGHT_INCREMENT.toLocaleString()} units)`}
+          aria-label={`Add scroll space (${DEFAULT_EPISODE_HEIGHT_INCREMENT.toLocaleString()} pixels)`}
           onClick={extendEpisodeHeight}
         >
           <span aria-hidden="true">+</span>

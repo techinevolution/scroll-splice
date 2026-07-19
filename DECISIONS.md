@@ -174,6 +174,22 @@ Reason: These mechanisms carry different permissions and risks. A model needs ex
 
 Consequences: Add no OAuth or OpenAI dependency until an official supported model-access path is verified and a secure credential boundary is approved. Provider credentials never enter browser bundles, episode data, commands, logs, or git. Every future model write goes through an implemented and tested human command; generated assets carry provenance; and WEBTOON publishing remains manual.
 
+## 2026-07-17: Implement a versioned editor adapter before OAuth
+
+Decision: Implement a provider-neutral, versioned editor adapter that reads normalized JSON-safe editor context and dispatches stable-ID operations through existing human editor commands. Expose it as `window.scrollSpliceEditor` only in development; future authenticated tools import and wrap it at the application edge.
+
+Reason: Screen-coordinate dragging is fragile and gives a future model the wrong abstraction. A command adapter makes canvas location, planes, stacking, selection, and history explicit while preserving one source of document truth.
+
+Consequences: Programmatic clients must inspect first, use returned IDs and logical episode pixels, execute one validated command, then inspect the result. The adapter does not authorize OAuth, OpenAI runtime access, raw store setters, DOM/Konva manipulation, credentials, file handles, or WEBTOON automation. Binary import/export remains a separate host boundary.
+
+## 2026-07-18: Make the generated story authoritative and element grips visible
+
+Decision: Replace the mixed legacy demo with the adapter-verified **The Light We Planted** arrangement: six generated Story Art images, one episode title, six gutter-paced narration elements, and empty named Atmosphere/Effects planes. Element rows now follow local stack order and expose a left-side native drag grip with keyboard and explicit-button alternatives.
+
+Reason: The old fixture placed real story images in Foreground over unrelated synthetic panels, captions, and accents, so the document hierarchy did not describe what the creator saw. A grip that changes stacking while a spatial sort immediately moves the row back also appears broken.
+
+Consequences: Reset Demo contains 13 meaningful elements rather than 36 mixed elements. Grip drops route through one pure reorder command and one history checkpoint; the adapter exposes the same direct-index command. Reordering changes overlap order, not logical element coordinates. Locked elements must be unlocked first.
+
 ## 2026-07-13: Push passing slices through the first testable editor
 
 Decision: Katherine authorizes Codex to commit and push the current unpushed work and every later coherent, validated slice directly to `main` until the complete human-editor MVP is available for her hands-on product review.
@@ -365,3 +381,20 @@ Consequences: Supported v3/v4/v5 documents receive deterministic v6 defaults; un
 The local renderer may produce a tall master and creator-reviewed deterministic PNG/JPEG slices and may preflight the current observed limits. Its UI and documentation must state that this profile is **provisional, not upload-verified, not guaranteed WEBTOON-ready, and manual-upload only**. It does not authenticate to WEBTOON, upload files, inspect previews, schedule, or publish. OpenAI/OAuth/cloud work remains gated and absent.
 
 Bounded implementation note: grouped movement commits every member atomically, but only the primary member publishes live status/minimap preview; followers update on release. `overflow: bleed` applies to episode-edge overflow and final output clipping. It does not bypass an image mask, so first-class panel breakout remains unimplemented and currently requires a separate duplicated unmasked overlay.
+
+## 2026-07-16: Model speech-balloon types as composable editable presets
+
+Decision: Use the [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) as ScrollSplice's comprehensive practical inventory. Familiar forms such as thought, whisper, shout, electric, rough, wavy, telepathic, and double-outline balloons are presets made from shared editable body, outline, fill, tail, lettering, and relationship primitives. Their conventional meanings are guidance, never enforced rules.
+
+Reason: Professional lettering does not have one universal closed taxonomy. The same balloon can combine a whisper outline, colored translucent fill, curved off-panel tail, and custom lettering. Separate hard-coded or raster objects for every combination would duplicate behavior, limit creator freedom, and make history, persistence, preview, and output parity fragile. The existing atomic format-v6 balloon already provides the correct ownership boundary for a richer data-driven system.
+
+Consequences: Placing a built-in preset materializes all rendering values into the episode so later preset changes cannot alter existing work. New body/tail/relationship fields require a separately approved versioned document extension with deterministic defaults for format-v6 balloons. Direct joins, connectors, multiple tails, and reading order remain flat explicit associations rather than recursive groups. Creator-saved presets stay at the application edge and may be packaged portably later. Captions and sound effects reuse appropriate primitives but remain separate element kinds. All built-ins must be original ScrollSplice work rather than copied commercial balloon vectors.
+
+
+## 2026-07-17: Pair Bright Studio light mode with Graphite and Copper dark mode
+
+Decision: Offer two creator-selectable application appearances based on Katherine's chosen mockups: a pale neutral **Bright Studio** light mode with restrained teal accents and a matte **Graphite and Copper** dark mode. Put both choices under **View**, keep dark mode as the first-run default, and remember the preference in browser-local UI storage.
+
+Reason: The former purple/cyan shell read as generic AI-generated software and competed with comic artwork. The selected references keep the story canvas dominant while giving creators a comfortable light workspace and a distinctive dark workspace without changing the editor's information architecture.
+
+Consequences: Theme and Details Bar visibility are application-chrome preferences only; they never enter the episode document, portable project, history, export, or persistence adapters. **View > Show/Hide Details Bar** owns the optional bottom property strip. The verbose document status remains available to assistive technology, while the header exposes a compact Saved/Unsaved indicator with explanatory hover text. Existing asset, canvas, minimap, Layers, menu, history, persistence, and export behavior must remain unchanged.

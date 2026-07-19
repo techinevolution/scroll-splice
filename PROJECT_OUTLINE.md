@@ -165,7 +165,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Allow a precise drop onto a numbered plane tab or the active Layers list to choose the destination plane directly.
 - Reusing an asset must not duplicate the original source file unnecessarily.
 - Include a free starter set of resizable comic speech balloons and let creators add their own reusable balloon or decorative assets. The implemented starter catalog has three original neutral balloons, three decorations, and three splatters.
-- Common speech-balloon forms were reviewed against the [Clip Studio balloon guide](https://tips.clip-studio.com/en-us/articles/863) and [Blambot's professional lettering conventions](https://blambot.com/en-gb/pages/comic-book-grammar-tradition) before the starter set was named. Treat those conventions as guidance rather than universal rules. Keep independent text available, and also provide an atomic fitted balloon/body/text/tail element; creator-saved templates may follow separately.
+- Use the research-backed [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) as the product inventory for future balloon depth. Treat familiar forms as composable, fully editable presets rather than locked meanings or fixed pictures. The current atomic fitted body/text/tail element is the foundation; body, outline, tail, relationship, lettering-treatment, and creator-preset expansions follow in separately validated slices.
 
 ### 6. Drag-and-drop interaction system
 
@@ -257,6 +257,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 - A creator clicks the ordinary title text and edits it without the title or header shifting, reaches the end of the current scroll, adds another 1,280 logical units, drags the bottom edge upward to remove only the unused portion, and sees the minimap immediately refit without moving or clipping existing content.
 - A creator deletes one placed panel from its Layers-row trash action, then uses the bottom paperclip to add an original built-in or locally imported image while leaving the reusable source intact.
 - A creator adds a starter speech balloon, resizes it with corner handles, and replaces or supplements the starter library with a personal reusable balloon asset.
+- A creator starts with a familiar editable preset such as Thought, Whisper, Shout, Electric, or Wavy; changes its body, outline, fill, tail, and lettering; then saves the customized result later without changing balloons already placed in the episode.
 - Dragging the minimap viewport moves the main canvas to the matching portion of the episode.
 - Selecting an image on the canvas highlights its element row; reordering that element within its plane changes the visible stacking immediately.
 - Closing and reopening the project restores the same asset list and episode layout.

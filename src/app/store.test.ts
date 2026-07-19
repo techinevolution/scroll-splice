@@ -28,25 +28,9 @@ import {
 } from '../core/commands'
 import {
   getBackgroundBaseLayerPlane,
-  getElementCompositionGroup,
   getLayerPlaneById,
   getLayerPlanesForGroup,
-  type CompositionGroup,
-  type EpisodeElement,
 } from '../core/episode'
-
-function fixtureElementInGroup(group: CompositionGroup): EpisodeElement {
-  const element = buildWeekEpisode.elements.find(
-    (candidate) =>
-      getElementCompositionGroup(buildWeekEpisode, candidate) === group,
-  )
-
-  if (!element) {
-    throw new Error(`Missing ${group} fixture element`)
-  }
-
-  return element
-}
 
 class MemoryAssetRepository implements AssetRepository {
   snapshot: AssetLibrarySnapshot | undefined
@@ -250,7 +234,18 @@ describe('editor store', () => {
   })
 
   it('activates the selected element group and plane', () => {
-    const foregroundElement = fixtureElementInGroup('foreground')
+    const foregroundElementId = 'beat-01-stillness-story-image'
+    useEditorStore.getState().moveElementToLayerPlane(
+      foregroundElementId,
+      BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
+    )
+    const foregroundElement = useEditorStore
+      .getState()
+      .episode.elements.find(({ id }) => id === foregroundElementId)
+
+    if (!foregroundElement) {
+      throw new Error('Missing moved foreground fixture element')
+    }
 
     useEditorStore.getState().selectElement(foregroundElement.id)
 
@@ -630,7 +625,7 @@ describe('editor store', () => {
   })
 
   it('moves through the command and resets the known demo state', () => {
-    const elementId = 'beat-01-stillness-accent-2'
+    const elementId = 'beat-01-stillness-story-image'
 
     useEditorStore.getState().moveElement(elementId, { x: 500, y: 600 })
     expect(
@@ -651,7 +646,7 @@ describe('editor store', () => {
   })
 
   it('previews live element bounds without mutating the episode and clears on commit', () => {
-    const elementId = 'beat-01-stillness-accent-2'
+    const elementId = 'beat-01-stillness-story-image'
     const episode = useEditorStore.getState().episode
 
     expect(useEditorStore.getState().liveElementBounds).toBeNull()
@@ -691,7 +686,7 @@ describe('editor store', () => {
   })
 
   it('clears stale live bounds on selection changes, deletion, and reset', () => {
-    const elementId = 'beat-01-stillness-accent-2'
+    const elementId = 'beat-01-stillness-story-image'
     const previewBounds = { x: 400, y: 500, width: 60, height: 60 }
 
     useEditorStore.getState().selectElement(elementId)
@@ -728,7 +723,7 @@ describe('editor store', () => {
   })
 
   it('resizes through the command and restores the fixture on reset', () => {
-    const elementId = 'beat-01-stillness-accent-2'
+    const elementId = 'beat-01-stillness-story-image'
     const before = useEditorStore
       .getState()
       .episode.elements.find(({ id }) => id === elementId)
@@ -822,8 +817,8 @@ describe('editor store', () => {
   })
 
   it('deletes only the requested placed element and clears its selection', () => {
-    const deletedId = 'beat-01-stillness-background'
-    const unrelatedId = 'beat-02-spark-background'
+    const deletedId = 'beat-01-stillness-story-image'
+    const unrelatedId = 'beat-02-spark-story-image'
 
     useEditorStore.getState().selectElement(deletedId)
     useEditorStore.getState().deleteElement(deletedId)
@@ -1542,7 +1537,7 @@ describe('editor store', () => {
   })
 
   it('coordinates element naming and lock semantics through history', () => {
-    const elementId = 'beat-01-stillness-background'
+    const elementId = 'beat-01-stillness-story-image'
     useEditorStore.getState().selectElement(elementId)
     const initialHistoryCount = useEditorStore.getState().historyPast.length
 
@@ -1587,7 +1582,7 @@ describe('editor store', () => {
   })
 
   it('duplicates once per history step and restores its stable ID on redo', () => {
-    const elementId = 'beat-01-stillness-background'
+    const elementId = 'beat-01-stillness-story-image'
     useEditorStore.getState().selectElement(elementId)
     const initialHistoryCount = useEditorStore.getState().historyPast.length
 
@@ -1630,7 +1625,7 @@ describe('editor store', () => {
   })
 
   it('nudges and aligns the selection as separate undoable commands', () => {
-    const elementId = 'beat-01-stillness-accent-2'
+    const elementId = 'beat-01-stillness-story-image'
     const original = useEditorStore
       .getState()
       .episode.elements.find(({ id }) => id === elementId)
@@ -1742,7 +1737,7 @@ describe('editor store', () => {
   })
 
   it('restores and removes a selected element across delete undo and redo', () => {
-    const elementId = 'beat-01-stillness-background'
+    const elementId = 'beat-01-stillness-story-image'
 
     useEditorStore.getState().selectElement(elementId)
     useEditorStore.getState().deleteElement(elementId)
@@ -1775,7 +1770,7 @@ describe('editor store', () => {
   })
 
   it('records one history entry per committed move and resize, excluding live previews', () => {
-    const elementId = 'beat-01-stillness-accent-2'
+    const elementId = 'beat-01-stillness-story-image'
     const original = useEditorStore
       .getState()
       .episode.elements.find(({ id }) => id === elementId)
@@ -2039,7 +2034,7 @@ describe('editor store', () => {
   })
 
   it('coalesces an opacity gesture into one undo entry and restores cancelled or no-op gestures', () => {
-    const elementId = 'beat-01-stillness-accent-2'
+    const elementId = 'beat-01-stillness-story-image'
     const originalOpacity = useEditorStore
       .getState()
       .episode.elements.find(({ id }) => id === elementId)?.opacity
@@ -2197,8 +2192,8 @@ describe('editor store', () => {
       ).map(({ id, name }) => ({ id, name })),
     ).toEqual([
       { id: createdPlaneId, name: 'Dialogue' },
-      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels, name: undefined },
-      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentText, name: undefined },
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels, name: 'Story Art' },
+      { id: BUILD_WEEK_LAYER_PLANE_IDS.contentText, name: 'Lettering' },
     ])
 
     useEditorStore.getState().undo()

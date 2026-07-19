@@ -27,6 +27,7 @@ import {
   moveElementToLayerPlane,
   nudgeElement,
   reorderLayerPlane,
+  reorderElementInStack,
   resizeElement,
   resizeEpisodeHeight,
   setBaseColor,
@@ -100,7 +101,7 @@ describe('setEpisodeName', () => {
 })
 
 describe('element identity and locking', () => {
-  const elementId = 'beat-01-stillness-background'
+  const elementId = 'beat-01-stillness-story-image'
 
   it('stores a trimmed element name within the editor limit', () => {
     const renamed = setElementName(
@@ -169,6 +170,7 @@ describe('element identity and locking', () => {
       }),
     ).toBe(locked)
     expect(moveElementInStack(locked, elementId, 'forward')).toBe(locked)
+    expect(reorderElementInStack(locked, elementId, 1)).toBe(locked)
     expect(
       moveElementToLayerPlane(
         locked,
@@ -183,10 +185,7 @@ describe('element identity and locking', () => {
     const lockedShape = setElementLocked(buildWeekEpisode, elementId, true)
     const hidden = setElementVisibility(lockedShape, elementId, false)
     const faded = setElementOpacity(lockedShape, elementId, 0.4)
-    const recolored = setShapeFill(lockedShape, elementId, {
-      kind: 'solid',
-      color: '#123456',
-    })
+    const blended = setElementBlendMode(lockedShape, elementId, 'multiply')
     const renamed = setElementName(lockedShape, elementId, 'Locked panel')
     const textId = 'beat-01-stillness-title'
     const lockedText = setElementLocked(buildWeekEpisode, textId, true)
@@ -206,7 +205,7 @@ describe('element identity and locking', () => {
 
     expect(hidden).not.toBe(lockedShape)
     expect(faded).not.toBe(lockedShape)
-    expect(recolored).not.toBe(lockedShape)
+    expect(blended).not.toBe(lockedShape)
     expect(renamed).not.toBe(lockedShape)
     expect(updatedText).not.toBe(lockedText)
     expect(
@@ -342,7 +341,7 @@ describe('resizeEpisodeHeight', () => {
 
 describe('moveElement', () => {
   const movableElement = buildWeekEpisode.elements.find(
-    ({ id }) => id === 'beat-01-stillness-accent-2',
+    ({ id }) => id === 'beat-01-stillness-story-image',
   )
 
   if (!movableElement) {
@@ -405,7 +404,7 @@ describe('moveElement', () => {
 })
 
 describe('nudgeElement and alignElement', () => {
-  const elementId = 'beat-01-stillness-accent-2'
+  const elementId = 'beat-01-stillness-story-image'
 
   it('nudges by a logical delta and clamps at the episode edges', () => {
     const element = buildWeekEpisode.elements.find(({ id }) => id === elementId)
@@ -496,7 +495,7 @@ describe('nudgeElement and alignElement', () => {
 })
 
 describe('duplicateElement', () => {
-  const elementId = 'beat-01-stillness-background'
+  const elementId = 'beat-01-stillness-story-image'
 
   it('creates one offset, top-stacked copy with a deterministic stable ID', () => {
     const source = buildWeekEpisode.elements.find(({ id }) => id === elementId)
@@ -586,7 +585,7 @@ describe('duplicateElement', () => {
 
 describe('resizeElement', () => {
   const shapeElement = buildWeekEpisode.elements.find(
-    ({ id }) => id === 'beat-01-stillness-accent-2',
+    ({ id }) => id === 'beat-01-stillness-story-image',
   )
   const textElement = buildWeekEpisode.elements.find(
     ({ id }) => id === 'beat-01-stillness-caption',
@@ -689,9 +688,9 @@ describe('resizeElement', () => {
 
     expect(resizedBounds).toEqual({
       x: currentRight - MIN_ELEMENT_SIZE,
-      y: currentBottom - MIN_ELEMENT_SIZE,
+      y: currentBottom - MIN_ELEMENT_SIZE * 1.5,
       width: MIN_ELEMENT_SIZE,
-      height: MIN_ELEMENT_SIZE,
+      height: MIN_ELEMENT_SIZE * 1.5,
     })
   })
 
@@ -942,7 +941,7 @@ describe('setElementVisibility', () => {
 })
 
 describe('element appearance commands', () => {
-  const shapeId = 'beat-01-stillness-accent-2'
+  const appearanceElementId = 'beat-01-stillness-story-image'
   const textId = 'beat-01-stillness-caption'
 
   it('sets universal opacity and clamps finite values into the document range', () => {
@@ -972,9 +971,9 @@ describe('element appearance commands', () => {
       'soft-light',
       'normal',
     ] as const) {
-      episode = setElementBlendMode(episode, shapeId, blendMode)
+      episode = setElementBlendMode(episode, appearanceElementId, blendMode)
       expect(
-        episode.elements.find(({ id }) => id === shapeId)?.blendMode,
+        episode.elements.find(({ id }) => id === appearanceElementId)?.blendMode,
       ).toBe(blendMode)
     }
 
@@ -1015,7 +1014,7 @@ describe('element appearance commands', () => {
       },
     })
     expect(
-      setShapeFill(buildWeekEpisode, shapeId, {
+      setShapeFill(buildWeekEpisode, appearanceElementId, {
         kind: 'vertical-gradient',
         top: { color: '#000000', opacity: 1 },
         bottom: { color: '#FFFFFF', opacity: 0 },
@@ -1024,7 +1023,14 @@ describe('element appearance commands', () => {
   })
 
   it('updates rectangle and ellipse outline geometry without replacing bounds', () => {
-    const shape = buildWeekEpisode.elements.find(
+    const withShape = createSyntheticShapeElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Test panel',
+      shape: 'rectangle',
+      fill: '#FFFFFF',
+      bounds: { x: 80, y: 80, width: 240, height: 180 },
+    })
+    const shape = withShape.elements.find(
       (element) => element.type === 'shape',
     )
 
@@ -1032,7 +1038,7 @@ describe('element appearance commands', () => {
       throw new Error('The shape appearance fixture is missing.')
     }
 
-    const ellipse = updateShapeElementStyle(buildWeekEpisode, shape.id, {
+    const ellipse = updateShapeElementStyle(withShape, shape.id, {
       shape: 'ellipse',
       stroke: '#123456',
       strokeWidth: 7,
@@ -1093,7 +1099,7 @@ describe('element appearance commands', () => {
 
     expect(tiled.elements.at(-1)).toMatchObject({ presentation: 'tile' })
     expect(setImagePresentation(tiled, image.id, 'tile')).toBe(tiled)
-    expect(setImagePresentation(tiled, shapeId, 'tile')).toBe(tiled)
+    expect(setImagePresentation(tiled, textId, 'tile')).toBe(tiled)
 
     const resizedTile = resizeElement(tiled, image.id, {
       x: 10,
@@ -1134,7 +1140,16 @@ describe('element appearance commands', () => {
   })
 
   it('returns the original document for missing, unchanged, or invalid appearance', () => {
-    const shape = buildWeekEpisode.elements.find(({ id }) => id === shapeId)
+    const withShape = createSyntheticShapeElement(buildWeekEpisode, {
+      layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
+      name: 'Appearance test shape',
+      shape: 'rectangle',
+      fill: '#FFFFFF',
+      bounds: { x: 80, y: 80, width: 240, height: 180 },
+    })
+    const shape = withShape.elements.find(
+      (element) => element.type === 'shape',
+    )
 
     if (!shape || shape.type !== 'shape') {
       throw new Error('The shape appearance fixture is missing.')
@@ -1143,24 +1158,24 @@ describe('element appearance commands', () => {
     expect(setElementOpacity(buildWeekEpisode, 'missing', 0.5)).toBe(
       buildWeekEpisode,
     )
-    expect(setElementOpacity(buildWeekEpisode, shapeId, shape.opacity)).toBe(
-      buildWeekEpisode,
+    expect(setElementOpacity(withShape, shape.id, shape.opacity)).toBe(
+      withShape,
     )
-    expect(setElementOpacity(buildWeekEpisode, shapeId, Number.NaN)).toBe(
-      buildWeekEpisode,
+    expect(setElementOpacity(withShape, shape.id, Number.NaN)).toBe(
+      withShape,
     )
     expect(
       setElementBlendMode(
-        buildWeekEpisode,
-        shapeId,
+        withShape,
+        shape.id,
         'difference' as never,
       ),
-    ).toBe(buildWeekEpisode)
-    expect(setElementBlendMode(buildWeekEpisode, shapeId, 'normal')).toBe(
-      buildWeekEpisode,
+    ).toBe(withShape)
+    expect(setElementBlendMode(withShape, shape.id, 'normal')).toBe(
+      withShape,
     )
-    expect(setShapeFill(buildWeekEpisode, shapeId, shape.fill)).toBe(
-      buildWeekEpisode,
+    expect(setShapeFill(withShape, shape.id, shape.fill)).toBe(
+      withShape,
     )
     expect(
       setShapeFill(buildWeekEpisode, textId, {
@@ -1169,19 +1184,19 @@ describe('element appearance commands', () => {
       }),
     ).toBe(buildWeekEpisode)
     expect(
-      setShapeFill(buildWeekEpisode, shapeId, {
+      setShapeFill(withShape, shape.id, {
         kind: 'vertical-gradient',
         top: { color: '#000000', opacity: -1 },
         bottom: { color: '#FFFFFF', opacity: 1 },
       }),
-    ).toBe(buildWeekEpisode)
+    ).toBe(withShape)
     expect(
       setImagePresentation(
-        buildWeekEpisode,
-        shapeId,
+        withShape,
+        shape.id,
         'stretch' as never,
       ),
-    ).toBe(buildWeekEpisode)
+    ).toBe(withShape)
   })
 })
 
@@ -1893,7 +1908,7 @@ describe('setLayerPlaneVisibility', () => {
       ({ id }) => id === 'beat-01-stillness-title',
     )
     const panel = buildWeekEpisode.elements.find(
-      ({ id }) => id === 'beat-01-stillness-background',
+      ({ id }) => id === 'beat-01-stillness-story-image',
     )
     const nextDocument = setLayerPlaneVisibility(
       buildWeekEpisode,
@@ -2073,6 +2088,29 @@ describe('layer plane organization', () => {
 })
 
 describe('element stack organization', () => {
+  it('reorders an element to an arbitrary stack position and compacts z indexes', () => {
+    const elementId = 'beat-06-dawn-caption'
+    const reordered = reorderElementInStack(
+      buildWeekEpisode,
+      elementId,
+      0,
+    )
+    const planeStack = reordered.elements
+      .filter(
+        ({ layerPlaneId }) =>
+          layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentText,
+      )
+      .sort((first, second) => first.zIndex - second.zIndex)
+
+    expect(planeStack[0]?.id).toBe(elementId)
+    expect(planeStack.map(({ zIndex }) => zIndex)).toEqual(
+      planeStack.map((_, index) => index),
+    )
+    expect(
+      reorderElementInStack(reordered, elementId, 0),
+    ).toBe(reordered)
+  })
+
   it('moves an element one step in its plane stack and compacts z indexes', () => {
     const titleId = 'beat-01-stillness-title'
     const captionId = 'beat-01-stillness-caption'

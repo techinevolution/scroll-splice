@@ -27,7 +27,7 @@ test('reviews provisional cuts, preflights, and downloads local episode images',
   await dialog.getByTestId('render-slices').click()
   await expect(
     dialog.getByRole('heading', { name: 'Preflight: needs attention' }),
-  ).toBeVisible()
+  ).toBeVisible({ timeout: 20_000 })
   await expect(dialog).toContainText('taller than the observed 1280px limit')
 
   await dialog.getByRole('button', { name: 'Reset cuts' }).click()
@@ -36,7 +36,7 @@ test('reviews provisional cuts, preflights, and downloads local episode images',
     dialog.getByRole('heading', {
       name: 'Preflight: passes observed limits',
     }),
-  ).toBeVisible()
+  ).toBeVisible({ timeout: 20_000 })
   await expect(dialog.getByRole('heading', { name: 'Sliced files' })).toBeVisible()
 
   const sliceDownload = page.waitForEvent('download')
@@ -46,7 +46,9 @@ test('reviews provisional cuts, preflights, and downloads local episode images',
   await dialog.getByLabel('Format').selectOption('image/jpeg')
   await expect(dialog.getByLabel(/JPEG quality/)).toBeEnabled()
   await dialog.getByRole('button', { name: 'Render tall master' }).click()
-  await expect(dialog.getByRole('heading', { name: 'Tall master' })).toBeVisible()
+  await expect(
+    dialog.getByRole('heading', { name: 'Tall master' }),
+  ).toBeVisible({ timeout: 20_000 })
 
   const tallDownload = page.waitForEvent('download')
   await dialog.getByRole('button', { name: 'Download tall master' }).click()

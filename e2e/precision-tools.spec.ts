@@ -14,6 +14,10 @@ test('creates, names, locks, positions, aligns, and duplicates a panel', async (
 
   await page.getByRole('button', { name: 'File', exact: true }).click()
   await page.getByRole('menuitem', { name: 'New Episode' }).click()
+  await page.getByRole('button', { name: 'View', exact: true }).click()
+  await page
+    .getByRole('menuitem', { name: 'Show Details Bar', exact: true })
+    .click()
 
   await page.getByRole('button', { name: 'Panel / shape' }).click()
   const shapeForm = page.locator('.shape-create-form')
@@ -27,16 +31,11 @@ test('creates, names, locks, positions, aligns, and duplicates a panel', async (
 
   const management = page.getByTestId('selected-layer-management')
   await expect(management).toBeVisible()
-  await expect(page.getByTestId('selection-status')).toContainText(
-    'Opening panel',
-  )
-
   const nameInput = management.getByLabel('Name')
+  await expect(nameInput).toHaveValue('Opening panel')
   await nameInput.fill('Establishing panel')
   await nameInput.press('Enter')
-  await expect(page.getByTestId('selection-status')).toContainText(
-    'Establishing panel',
-  )
+  await expect(nameInput).toHaveValue('Establishing panel')
 
   await management
     .getByRole('button', { name: 'Lock selection', exact: true })
@@ -73,7 +72,7 @@ test('creates, names, locks, positions, aligns, and duplicates a panel', async (
 
   await management.getByRole('button', { name: 'Duplicate' }).click()
   await expect(page.locator('[data-layer-id]')).toHaveCount(2)
-  await expect(page.getByTestId('selection-status')).toContainText('copy')
+  await expect(nameInput).toHaveValue('Establishing panel copy')
 
   const canvas = page.getByTestId('editor-canvas')
   await canvas.focus()

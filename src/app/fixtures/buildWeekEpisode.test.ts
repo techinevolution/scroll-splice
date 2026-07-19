@@ -20,21 +20,19 @@ import {
 describe('buildWeekEpisode', () => {
   it('contains six original story beats with matching generated story art', () => {
     expect(BUILD_WEEK_BEATS).toHaveLength(6)
-    expect(buildWeekEpisode.elements).toHaveLength(36)
-    expect(buildWeekEpisode.elements.filter(({ type }) => type === 'shape')).toHaveLength(
-      18,
-    )
+    expect(buildWeekEpisode.elements).toHaveLength(13)
+    expect(buildWeekEpisode.elements.filter(({ type }) => type === 'shape')).toHaveLength(0)
     expect(buildWeekEpisode.elements.filter(({ type }) => type === 'text')).toHaveLength(
-      12,
+      7,
     )
     expect(buildWeekEpisode.elements.filter(({ type }) => type === 'image')).toHaveLength(
       6,
     )
 
-    for (const beat of BUILD_WEEK_BEATS) {
+    for (const [index, beat] of BUILD_WEEK_BEATS.entries()) {
       expect(
         buildWeekEpisode.elements.filter(({ id }) => id.startsWith(`${beat.id}-`)),
-      ).toHaveLength(6)
+      ).toHaveLength(index === 0 ? 3 : 2)
     }
   })
 
@@ -59,14 +57,14 @@ describe('buildWeekEpisode', () => {
           getLayerPlaneById(buildWeekEpisode, layerPlaneId)?.compositionGroup ===
           'content',
       ),
-    ).toHaveLength(18)
+    ).toHaveLength(13)
     expect(
       buildWeekEpisode.elements.filter(
         ({ layerPlaneId }) =>
           getLayerPlaneById(buildWeekEpisode, layerPlaneId)?.compositionGroup ===
           'foreground',
       ),
-    ).toHaveLength(18)
+    ).toHaveLength(0)
     expect(
       buildWeekEpisode.elements.every(({ layerPlaneId }) =>
         Boolean(getLayerPlaneById(buildWeekEpisode, layerPlaneId)),
@@ -116,7 +114,7 @@ describe('buildWeekEpisode', () => {
     ).toBe(false)
   })
 
-  it('puts panels below text in Content and accents in Foreground', () => {
+  it('puts generated story art below lettering and keeps Effects available', () => {
     expect(
       buildWeekEpisode.elements.filter(
         ({ layerPlaneId }) =>
@@ -128,13 +126,13 @@ describe('buildWeekEpisode', () => {
         ({ layerPlaneId }) =>
           layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.contentText,
       ),
-    ).toHaveLength(12)
+    ).toHaveLength(7)
     expect(
       buildWeekEpisode.elements.filter(
         ({ layerPlaneId }) =>
           layerPlaneId === BUILD_WEEK_LAYER_PLANE_IDS.foregroundAccents,
       ),
-    ).toHaveLength(18)
+    ).toHaveLength(0)
   })
 
   it('renders by fixed group, then plane, then local stacking order', () => {
@@ -146,10 +144,7 @@ describe('buildWeekEpisode', () => {
       getElementCompositionGroup(buildWeekEpisode, element),
     )
 
-    expect(orderedGroups).toEqual([
-      ...Array(18).fill('content'),
-      ...Array(18).fill('foreground'),
-    ])
+    expect(orderedGroups).toEqual(Array(13).fill('content'))
 
     for (const compositionGroup of COMPOSITION_GROUPS) {
       const groupElements = orderedElements.filter(
@@ -194,7 +189,7 @@ describe('buildWeekEpisode', () => {
     expect(orderedText.slice(0, 3).map(({ id }) => id)).toEqual([
       'beat-01-stillness-title',
       'beat-01-stillness-caption',
-      'beat-02-spark-title',
+      'beat-02-spark-caption',
     ])
 
     const title = orderedText[0]

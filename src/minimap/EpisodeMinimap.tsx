@@ -1,4 +1,4 @@
-import { useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react'
 
 import { useEditorStore } from '../app/store'
 import { resolveImageAsset } from '../assets/runtime'
@@ -266,7 +266,7 @@ function MinimapImageElement({
           width={bounds.width}
           height={bounds.height}
           fill="none"
-          stroke="#65E4FF"
+          stroke="var(--ui-accent)"
           strokeWidth="12"
         />
       ) : null}
@@ -349,7 +349,7 @@ function MinimapSpeechBalloon({
           data-selection-outline-for={element.id}
           d={path.pathData}
           fill="none"
-          stroke="#65E4FF"
+          stroke="var(--ui-accent)"
           strokeWidth="12"
           strokeLinejoin="round"
         />
@@ -406,7 +406,7 @@ function MinimapElement({
             height={textPreviewHeight}
             rx="8"
             fill="none"
-            stroke="#65E4FF"
+            stroke="var(--ui-accent)"
             strokeWidth="12"
           />
         ) : null}
@@ -493,7 +493,7 @@ function MinimapElement({
             rx={bounds.width / 2}
             ry={bounds.height / 2}
             fill="none"
-            stroke="#65E4FF"
+            stroke="var(--ui-accent)"
             strokeWidth="12"
           />
         ) : null}
@@ -540,7 +540,7 @@ function MinimapElement({
           height={bounds.height}
           rx={element.cornerRadius}
           fill="none"
-          stroke="#65E4FF"
+          stroke="var(--ui-accent)"
           strokeWidth="12"
         />
       ) : null}
@@ -568,6 +568,8 @@ export function EpisodeMinimap() {
   )
   const panViewport = useEditorStore((state) => state.panViewport)
   const dragOffset = useRef<LogicalPosition | null>(null)
+  const scrollViewportRef = useRef<HTMLDivElement>(null)
+  const minimapSurfaceRef = useRef<HTMLDivElement>(null)
   const baseColor = getEffectiveEpisodeBaseColor(episode)
   const orderedElements = useMemo(
     () =>
@@ -603,6 +605,28 @@ export function EpisodeMinimap() {
     (asset) => asset === undefined,
   ).length
 
+  useEffect(() => {
+    const scrollViewport = scrollViewportRef.current
+    const minimapSurface = minimapSurfaceRef.current
+
+    if (!scrollViewport || !minimapSurface) {
+      return
+    }
+
+    const scale = minimapSurface.clientHeight / episode.logicalHeight
+    const viewportTop = viewportY * scale
+    const viewportBottom = (viewportY + viewportLogicalHeight) * scale
+
+    if (viewportTop < scrollViewport.scrollTop) {
+      scrollViewport.scrollTop = viewportTop
+    } else if (
+      viewportBottom >
+      scrollViewport.scrollTop + scrollViewport.clientHeight
+    ) {
+      scrollViewport.scrollTop = viewportBottom - scrollViewport.clientHeight
+    }
+  }, [episode.logicalHeight, viewportLogicalHeight, viewportY])
+
   const navigateFromPointer = (
     event: PointerEvent<HTMLDivElement>,
     beginDrag: boolean,
@@ -633,12 +657,15 @@ export function EpisodeMinimap() {
       episodeDimensions,
       minimapDimensions,
     )
+    const viewportFrameExpansion =
+      (48 / episode.logicalWidth) * minimapDimensions.width
 
     if (beginDrag) {
       event.currentTarget.setPointerCapture(event.pointerId)
       const hitViewport =
-        pointerX >= viewportBox.x &&
-        pointerX <= viewportBox.x + viewportBox.width &&
+        pointerX >= viewportBox.x - viewportFrameExpansion &&
+        pointerX <=
+          viewportBox.x + viewportBox.width + viewportFrameExpansion &&
         pointerY >= viewportBox.y &&
         pointerY <= viewportBox.y + viewportBox.height
 
@@ -704,111 +731,121 @@ export function EpisodeMinimap() {
           <h2 id="minimap-heading">Minimap</h2>
         </div>
         <span className="panel-count">
-          {episode.logicalHeight.toLocaleString()}u
+          {episode.logicalHeight.toLocaleString()}px
         </span>
       </header>
 
       <div
-        className="minimap-surface"
-        data-testid="minimap"
-        role="region"
-        tabIndex={0}
-        aria-label="Episode position and viewport"
-        aria-roledescription="two-dimensional viewport navigator"
-        aria-describedby="minimap-navigation-help minimap-position-status"
-        data-viewport-x={viewportX}
-        data-viewport-y={viewportY}
-        data-image-element-count={resolvedImageAssets.size}
-        data-visible-image-element-count={visibleImageElementCount}
-        data-missing-image-element-count={missingImageElementCount}
-        data-aspect-fit="contain"
-        onKeyDown={handleKeyDown}
-        onPointerDown={(event) => navigateFromPointer(event, true)}
-        onPointerMove={(event) => {
-          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-            navigateFromPointer(event, false)
-          }
-        }}
-        onPointerUp={(event) => {
-          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-            event.currentTarget.releasePointerCapture(event.pointerId)
-          }
-          dragOffset.current = null
-        }}
-        onPointerCancel={() => {
-          dragOffset.current = null
-        }}
+        className="minimap-scroll-viewport"
+        data-testid="minimap-scroll-viewport"
+        ref={scrollViewportRef}
       >
-        <svg
-          viewBox={`0 0 ${episode.logicalWidth} ${episode.logicalHeight}`}
-          preserveAspectRatio="xMidYMid meet"
-          style={{ isolation: 'isolate' }}
-          aria-hidden="true"
+        <div
+          className="minimap-surface"
+          ref={minimapSurfaceRef}
+          style={{
+            aspectRatio: `${episode.logicalWidth} / ${episode.logicalHeight}`,
+          }}
+          data-testid="minimap"
+          role="region"
+          tabIndex={0}
+          aria-label="Episode position and viewport"
+          aria-roledescription="two-dimensional viewport navigator"
+          aria-describedby="minimap-navigation-help minimap-position-status"
+          data-viewport-x={viewportX}
+          data-viewport-y={viewportY}
+          data-image-element-count={resolvedImageAssets.size}
+          data-visible-image-element-count={visibleImageElementCount}
+          data-missing-image-element-count={missingImageElementCount}
+          data-aspect-fit="contain"
+          onKeyDown={handleKeyDown}
+          onPointerDown={(event) => navigateFromPointer(event, true)}
+          onPointerMove={(event) => {
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+              navigateFromPointer(event, false)
+            }
+          }}
+          onPointerUp={(event) => {
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+              event.currentTarget.releasePointerCapture(event.pointerId)
+            }
+            dragOffset.current = null
+          }}
+          onPointerCancel={() => {
+            dragOffset.current = null
+          }}
         >
-          <defs>
-            <pattern
-              id="minimap-transparency-grid"
-              width="80"
-              height="80"
-              patternUnits="userSpaceOnUse"
-            >
-              <rect width="80" height="80" fill="#d9d4df" />
-              <path d="M0 0h40v40H0ZM40 40h40v40H40Z" fill="#eeeaf1" />
-            </pattern>
-          </defs>
-          <rect
-            width={episode.logicalWidth}
-            height={episode.logicalHeight}
-            fill="url(#minimap-transparency-grid)"
-          />
-          {baseColor ? (
+          <svg
+            viewBox={`0 0 ${episode.logicalWidth} ${episode.logicalHeight}`}
+            preserveAspectRatio="xMidYMid meet"
+            style={{ isolation: 'isolate', overflow: 'visible' }}
+            aria-hidden="true"
+          >
+            <defs>
+              <pattern
+                id="minimap-transparency-grid"
+                width="80"
+                height="80"
+                patternUnits="userSpaceOnUse"
+              >
+                <rect width="80" height="80" fill="#d9d4df" />
+                <path d="M0 0h40v40H0ZM40 40h40v40H40Z" fill="#eeeaf1" />
+              </pattern>
+            </defs>
             <rect
-              data-testid="minimap-base"
               width={episode.logicalWidth}
               height={episode.logicalHeight}
-              fill={baseColor}
+              fill="url(#minimap-transparency-grid)"
             />
-          ) : null}
-          {orderedElements.map((element, index) => (
-            <MinimapElement
-              key={element.id}
-              element={element}
-              definitionId={`minimap-appearance-${index}`}
-              imageSourceUrl={
-                resolvedImageAssets.get(element.id)?.sourceUrl
-              }
-              bounds={
-                liveElementBounds?.elementId === element.id &&
-                selectedElementId === element.id
-                  ? liveElementBounds.bounds
-                  : element.bounds
-              }
-              isSelected={element.id === selectedElementId}
+            {baseColor ? (
+              <rect
+                data-testid="minimap-base"
+                width={episode.logicalWidth}
+                height={episode.logicalHeight}
+                fill={baseColor}
+              />
+            ) : null}
+            {orderedElements.map((element, index) => (
+              <MinimapElement
+                key={element.id}
+                element={element}
+                definitionId={`minimap-appearance-${index}`}
+                imageSourceUrl={
+                  resolvedImageAssets.get(element.id)?.sourceUrl
+                }
+                bounds={
+                  liveElementBounds?.elementId === element.id &&
+                  selectedElementId === element.id
+                    ? liveElementBounds.bounds
+                    : element.bounds
+                }
+                isSelected={element.id === selectedElementId}
+              />
+            ))}
+            <rect
+              data-testid="minimap-viewport"
+              x={viewportX - 48}
+              y={viewportY}
+              width={viewportLogicalWidth + 96}
+              height={viewportLogicalHeight}
+              rx="18"
+              fill="rgb(101 228 255 / 0.08)"
+              stroke="var(--ui-accent)"
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
             />
-          ))}
-          <rect
-            data-testid="minimap-viewport"
-            x={viewportX}
-            y={viewportY}
-            width={viewportLogicalWidth}
-            height={viewportLogicalHeight}
-            rx="18"
-            fill="rgb(101 228 255 / 0.08)"
-            stroke="#65E4FF"
-            strokeWidth="2"
-            vectorEffect="non-scaling-stroke"
-          />
-        </svg>
+          </svg>
+        </div>
       </div>
       <p id="minimap-navigation-help" className="panel-help">
-        Click or drag the cyan frame · x {Math.round(viewportX)} · y{' '}
-        {Math.round(viewportY)}
+        Click or drag the frame · x {Math.round(viewportX)}px · y{' '}
+        {Math.round(viewportY)}px
       </p>
       <p id="minimap-position-status" className="sr-only" aria-live="polite">
         Viewport starts at x {Math.round(viewportX)}, y {Math.round(viewportY)};
         visible size {Math.round(viewportLogicalWidth)} by{' '}
-        {Math.round(viewportLogicalHeight)} logical units within an episode{' '}
-        {episode.logicalWidth} by {episode.logicalHeight} logical units.
+        {Math.round(viewportLogicalHeight)} pixels within an episode{' '}
+        {episode.logicalWidth} by {episode.logicalHeight} pixels.
       </p>
     </section>
   )

@@ -102,7 +102,7 @@ The approved organization model remains shallow and predictable rather than beco
 - The Asset Library slice made the first concrete schema transition from v3 to v4. The implemented appearance transition remains similarly bounded: supported v3 and v4 documents normalize into v5 appearance defaults, while malformed or unknown versions fail safely. Do not build a broad migration framework or silently coerce unknown versions.
 - Ordinary color regions are elements with normal logical `x`, `y`, `width`, and `height` bounds plus fill data. Creation starts them at `x = 0` and 800 units wide for convenience, but that is not an invariant: subsequent moves and eight-handle transforms freely edit both axes and dimensions. A fill is either solid or one vertical two-stop fill whose endpoints each carry color and alpha; that covers both a color gradient and a fade to transparency. Arbitrary angles, extra stops, and masks remain deferred.
 - Effective visibility is `group visible AND plane visible AND element visible`. A hidden element is absent from the canvas and hit testing but may remain selected from the Layers panel.
-- Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents elements by logical `y` from top to bottom and uses local stacking only to resolve equal or overlapping positions.
+- Render order is fixed group order, then plane order, then local element stacking. Within a group, plane 1 is lowest and each increasing plane number renders above the lower numbers. The right list presents the active plane in that same local stack order, making grip reordering visible and keeping the list and overlap contract aligned.
 - `activeCompositionGroup` and `activeLayerPlaneId` are transient editor state. Canvas selection activates both so the matching row remains discoverable.
 
 Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without speculative migration machinery. The colored beat rectangles now live in a Content plane as comic panels, and pinned Background plane 1 owns the starting backdrop color used by both renderers; no hardcoded episode fill remains in the canvas or minimap.
@@ -159,7 +159,7 @@ The appearance slices add pure commands such as `setElementOpacity`, `setBackgro
 The three creator-completion slices extend existing seams rather than introducing a new model:
 
 - Plane naming writes or clears the existing optional `LayerPlane.name`. Same-group plane reorder changes only ordinary-plane `order`, retains stable IDs, compacts visible numbering, and cannot move Background plane 1. A drag gesture and Move Left/Right dispatch the same pure operation and produce one history entry.
-- Bring Forward and Send Backward adjust the selected element's local `zIndex` by one position inside its current plane. The Layers list remains spatially sorted by logical `y`; explicit actions own visual stacking.
+- Bring Forward and Send Backward adjust the selected element's local `zIndex` by one position inside its current plane. A left-side row grip can move an unlocked element directly to another stack position in one history entry; Up/Down arrow keys on the focused grip provide the keyboard equivalent. The Layers list renders the resulting stack order.
 - Move to Plane changes one selected element's `layerPlaneId` to an ordinary destination in any fixed group, normalizes local stacking at that destination, and preserves its stable ID, bounds, appearance, and asset reference. Application coordination activates the destination group and plane.
 - Add Text creates one ordinary `TextElement` in the active ordinary plane. Text property commands update wording, fill color, font size, the existing `400 | 600 | 700` weight, or left/center/right alignment. The font family and line-height defaults remain fixed for this slice. Text remains independently movable, resizable, visible, composited, and selectable; no image asset or compound balloon record owns it.
 - Reader preview is a read-only presentation over the current normalized document and resolved asset sources. It does not create a second episode representation and does not write document, history, dirty, selection, active-plane, zoom, or viewport state.
@@ -369,6 +369,18 @@ Hidden elements do not render and cannot capture canvas selection. They remain s
 3. A shared pure layout function fits text between the recorded minimum and maximum size whenever bounds or properties change.
 4. Canvas, minimap, Reader Preview, visual bounds/clamping, save/reopen, portable projects, history, and local output all consume the same balloon record.
 
+### Planned research-backed balloon-preset expansion
+
+The current atomic balloon is the foundation, not the full preset catalog. The [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) records the future product inventory and its implementation order.
+
+- Extend the same atomic element with explicit body, outline, fill, tail/source-marker, and lettering-treatment properties. Do not create one unrelated element type per visual convention.
+- Treat built-in presets as immutable original starting configurations that materialize complete editable values into the episode. Rendering must never depend on a mutable preset lookup after placement.
+- Preserve flat document structure. Direct joins, connectors, multiple tails, and reading order use explicit flat associations and must be safely unlinkable; they do not introduce recursive groups or hidden duplicate geometry.
+- Keep creator-saved presets in an application-edge repository and include them in portable packaging when approved. Provider, store, account, or credential details never enter the episode.
+- Keep captions and sound effects as separate element kinds that may reuse typography and appearance primitives. They are related lettering tools, not special balloon flags.
+- Add new schema fields only through a separately approved, explicit versioned document change with deterministic defaults for existing format-v6 balloons.
+- Require command, history, persistence, recovery, portable-project, canvas, minimap, Reader Preview, and output parity for every added primitive before calling a preset complete.
+
 ### Implemented reader-preview and reset flow
 
 1. Entering preview records no document mutation. The application presents the same episode and resolved assets at the episode aspect ratio without editor chrome.
@@ -376,6 +388,12 @@ Hidden elements do not render and cannot capture canvas selection. They remain s
 3. Reset Demo checks dirty state before replacement. Cancel changes nothing; confirm loads the fixture as unsaved, clears stale transient/history context, and preserves the explicit saved slot for Reopen.
 
 ## Application-edge seams
+
+### Implemented editor adapter
+
+`src/automation/editorAdapter.ts` implements the first version of `ProjectContextReader` plus the local editor-command side of `EditorToolRegistry`. It returns a bounded JSON-safe snapshot and dispatches ID-based operations through the existing Zustand coordinator, which in turn uses the same tested document commands as the human UI. It does not mutate React, Konva, storage, or core data directly.
+
+Vite development builds expose this adapter as `window.scrollSpliceEditor` for inspection, test automation, and precise local manipulation. That writable global is not included in production builds. A future authenticated agent imports the adapter behind authorization, approval, cancellation, and provenance controls; OAuth/provider credentials never enter this contract. Raw file import/export remains host-mediated rather than crossing the serializable command boundary.
 
 The browser-local project, recovery, asset, portable-file, and renderer adapters are implemented. Network/authentication contracts remain future boundaries, not Build Week infrastructure to scaffold:
 
@@ -523,3 +541,10 @@ The historical fixed-width corrective checkpoint passed 120 unit tests. Its supe
 - Model write tools call the same tested commands available to humans and cannot mutate UI framework state directly.
 - Generated assets retain provenance and remain ordinary editable assets after creation.
 - A model run has visible progress, cancellation, and cost limits; it never publishes to WEBTOON.
+
+
+## Application appearance preferences
+
+Light/dark appearance and Details Bar visibility are browser-local application-shell preferences. They are initialized and coordinated at the React application edge, use stable local-storage keys, and are passed down only where a canvas renderer needs a concrete accent color. CSS custom properties style normal React/CSS chrome, while the Konva selection transformer receives the resolved accent as a presentation prop. Neither preference belongs in Zustand document state, the episode schema, command history, crash recovery, portable projects, export profiles, or authentication/persistence adapters.
+
+The compact header status separates visible chrome from the existing detailed document status: creators see Saved or Unsaved with explanatory hover text, and the complete message remains an assistive live region and test seam. The optional Details Bar retains coordinates and selected-element controls but omits the selected element's name, preventing long names from consuming horizontal control space.

@@ -3,7 +3,12 @@ import { expect, test, type Page } from '@playwright/test'
 async function useMenuItem(
   page: Page,
   menuName: 'File' | 'View',
-  itemName: 'New Episode' | 'Save' | 'Reopen Current' | 'Reader Preview',
+  itemName:
+    | 'New Episode'
+    | 'Save'
+    | 'Reopen Current'
+    | 'Reader Preview'
+    | 'Show Details Bar',
 ) {
   await page.getByRole('button', { name: menuName, exact: true }).click()
   const item = page
@@ -48,6 +53,7 @@ test('edits an atomic speech balloon and preserves it through save, reopen, and 
   )
 
   await useMenuItem(page, 'File', 'New Episode')
+  await useMenuItem(page, 'View', 'Show Details Bar')
   await page
     .getByRole('button', { name: 'Speech Balloons', exact: true })
     .click()

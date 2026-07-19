@@ -18,6 +18,7 @@ import {
   deleteEmptyLayerPlane as deleteEmptyLayerPlaneCommand,
   extendEpisodeHeight as extendEpisodeHeightCommand,
   moveElementInStack as moveElementInStackCommand,
+  reorderElementInStack as reorderElementInStackCommand,
   reorderLayerPlane as reorderLayerPlaneCommand,
   resizeElement as resizeElementCommand,
   resizeEpisodeHeight as resizeEpisodeHeightCommand,
@@ -233,6 +234,10 @@ interface EditorState {
   readonly moveElementInStack: (
     elementId: string,
     direction: 'backward' | 'forward',
+  ) => void
+  readonly reorderElementInStack: (
+    elementId: string,
+    targetIndex: number,
   ) => void
   readonly moveElementToLayerPlane: (
     elementId: string,
@@ -2027,6 +2032,19 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       commitEpisodeChange(
         state,
         moveElementInStackCommand(state.episode, elementId, direction),
+      ),
+    )
+  },
+
+  reorderElementInStack: (elementId, targetIndex) => {
+    set((state) =>
+      commitEpisodeChange(
+        state,
+        reorderElementInStackCommand(
+          state.episode,
+          elementId,
+          targetIndex,
+        ),
       ),
     )
   },
