@@ -70,6 +70,32 @@ test('fits minimap geometry and exposes constrained inspector and help controls'
   )
   expect(minimapBaseBounds.width).toBeGreaterThan(minimapBounds.width - 4)
 
+  const zoomSlider = page.getByRole('slider', { name: 'Canvas zoom' })
+  await zoomSlider.fill('200')
+  const expandedViewportFrame = page.getByTestId('minimap-viewport')
+  const expandedFrameBounds = await expandedViewportFrame.boundingBox()
+  if (!expandedFrameBounds) {
+    throw new Error('The expanded minimap viewport frame needs visible bounds.')
+  }
+
+  const viewportXBeforeExpandedFrameDrag = Number(
+    await canvas.getAttribute('data-viewport-x'),
+  )
+  const leftExpansionCenterX =
+    expandedFrameBounds.x + expandedFrameBounds.width * (24 / 496)
+  const frameCenterY =
+    expandedFrameBounds.y + expandedFrameBounds.height / 2
+
+  await page.mouse.move(leftExpansionCenterX, frameCenterY)
+  await page.mouse.down()
+  await page.mouse.move(leftExpansionCenterX + 10, frameCenterY, { steps: 4 })
+  await page.mouse.up()
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-viewport-x')))
+    .toBeGreaterThan(viewportXBeforeExpandedFrameDrag)
+
+  await zoomSlider.fill('100')
+
   await minimapScroller.evaluate((element) => {
     element.scrollTop = element.scrollHeight - element.clientHeight
   })

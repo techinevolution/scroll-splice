@@ -25,7 +25,7 @@ import {
 } from '../core/episode'
 import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
 import { getSpeechBalloonTextLayout } from '../core/speechBalloonLayout'
-import { useAssetImage } from '../editor/useAssetImage'
+import { useAssetImage } from '../assets/useAssetImage'
 import {
   getTilePatternScale,
   toCssMixBlendMode,

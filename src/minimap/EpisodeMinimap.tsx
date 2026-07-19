@@ -22,7 +22,7 @@ import {
   type SpeechBalloonElement,
 } from '../core/episode'
 import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
-import { useAssetImage } from '../editor/useAssetImage'
+import { useAssetImage } from '../assets/useAssetImage'
 import {
   getTilePatternScale,
   toCssMixBlendMode,

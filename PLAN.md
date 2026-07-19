@@ -27,7 +27,7 @@ Implementation status in the current working build:
 5. **Panels, crop, and intentional overflow — implemented as bounded presets:** rectangle/rounded/slant-left/slant-right/diamond image masks, Cover focus/zoom, optional mask-following frame border, and constrained or final-output-clipped **episode-edge** bleed. A masked image remains clipped to its frame. First-class panel breakout is not implemented; the current manual workaround is a separate duplicated unmasked overlay. Arbitrary point editing remains outside this build.
 6. **Text and speech-balloon composition — implemented as one atomic editable balloon element:** automatic fitting, typography/body controls, and editable tail side/anchor/width/tip. Creator template saving remains outside this build.
 7. **Local render/export proof — implemented provisionally:** tall master, creator-reviewed deterministic PNG/JPEG slices, observed-profile preflight, and explicit **not upload-verified / manual upload** labeling.
-8. **Reliability and handoff — complete:** 385 unit tests across 29 files, strict typecheck, ESLint, production build, and all 15 Playwright Chromium stories pass. The editor, Reader Preview, provisional export, and matched dark/light release screenshots are indexed; [Feature Test Sheet](FEATURE_TEST_SHEET.md) is ready for Katherine's review.
+8. **Reliability and handoff — complete:** 386 unit tests across 29 files, strict typecheck, ESLint, production build, and all 15 Playwright Chromium stories pass. The editor, Reader Preview, provisional export, and matched dark/light release screenshots are indexed; [Feature Test Sheet](FEATURE_TEST_SHEET.md) is ready for Katherine's review.
 
 The locally feasible goal excludes production accounts, OAuth, OpenAI runtime access, cloud sync, external connectors, desktop packaging, automated WEBTOON login/upload/publishing, and any use of private Root & Table material. Those features need their existing network, privacy, credential, platform, or stack decisions before implementation. Public deployment and Devpost evidence remain scheduled work rather than editor features.
 
@@ -178,7 +178,7 @@ Must-have work:
 - Make the episode title editable in the existing header. Enter or blur commits, Escape cancels, blank or whitespace-only text is rejected, and the input is capped at 60 characters for WEBTOON-compatible episode-title entry.
 - Add an editor-only **+ Add scroll space** control at the logical bottom of the story canvas. It is workspace chrome, not episode content and not part of eventual export.
 - Extend only downward by a centralized default of 1280 logical units per activation. Do not scatter that number through components, and do not add shrinking or arbitrary-height entry in this slice.
-- Keep the current logical viewport position stable when space is added. The pinned base automatically follows the new document height, and the fixed-size minimap refits the entire episode while preserving accurate navigation and viewport proportions.
+- Keep the current logical viewport position stable when space is added. At this historical checkpoint, the pinned base followed the new document height and the fixed-size minimap refit the entire episode; the later selected design supersedes that presentation with a larger scrollable minimap surface and followed viewport frame.
 - Make reset restore the fixture title, original episode height, original planes, active plane, selection, visibility, base color, and viewport.
 
 Acceptance:
@@ -188,7 +188,7 @@ Acceptance:
 - deletion leaves all surviving IDs and content intact, closes the numbering gap, and activates the nearest survivor
 - the header title supports commit and cancel behavior, rejects blank text, enforces the 60-character cap, and reset restores the fixture title
 - each add-space activation increases the logical height by exactly the centralized 1280-unit default without moving existing elements or jumping the viewport
-- the base continues through the extended area and the minimap automatically refits the full new height with correct click, drag, and viewport-box behavior
+- the base continues through the extended area and the minimap updates the full new height with correct click, drag, and viewport-box behavior; the current release presents that full surface through a larger scrollable window
 - existing canvas navigation, selection, movement, visibility, plane overflow, and reset behavior remain passing
 - focused unit/store coverage, typecheck, lint, production build, Playwright, and visual inspection at the supported desktop sizes pass
 
@@ -234,7 +234,7 @@ Must-have work:
 
 - Retain **Add scroll space** as the fast 1280-unit action, and add a distinct bottom-edge drag handle for precise height adjustment.
 - Convert the pointer drag through shared logical-coordinate helpers. Allow growth and shrinking of unused tail space, but clamp the minimum to the lowest content bound across every plane; hidden elements and color regions count. Never move, crop, or delete content to satisfy a shrink request.
-- Keep the current viewport valid as height changes, let the pinned base follow the resulting document height, and refit the complete minimap continuously or immediately after commit.
+- Keep the current viewport valid as height changes, let the pinned base follow the resulting document height, and update the complete minimap surface continuously or immediately after commit. The current larger preview is vertically scrollable and follows the active viewport rather than fitting the entire episode onscreen at once.
 - At this historical checkpoint, introduce a solid full-width color-region element for ordinary Background planes. Creation accepts a color, vertical start, and length, defaults the start from the current viewport, remains vertically movable, and participates in normal selection, visibility, ordering, deletion, minimap, and height-safety rules. The later free-transform correction supersedes the fixed-width/vertical-only behavior without changing this checkpoint record.
 - Keep each color region independent from pinned Background plane 1. The base remains a full-scroll fallback; ordinary regions provide local color changes above it and below Content.
 
@@ -427,7 +427,7 @@ A creator starts a blank episode, names it, chooses the base color, and imports 
 
 - Let an ordinary plane keep an optional creator-facing name without changing its stable ID or unrestricted meaning.
 - Reorder ordinary planes only within their fixed composition group through a dedicated tab drag grip, a clear insertion marker, and visible **Move Left** / **Move Right** actions. Overflow arrows remain navigation only. Background plane 1 stays pinned and cannot move.
-- Keep the Layers element list ordered spatially from the top of the scroll; do not make row position ambiguously represent stacking. Give the selected element explicit **Bring Forward** and **Send Backward** actions within its current plane.
+- Keep the Layers element list in deterministic low-to-high local stack order so row movement and canvas overlap agree. Give the selected element explicit **Bring Forward** and **Send Backward** actions within its current plane; focused grip Arrow Up moves to the preceding visible row and Arrow Down to the following row.
 - Add a visible, keyboard-accessible **Move to Plane** action that can move the selected element to an ordinary plane in any fixed group. Update the active group and plane to the destination, preserve the selected stable element and asset reference, and never duplicate it or target Background plane 1.
 - Implement these operations as pure document commands over existing `LayerPlane.name`, plane `order`, element `layerPlaneId`, and element `zIndex`. They create one normal history entry, survive Save/reload/Reopen, and require no format bump.
 
@@ -588,7 +588,7 @@ Items 1–16 preserve the historical slice record. On July 16 Katherine authoriz
 15. Basic independent text creation and editing over existing balloon assets. **Implemented, validated, and published in `cb1f284`.**
 16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented, validated, and published in `cb1f284`.**
 
-Completion-pass additions across the historical items are implemented and validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, atomic editable speech balloons, provisional rendering, the six-image default story, dual light/dark appearances, compact element grips, and the versioned editor adapter. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 385 unit tests, typecheck, lint, build, and all 15 Playwright stories and is included in the current big feature/UI release.
+Completion-pass additions across the historical items are implemented and validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, atomic editable speech balloons, provisional rendering, the six-image default story, dual light/dark appearances, compact element grips, and the versioned editor adapter. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 386 unit tests, typecheck, lint, build, and all 15 Playwright stories and is included in the current big feature/UI release.
 
 Continue through the locally feasible queue while validation remains healthy. Stop immediately if product work threatens the scheduled submission runway or the minimum editor experience.
 

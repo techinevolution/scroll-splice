@@ -23,7 +23,7 @@ Root & Table is the first real story used to test whether the tool supports an e
 
 ### Build Week MVP
 
-The July 21 submission is a small but complete working editor experience, not the full product. It uses a fixed-width original sample episode rendered from code-defined shapes and text to deliver:
+The July 21 submission is a small but complete working editor experience, not the full product. It uses the fixed-width original six-image **The Light We Planted** sample episode with separate editable title and narration to deliver:
 
 - a viewport-sized vertical editing canvas
 - a lightweight full-episode minimap with synchronized navigation
@@ -130,7 +130,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 
 ### 3. Minimap preview
 
-- Always fit the complete episode into the available minimap preview, including immediately after **Add scroll space** changes its height.
+- Render the complete episode on one proportionate minimap surface inside a larger vertically scrollable preview, including immediately after **Add scroll space** changes its height. Keep the active viewport frame scrolled into view instead of shrinking the whole episode until it becomes unreadable.
 - Viewport box accurately representing the visible main-canvas region at the current episode height and view scale.
 - Drag the viewport box to pan the main canvas.
 - Click a minimap location to jump there.
@@ -254,7 +254,7 @@ These components follow the creator-ready human workflow and are not Build Week 
 - A creator makes an angled panel mask, repositions a photo inside it, and lets a character or sound effect break beyond the frame without snapping forcing it back inside.
 - On a smaller monitor, the creator can scroll or collapse the right inspector without losing the composition-group controls or access to the Asset Library.
 - A creator combines a chosen background color with a transparent uploaded background and optional edge decoration, then extends the episode as new story beats are added.
-- A creator clicks the ordinary title text and edits it without the title or header shifting, reaches the end of the current scroll, adds another 1,280 logical units, drags the bottom edge upward to remove only the unused portion, and sees the minimap immediately refit without moving or clipping existing content.
+- A creator clicks the ordinary title text and edits it without the title or header shifting, reaches the end of the current scroll, adds another 1,280 logical units, drags the bottom edge upward to remove only the unused portion, and sees the scrollable minimap surface and viewport frame update without moving or clipping existing content.
 - A creator deletes one placed panel from its Layers-row trash action, then uses the bottom paperclip to add an original built-in or locally imported image while leaving the reusable source intact.
 - A creator adds a starter speech balloon, resizes it with corner handles, and replaces or supplements the starter library with a personal reusable balloon asset.
 - A creator starts with a familiar editable preset such as Thought, Whisper, Shout, Electric, or Wavy; changes its body, outline, fill, tail, and lettering; then saves the customized result later without changing balloons already placed in the episode.

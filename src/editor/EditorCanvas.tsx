@@ -67,7 +67,10 @@ import {
 import { useElementSize } from './useElementSize'
 import { CanvasBaseColorControl } from './CanvasBaseColorControl'
 import { EpisodeHeightControls } from './EpisodeHeightControls'
-import { useAssetImage, type AssetImageStatus } from './useAssetImage'
+import {
+  useAssetImage,
+  type AssetImageStatus,
+} from '../assets/useAssetImage'
 
 const RENDER_BUFFER = 160
 const PROPORTIONAL_RESIZE_ANCHORS = [
