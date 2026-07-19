@@ -106,4 +106,26 @@ describe('editor adapter', () => {
       planeId: backgroundPlane.id,
     })
   })
+
+  it('activates an explicit plane outside the currently active group', () => {
+    const adapter = createEditorAdapter()
+    const before = adapter.inspect()
+    const targetPlane = before.planes.find(
+      ({ group }) => group !== before.active.group,
+    )
+
+    expect(targetPlane).toBeDefined()
+    if (!targetPlane) return
+
+    const result = adapter.execute({
+      type: 'set-active-plane',
+      planeId: targetPlane.id,
+    })
+
+    expect(result.ok).toBe(true)
+    expect(result.snapshot.active).toEqual({
+      group: targetPlane.group,
+      planeId: targetPlane.id,
+    })
+  })
 })

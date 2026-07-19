@@ -259,21 +259,37 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
     if ('planeId' in command && !plane) return fail(command, 'not-found', `Layer plane ${command.planeId} was not found.`)
     if ('elementId' in command && !element) return fail(command, 'not-found', `Element ${command.elementId} was not found.`)
 
-    if (
+    const createsElementOnTargetPlane =
       command.type === 'create-text' ||
       command.type === 'create-speech-balloon' ||
       command.type === 'create-background-region' ||
       command.type === 'place-built-in-asset' ||
       command.type === 'place-imported-asset'
-    ) {
+
+    if (createsElementOnTargetPlane) {
       if (plane?.kind !== 'ordinary') return fail(command, 'wrong-type', 'New elements can only be placed on an ordinary layer plane.')
+    }
+
+    if (createsElementOnTargetPlane || command.type === 'set-active-plane') {
+      if (!plane) {
+        return fail(command, 'not-found', `Layer plane ${command.planeId} was not found.`)
+      }
+
       beforeState.setActiveCompositionGroup(plane.compositionGroup)
-      beforeState.setActiveLayerPlane(command.planeId)
+      store.getState().setActiveLayerPlane(command.planeId)
+
+      const activeState = store.getState()
+      if (
+        activeState.activeCompositionGroup !== plane.compositionGroup ||
+        activeState.activeLayerPlaneId !== command.planeId
+      ) {
+        return fail(command, 'rejected', `Layer plane ${command.planeId} could not be activated.`)
+      }
     }
 
     switch (command.type) {
       case 'set-active-group': beforeState.setActiveCompositionGroup(command.group); break
-      case 'set-active-plane': beforeState.setActiveLayerPlane(command.planeId); break
+      case 'set-active-plane': break
       case 'set-viewport': beforeState.setViewportPosition(command.position); break
       case 'pan-viewport': beforeState.panViewport(command.delta); break
       case 'set-zoom': beforeState.setZoomFactor(command.zoomFactor); break

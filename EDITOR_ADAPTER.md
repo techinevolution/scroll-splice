@@ -30,6 +30,8 @@ Always use this sequence:
 
 All positions and bounds use logical episode pixels. The episode is normally 800 px wide. Element coordinates are absolute within the full scroll; viewport coordinates only control what is currently visible.
 
+`set-active-plane` and every plane-targeted creation command resolve the plane's composition group from its stable ID, activate that group first, verify that the requested plane became active, and only then continue. Callers do not need to issue a separate `set-active-group`; if activation fails, the adapter returns a rejected result before creating content on any fallback plane.
+
 ## Common examples
 
 Select and reveal an element:
