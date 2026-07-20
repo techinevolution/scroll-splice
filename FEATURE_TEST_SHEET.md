@@ -12,7 +12,7 @@ Use the public editor at <https://techinevolution.github.io/scroll-splice/>. Its
 - Public URL: <https://techinevolution.github.io/scroll-splice/>
 - Build/commit: `2849d81`
 - Tester: Katherine
-- Current test: `W01`
+- Current test: `E01`
 - Overall result: In progress / Pass / Pass with notes / Fail
 - Blocking issue, if any:
 
@@ -34,12 +34,12 @@ Imagine that you are starting a short vertical episode about a character crossin
 
 | ID | Action | Expected result | Result | Notes |
 | --- | --- | --- | --- | --- |
-| W01 | Open the [deployed ScrollSplice editor](https://techinevolution.github.io/scroll-splice/) in a fresh browser tab. | **The Light We Planted** loads with the story canvas, left Asset Library rail, full-episode minimap, and Layers inspector visible; the canvas is usable rather than squeezed. |  |  |
-| W02 | Click **File**, **Edit**, **View**, **Window**, and **Help**. | Each working menu opens above the Asset Library and canvas; moving between menus does not trigger an editor action. |  |  |
-| W03 | Open **Help > Shortcuts & About**, then close it with Escape. | The help dialog explains local storage, portable projects, and the working shortcuts; Escape closes it. |  |  |
-| W04 | Use **Window > Hide Inspector**, then show it again from the header control or Window menu. | The minimap/Layers inspector hides and returns without changing the episode. |  |  |
-| W05 | Narrow the window to about 1,024 pixels wide and open the inspector. | The inspector behaves as an overlay instead of crushing the canvas; its close control, scrim, and Escape dismissal work. |  |  |
-| W06 | Open one Asset Library category, then click the active category again. | The drawer opens over the workspace and the second click closes it. |  |  |
+| W01 | Open the [deployed ScrollSplice editor](https://techinevolution.github.io/scroll-splice/) in a fresh browser tab. | **The Light We Planted** loads with the story canvas, left Asset Library rail, full-episode minimap, and Layers inspector visible; the canvas is usable rather than squeezed. | Pass | Editor opened; The Light We Planted loaded; Asset Library rail appeared on the left; the scrollable canvas allowed element movement; minimap and Layers appeared on the right with ample canvas room. |
+| W02 | Click **File**, **Edit**, **View**, **Window**, and **Help**. | Each working menu opens above the Asset Library and canvas; moving between menus does not trigger an editor action. | Pass | Every menu opened above the workspace. Opening another menu closed the previous one; clicking the active menu again closed it. No visible canvas content changed. |
+| W03 | Open **Help > Shortcuts & About**, then close it with Escape. | The shortcut list is present. The **About** paragraph explains that episode/assets stay in the current browser unless deliberately exported and that a portable `.scrollsplice` file carries the episode plus its local asset library; these are concepts, not required section headings. Escape closes the dialog. | Pass | The complete shortcut list and both About explanations were present. Escape closed the dialog and the episode remained unchanged. Screenshot reviewed from Katherine's July 19 test. |
+| W04 | Use **Window > Hide Inspector**, then show it again from the header control or Window menu. | The minimap/Layers inspector hides and returns without changing the episode. | Pass | Window menu and header controls both hid/restored the inspector. The inspector's own × button also closed it. Episode title and content remained unchanged. |
+| W05 | Narrow the window to about 1,024 pixels wide and open the inspector. | The inspector behaves as an overlay instead of crushing the canvas; its close control, scrim, and Escape dismissal work. | Pass | Inspector overlaid the right side without crushing the canvas. Scrim appeared. The × button, Escape, and clicking the darkened canvas all closed the inspector. |
+| W06 | Open one Asset Library category, then click the active category again. | The drawer opens over the workspace and the second click closes it. | Pass | Uploads, Speech Balloons, Decor, and Splatters all opened over the workspace and closed when their active category button was clicked again. |
 
 ## Story 2 — Start and shape the episode
 
