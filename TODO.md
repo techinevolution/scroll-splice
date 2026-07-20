@@ -32,12 +32,14 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Katherine — before submission
 
-- [ ] On or around July 19, approve the separately scoped GitHub Pages deployment after the product-building window closes.
+- [x] Approve the separately scoped GitHub Pages deployment and clean-browser public-editor check on July 19.
+- [ ] Paste the working editor URL into Devpost: <https://techinevolution.github.io/scroll-splice/>.
 - [ ] Paste the recorded Codex Feedback Session ID into the Devpost submission form.
 
 ## Codex — after the relevant gate
 
-- [ ] Publish the validated adapter-plane and architecture-alignment reconciliation commits after Katherine explicitly approves a push to `main`.
+- [x] Publish the validated adapter-plane and architecture-alignment reconciliation commits after Katherine explicitly approves a push to `main`.
+- [x] Publish the human editor to GitHub Pages and pass the clean-browser walkthrough.
 
 - [x] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
 - [x] Build, validate, push, and prepare the complete human editor for Katherine's product review.

@@ -116,13 +116,14 @@ The locally implemented WEBTOON candidate-boundary overlay is an editor aid, not
 
 Rules require a website, functioning demo, or test build that is free and unrestricted through the end of judging.
 
-- [ ] Preferred: publish the passing static build through GitHub Pages.
-- [ ] Fallback: provide an unrestricted downloadable test build with exact launch steps.
-- [ ] Put the working-access URL in README and the Devpost form.
-- [ ] Test that URL from a signed-out/private browser session with no credentials, local files, private assets, or paid services.
+- [x] Preferred: publish the passing static build through GitHub Pages.
+- [—] Fallback: not needed because GitHub Pages is live.
+- [x] Put the working-access URL in README.
+- [ ] Put the working-access URL in the Devpost form.
+- [x] Test that URL from a clean isolated browser profile with no credentials, local files, private assets, or paid services.
 - [ ] Keep the submitted working project free, unrestricted, and available until **August 5, 2026 at 5:00 PM PT**.
 
-Working-access URL: **PENDING — the local application and production build exist; public deployment has not begun.**
+Working-access URL: <https://techinevolution.github.io/scroll-splice/>. On July 19 a new isolated Chromium profile loaded the six-panel demo, selected a canvas element from Layers, and synchronized canvas scrolling with the minimap from `y 0px` to `y 900px`. It had no cookies, saved projects, imported assets, credentials, or paid-service dependency.
 
 ## 7. Repository and technical evidence
 

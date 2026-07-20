@@ -4,7 +4,9 @@ ScrollSplice is a scroll-native vertical comic editor. Its defining workspace co
 
 Programmatic editor inspection and manipulation now use the versioned [Editor Adapter](EDITOR_ADAPTER.md). In development it is available as `window.scrollSpliceEditor`; future authenticated model tools will wrap the same command surface rather than manipulate the DOM or canvas directly.
 
-This repository is the public Build Week record for ScrollSplice: <https://github.com/techinevolution/scroll-splice>.
+**Try the deployed human editor:** <https://techinevolution.github.io/scroll-splice/>
+
+This repository is the public Build Week record for ScrollSplice: <https://github.com/techinevolution/scroll-splice>. The judge build is free and requires no login, API key, paid service, or local files.
 
 **Name screen:** ScrollSplice replaced the conflicted ScrollForge working name on July 13. A basic exact-name screen found no matching software brand in general web search, GitHub repositories, npm, or PyPI. This is practical risk reduction, not legal trademark clearance; see [Build Week Compliance](BUILD_WEEK_COMPLIANCE.md#name-screen-and-clearance).
 
