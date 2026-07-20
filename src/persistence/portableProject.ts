@@ -5,6 +5,7 @@ import {
   MAX_IMPORTED_IMAGE_BYTES,
   type AssetLibrarySnapshot,
   type CreatorAssetCategorySnapshot,
+  type GeneratedImageMetadata,
   type ImportedImageMediaType,
   type ImportedImageSnapshot,
 } from '../assets/types'
@@ -80,6 +81,7 @@ interface PortableImportedImageV1 {
   readonly intrinsicHeight: number
   readonly creatorCategoryId: string | null
   readonly importedAt: string
+  readonly generation?: GeneratedImageMetadata
   readonly sourceEncoding: 'base64'
   readonly sourceBase64: string
 }
@@ -181,6 +183,7 @@ export async function serializePortableProject(
         intrinsicHeight: image.intrinsicHeight,
         creatorCategoryId: image.creatorCategoryId,
         importedAt: image.importedAt,
+        ...(image.generation ? { generation: image.generation } : {}),
         sourceEncoding: 'base64',
         sourceBase64: encodeBase64(sourceBytes),
       })
@@ -475,18 +478,7 @@ function decodePortableImportedImage(
   | { readonly ok: true; readonly image: ImportedImageSnapshot }
   | PortableProjectFailure {
   if (
-    !hasExactKeys(value, [
-      'id',
-      'displayName',
-      'mediaType',
-      'byteSize',
-      'intrinsicWidth',
-      'intrinsicHeight',
-      'creatorCategoryId',
-      'importedAt',
-      'sourceEncoding',
-      'sourceBase64',
-    ]) ||
+    !hasOnlyImportedImageKeys(value) ||
     value.sourceEncoding !== 'base64' ||
     typeof value.sourceBase64 !== 'string' ||
     !isImportedImageMediaType(value.mediaType) ||
@@ -520,8 +512,31 @@ function decodePortableImportedImage(
       sourceBlob: new Blob([sourceBytes], { type: value.mediaType }),
       creatorCategoryId: value.creatorCategoryId as string | null,
       importedAt: value.importedAt as string,
+      ...(value.generation !== undefined
+        ? { generation: value.generation as GeneratedImageMetadata }
+        : {}),
     },
   }
+}
+
+function hasOnlyImportedImageKeys(value: RecordValue): boolean {
+  const requiredKeys = [
+    'id',
+    'displayName',
+    'mediaType',
+    'byteSize',
+    'intrinsicWidth',
+    'intrinsicHeight',
+    'creatorCategoryId',
+    'importedAt',
+    'sourceEncoding',
+    'sourceBase64',
+  ]
+
+  return (
+    hasExactKeys(value, requiredKeys) ||
+    hasExactKeys(value, [...requiredKeys, 'generation'])
+  )
 }
 
 function validatePortableAssetBounds(

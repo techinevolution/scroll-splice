@@ -21,6 +21,9 @@ export const MAX_IMPORTED_IMAGE_BYTES = 20 * 1024 * 1024
 export const MAX_IMPORTED_IMAGE_PIXELS = 40_000_000
 export const MAX_ASSET_DISPLAY_NAME_LENGTH = 120
 export const MAX_CREATOR_CATEGORY_NAME_LENGTH = 40
+export const MAX_GENERATED_PROVIDER_LENGTH = 120
+export const MAX_GENERATED_MODEL_LENGTH = 160
+export const MAX_GENERATED_PROMPT_LENGTH = 8_000
 
 export interface BuiltInAssetDefinition {
   readonly id: string
@@ -38,6 +41,13 @@ export interface CreatorAssetCategorySnapshot {
   readonly createdAt: string
 }
 
+export interface GeneratedImageMetadata {
+  readonly provider: string
+  readonly model: string | null
+  readonly prompt: string | null
+  readonly generatedAt: string
+}
+
 export interface ImportedImageSnapshot {
   readonly id: string
   readonly displayName: string
@@ -48,6 +58,7 @@ export interface ImportedImageSnapshot {
   readonly sourceBlob: Blob
   readonly creatorCategoryId: string | null
   readonly importedAt: string
+  readonly generation?: GeneratedImageMetadata
 }
 
 export interface AssetLibrarySnapshot {

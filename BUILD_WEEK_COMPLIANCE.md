@@ -88,6 +88,7 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [ ] Only synthetic prompts and references are sent; no Root & Table production art or other private creative material is uploaded.
 - [ ] No API key, OAuth token, reusable provider credential, or private response data appears in the browser bundle, repository, logs, screenshots, or video.
 - [x] Generated assets record provenance, and the demo distinguishes implemented behavior from the later full-autonomy vision. The six-panel **The Light We Planted** fixture was generated with OpenAI image generation on July 17 from original text prompts without private or third-party reference art; optimized copies live under public/demo/the-light-we-planted/.
+- [x] The provider-neutral editor adapter can validate and persist host-generated PNG/JPEG/WebP bytes with provider/model/prompt/timestamp provenance, return a stable Asset Library ID, place the source on an explicit ordinary plane and logical bounds, and undo the placed instance without deleting the reusable source. This is local intake infrastructure, not proof of a live OpenAI connection.
 - [ ] The integration follows current OpenAI terms, usage policies, model availability, and an officially supported authorization path.
 
 ## 5. Working-project requirements

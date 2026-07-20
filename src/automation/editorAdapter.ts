@@ -1,4 +1,8 @@
-import { BUILT_IN_ASSETS } from '../assets'
+import {
+  BUILT_IN_ASSETS,
+  type GeneratedImageMetadata,
+} from '../assets'
+import { isGeneratedImageMetadata } from '../assets/validation'
 import { useEditorStore } from '../app/store'
 import type {
   ElementAlignment,
@@ -24,8 +28,12 @@ import {
   type ImagePresentation,
   type ShapeFill,
 } from '../core/episode'
+import {
+  materializeGeneratedImageSource,
+  type GeneratedImageSource,
+} from './generatedImageSource'
 
-export const EDITOR_ADAPTER_API_VERSION = 1 as const
+export const EDITOR_ADAPTER_API_VERSION = 2 as const
 
 export type EditorAdapterCommand =
   | { readonly type: 'set-active-group'; readonly group: CompositionGroup }
@@ -88,6 +96,32 @@ export type EditorAdapterCommand =
   | { readonly type: 'new-episode' }
   | { readonly type: 'reset-demo' }
 
+export interface GeneratedAssetImportMetadata {
+  readonly displayName: string
+  readonly creatorCategoryId?: string | null
+  readonly provider: string
+  readonly model?: string | null
+  readonly prompt?: string | null
+  readonly generatedAt?: string
+}
+
+export type EditorAdapterAsyncCommand =
+  | {
+      readonly type: 'import-generated-asset'
+      readonly source: GeneratedImageSource
+      readonly metadata: GeneratedAssetImportMetadata
+    }
+  | {
+      readonly type: 'place-generated-asset'
+      readonly assetId: string
+      readonly planeId: string
+      readonly bounds: ElementBounds
+    }
+
+export type EditorAdapterCommandType =
+  | EditorAdapterCommand['type']
+  | EditorAdapterAsyncCommand['type']
+
 export interface EditorAdapterSnapshot {
   readonly apiVersion: typeof EDITOR_ADAPTER_API_VERSION
   readonly episode: {
@@ -129,7 +163,15 @@ export interface EditorAdapterSnapshot {
   }[]
   readonly assets: {
     readonly builtIn: readonly { readonly id: string; readonly name: string; readonly categoryId: string; readonly width: number; readonly height: number }[]
-    readonly imported: readonly { readonly id: string; readonly name: string; readonly mediaType: string; readonly width: number; readonly height: number; readonly categoryId: string | null }[]
+    readonly imported: readonly {
+      readonly id: string
+      readonly name: string
+      readonly mediaType: string
+      readonly width: number
+      readonly height: number
+      readonly categoryId: string | null
+      readonly generation: GeneratedImageMetadata | null
+    }[]
   }
   readonly editor: {
     readonly canUndo: boolean
@@ -141,17 +183,24 @@ export interface EditorAdapterSnapshot {
   }
 }
 
-type AdapterErrorCode = 'invalid-command' | 'not-found' | 'wrong-type' | 'rejected'
+type AdapterErrorCode =
+  | 'invalid-command'
+  | 'invalid-source'
+  | 'not-found'
+  | 'wrong-type'
+  | 'rejected'
 
 export type EditorAdapterResult =
-  | { readonly ok: true; readonly command: EditorAdapterCommand['type']; readonly changed: boolean; readonly createdId?: string; readonly snapshot: EditorAdapterSnapshot }
-  | { readonly ok: false; readonly command: EditorAdapterCommand['type']; readonly code: AdapterErrorCode; readonly message: string; readonly snapshot: EditorAdapterSnapshot }
+  | { readonly ok: true; readonly command: EditorAdapterCommandType; readonly changed: boolean; readonly createdId?: string; readonly snapshot: EditorAdapterSnapshot }
+  | { readonly ok: false; readonly command: EditorAdapterCommandType; readonly code: AdapterErrorCode; readonly message: string; readonly snapshot: EditorAdapterSnapshot }
 
 export interface ScrollSpliceEditorAdapter {
   readonly apiVersion: typeof EDITOR_ADAPTER_API_VERSION
-  readonly commandTypes: readonly EditorAdapterCommand['type'][]
+  readonly commandTypes: readonly EditorAdapterCommandType[]
+  readonly asyncCommandTypes: readonly EditorAdapterAsyncCommand['type'][]
   inspect(): EditorAdapterSnapshot
   execute(command: EditorAdapterCommand): EditorAdapterResult
+  executeAsync(command: EditorAdapterAsyncCommand): Promise<EditorAdapterResult>
 }
 
 type EditorStore = Pick<typeof useEditorStore, 'getState'>
@@ -173,6 +222,11 @@ export const EDITOR_ADAPTER_COMMAND_TYPES = [
   'ungroup-selection', 'move-story-beat', 'set-magnet', 'set-slice-guides', 'undo',
   'redo', 'save', 'save-as', 'reopen', 'new-episode', 'reset-demo',
 ] as const satisfies readonly EditorAdapterCommand['type'][]
+
+export const EDITOR_ADAPTER_ASYNC_COMMAND_TYPES = [
+  'import-generated-asset',
+  'place-generated-asset',
+] as const satisfies readonly EditorAdapterAsyncCommand['type'][]
 
 export function createEditorAdapter(store: EditorStore = useEditorStore): ScrollSpliceEditorAdapter {
   const inspect = (): EditorAdapterSnapshot => {
@@ -231,7 +285,15 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
       })),
       assets: {
         builtIn: BUILT_IN_ASSETS.map((asset) => ({ id: asset.id, name: asset.displayName, categoryId: asset.categoryId, width: asset.intrinsicWidth, height: asset.intrinsicHeight })),
-        imported: state.importedImageAssets.map((asset) => ({ id: asset.id, name: asset.displayName, mediaType: asset.mediaType, width: asset.intrinsicWidth, height: asset.intrinsicHeight, categoryId: asset.creatorCategoryId })),
+        imported: state.importedImageAssets.map((asset) => ({
+          id: asset.id,
+          name: asset.displayName,
+          mediaType: asset.mediaType,
+          width: asset.intrinsicWidth,
+          height: asset.intrinsicHeight,
+          categoryId: asset.creatorCategoryId,
+          generation: asset.generation ?? null,
+        })),
       },
       editor: {
         canUndo: state.canUndo,
@@ -244,7 +306,11 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
     }
   }
 
-  const fail = (command: EditorAdapterCommand, code: AdapterErrorCode, message: string): EditorAdapterResult => ({
+  const fail = (
+    command: EditorAdapterCommand | EditorAdapterAsyncCommand,
+    code: AdapterErrorCode,
+    message: string,
+  ): EditorAdapterResult => ({
     ok: false, command: command.type, code, message, snapshot: inspect(),
   })
 
@@ -382,7 +448,202 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
     return { ok: true, command: command.type, changed, createdId: createdElement?.id ?? createdPlane?.id, snapshot: inspect() }
   }
 
-  return { apiVersion: EDITOR_ADAPTER_API_VERSION, commandTypes: EDITOR_ADAPTER_COMMAND_TYPES, inspect, execute }
+  const executeAsync = async (
+    command: EditorAdapterAsyncCommand,
+  ): Promise<EditorAdapterResult> => {
+    if (command.type === 'import-generated-asset') {
+      const metadata = command.metadata
+
+      if (
+        !metadata ||
+        typeof metadata.displayName !== 'string' ||
+        typeof metadata.provider !== 'string' ||
+        (metadata.model !== undefined &&
+          metadata.model !== null &&
+          typeof metadata.model !== 'string') ||
+        (metadata.prompt !== undefined &&
+          metadata.prompt !== null &&
+          typeof metadata.prompt !== 'string') ||
+        (metadata.generatedAt !== undefined &&
+          typeof metadata.generatedAt !== 'string') ||
+        (metadata.creatorCategoryId !== undefined &&
+          metadata.creatorCategoryId !== null &&
+          typeof metadata.creatorCategoryId !== 'string')
+      ) {
+        return fail(command, 'invalid-command', 'The generated asset metadata is invalid.')
+      }
+
+      const generatedAt = metadata.generatedAt ?? new Date().toISOString()
+      const generation: GeneratedImageMetadata = {
+        provider: metadata.provider.trim(),
+        model: metadata.model?.trim() || null,
+        prompt: metadata.prompt?.trim() || null,
+        generatedAt,
+      }
+
+      if (!isGeneratedImageMetadata(generation)) {
+        return fail(
+          command,
+          'invalid-command',
+          'The generated image provider, model, prompt, or timestamp is invalid.',
+        )
+      }
+
+      const source = materializeGeneratedImageSource(
+        command.source,
+        metadata.displayName,
+      )
+
+      if (!source.ok) {
+        return fail(command, 'invalid-source', source.message)
+      }
+
+      const beforeIds = new Set(
+        store.getState().importedImageAssets.map(({ id }) => id),
+      )
+      const imported = await store.getState().importImageAsset(
+        source.file,
+        metadata.creatorCategoryId ?? null,
+        generation,
+      )
+
+      if (!imported) {
+        return fail(
+          command,
+          'rejected',
+          store.getState().assetLibraryMessage ||
+            'The generated image could not be imported.',
+        )
+      }
+
+      const createdAsset = store
+        .getState()
+        .importedImageAssets.find(({ id }) => !beforeIds.has(id))
+
+      if (!createdAsset) {
+        return fail(
+          command,
+          'rejected',
+          'The generated image was saved, but its stable asset ID could not be identified.',
+        )
+      }
+
+      return {
+        ok: true,
+        command: command.type,
+        changed: true,
+        createdId: createdAsset.id,
+        snapshot: inspect(),
+      }
+    }
+
+    const requestedBounds = command.bounds
+    if (
+      !requestedBounds ||
+      typeof requestedBounds !== 'object' ||
+      !Number.isFinite(requestedBounds.x) ||
+      !Number.isFinite(requestedBounds.y) ||
+      !Number.isFinite(requestedBounds.width) ||
+      !Number.isFinite(requestedBounds.height) ||
+      requestedBounds.width <= 0 ||
+      requestedBounds.height <= 0
+    ) {
+      return fail(
+        command,
+        'invalid-command',
+        'Generated asset bounds must contain finite positive dimensions.',
+      )
+    }
+
+    const before = store.getState()
+    const plane = getLayerPlaneById(before.episode, command.planeId)
+
+    if (!plane) {
+      return fail(
+        command,
+        'not-found',
+        `Layer plane ${command.planeId} was not found.`,
+      )
+    }
+
+    if (plane.kind !== 'ordinary') {
+      return fail(
+        command,
+        'wrong-type',
+        'Generated images can only be placed on an ordinary layer plane.',
+      )
+    }
+
+    const asset = before.importedImageAssets.find(
+      ({ id }) => id === command.assetId,
+    )
+
+    if (!asset) {
+      return fail(
+        command,
+        'not-found',
+        `Generated asset ${command.assetId} was not found.`,
+      )
+    }
+
+    if (!asset.generation) {
+      return fail(
+        command,
+        'wrong-type',
+        `Asset ${command.assetId} is an ordinary imported image, not a generated asset.`,
+      )
+    }
+
+    before.setActiveCompositionGroup(plane.compositionGroup)
+    store.getState().setActiveLayerPlane(plane.id)
+
+    const active = store.getState()
+    if (
+      active.activeCompositionGroup !== plane.compositionGroup ||
+      active.activeLayerPlaneId !== plane.id
+    ) {
+      return fail(
+        command,
+        'rejected',
+        `Layer plane ${command.planeId} could not be activated.`,
+      )
+    }
+
+    const createdId = store.getState().placeImportedAssetAtBounds(
+      asset.id,
+      plane.id,
+      command.bounds,
+    )
+
+    if (!createdId) {
+      return fail(
+        command,
+        'rejected',
+        store.getState().assetLibraryMessage ||
+          'The generated asset could not be placed.',
+      )
+    }
+
+    return {
+      ok: true,
+      command: command.type,
+      changed: true,
+      createdId,
+      snapshot: inspect(),
+    }
+  }
+
+  return {
+    apiVersion: EDITOR_ADAPTER_API_VERSION,
+    commandTypes: [
+      ...EDITOR_ADAPTER_COMMAND_TYPES,
+      ...EDITOR_ADAPTER_ASYNC_COMMAND_TYPES,
+    ],
+    asyncCommandTypes: EDITOR_ADAPTER_ASYNC_COMMAND_TYPES,
+    inspect,
+    execute,
+    executeAsync,
+  }
 }
 
 export function installEditorAdapterBrowserBridge(target: Window = window): ScrollSpliceEditorAdapter {

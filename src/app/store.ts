@@ -103,6 +103,7 @@ import {
   type BrowserImageFile,
   type CreatorAssetCategorySnapshot,
   type ImportedImageSnapshot,
+  type GeneratedImageMetadata,
   type ResolvedImageAsset,
   type RuntimeImportedImage,
 } from '../assets'
@@ -334,6 +335,7 @@ interface EditorState {
   readonly importImageAsset: (
     file: BrowserImageFile,
     creatorCategoryId?: string | null,
+    generation?: GeneratedImageMetadata,
   ) => Promise<boolean>
   readonly importAndPlaceImageAsset: (
     file: BrowserImageFile,
@@ -354,6 +356,11 @@ interface EditorState {
   readonly deleteImportedImageAsset: (assetId: string) => Promise<boolean>
   readonly placeBuiltInAsset: (assetId: string) => boolean
   readonly placeImportedAsset: (assetId: string) => boolean
+  readonly placeImportedAssetAtBounds: (
+    assetId: string,
+    layerPlaneId: string,
+    bounds: ElementBounds,
+  ) => string | null
   readonly placeDraggedAsset: (
     payload: AssetDragPayload,
     logicalCenter: LogicalPosition,
@@ -454,6 +461,7 @@ function createImportedImageSnapshot(
     sourceBlob: image.sourceBlob,
     creatorCategoryId: image.creatorCategoryId,
     importedAt: image.importedAt,
+    ...(image.generation ? { generation: image.generation } : {}),
   }
 }
 
@@ -675,13 +683,16 @@ function placeImageAssetInEpisode(
   assetReference: ImageAssetReference,
   logicalCenter?: LogicalPosition,
   layerPlaneId: string = state.activeLayerPlaneId,
+  requestedBounds?: ElementBounds,
 ): EpisodeDocument | undefined {
-  const bounds = getCenteredImageBounds(
-    state,
-    asset.intrinsicWidth,
-    asset.intrinsicHeight,
-    logicalCenter,
-  )
+  const bounds =
+    requestedBounds ??
+    getCenteredImageBounds(
+      state,
+      asset.intrinsicWidth,
+      asset.intrinsicHeight,
+      logicalCenter,
+    )
 
   if (!bounds) {
     return undefined
@@ -697,6 +708,7 @@ function placeImageAssetInEpisode(
 
 interface AssetPlacementTransition {
   readonly placed: boolean
+  readonly createdElementId?: string
   readonly nextState: EditorState | EditorStatePatch
 }
 
@@ -705,6 +717,7 @@ function createAssetPlacementTransition(
   assetReference: ImageAssetReference,
   logicalCenter?: LogicalPosition,
   targetLayerPlaneId: string = state.activeLayerPlaneId,
+  requestedBounds?: ElementBounds,
 ): AssetPlacementTransition {
   const activeLayerPlane = getLayerPlaneById(
     state.episode,
@@ -730,6 +743,24 @@ function createAssetPlacementTransition(
       placed: false,
       nextState: {
         assetLibraryMessage: 'The canvas drop position is invalid.',
+        assetLibraryMessageKind: 'error',
+      },
+    }
+  }
+
+  if (
+    requestedBounds &&
+    (!Number.isFinite(requestedBounds.x) ||
+      !Number.isFinite(requestedBounds.y) ||
+      !Number.isFinite(requestedBounds.width) ||
+      !Number.isFinite(requestedBounds.height) ||
+      requestedBounds.width <= 0 ||
+      requestedBounds.height <= 0)
+  ) {
+    return {
+      placed: false,
+      nextState: {
+        assetLibraryMessage: 'The requested asset bounds are invalid.',
         assetLibraryMessageKind: 'error',
       },
     }
@@ -781,6 +812,7 @@ function createAssetPlacementTransition(
     assetReference,
     logicalCenter,
     targetLayerPlaneId,
+    requestedBounds,
   )
 
   if (!episode) {
@@ -801,6 +833,7 @@ function createAssetPlacementTransition(
 
   return {
     placed: true,
+    createdElementId: createdElement?.id,
     nextState: commitEpisodeChange(state, episode, {
       selectedElementId: createdElement?.id ?? state.selectedElementId,
       activeCompositionGroup: activeLayerPlane.compositionGroup,
@@ -3111,7 +3144,11 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return true
   },
 
-  importImageAsset: async (file, requestedCreatorCategoryId = null) => {
+  importImageAsset: async (
+    file,
+    requestedCreatorCategoryId = null,
+    generation,
+  ) => {
     const state = get()
     const creatorCategoryId = requestedCreatorCategoryId ?? null
 
@@ -3151,7 +3188,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     let imported: Awaited<ReturnType<typeof importBrowserImage>>
 
     try {
-      imported = await importBrowserImage(file, { creatorCategoryId })
+      imported = await importBrowserImage(file, {
+        creatorCategoryId,
+        ...(generation ? { generation } : {}),
+      })
     } catch {
       set({
         assetLibraryBusy: false,
@@ -3736,6 +3776,20 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
     set(transition.nextState)
     return transition.placed
+  },
+
+  placeImportedAssetAtBounds: (assetId, layerPlaneId, bounds) => {
+    const state = get()
+    const transition = createAssetPlacementTransition(
+      state,
+      { kind: 'imported', assetId },
+      undefined,
+      layerPlaneId,
+      bounds,
+    )
+
+    set(transition.nextState)
+    return transition.placed ? (transition.createdElementId ?? null) : null
   },
 
   placeDraggedAsset: (payload, logicalCenter) => {

@@ -48,6 +48,12 @@ function createAssetLibrary(): AssetLibrarySnapshot {
         sourceBlob,
         creatorCategoryId: 'creator-category-effects',
         importedAt: SAVED_AT,
+        generation: {
+          provider: 'OpenAI',
+          model: 'image-model-test',
+          prompt: 'A transparent vertical comic panel.',
+          generatedAt: SAVED_AT,
+        },
       },
     ],
   }
@@ -116,6 +122,12 @@ describe('portable ScrollSplice project package', () => {
           {
             id: 'imported-alpha-panel',
             mediaType: 'image/png',
+            generation: {
+              provider: 'OpenAI',
+              model: 'image-model-test',
+              prompt: 'A transparent vertical comic panel.',
+              generatedAt: SAVED_AT,
+            },
           },
         ],
       },

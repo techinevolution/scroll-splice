@@ -182,6 +182,14 @@ Reason: Screen-coordinate dragging is fragile and gives a future model the wrong
 
 Consequences: Programmatic clients must inspect first, use returned IDs and logical episode pixels, execute one validated command, then inspect the result. The adapter does not authorize OAuth, OpenAI runtime access, raw store setters, DOM/Konva manipulation, credentials, file handles, or WEBTOON automation. Binary import/export remains a separate host boundary.
 
+## 2026-07-20: Extend the adapter with generated-image intake before chat OAuth
+
+Decision: Add asynchronous `import-generated-asset` and `place-generated-asset` commands to the provider-neutral editor adapter. Accept only validated PNG/JPEG/WebP bytes supplied as a Blob, base64 data URL, or raw base64 plus media type. Persist the unchanged source and provider/model/prompt/timestamp provenance in the existing Asset Library, return stable IDs, and make exact-bounds placement one ordinary undoable document change.
+
+Reason: A model-generated image must cross a safe binary boundary before the agent can compose it on the scroll. Reusing the existing import repository and image-element command keeps generated and human-imported sources equally durable and editable without giving the model browser storage, filesystem, DOM, Konva, or raw Zustand access.
+
+Consequences: The browser Asset Library is the initial durable generated-source store; no arbitrary filesystem export folder is required for canvas placement. Source import is a reusable-library mutation and is not undone with the episode, while each placed instance is one history checkpoint. Portable projects preserve generation provenance. A persistent per-project chat bubble remains a separate overlay UI backed by an `AgentConversationRepository`; this decision does not add OAuth, a model runtime, credentials, network generation, or WEBTOON automation.
+
 ## 2026-07-18: Make the generated story authoritative and element grips visible
 
 Decision: Replace the mixed legacy demo with the adapter-verified **The Light We Planted** arrangement: six generated Story Art images, one episode title, six gutter-paced narration elements, and empty named Atmosphere/Effects planes. Element rows now follow local stack order and expose a left-side native drag grip with keyboard and explicit-button alternatives.

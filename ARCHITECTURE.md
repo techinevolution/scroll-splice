@@ -393,6 +393,8 @@ The current atomic balloon is the foundation, not the full preset catalog. The [
 
 `src/automation/editorAdapter.ts` implements the first version of `ProjectContextReader` plus the local editor-command side of `EditorToolRegistry`. It returns a bounded JSON-safe snapshot and dispatches ID-based operations through the existing Zustand coordinator, which in turn uses the same tested document commands as the human UI. It does not mutate React, Konva, storage, or core data directly.
 
+The adapter now also owns a narrow asynchronous generated-image intake seam. An authorized host may provide a PNG/JPEG/WebP `Blob`, base64 data URL, or raw base64 payload plus non-secret provider/model/prompt/timestamp metadata. The adapter validates the same 20 MiB, 40-megapixel, header, media-type, and browser-decode rules as human imports, persists the unchanged Blob and provenance through `AssetRepository`, and returns its stable asset ID. A separate placement command creates one imported-image element on an explicit ordinary plane at requested logical bounds through one normal history checkpoint. Undo removes the instance while retaining the reusable source.
+
 Vite development builds expose this adapter as `window.scrollSpliceEditor` for inspection, test automation, and precise local manipulation. That writable global is not included in production builds. A future authenticated agent imports the adapter behind authorization, approval, cancellation, and provenance controls; OAuth/provider credentials never enter this contract. Raw file import/export remains host-mediated rather than crossing the serializable command boundary.
 
 The browser-local project, recovery, asset, portable-file, and renderer adapters are implemented. Network/authentication contracts remain future boundaries, not Build Week infrastructure to scaffold:
@@ -408,8 +410,11 @@ The browser-local project, recovery, asset, portable-file, and renderer adapters
 - `ImageGenerationGateway`: generate or edit image candidates behind a provider adapter.
 - `EditorToolRegistry`: expose approved read and command operations to a model through schemas.
 - `AgentRunCoordinator`: manage one autonomous run, progress, cancellation, cost limits, tool approvals, and provenance.
+- `AgentConversationRepository`: persist local chat messages and tool summaries by stable project ID without placing conversation state in the episode document.
 
 ScrollSplice account authentication and OpenAI model authorization are separate concerns. A future app login identifies a ScrollSplice user/workspace. A future model connection authorizes OpenAI requests. Neither authenticates to WEBTOON, and neither changes the episode document or command layer. Provider tokens and raw identity details stay inside their application-edge adapters; the editor receives only neutral session and connection state.
+
+The future agent UI is a fixed chat launcher plus an overlay panel above the workspace. Toggling it never resizes the canvas and closing it never deletes the per-project conversation. The panel reads and writes through `AgentConversationRepository`, calls the run coordinator, and uses the editor adapter for project inspection and approved mutations. Chat state, OAuth state, and agent-run state are application chrome, not episode data.
 
 The desired user-authorized OpenAI connection may resemble the Sign in with ChatGPT experience used by coding clients, but support for that exact flow in a general ScrollSplice web application is not assumed. Verify an official supported path before choosing OAuth dependencies. Never ship a reusable OpenAI credential in browser JavaScript, persisted episode data, generated asset metadata, logs, or git.
 
@@ -481,7 +486,7 @@ The intended end state may assemble a complete first-pass episode autonomously, 
 
 ### Build Week stretch boundary
 
-The only permitted Build Week proof is one synthetic generate-and-place loop after the complete human MVP and submission path pass. It may expose a minimal read-only snapshot and use one existing placement command. It must not require private art, broad filesystem access, an external connector, full agent autonomy, or judge credentials. If secure model authorization cannot be completed without weakening the static app or schedule, defer the proof without affecting MVP completion.
+The generated-image intake and exact-bounds placement half of the Build Week proof is implemented. A complete network proof still requires one supported model-authorization path, a bounded chat/run UI, one synthetic generation request, creator-visible progress/cancellation, and a successful handoff of returned bytes into these commands. It must not require private art, broad filesystem access, an external connector, full agent autonomy, or judge credentials. If secure model authorization cannot be completed without weakening the static app or schedule, the human editor remains the valid fallback.
 
 ## Implemented provisional export boundary
 
@@ -508,7 +513,7 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-The current July 19 working tree passes 386 Vitest cases across 29 files, strict TypeScript, ESLint, the production build, and all 15 Playwright Chromium stories. Current focused coverage includes cross-group adapter plane activation and creation, visible-direction layer-grip keys, expanded-frame minimap dragging, the six-image default story, matched light/dark appearance, transforms, persistence, Reader Preview, and provisional local export. The production build retains Vite's non-blocking over-500 kB advisory.
+The current July 20 working tree passes 390 Vitest cases across 30 files, strict TypeScript, ESLint, the production build, and all 15 Playwright Chromium stories. Current focused coverage includes generated Blob/data-URL/base64 intake, provenance inspection and portable persistence, explicit-plane exact-bounds placement plus one-step undo, cross-group adapter plane activation and creation, visible-direction layer-grip keys, expanded-frame minimap dragging, the six-image default story, matched light/dark appearance, transforms, persistence, Reader Preview, and provisional local export. The production build retains Vite's non-blocking over-500 kB advisory.
 
 Historical feature commit `a26927f` passed 377 Vitest cases across 28 files, strict TypeScript, ESLint, the production build, and all 13 Playwright Chromium stories. Its production build contained 137 modules; CSS was 40.26 kB and JavaScript was 769.96 kB minified / 222.48 kB gzip. That checkpoint added focused coverage for v3/v4/v5-to-v6 defaults, transforms and visual bounds, image crop/masks/frame parity, flat groups and populated-plane commands, fitted speech-balloon geometry and round trips, reference-safe source deletion, multiple/recovery/portable project behavior, provisional render/preflight behavior, and ExportDialog focus restoration/Tab containment.
 

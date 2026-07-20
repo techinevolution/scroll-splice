@@ -2,6 +2,10 @@ import {
   IMPORTED_IMAGE_MEDIA_TYPES,
   MAX_ASSET_DISPLAY_NAME_LENGTH,
   MAX_CREATOR_CATEGORY_NAME_LENGTH,
+  MAX_GENERATED_MODEL_LENGTH,
+  MAX_GENERATED_PROMPT_LENGTH,
+  MAX_GENERATED_PROVIDER_LENGTH,
+  type GeneratedImageMetadata,
   type ImportedImageMediaType,
 } from './types'
 
@@ -54,6 +58,24 @@ export function isValidIsoDate(value: unknown): value is string {
   )
 }
 
+export function isGeneratedImageMetadata(
+  value: unknown,
+): value is GeneratedImageMetadata {
+  if (!isRecord(value)) return false
+
+  return (
+    isBoundedMetadataLabel(value.provider, MAX_GENERATED_PROVIDER_LENGTH) &&
+    (value.model === null ||
+      isBoundedMetadataLabel(value.model, MAX_GENERATED_MODEL_LENGTH)) &&
+    (value.prompt === null ||
+      (typeof value.prompt === 'string' &&
+        value.prompt.length > 0 &&
+        value.prompt.length <= MAX_GENERATED_PROMPT_LENGTH &&
+        !value.prompt.includes('\0'))) &&
+    isValidIsoDate(value.generatedAt)
+  )
+}
+
 export function isPositiveInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0
 }
@@ -70,4 +92,14 @@ function hasControlCharacters(value: string): boolean {
     const codePoint = character.codePointAt(0) ?? 0
     return codePoint <= 31 || codePoint === 127
   })
+}
+
+function isBoundedMetadataLabel(value: unknown, maxLength: number): boolean {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value.length <= maxLength &&
+    value === value.trim() &&
+    !hasControlCharacters(value)
+  )
 }

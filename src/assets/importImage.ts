@@ -4,9 +4,11 @@ import {
   MAX_IMPORTED_IMAGE_PIXELS,
   type ImportedImageMediaType,
   type ImportedImageSnapshot,
+  type GeneratedImageMetadata,
 } from './types'
 import {
   isImportedImageMediaType,
+  isGeneratedImageMetadata,
   isPositiveInteger,
   isSafeAssetId,
   replaceControlCharacters,
@@ -21,6 +23,7 @@ export interface DecodedImageDimensions {
 
 export interface ImportBrowserImageOptions {
   readonly creatorCategoryId?: string | null
+  readonly generation?: GeneratedImageMetadata
   readonly decodeDimensions?: (
     sourceBlob: Blob,
   ) => Promise<DecodedImageDimensions>
@@ -79,6 +82,16 @@ export async function importBrowserImage(
     return failure(
       'invalid-category',
       'The selected creator category is invalid.',
+    )
+  }
+
+  if (
+    options.generation !== undefined &&
+    !isGeneratedImageMetadata(options.generation)
+  ) {
+    return failure(
+      'metadata-failed',
+      'The generated image metadata is invalid.',
     )
   }
 
@@ -181,6 +194,7 @@ export async function importBrowserImage(
       sourceBlob: file,
       creatorCategoryId,
       importedAt,
+      ...(options.generation ? { generation: options.generation } : {}),
     },
   }
 }

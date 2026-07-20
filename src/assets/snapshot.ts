@@ -8,6 +8,7 @@ import {
 } from './types'
 import {
   isImportedImageMediaType,
+  isGeneratedImageMetadata,
   isPositiveInteger,
   isRecord,
   isSafeAssetId,
@@ -131,6 +132,12 @@ function parseImportedImage(value: unknown): ImportedImageSnapshot | undefined {
   }
 
   const sourceBlob = readBlob(value)
+  const generation =
+    value.generation === undefined
+      ? undefined
+      : isGeneratedImageMetadata(value.generation)
+        ? value.generation
+        : null
 
   if (
     !sourceBlob ||
@@ -148,6 +155,7 @@ function parseImportedImage(value: unknown): ImportedImageSnapshot | undefined {
     (value.creatorCategoryId !== null &&
       !isSafeAssetId(value.creatorCategoryId)) ||
     !isValidIsoDate(value.importedAt)
+    || generation === null
   ) {
     return undefined
   }
@@ -162,6 +170,7 @@ function parseImportedImage(value: unknown): ImportedImageSnapshot | undefined {
     sourceBlob,
     creatorCategoryId: value.creatorCategoryId,
     importedAt: value.importedAt,
+    ...(generation ? { generation } : {}),
   }
 }
 
