@@ -26,7 +26,8 @@ async function resetDemoSafely(page: Page) {
     })
   }
 
-  await page.getByRole('button', { name: 'Reset demo' }).click()
+  await page.getByRole('button', { name: 'File', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Reset Demo' }).click()
 
   if (isDirty) {
     expect(dialogMessage).toBe('Discard unsaved changes and reset the demo?')
@@ -171,7 +172,9 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const firstTitleLayer = page.locator(
     '[data-layer-id="beat-01-stillness-title"]',
   )
-  const resetDemo = page.getByRole('button', { name: 'Reset demo' })
+  const agentChatTrigger = page.getByRole('button', {
+    name: 'Open ScrollSplice agent chat',
+  })
   const episodeLabel = page.getByTestId('episode-label')
   const appHeader = page.locator('.app-header')
   const magnetToggle = page.getByTestId('alignment-magnet-toggle')
@@ -212,7 +215,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   })
 
   const episodeLabelXBeforeEdit = await readLocatorX(episodeLabel)
-  const resetXBeforeEdit = await readLocatorX(resetDemo)
+  const agentXBeforeEdit = await readLocatorX(agentChatTrigger)
   await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
   const episodeTitleBoundsBeforeEdit = await readLocatorBounds(editEpisodeTitle)
   await editEpisodeTitle.click()
@@ -227,7 +230,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     Math.abs((await readLocatorX(episodeLabel)) - episodeLabelXBeforeEdit),
   ).toBeLessThan(1)
   expect(
-    Math.abs((await readLocatorX(resetDemo)) - resetXBeforeEdit),
+    Math.abs((await readLocatorX(agentChatTrigger)) - agentXBeforeEdit),
   ).toBeLessThan(1)
   await episodeTitleInput.fill('A')
   const shortEpisodeTitleWidth = (await episodeTitleInput.boundingBox())?.width
@@ -249,7 +252,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     Math.abs(longEpisodeTitleBounds.x - episodeTitleInputBoundsAtStart.x),
   ).toBeLessThan(1)
   expect(longEpisodeTitleBounds.x + longEpisodeTitleBounds.width).toBeLessThan(
-    resetXBeforeEdit,
+    agentXBeforeEdit,
   )
   await episodeTitleInput.fill('  A Light Below  ')
   await episodeTitleInput.press('Enter')
@@ -1270,7 +1273,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   ]) {
     await page.setViewportSize(viewport)
     const responsiveEpisodeLabelX = await readLocatorX(episodeLabel)
-    const responsiveResetX = await readLocatorX(resetDemo)
+    const responsiveAgentX = await readLocatorX(agentChatTrigger)
     await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
     const responsiveTitleBounds = await readLocatorBounds(editEpisodeTitle)
     await editEpisodeTitle.click()
@@ -1285,7 +1288,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       ),
     ).toBeLessThan(1)
     expect(
-      Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
+      Math.abs((await readLocatorX(agentChatTrigger)) - responsiveAgentX),
     ).toBeLessThan(1)
     await episodeTitleInput.fill('x'.repeat(60))
     const responsiveLongInputBounds = await readLocatorBounds(episodeTitleInput)
@@ -1294,14 +1297,14 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     ).toBeLessThan(1)
     expect(
       responsiveLongInputBounds.x + responsiveLongInputBounds.width,
-    ).toBeLessThan(responsiveResetX)
+    ).toBeLessThan(responsiveAgentX)
     expect(
       Math.abs(
         (await readLocatorX(episodeLabel)) - responsiveEpisodeLabelX,
       ),
     ).toBeLessThan(1)
     expect(
-      Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
+      Math.abs((await readLocatorX(agentChatTrigger)) - responsiveAgentX),
     ).toBeLessThan(1)
     await episodeTitleInput.press('Enter')
     await expectHorizontalCentersToMatch(editEpisodeTitle, appHeader)
@@ -1311,7 +1314,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       ),
     ).toBeLessThan(1)
     expect(
-      Math.abs((await readLocatorX(resetDemo)) - responsiveResetX),
+      Math.abs((await readLocatorX(agentChatTrigger)) - responsiveAgentX),
     ).toBeLessThan(1)
     await expect(canvas).toHaveAttribute('data-ready', 'true')
     await expect(inspector).toBeVisible()
@@ -1332,14 +1335,14 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       const episode = document
         .querySelector('.episode-heading')
         ?.getBoundingClientRect()
-      const reset = document.querySelector('.reset-button')?.getBoundingClientRect()
+      const agent = document.querySelector('.agent-chat-trigger')?.getBoundingClientRect()
 
-      return brand && episode && reset
+      return brand && episode && agent
         ? {
             brandRight: brand.right,
             episodeLeft: episode.left,
             episodeRight: episode.right,
-            resetLeft: reset.left,
+            agentLeft: agent.left,
           }
         : null
     })
@@ -1348,7 +1351,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       headerRegions?.brandRight ?? 0,
     )
     expect(headerRegions?.episodeRight).toBeLessThanOrEqual(
-      headerRegions?.resetLeft ?? 0,
+      headerRegions?.agentLeft ?? 0,
     )
 
     await resetDemoSafely(page)

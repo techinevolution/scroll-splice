@@ -88,6 +88,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
     'Import Project…',
     'Export Project File…',
     'Export Episode Images…',
+    'Reset Demo',
   ])
   await expect(
     fileMenu.getByRole('menuitem', { name: 'Reopen Current', exact: true }),

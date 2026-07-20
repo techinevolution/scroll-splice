@@ -22,6 +22,7 @@ export interface AppMenuBarProps {
   readonly onImportProject: () => void
   readonly onExportProject: () => void
   readonly onExportEpisodeImages: () => void
+  readonly onResetDemo: () => void
   readonly onUndo: () => void
   readonly onRedo: () => void
   readonly onReaderPreview: () => void
@@ -75,6 +76,7 @@ export function AppMenuBar({
   onImportProject,
   onExportProject,
   onExportEpisodeImages,
+  onResetDemo,
   onUndo,
   onRedo,
   onReaderPreview,
@@ -269,6 +271,7 @@ export function AppMenuBar({
     { label: 'Import Project…', action: onImportProject },
     { label: 'Export Project File…', action: onExportProject },
     { label: 'Export Episode Images…', action: onExportEpisodeImages },
+    { label: 'Reset Demo', action: onResetDemo },
   ]
   const editItems: readonly MenuItemDefinition[] = [
     { label: 'Undo', disabled: !canUndo, action: onUndo },

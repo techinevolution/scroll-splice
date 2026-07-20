@@ -220,7 +220,10 @@ test('supports a creator story from blank episode through saved reader preview',
     page,
     'Discard unsaved changes and reset the demo?',
     'dismiss',
-    () => page.getByRole('button', { name: 'Reset demo' }).click(),
+    async () => {
+      await page.getByRole('button', { name: 'File', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Reset Demo' }).click()
+    },
   )
   await expect(
     page.getByRole('button', {
@@ -233,7 +236,10 @@ test('supports a creator story from blank episode through saved reader preview',
     page,
     'Discard unsaved changes and reset the demo?',
     'accept',
-    () => page.getByRole('button', { name: 'Reset demo' }).click(),
+    async () => {
+      await page.getByRole('button', { name: 'File', exact: true }).click()
+      await page.getByRole('menuitem', { name: 'Reset Demo' }).click()
+    },
   )
   await expect(
     page.getByRole('button', {

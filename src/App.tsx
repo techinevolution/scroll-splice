@@ -8,6 +8,7 @@ import {
 
 import { useEditorStore } from './app/store'
 import { AppMenuBar } from './components/AppMenuBar'
+import { AgentChatPanel } from './components/AgentChatPanel'
 import { AssetPanel } from './components/AssetPanel'
 import { CompositionGroupControls } from './components/CompositionGroupControls'
 import { ExportDialog } from './components/ExportDialog'
@@ -528,6 +529,7 @@ export function App() {
           onImportProject={choosePortableProject}
           onExportProject={() => void downloadPortableProject()}
           onExportEpisodeImages={() => setExportDialogOpen(true)}
+          onResetDemo={resetDemo}
           onUndo={undo}
           onRedo={redo}
           onReaderPreview={openReaderPreview}
@@ -636,13 +638,10 @@ export function App() {
           >
             <span aria-hidden="true">▥</span>
           </button>
-          <button
-            className="reset-button"
-            type="button"
-            onClick={resetDemo}
-          >
-            Reset demo
-          </button>
+          <AgentChatPanel
+            key={`episode:${episodeId}`}
+            projectKey={`episode:${episodeId}`}
+          />
         </div>
       </header>
 
