@@ -120,7 +120,7 @@ Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without specul
 
 An empty plane's centered action area pairs the implemented **Delete plane** control with a paperclip **Add asset** action. The same add action remains available when an ordinary plane is populated. It opens the overlay Asset Library and targets the currently active ordinary plane.
 
-The fixed left rail is an application-shell concern with four destinations: **Uploads**, **Speech Balloons**, **Decorations**, and **Splatters**. Uploads owns the personal library and exposes **All**, **Unsorted**, and creator-named category filters inside the drawer so an unbounded list cannot overwhelm the rail. Filter selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The starter catalog contains nine original transparent SVG assets—three in each built-in category. The local build supports click and native drag placement, select, move, proportional resize, visibility, delete, history, opacity, the five recorded blend modes, single/tile image presentation, and independent editable text. General selected-image controls implement crop focus/zoom, rotation, and flip; the atomic editable balloon implements automatic fitting and tail editing. Static built-in balloon images remain simple assets: recoloring their artwork, coupling loose balloon images to separate text, perspective, and freeform distortion remain deferred.
+The fixed left rail is an application-shell concern with four destinations: **Uploads**, **Speech Balloons**, **Decorations**, and **Splatters**. Uploads owns the personal library and exposes **All**, **Unsorted**, and creator-named category filters inside the drawer so an unbounded list cannot overwhelm the rail. Filter selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The starter catalog contains nine original transparent SVG assets—three in each built-in category. The local build supports click and native drag placement, select, move, proportional resize, visibility, delete, history, opacity, the five recorded blend modes, Stretch/Cover/Tile image presentation, and independent editable text. General selected-image controls implement non-destructive Cover crop focus/zoom, rotation, and flip; the atomic editable balloon implements automatic fitting and tail editing. Static built-in balloon images remain simple assets: recoloring their artwork, coupling loose balloon images to separate text, perspective, and freeform distortion remain deferred.
 
 ## Commands and state ownership
 
@@ -333,7 +333,7 @@ This same flow supports background photos: choose an ordinary Background plane�
 
 1. A Background, Content, or Foreground control updates the transient active group.
 2. The numbered tab strip chooses one plane in that group while the canvas continues to render every effectively visible group and plane.
-3. The right element list shows the active plane's contents from top to bottom on the scroll.
+3. The right element list shows the active plane's contents from low to high local stack order; vertical canvas position does not reorder the rows.
 4. Selecting a canvas element updates the selected ID, active group, and active plane.
 5. A group, plane, or element eye dispatches its corresponding pure visibility command.
 6. Canvas, minimap, and Layers panel derive effective visibility from the same episode document.

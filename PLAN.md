@@ -2,7 +2,7 @@
 
 ## Current state
 
-ScrollSplice is a public planning repository at <https://github.com/techinevolution/scroll-splice>. Katherine identified seven documents as July 12 pre-event planning work under the earlier ScrollForge name. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
+ScrollSplice is a public Build Week repository and working local editor at <https://github.com/techinevolution/scroll-splice>. Katherine identified seven documents as July 12 pre-event planning work under the earlier ScrollForge name. They were first committed unchanged on July 13 at 11:28:56 AM PT in commit `e4db897` and marked by annotated tag `pre-build-week-planning`. The owner-attested baseline contains no application code; the Git timestamp records preservation on July 13 rather than independently proving the July 12 creation date.
 
 Post-start documentation/compliance work is recorded in commit `a567865` at 11:50:26 AM PT on July 13. Later on July 13, Katherine approved the scaffold and synthetic fixture, then approved one larger `/goal` through the first complete editor she could test. The locked scaffold, verified command contracts, original six-beat synthetic fixture, editor shell, and defining canvas/minimap/layers interaction are complete and pushed. After her product review, Katherine approved and Codex completed the bounded composition-groups and visibility checkpoint in `f02776f` and the numbered layer-plane and editable-backdrop checkpoint in `c5f83c5`.
 
@@ -14,9 +14,9 @@ Katherine completed the required hands-on test of that combined build on July 14
 
 Katherine completed the corrective checkpoint's human retest on July 14 and marked it **PASS WITH NOTES**. Live `x/y/w/h`, live minimap synchronization, eight Background-region handles, magnet-off/Alt/Option snap override, and Option-drag passed. The minimap's visual aspect distortion is recorded as non-blocking polish. She then approved the local history, explicit save/reopen, blank New Episode, and minimal File/Edit menu slice below. That slice passed its automated and browser checks, screenshot review, and Katherine's July 15 hands-on test. She then authorized the bounded Asset Library slice and publication of the resulting passing build to `main`. The complete stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`; the July 15 menu/rail correction was later published in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`. Katherine then selected the five-slice direct-placement and appearance `/goal` below. It was implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8`. On July 15 she authorized the three-slice **creator completion pass** below: composition ordering, independent text, and Reader Preview with a safe Reset Demo boundary. All three slices were implemented, validated, and published in `cb1f28443f7b1045d139879a2bba7b03edf25856` on July 16, with local and remote `main` verified equal immediately after the push.
 
-## Current authorized goal: complete the locally feasible human editor
+## Completed human-editor goal and current submission gate
 
-On July 16 Katherine replaced the earlier three-slice stopping point with one broader instruction: continue through the documented human-editor backlog and make ScrollSplice as complete as practical before preparing the feature-by-feature test sheet. This is authorization to keep implementing coherent local slices without asking her to choose each one individually. It does **not** silently authorize external services, private-data transfer, a new runtime stack, or claims that have not been validated.
+On July 16 Katherine replaced the earlier three-slice stopping point with one broader instruction: continue through the documented human-editor backlog and make ScrollSplice as complete as practical before preparing the feature-by-feature test sheet. That locally feasible human-editor goal is now complete. Current work is submission access, hands-on verification, evidence, and narrowly scoped reconciliation. It does **not** authorize external services, private-data transfer, a new runtime stack, OAuth, or claims that have not been validated.
 
 Implementation status in the current working build:
 
@@ -460,10 +460,11 @@ Explicitly deferred from this completion pass: deterministic WEBTOON export; Ope
 
 ### Remaining bounded follow-ups
 
-1. **Publish the passing local completion stack:** local validation and public-safe screenshots are complete; record the final commit/push state without rewriting the pre-event baseline.
-2. **Authenticated WEBTOON upload verification:** use harmless unpublished files to establish actual boundary, alpha, order, filename, preview, and recompression behavior. Only then may the observed export profile become upload-verified.
-3. **Optional later editor depth outside lettering:** arbitrary polygon-point editing, row context-menu shortcuts, perspective/freeform distortion, or richer section systems require separate design and are not hidden requirements of this completion pass.
-4. **Research-backed editable-balloon expansion:** the inventory and design rules are now recorded in [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md). Build it as composable presets over the existing atomic balloon: first core bodies/outlines/tails, then source markers and flat balloon relationships, then webtoon styling and creator-saved presets, and finally separate caption/sound-effect tools. This is documented future depth, not a claim that those presets already exist.
+1. **Publish the validated reconciliation commits:** the adapter-plane and architecture-alignment fixes are complete locally; push them only after Katherine approves publication to `main`.
+2. **Provide public judge access:** deploy the passing build, then verify it from a clean browser profile without local project or asset state.
+3. **Complete submission evidence:** run Katherine's feature sheet, record the reviewer walkthrough and video, finish the Devpost fields, and perform the final rules/privacy check.
+4. **Authenticated WEBTOON upload verification:** later use harmless unpublished files to establish actual boundary, alpha, order, filename, preview, and recompression behavior. Only then may the observed export profile become upload-verified.
+5. **OAuth/model proof only after a separate gate:** verify an officially supported authorization path and approve its backend/secret boundary, consent, privacy, cancellation, provenance, command permissions, cost, and time limits before implementation.
 
 ### Submission runway: July 19–21
 
@@ -486,7 +487,7 @@ That is the simplest required MVP for Build Week. The larger local completion pa
 ### Working product
 
 - A recognizable vertical-comic workspace at representative desktop sizes.
-- One original six-beat sample episode made from code-rendered shapes and text, with clear named elements.
+- One original six-image **The Light We Planted** sample episode with separate editable title and narration, committed with documented synthetic provenance.
 - One shared episode model rendered by the canvas, minimap, and layers list.
 - Accurate two-way canvas/minimap navigation and viewport clamping.
 - Canvas/layers selection synchronization, including centering an off-screen layer selection.
@@ -535,7 +536,7 @@ End-of-day target achieved: the current editor and all three post-review checkpo
 
 ### July 15–18 — Two-hour product and reliability evenings
 
-- Continue through the current authorized locally feasible human-editor goal in coherent, validated slices; do not stop merely because the historical three-slice creator-completion pass is finished.
+- Preserve the completed locally feasible human-editor baseline in coherent, validated slices; prioritize submission access, evidence, and blocking corrections over new product depth.
 - Follow the dependency order in the current goal: polish, asset workflows, recoverable/portable projects, transforms and organization, frames, balloon/text composition, then clearly provisional local render/export.
 - Avoid OAuth, autonomous generation, cloud services, WEBTOON automation, and other externally gated infrastructure.
 - Preserve navigation, minimap, selection, movement, reset, and the shared episode model after every change.
@@ -584,13 +585,13 @@ Items 1–16 preserve the historical slice record. On July 16 Katherine authoriz
 11. Plane optional names/reordering plus explicit element stacking and Move to Plane. **Implemented, validated, and published in `cb1f284`.**
 12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete, validated, and published July 15 in `fdd4ead`.**
 13. Asset-to-canvas drag. **Folded into current item 9; click-to-place remains the accessible fallback.**
-14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional external-services gate below is satisfied. This is not part of the active local human-editor completion goal.
+14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional external-services gate below is satisfied. This is not part of the completed local human-editor baseline.
 15. Basic independent text creation and editing over existing balloon assets. **Implemented, validated, and published in `cb1f284`.**
 16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented, validated, and published in `cb1f284`.**
 
 Completion-pass additions across the historical items are implemented and validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, atomic editable speech balloons, provisional rendering, the six-image default story, dual light/dark appearances, compact element grips, and the versioned editor adapter. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 386 unit tests, typecheck, lint, build, and all 15 Playwright stories and is included in the current big feature/UI release.
 
-Continue through the locally feasible queue while validation remains healthy. Stop immediately if product work threatens the scheduled submission runway or the minimum editor experience.
+The locally feasible human-editor queue is complete. Do not start OAuth or model-runtime work until the submission path is stable and the separate authorization, credential, privacy, consent, command, cost, and cancellation gates are explicitly approved.
 
 ### Additional gate for the OpenAI stretch
 
@@ -678,7 +679,7 @@ The Build Week submission is complete only when:
 
 ## Stop rules
 
-- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass passes the complete current regression suite, all seven Playwright stories, and indexed visual evidence and was published in `cb1f28443f7b1045d139879a2bba7b03edf25856`. The historical three-slice stop is complete; continue through the current locally feasible human-editor goal. Upload-verified WEBTOON compatibility, deployment, OpenAI/OAuth, cloud services, and external connectors remain separately gated.
+- The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass passes the complete current regression suite, all seven Playwright stories, and indexed visual evidence and was published in `cb1f28443f7b1045d139879a2bba7b03edf25856`. The historical three-slice stop and the broader locally feasible human-editor goal are complete; restrict current work to submission access, evidence, stabilization, and narrowly scoped corrections. Upload-verified WEBTOON compatibility, OpenAI/OAuth, cloud services, and external connectors remain separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
 - Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.

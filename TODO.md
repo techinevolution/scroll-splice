@@ -37,6 +37,8 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Codex — after the relevant gate
 
+- [ ] Publish the validated adapter-plane and architecture-alignment reconciliation commits after Katherine explicitly approves a push to `main`.
+
 - [x] After implementation approval: create the original six-beat fixture from code-rendered shapes and text as part of the foundation slice.
 - [x] Build, validate, push, and prepare the complete human editor for Katherine's product review.
 - [x] After Katherine runs `/feedback`: record the returned Session ID in README and `BUILD_WEEK_COMPLIANCE.md`.
