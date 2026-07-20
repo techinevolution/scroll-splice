@@ -129,6 +129,16 @@ Open the local URL printed by Vite in a desktop Chrome-class browser. The curren
 
 **Local persistence boundary:** Explicit **Save** and **Save As** write validated format-v6 episodes to a browser-local project library that retains up to 100 projects. Debounced crash recovery is stored separately and is never presented as an explicit save. The Asset Library stores imported sources and creator categories in IndexedDB; each library mutation reads, merges, validates, and writes one snapshot atomically so concurrent tabs do not silently overwrite one another. Portable `.scrollsplice` export/import packages one validated episode with its reusable asset snapshot for manual transfer. Clearing site data, changing browsers/profiles, or using a different origin loses the browser-local projects, recovery record, and Asset Library unless the creator exported a portable file. This remains local-only: there is no account, cloud sync, collaboration, or server backup.
 
+## Publish an approved update
+
+After the change passes review, is committed, and local `main` matches `origin/main`:
+
+```bash
+corepack pnpm deploy:pages
+```
+
+The command rebuilds the app and safely replaces only the generated `gh-pages` branch. The public URL remains <https://techinevolution.github.io/scroll-splice/>. Do not deploy uncommitted or unpushed work.
+
 Suggested review walkthrough for the currently implemented local build:
 
 1. Switch among **Background**, **Content**, and **Foreground** and confirm the numbered plane tabs and element list follow the active group without changing the composed episode.
