@@ -12,7 +12,7 @@ Use the public editor at <https://techinevolution.github.io/scroll-splice/>. Its
 - Public URL: <https://techinevolution.github.io/scroll-splice/>
 - Build/commit: `2849d81`
 - Tester: Katherine
-- Current test: `E01`
+- Current test: `L01`
 - Overall result: In progress / Pass / Pass with notes / Fail
 - Blocking issue, if any:
 
@@ -45,15 +45,15 @@ Imagine that you are starting a short vertical episode about a character crossin
 
 | ID | Action | Expected result | Result | Notes |
 | --- | --- | --- | --- | --- |
-| E01 | Choose **File > New Episode** and confirm any discard warning. | A blank 800 × 1,280 episode opens without deleting previously saved projects or reusable assets. |  |  |
-| E02 | Click the episode title and rename it **Moonlit Garden**; press Enter. | Only the title footprint becomes editable, the **EPISODE** label stays anchored, and the saved title remains visible. |  |  |
-| E03 | Re-enter title editing, type a temporary change, then press Escape. | The temporary change is canceled. Blank text is not accepted, and input stops at 60 characters. |  |  |
-| E04 | Select **Background**, plane 1, and change **Base color** in Layers. | The complete episode base changes color immediately in the canvas and minimap. |  |  |
-| E05 | Use the direct base-color control on the canvas for a second color. | The same Background plane 1 data changes; there is no separate or hardcoded canvas color. |  |  |
-| E06 | Hide Background plane 1, then reveal it. | Hidden base content stops rendering while its eye state remains recoverable from Layers. |  |  |
-| E07 | Click **Add scroll space** twice. | The episode grows by 1,280 logical units per click; the base, canvas, slice guides, scrollbar, and minimap refit to the new height. |  |  |
-| E08 | Drag the episode's bottom resize edge down, then back upward. | Height changes continuously; shrinking stops before it would clip any visible or hidden element and never moves existing content. |  |  |
-| E09 | Toggle **Slice guides** off and on. | Gray dotted 1,280-unit candidate boundaries disappear and return; they do not appear as layers or minimap content. |  |  |
+| E01 | Choose **File > New Episode** and confirm any discard warning. | A blank 800 × 1,280 episode opens without deleting previously saved projects or reusable assets. | Pass | Discard confirmation worked. Untitled Episode opened blank at 800 × 1,280; the minimap reported 1,280px, built-in Asset Library categories remained available, and status showed a new unsaved episode. |
+| E02 | Click the episode title and rename it **Moonlit Garden**; press Enter. | Only the title footprint becomes editable, the **EPISODE** label stays anchored, and the saved title remains visible. | Pass | Clicking the title automatically selected Untitled Episode. The EPISODE label stayed anchored; Enter saved Moonlit Garden and closed the field. Clicking outside the field also saved changes. |
+| E03 | Re-enter title editing, type a temporary change, then press Escape. | The temporary change is canceled. Blank text is not accepted, and input stops at 60 characters. | Pass with notes | Escape restored Moonlit Garden; blank input was rejected; pasted text worked; the 65-character probe stopped at 60 and excluded EXTRA. After accepting a maximum-length title, the header showed an ellipsis instead of all 60 characters. Logged as non-blocking responsive-title polish. |
+| E04 | Select **Background**, plane 1, and change **Base color** in Layers. | The complete episode base changes color immediately in the canvas and minimap. | Pass with notes | The Layers Base color control updated the complete canvas and minimap immediately. Clicking the color bar opened the picker, but clicking it again opened or reopened it rather than toggling it closed. The picker has no explicit accept control; clicking elsewhere closes it. Logged as non-blocking picker-consistency polish. |
+| E05 | Use the direct base-color control on the canvas for a second color. | The same Background plane 1 data changes; there is no separate or hardcoded canvas color. | Pass with notes | The direct canvas control changed the same Background plane 1 color in the canvas, minimap, and Layers control. Its picker has the same consistency issue as the Layers control: a second click opens or reopens it rather than toggling it closed. |
+| E06 | Hide Background plane 1, then reveal it. | Hidden base content stops rendering while its eye state remains recoverable from Layers. | Pass | Hiding plane 1 replaced the base with a checkerboard transparency indicator; revealing it restored the same base. The Background group eye performed the related group-level action and hid all Background items. |
+| E07 | Click **Add scroll space** twice. | The episode grows by 1,280 logical units per click; the base, canvas, slice guides, scrollbar, and minimap refit to the new height. | Pass | Both 1,280px additions worked. The base filled the added area; the longer canvas, slice guides, scrollbar, and minimap all refit correctly without moving existing content. |
+| E08 | Drag the episode's bottom resize edge down, then back upward. | Height changes continuously; shrinking stops before it would clip any visible or hidden element and never moves existing content. | Pass with notes | Height changed continuously in both directions; the minimap canvas and pixel count updated, and content did not move or crop. With only a base color, the main canvas offered little visual feedback. Dragging the pointer beyond the browser window stopped further expansion, making long downward resizing awkward. Logged as non-blocking resize-feedback and pointer-capture polish. |
+| E09 | Toggle **Slice guides** off and on. | Gray dotted 1,280-unit candidate boundaries disappear and return; they do not appear as layers or minimap content. | Pass | Slice guides disappeared and returned correctly at the 1,280px boundaries. They remained canvas-only guidance and did not appear in Layers or the minimap. |
 
 ## Story 3 — Build Background, Content, and Foreground planes
 
