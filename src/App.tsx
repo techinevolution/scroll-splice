@@ -542,7 +542,7 @@ export function App() {
         <div className="brand-lockup">
           <img
             className="brand-mark"
-            src="/brand/scrollsplice-mark.png?v=2"
+            src={`${import.meta.env.BASE_URL}brand/scrollsplice-mark.png?v=2`}
             alt=""
             aria-hidden="true"
             data-testid="brand-mark"
