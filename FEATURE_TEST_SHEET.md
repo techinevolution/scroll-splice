@@ -1,20 +1,22 @@
 # ScrollSplice Feature Test Sheet
 
-Use this sheet for Katherine's hands-on review of the completed **local human editor**. The walkthrough follows one synthetic creator story so each test builds on the last instead of feeling like a disconnected checklist.
+Use this sheet for Katherine's hands-on review of the completed **deployed human editor**. The walkthrough follows one synthetic creator story so each test builds on the last instead of feeling like a disconnected checklist. Test one row at a time; record the result before moving on.
 
-This sheet does **not** test OpenAI generation, OAuth, cloud sync, automated WEBTOON login/upload/publishing, native desktop packaging, public deployment, or Devpost submission. Those capabilities are gated and are not present in this build. Episode-image export uses the limits observed on WEBTOON's July 13 form and must remain labeled **provisional, not upload-verified, and for manual upload only**.
+Use the public editor at <https://techinevolution.github.io/scroll-splice/>. Its GitHub Pages access and clean-profile launch have already passed automated verification; this sheet records Katherine's product review. It does **not** test OpenAI generation, OAuth, cloud sync, automated WEBTOON login/upload/publishing, native desktop packaging, or the final Devpost video/submission. Those capabilities remain separately gated. Episode-image export uses the limits observed on WEBTOON's July 13 form and must remain labeled **provisional, not upload-verified, and for manual upload only**.
 
 ## Review record
 
-- Date:
+- Date started: July 19, 2026
 - Browser and version:
 - Window size or display resolution:
-- Build/commit:
+- Public URL: <https://techinevolution.github.io/scroll-splice/>
+- Build/commit: `2849d81`
 - Tester: Katherine
-- Overall result: Pass / Pass with notes / Fail
+- Current test: `W01`
+- Overall result: In progress / Pass / Pass with notes / Fail
 - Blocking issue, if any:
 
-For each row, record **Pass**, **Pass with notes**, **Fail**, or **Skipped**. A note should say what happened, where it happened, and whether reloading changed it.
+For each row, record **Pass**, **Pass with notes**, **Fail**, or **Skipped**. A note should say what happened, where it happened, and whether reloading changed it. Keep the same browser window open between rows so the creator story and browser-local project state carry forward.
 
 ## Safe test material
 
@@ -32,7 +34,7 @@ Imagine that you are starting a short vertical episode about a character crossin
 
 | ID | Action | Expected result | Result | Notes |
 | --- | --- | --- | --- | --- |
-| W01 | Open ScrollSplice from a clean browser tab. | The editor loads with the story canvas, left Asset Library rail, full-episode minimap, and Layers inspector visible; the canvas is usable rather than squeezed. |  |  |
+| W01 | Open the [deployed ScrollSplice editor](https://techinevolution.github.io/scroll-splice/) in a fresh browser tab. | **The Light We Planted** loads with the story canvas, left Asset Library rail, full-episode minimap, and Layers inspector visible; the canvas is usable rather than squeezed. |  |  |
 | W02 | Click **File**, **Edit**, **View**, **Window**, and **Help**. | Each working menu opens above the Asset Library and canvas; moving between menus does not trigger an editor action. |  |  |
 | W03 | Open **Help > Shortcuts & About**, then close it with Escape. | The help dialog explains local storage, portable projects, and the working shortcuts; Escape closes it. |  |  |
 | W04 | Use **Window > Hide Inspector**, then show it again from the header control or Window menu. | The minimap/Layers inspector hides and returns without changing the episode. |  |  |
@@ -79,10 +81,10 @@ Imagine that you are starting a short vertical episode about a character crossin
 | A06 | Try dropping a non-image file or an asset on Background plane 1. | ScrollSplice refuses the invalid target/file clearly and does not create a broken layer. |  |  |
 | A07 | Place a transparent PNG over a colored background. | Transparent pixels stay transparent in the canvas, minimap, Reader Preview, save/reopen path, and local renderer. |  |  |
 | A08 | Open **Speech Balloons**, **Decor**, and **Splatters** and place at least one original built-in from each. | Each built-in is reusable, resizable, transparent, and independently selectable. The Oval and Rounded balloon outlines have no white seam. |  |  |
-| A09 | In **My Library**, create **Garden Kit**, rename it, move it left/right among creator categories, and then return it to that name. | Creator categories are persistent and reorder without moving or duplicating source bytes. |  |  |
+| A09 | In **Uploads**, create the creator category **Garden Kit**, rename it, move it left/right among creator categories, and then return it to that name. | Creator categories live inside Uploads, persist locally, and reorder without moving or duplicating source bytes. |  |  |
 | A10 | Move an imported source into **Garden Kit**, rename the source, and replace its image. | The stable source remains reusable; placed references update to the replacement rather than becoming detached. |  |  |
 | A11 | Try deleting a source still referenced by the current episode or a saved/recovery/local project. | Deletion is blocked with a useful explanation; no placed or saved image becomes silently missing. |  |  |
-| A12 | Remove every reference to a disposable source and delete it. Then delete its creator category. | The unused source can be deleted; deleting a category keeps any remaining sources by moving them to Uploads. |  |  |
+| A12 | Remove every reference to a disposable source and delete it. Then delete its creator category. | The unused source can be deleted; deleting a category keeps any remaining sources by moving them to **Unsorted** inside Uploads. |  |  |
 
 ## Story 5 — Compose panels, text, and speech
 
@@ -188,7 +190,7 @@ Do not report these as missing regressions; they require separate approval or ou
 - automated WEBTOON login, upload, preview inspection, scheduling, or publishing
 - an upload-verified or guaranteed-WEBTOON-ready export claim
 - native macOS/Windows menus or desktop packaging
-- public deployment and final Devpost video/submission work
+- final Devpost video production and submission-form completion
 - arbitrary freehand polygon-point editing, perspective/freeform distortion, or nested groups
 - first-class art breaking out of an image mask; use a separate duplicated unmasked overlay in this build
 - reusable editable-balloon template saving; the atomic editable balloon itself is implemented
