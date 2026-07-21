@@ -3419,8 +3419,11 @@ p {
 }
 
 .header-history-actions button {
+  display: grid;
+  width: 34px;
   height: 32px;
-  padding: 0 0.62rem;
+  place-items: center;
+  padding: 0;
   border: 1px solid var(--ui-border);
   border-radius: 0.35rem;
   color: var(--ui-text);
@@ -3428,6 +3431,11 @@ p {
   font-size: 0.68rem;
   font-weight: 750;
   cursor: pointer;
+}
+
+.header-history-actions button > span {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 .header-history-actions button:hover:not(:disabled) {

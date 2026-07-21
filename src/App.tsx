@@ -605,11 +605,23 @@ export function App() {
 
         <div className="header-actions">
           <div className="header-history-actions" aria-label="History Actions">
-            <button type="button" disabled={!canUndo} onClick={undo}>
-              Undo
+            <button
+              type="button"
+              disabled={!canUndo}
+              aria-label="Undo"
+              title="Undo"
+              onClick={undo}
+            >
+              <span aria-hidden="true">↶</span>
             </button>
-            <button type="button" disabled={!canRedo} onClick={redo}>
-              Redo
+            <button
+              type="button"
+              disabled={!canRedo}
+              aria-label="Redo"
+              title="Redo"
+              onClick={redo}
+            >
+              <span aria-hidden="true">↷</span>
             </button>
           </div>
           <AgentChatPanel
