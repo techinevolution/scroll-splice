@@ -612,7 +612,7 @@ export function App() {
               title="Undo"
               onClick={undo}
             >
-              <span aria-hidden="true">↶</span>
+              <span aria-hidden="true">↺</span>
             </button>
             <button
               type="button"
@@ -621,7 +621,7 @@ export function App() {
               title="Redo"
               onClick={redo}
             >
-              <span aria-hidden="true">↷</span>
+              <span aria-hidden="true">↻</span>
             </button>
           </div>
           <AgentChatPanel
