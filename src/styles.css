@@ -3948,6 +3948,51 @@ button:focus-visible,
   background: var(--ui-surface-raised);
 }
 
+.theme-light .extend-episode-button,
+.theme-light .plane-element-actions button,
+.theme-light .layer-empty-action:not(:disabled),
+.theme-light .fit-width-button {
+  border-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border));
+  color: var(--ui-accent-strong);
+  background: var(--ui-accent-soft);
+}
+
+.theme-light .canvas-view-controls .view-toggle-button,
+.theme-light .canvas-view-controls .view-toggle-button[aria-pressed="true"] {
+  border-color: color-mix(in srgb, var(--ui-accent) 30%, var(--ui-border));
+  color: var(--ui-accent-strong);
+  background: var(--ui-accent-soft);
+}
+
+.theme-light .canvas-view-controls output {
+  color: var(--ui-text-muted);
+}
+
+.theme-light .extend-episode-button {
+  box-shadow:
+    0 7px 18px var(--ui-shadow),
+    0 0 0 2px color-mix(in srgb, var(--ui-accent) 8%, transparent);
+}
+
+.theme-light .extend-episode-button > span:first-child {
+  color: var(--ui-accent);
+}
+
+.theme-light .extend-episode-button:hover,
+.theme-light .plane-element-actions button:hover,
+.theme-light .layer-empty-action:not(:disabled):hover,
+.theme-light .fit-width-button:hover {
+  border-color: var(--ui-accent);
+  color: var(--ui-accent-strong);
+  background: color-mix(in srgb, var(--ui-accent) 18%, var(--ui-surface));
+}
+
+.theme-light .layer-empty-action:disabled {
+  border-color: var(--ui-border-soft);
+  color: var(--ui-text-faint);
+  background: var(--ui-surface-muted);
+}
+
 .theme-light .editor-canvas-frame {
   box-shadow: 0 7px 22px rgb(35 48 41 / 16%);
 }

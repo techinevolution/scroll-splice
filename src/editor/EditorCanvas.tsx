@@ -1358,7 +1358,11 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
           <span aria-hidden="true">⋯</span>
           Slice Guides {sliceGuidesVisible ? 'On' : 'Off'}
         </button>
-        <button type="button" onClick={() => setZoomFactor(1)}>
+        <button
+          type="button"
+          className="fit-width-button"
+          onClick={() => setZoomFactor(1)}
+        >
           Fit Width
         </button>
         <input
