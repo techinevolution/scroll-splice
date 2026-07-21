@@ -5,7 +5,6 @@ import {
   importBrowserImage,
   type BrowserImageFile,
 } from './importImage'
-import { MAX_IMPORTED_IMAGE_BYTES } from './types'
 
 function writeUint16BigEndian(
   bytes: Uint8Array,
@@ -224,16 +223,8 @@ describe('browser image import', () => {
     },
   )
 
-  it('rejects empty, oversized, and signature-mismatched files', async () => {
+  it('rejects empty and signature-mismatched files', async () => {
     const empty = createNamedBlob([], 'image/png', 'empty.png')
-    const oversized = createNamedBlob(
-      VALID_HEADERS['image/png'],
-      'image/png',
-      'large.png',
-    )
-    Object.defineProperty(oversized, 'size', {
-      value: MAX_IMPORTED_IMAGE_BYTES + 1,
-    })
     const disguisedSvg = createNamedBlob(
       Array.from(new TextEncoder().encode('<svg></svg>')),
       'image/png',
@@ -244,13 +235,27 @@ describe('browser image import', () => {
       ok: false,
       reason: 'empty-file',
     })
-    await expect(importBrowserImage(oversized)).resolves.toMatchObject({
-      ok: false,
-      reason: 'file-too-large',
-    })
     await expect(importBrowserImage(disguisedSvg)).resolves.toMatchObject({
       ok: false,
       reason: 'signature-mismatch',
+    })
+  })
+
+  it('does not apply a WEBTOON file-size cap to editor source intake', async () => {
+    const source = createNamedBlob(
+      createPngHeader(320, 200),
+      'image/png',
+      'large-source.png',
+    )
+    Object.defineProperty(source, 'size', { value: 20 * 1024 * 1024 + 1 })
+
+    await expect(
+      importBrowserImage(source, {
+        decodeDimensions: async () => ({ width: 320, height: 200 }),
+      }),
+    ).resolves.toMatchObject({
+      ok: true,
+      image: { byteSize: 20 * 1024 * 1024 + 1 },
     })
   })
 
@@ -259,7 +264,7 @@ describe('browser image import', () => {
     ['image/jpeg', createJpegHeader(8_001, 5_000)],
     ['image/webp', createWebpExtendedHeader(8_001, 5_000)],
   ])(
-    'rejects header-declared oversized %s images before full decode',
+    'accepts large-dimension %s source images after browser decode',
     async (mediaType, header) => {
       const decodeDimensions = vi.fn(async () => ({
         width: 8_001,
@@ -271,8 +276,11 @@ describe('browser image import', () => {
           createNamedBlob(header, mediaType, 'oversized-source'),
           { decodeDimensions },
         ),
-      ).resolves.toMatchObject({ ok: false, reason: 'pixel-limit' })
-      expect(decodeDimensions).not.toHaveBeenCalled()
+      ).resolves.toMatchObject({
+        ok: true,
+        image: { intrinsicWidth: 8_001, intrinsicHeight: 5_000 },
+      })
+      expect(decodeDimensions).toHaveBeenCalledOnce()
     },
   )
 
@@ -295,7 +303,7 @@ describe('browser image import', () => {
     expect(decodeDimensions).not.toHaveBeenCalled()
   })
 
-  it('rejects decode failures, invalid dimensions, and more than 40M pixels', async () => {
+  it('rejects decode failures, invalid dimensions, and header mismatches', async () => {
     const file = createNamedBlob(
       createPngHeader(100, 100),
       'image/png',
@@ -318,7 +326,7 @@ describe('browser image import', () => {
       importBrowserImage(file, {
         decodeDimensions: async () => ({ width: 8_001, height: 5_000 }),
       }),
-    ).resolves.toMatchObject({ ok: false, reason: 'pixel-limit' })
+    ).resolves.toMatchObject({ ok: false, reason: 'decode-failed' })
   })
 
   it('rejects a decoded dimension mismatch after header preflight', async () => {

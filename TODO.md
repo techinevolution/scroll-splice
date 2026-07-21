@@ -84,6 +84,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Implement tall-master and deterministic PNG/JPEG slice rendering with creator-reviewed cuts, observed-profile preflight, and explicit provisional/manual-upload labeling.
 - [x] Create [FEATURE_TEST_SHEET.md](FEATURE_TEST_SHEET.md) as Katherine's coherent end-to-end review story.
 - [x] Finish the big feature/UI closeout: 385 unit tests across 29 files, typecheck, lint, production build, and all 15 Playwright Chromium stories pass; index the editor, Reader Preview, provisional export, and matched dark/light release screenshots.
+- [x] Repair generated-image intake: pass opaque generation references through Agent events, retrieve image bytes through the authenticated companion binary endpoint, retain native PNG/JPEG/WebP source dimensions, and keep WEBTOON limits in export only.
 - [x] Include the previously local completion work, six-image demo, dual interface, layer grips, and editor adapter in one current release without rewriting the pre-event baseline.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 - [x] Research professional comic and webtoon speech-balloon conventions and record the complete practical editable inventory, composable design rule, and phased implementation path in [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md).

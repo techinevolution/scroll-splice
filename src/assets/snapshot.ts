@@ -1,7 +1,5 @@
 import {
   ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
-  MAX_IMPORTED_IMAGE_BYTES,
-  MAX_IMPORTED_IMAGE_PIXELS,
   type AssetLibrarySnapshot,
   type CreatorAssetCategorySnapshot,
   type ImportedImageSnapshot,
@@ -145,11 +143,8 @@ function parseImportedImage(value: unknown): ImportedImageSnapshot | undefined {
     !isSafeDisplayName(value.displayName) ||
     !isImportedImageMediaType(value.mediaType) ||
     !isPositiveInteger(value.byteSize) ||
-    value.byteSize > MAX_IMPORTED_IMAGE_BYTES ||
     !isPositiveInteger(value.intrinsicWidth) ||
     !isPositiveInteger(value.intrinsicHeight) ||
-    value.intrinsicWidth * value.intrinsicHeight >
-      MAX_IMPORTED_IMAGE_PIXELS ||
     sourceBlob.size !== value.byteSize ||
     sourceBlob.type !== value.mediaType ||
     (value.creatorCategoryId !== null &&

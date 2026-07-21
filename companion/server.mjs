@@ -191,6 +191,34 @@ export function createCompanionServer(options) {
         return
       }
 
+      const generationMatch = /^\/agent-api\/generations\/([^/]+)$/.exec(url.pathname)
+      if (req.method === 'GET' && generationMatch) {
+        const generationRef = decodeURIComponent(generationMatch[1])
+        if (!validLoginId(generationRef)) {
+          throw Object.assign(new Error('A valid generation reference is required.'), { status: 400 })
+        }
+        const generation = agent.getGeneration(generationRef)
+        if (!generation) {
+          json(res, 404, { message: 'That generated image is no longer available.' })
+          return
+        }
+        let bytes
+        try {
+          bytes = await fs.readFile(generation.filePath)
+        } catch {
+          json(res, 404, { message: 'That generated image is no longer available.' })
+          return
+        }
+        res.writeHead(200, {
+          'Content-Type': generation.mediaType,
+          'Content-Length': bytes.length,
+          'Cache-Control': 'no-store',
+          'X-Content-Type-Options': 'nosniff',
+        })
+        res.end(bytes)
+        return
+      }
+
       const toolMatch = /^\/agent-api\/tool-results\/([^/]+)$/.exec(url.pathname)
       if (req.method === 'POST' && toolMatch) {
         const callId = decodeURIComponent(toolMatch[1])
@@ -277,26 +305,20 @@ async function streamTurn({ req, res, agent, activeTurns, selected, prompt }) {
         agent.respondToolCall(params.callId, { success: false, result: { ok: false, message: 'Generate an image before importing it.' } })
         return
       }
-      try {
-        const bytes = await fs.readFile(generation.filePath)
-        const requestedMetadata = params.arguments?.metadata || {}
-        args = {
-          ...(params.arguments || {}),
-          metadata: {
-            displayName: requestedMetadata.displayName || 'Generated image',
-            provider: 'OpenAI',
-            model: selected.model,
-            prompt: generation.revisedPrompt || requestedMetadata.prompt || null,
-            generatedAt: generation.generatedAt,
-            ...(requestedMetadata.creatorCategoryId
-              ? { creatorCategoryId: requestedMetadata.creatorCategoryId }
-              : {}),
-          },
-          source: { kind: 'data-url', dataUrl: `data:${generation.mediaType};base64,${bytes.toString('base64')}` },
-        }
-      } catch {
-        agent.respondToolCall(params.callId, { success: false, result: { ok: false, message: 'The staged generated image expired.' } })
-        return
+      const requestedMetadata = params.arguments?.metadata || {}
+      args = {
+        ...(params.arguments || {}),
+        generationRef,
+        metadata: {
+          displayName: requestedMetadata.displayName || 'Generated image',
+          provider: 'OpenAI',
+          model: selected.model,
+          prompt: generation.revisedPrompt || requestedMetadata.prompt || null,
+          generatedAt: generation.generatedAt,
+          ...(requestedMetadata.creatorCategoryId
+            ? { creatorCategoryId: requestedMetadata.creatorCategoryId }
+            : {}),
+        },
       }
     }
     write({

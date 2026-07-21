@@ -92,6 +92,8 @@ For now, an export profile may record 800 px width, 1280 px maximum slice height
 
 ScrollSplice's authoring Asset Library accepts PNG, JPEG, and WebP sources because current browsers can preserve and display those files locally. That does not make WebP a WEBTOON output format: the observed Manage Episode form lists JPG/JPEG/PNG only. A future exporter must render or convert every source into a profile-accepted output format and preflight the encoded result rather than copying WebP source bytes into an upload package.
 
+Source-image dimensions and byte sizes are authoring concerns, not WEBTOON upload constraints. ScrollSplice retains browser-decodable source images unchanged at their native dimensions; the selected export profile is solely responsible for scaling the composed 800-unit episode, choosing output formats, slicing, encoding, and enforcing per-file and package limits.
+
 ## Required authenticated discovery test
 
 Complete the remaining behavior checks before approving production WEBTOON export. Use harmless original synthetic files, keep the episode unpublished, and never automate the login or upload.

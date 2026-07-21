@@ -146,7 +146,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
 }
 
-async function resolveToolArguments(
+export async function resolveToolArguments(
   client: CompanionClient,
   event: Extract<CompanionTurnEvent, { type: 'tool-call' }>,
   signal: AbortSignal,

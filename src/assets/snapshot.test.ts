@@ -120,14 +120,6 @@ describe('asset-library snapshot parser', () => {
         byteSize: image.byteSize + 1,
       })),
     })],
-    ['excessive decoded pixels', (snapshot: AssetLibrarySnapshot) => ({
-      ...snapshot,
-      importedImages: snapshot.importedImages.map((image) => ({
-        ...image,
-        intrinsicWidth: 10_000,
-        intrinsicHeight: 10_000,
-      })),
-    })],
     ['duplicate image IDs', (snapshot: AssetLibrarySnapshot) => ({
       ...snapshot,
       importedImages: [
@@ -139,6 +131,25 @@ describe('asset-library snapshot parser', () => {
     expect(parseAssetLibrarySnapshot(mutate(createSnapshot()))).toMatchObject({
       ok: false,
       reason: 'corrupt',
+    })
+  })
+
+  it('retains native source dimensions above WEBTOON output limits', () => {
+    const snapshot = createSnapshot()
+    const result = parseAssetLibrarySnapshot({
+      ...snapshot,
+      importedImages: snapshot.importedImages.map((image) => ({
+        ...image,
+        intrinsicWidth: 10_000,
+        intrinsicHeight: 10_000,
+      })),
+    })
+
+    expect(result).toMatchObject({
+      ok: true,
+      snapshot: {
+        importedImages: [{ intrinsicWidth: 10_000, intrinsicHeight: 10_000 }],
+      },
     })
   })
 })

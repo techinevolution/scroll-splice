@@ -160,6 +160,7 @@ The full autonomous mode is not required for Build Week. The implemented local c
 - Keep the collapsed left rail visible as a compact set of category buttons and open the selected category in the Asset Library drawer.
 - Use **Uploads** for all creator-imported files, with **All**, **Unsorted**, and creator-named filters inside its drawer; use separate fixed rail categories for built-in speech balloons, decorations, and splatters.
 - Show asset thumbnails and names inside the selected category.
+- Retain browser-decodable PNG, JPEG, and WebP sources unchanged at their native dimensions. WEBTOON size, format, and file-weight rules apply to export output rather than Asset Library intake.
 - Collapse the drawer to preserve canvas space, and prefer overlay behavior when display width is constrained.
 - Clicking an asset creates an independently editable element centered in the current viewport on the active numbered plane, and native internal drag-to-canvas placement creates the same element beneath the pointer. The click path remains the accessible fallback.
 - Allow a precise drop onto a numbered plane tab or the active Layers list to choose the destination plane directly.

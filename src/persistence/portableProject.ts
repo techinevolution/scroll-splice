@@ -2,7 +2,6 @@ import type { EpisodeDocument } from '../core/episode'
 import { parseAssetLibrarySnapshot } from '../assets/snapshot'
 import {
   ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
-  MAX_IMPORTED_IMAGE_BYTES,
   type AssetLibrarySnapshot,
   type CreatorAssetCategorySnapshot,
   type GeneratedImageMetadata,
@@ -482,8 +481,7 @@ function decodePortableImportedImage(
     value.sourceEncoding !== 'base64' ||
     typeof value.sourceBase64 !== 'string' ||
     !isImportedImageMediaType(value.mediaType) ||
-    !isPositiveInteger(value.byteSize) ||
-    value.byteSize > MAX_IMPORTED_IMAGE_BYTES
+    !isPositiveInteger(value.byteSize)
   ) {
     return portableFailure(
       'corrupt',

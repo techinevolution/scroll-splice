@@ -17,8 +17,6 @@ export type ImportedImageMediaType =
   (typeof IMPORTED_IMAGE_MEDIA_TYPES)[number]
 
 export const ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION = 1 as const
-export const MAX_IMPORTED_IMAGE_BYTES = 20 * 1024 * 1024
-export const MAX_IMPORTED_IMAGE_PIXELS = 40_000_000
 export const MAX_ASSET_DISPLAY_NAME_LENGTH = 120
 export const MAX_CREATOR_CATEGORY_NAME_LENGTH = 40
 export const MAX_GENERATED_PROVIDER_LENGTH = 120

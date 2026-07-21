@@ -1,7 +1,5 @@
 import {
   MAX_ASSET_DISPLAY_NAME_LENGTH,
-  MAX_IMPORTED_IMAGE_BYTES,
-  MAX_IMPORTED_IMAGE_PIXELS,
   type ImportedImageMediaType,
   type ImportedImageSnapshot,
   type GeneratedImageMetadata,
@@ -39,11 +37,9 @@ export type ImportBrowserImageResult =
         | 'invalid-file'
         | 'unsupported-type'
         | 'empty-file'
-        | 'file-too-large'
         | 'signature-mismatch'
         | 'invalid-header'
         | 'decode-failed'
-        | 'pixel-limit'
         | 'invalid-category'
         | 'invalid-id'
         | 'metadata-failed'
@@ -67,13 +63,6 @@ export async function importBrowserImage(
 
   if (file.size === 0) {
     return failure('empty-file', 'The selected image file is empty.')
-  }
-
-  if (file.size > MAX_IMPORTED_IMAGE_BYTES) {
-    return failure(
-      'file-too-large',
-      'The selected image is larger than the 20 MiB source limit.',
-    )
   }
 
   const creatorCategoryId = options.creatorCategoryId ?? null
@@ -119,16 +108,6 @@ export async function importBrowserImage(
 
   const headerDimensions = headerResult.dimensions
 
-  if (
-    headerDimensions.width * headerDimensions.height >
-    MAX_IMPORTED_IMAGE_PIXELS
-  ) {
-    return failure(
-      'pixel-limit',
-      'The selected image exceeds the 40-megapixel decoded-size limit.',
-    )
-  }
-
   let dimensions: DecodedImageDimensions
 
   try {
@@ -148,13 +127,6 @@ export async function importBrowserImage(
     return failure(
       'decode-failed',
       'The selected image reported invalid decoded dimensions.',
-    )
-  }
-
-  if (dimensions.width * dimensions.height > MAX_IMPORTED_IMAGE_PIXELS) {
-    return failure(
-      'pixel-limit',
-      'The selected image exceeds the 40-megapixel decoded-size limit.',
     )
   }
 

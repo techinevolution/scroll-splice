@@ -124,7 +124,6 @@ const BLEND_MODES = new Set([
   'soft-light',
 ])
 const IMAGE_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
-const MAX_ENCODED_IMAGE_LENGTH = Math.ceil((20 * 1024 * 1024 * 4) / 3) + 256
 
 export function createEditorToolDispatcher(
   adapter: ScrollSpliceEditorAdapter = createEditorAdapter(),
@@ -639,12 +638,12 @@ function isGeneratedSource(value: unknown): value is GeneratedImageSource {
 
   if (value.kind === 'data-url') {
     return exact(value, ['kind', 'dataUrl']) && typeof value.dataUrl === 'string' &&
-      value.dataUrl.length > 0 && value.dataUrl.length <= MAX_ENCODED_IMAGE_LENGTH
+      value.dataUrl.length > 0
   }
 
   return value.kind === 'base64' && exact(value, ['kind', 'base64', 'mediaType']) &&
     typeof value.base64 === 'string' && value.base64.length > 0 &&
-    value.base64.length <= MAX_ENCODED_IMAGE_LENGTH && IMAGE_MEDIA_TYPES.has(value.mediaType as string)
+    IMAGE_MEDIA_TYPES.has(value.mediaType as string)
 }
 
 function isGeneratedMetadata(value: unknown): value is GeneratedAssetImportMetadata {

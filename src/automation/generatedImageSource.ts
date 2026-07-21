@@ -1,8 +1,4 @@
-import {
-  MAX_IMPORTED_IMAGE_BYTES,
-  type BrowserImageFile,
-  type ImportedImageMediaType,
-} from '../assets'
+import type { BrowserImageFile, ImportedImageMediaType } from '../assets'
 import { isImportedImageMediaType } from '../assets/validation'
 
 export type GeneratedImageSource =
@@ -80,10 +76,6 @@ export function materializeGeneratedImageSource(
     return failure('The generated image base64 is malformed or empty.')
   }
 
-  if (bytes.byteLength > MAX_IMPORTED_IMAGE_BYTES) {
-    return failure('The generated image is larger than the 20 MiB source limit.')
-  }
-
   return createNamedFile(
     new Blob([new Uint8Array(bytes).buffer], { type: mediaType }),
     displayName,
@@ -145,7 +137,7 @@ function decodeBase64(encoded: string): Uint8Array | undefined {
     (normalized.length / 4) * 3 -
     (normalized.endsWith('==') ? 2 : normalized.endsWith('=') ? 1 : 0)
 
-  if (estimatedByteSize <= 0 || estimatedByteSize > MAX_IMPORTED_IMAGE_BYTES) {
+  if (estimatedByteSize <= 0 || !Number.isSafeInteger(estimatedByteSize)) {
     return undefined
   }
 

@@ -111,7 +111,7 @@ test('turn streams exact browser events and waits for a browser tool result', as
   assert.match(agent.lastPrompt, /USER:\nInspect this episode\./)
 })
 
-test('generated import tool receives staged bytes, never a filesystem path', async (t) => {
+test('generated import tool retrieves staged bytes out of band, never a filesystem path', async (t) => {
   const directory = await fs.mkdtemp(path.join(tmpdir(), 'scrollsplice-generation-test-'))
   t.after(() => fs.rm(directory, { recursive: true, force: true }))
   const filePath = path.join(directory, 'private-generated.png')
@@ -131,12 +131,29 @@ test('generated import tool receives staged bytes, never a filesystem path', asy
   const events = await collectNdjson(response)
   const call = events.find(({ type }) => type === 'tool-call')
   assert.equal(call.name, 'scrollsplice.import_latest_generated_asset')
-  assert.match(call.arguments.source.dataUrl, /^data:image\/png;base64,/)
+  assert.equal(call.arguments.generationRef, 'opaque-ref')
+  assert.equal(Object.hasOwn(call.arguments, 'source'), false)
   assert.equal(call.arguments.metadata.provider, 'OpenAI')
   assert.equal(call.arguments.metadata.model, 'gpt-5.6-terra')
   assert.equal(call.arguments.metadata.prompt, 'A safer generated panel')
   assert.equal(JSON.stringify(call).includes(filePath), false)
   assert.equal(JSON.stringify(call).includes('savedPath'), false)
+
+  const generatedResponse = await fetch(
+    `${target}/agent-api/generations/${call.arguments.generationRef}`,
+    { headers: { [COMPANION_TOKEN_HEADER]: TOKEN } },
+  )
+  assert.equal(generatedResponse.status, 200)
+  assert.equal(generatedResponse.headers.get('content-type'), 'image/png')
+  assert.deepEqual(
+    Buffer.from(await generatedResponse.arrayBuffer()),
+    Buffer.from('89504e470d0a1a0a', 'hex'),
+  )
+
+  const noToken = await fetch(
+    `${target}/agent-api/generations/${call.arguments.generationRef}`,
+  )
+  assert.equal(noToken.status, 401)
 })
 
 async function listen(t, agent) {
