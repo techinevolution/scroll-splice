@@ -27,6 +27,7 @@ import {
 } from '../assets/dragPayload'
 import { resolveImageAsset } from '../assets/runtime'
 import {
+  MAX_TEXT_CONTENT_LENGTH,
   MIN_ELEMENT_SIZE,
   isElementFreeformResizable,
 } from '../core/commands'
@@ -51,6 +52,7 @@ import {
   type ImageElement,
   type ImageMask,
   type SpeechBalloonElement,
+  type TextElement,
 } from '../core/episode'
 import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
 import { getSpeechBalloonTextLayout } from '../core/speechBalloonLayout'
@@ -96,12 +98,14 @@ interface ElementNodeProps {
   readonly accentColor: string
   readonly isSelected: boolean
   readonly isPrimarySelected: boolean
+  readonly isEditing: boolean
   readonly episodeLogicalWidth: number
   readonly episodeLogicalHeight: number
   readonly magnetEnabled: boolean
   readonly nearbyBounds: readonly EpisodeElement['bounds'][]
   readonly viewScale: number
   readonly onSelect: (elementId: string, toggle: boolean) => void
+  readonly onEdit: (element: TextElement) => void
   readonly onMove: (elementId: string, x: number, y: number) => void
   readonly onResize: (
     elementId: string,
@@ -368,12 +372,14 @@ function ElementNode({
   accentColor,
   isSelected,
   isPrimarySelected,
+  isEditing,
   episodeLogicalWidth,
   episodeLogicalHeight,
   magnetEnabled,
   nearbyBounds,
   viewScale,
   onSelect,
+  onEdit,
   onMove,
   onResize,
   onPreviewBounds,
@@ -384,7 +390,7 @@ function ElementNode({
   const nodeRef = useRef<Konva.Group>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const isFreeformResizable = isElementFreeformResizable(element)
-  const isResizable = isPrimarySelected && !element.locked
+  const isResizable = isPrimarySelected && !element.locked && !isEditing
   const flipScaleX = element.transform.flipX ? -1 : 1
   const flipScaleY = element.transform.flipY ? -1 : 1
 
@@ -506,7 +512,10 @@ function ElementNode({
         scaleY={flipScaleY}
         listening={element.opacity > 0}
         draggable={
-          element.opacity > 0 && isPrimarySelected && !element.locked
+          element.opacity > 0 &&
+          isPrimarySelected &&
+          !element.locked &&
+          !isEditing
         }
         onMouseDown={(event) => {
           event.cancelBubble = true
@@ -515,6 +524,38 @@ function ElementNode({
         onTouchStart={(event) => {
           event.cancelBubble = true
           onSelect(element.id, false)
+        }}
+        onClick={(event) => {
+          if (
+            element.type !== 'text' ||
+            element.locked ||
+            !isPrimarySelected
+          ) {
+            return
+          }
+          event.cancelBubble = true
+          onEdit(element)
+        }}
+        onTap={(event) => {
+          if (
+            element.type !== 'text' ||
+            element.locked ||
+            !isPrimarySelected
+          ) {
+            return
+          }
+          event.cancelBubble = true
+          onEdit(element)
+        }}
+        onDblClick={(event) => {
+          if (element.type !== 'text' || element.locked) return
+          event.cancelBubble = true
+          onEdit(element)
+        }}
+        onDblTap={(event) => {
+          if (element.type !== 'text' || element.locked) return
+          event.cancelBubble = true
+          onEdit(element)
         }}
         onDragMove={(event) => {
           const position = constrainDrag(
@@ -551,7 +592,12 @@ function ElementNode({
         onMouseEnter={(event) => {
           const stage = event.target.getStage()
           if (stage) {
-            stage.container().style.cursor = isSelected ? 'grab' : 'pointer'
+            stage.container().style.cursor =
+              element.type === 'text' && !element.locked
+                ? 'text'
+                : isSelected
+                  ? 'grab'
+                  : 'pointer'
           }
         }}
         onMouseLeave={(event) => {
@@ -591,6 +637,7 @@ function ElementNode({
 
           {element.type === 'text' ? (
             <Text
+              visible={!isEditing}
               width={bounds.width}
               height={bounds.height}
               text={element.text}
@@ -696,6 +743,9 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
     (state) => state.nudgeSelectedElement,
   )
   const resizeElement = useEditorStore((state) => state.resizeElement)
+  const updateTextElement = useEditorStore(
+    (state) => state.updateTextElement,
+  )
   const previewElementBounds = useEditorStore(
     (state) => state.previewElementBounds,
   )
@@ -728,6 +778,9 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   } | null>(null)
   const [externalFileDropActive, setExternalFileDropActive] = useState(false)
   const [showFileDropFeedback, setShowFileDropFeedback] = useState(false)
+  const [editingTextId, setEditingTextId] = useState<string | null>(null)
+  const [editingTextDraft, setEditingTextDraft] = useState('')
+  const editingTextAreaRef = useRef<HTMLTextAreaElement>(null)
   const { elementRef, size } = useElementSize<HTMLDivElement>()
 
   const stageWidth = Math.max(size.width, 1)
@@ -752,6 +805,32 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   const selectedElement = episode.elements.find(
     ({ id }) => id === selectedElementId,
   )
+  const editingTextElement = episode.elements.find(
+    (element): element is TextElement =>
+      element.id === editingTextId && element.type === 'text',
+  )
+
+  useEffect(() => {
+    if (!editingTextElement) return
+
+    const textArea = editingTextAreaRef.current
+    textArea?.focus()
+    textArea?.select()
+  }, [editingTextElement])
+
+  const finishTextEditing = (commit: boolean) => {
+    if (commit && editingTextElement && editingTextDraft.trim()) {
+      updateTextElement(editingTextElement.id, {
+        text: editingTextDraft,
+        fill: editingTextElement.fill,
+        fontSize: editingTextElement.fontSize,
+        fontWeight: editingTextElement.fontWeight,
+        align: editingTextElement.align,
+      })
+    }
+
+    setEditingTextId(null)
+  }
   const sliceBoundaries = useMemo(
     () =>
       getCandidateLogicalSliceBoundaries(
@@ -1090,6 +1169,7 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
                   accentColor={accentColor}
                   isSelected={selectedElementIds.includes(element.id)}
                   isPrimarySelected={element.id === selectedElementId}
+                  isEditing={element.id === editingTextId}
                   episodeLogicalWidth={episode.logicalWidth}
                   episodeLogicalHeight={episode.logicalHeight}
                   magnetEnabled={magnetEnabled}
@@ -1098,6 +1178,11 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
                   onSelect={(elementId, toggle) =>
                     selectElement(elementId, false, toggle)
                   }
+                  onEdit={(textElement) => {
+                    selectElement(textElement.id)
+                    setEditingTextDraft(textElement.text)
+                    setEditingTextId(textElement.id)
+                  }}
                   onMove={(elementId, x, y) =>
                     moveElement(elementId, { x, y })
                   }
@@ -1156,6 +1241,47 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
             />
           ) : null}
         </div>
+
+        {editingTextElement ? (
+          <textarea
+            ref={editingTextAreaRef}
+            className="canvas-text-editor"
+            aria-label={`Edit ${editingTextElement.name} on canvas`}
+            data-testid="canvas-text-editor"
+            maxLength={MAX_TEXT_CONTENT_LENGTH}
+            value={editingTextDraft}
+            style={{
+              left: groupX + editingTextElement.bounds.x * viewScale,
+              top:
+                (editingTextElement.bounds.y - viewportY) * viewScale,
+              width: editingTextElement.bounds.width * viewScale,
+              height: editingTextElement.bounds.height * viewScale,
+              color: editingTextElement.fill,
+              fontFamily: editingTextElement.fontFamily,
+              fontSize: editingTextElement.fontSize * viewScale,
+              fontWeight: editingTextElement.fontWeight,
+              lineHeight: editingTextElement.lineHeight,
+              textAlign: editingTextElement.align,
+              borderColor: accentColor,
+            }}
+            onChange={(event) => setEditingTextDraft(event.currentTarget.value)}
+            onBlur={() => finishTextEditing(true)}
+            onKeyDown={(event) => {
+              event.stopPropagation()
+
+              if (event.key === 'Escape') {
+                event.preventDefault()
+                finishTextEditing(false)
+              } else if (
+                event.key === 'Enter' &&
+                (event.metaKey || event.ctrlKey)
+              ) {
+                event.preventDefault()
+                finishTextEditing(true)
+              }
+            }}
+          />
+        ) : null}
 
         <CanvasBaseColorControl />
 
