@@ -107,11 +107,12 @@ export function EpisodeHeightControls({
         <button
           className="extend-episode-button"
           type="button"
-          aria-label={`Add scroll space (${DEFAULT_EPISODE_HEIGHT_INCREMENT.toLocaleString()} pixels)`}
+          data-testid="canvas-add-scroll-space"
+          aria-label={`Add Scroll Space (${DEFAULT_EPISODE_HEIGHT_INCREMENT.toLocaleString()} pixels)`}
           onClick={extendEpisodeHeight}
         >
           <span aria-hidden="true">+</span>
-          <span>Add scroll space</span>
+          <span>Add Scroll Space</span>
         </button>
       </div>
     </>

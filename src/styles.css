@@ -1659,6 +1659,12 @@ p {
   font-weight: 800;
 }
 
+.minimap-extend-episode-button {
+  justify-self: stretch;
+  justify-content: center;
+  margin-top: 0.35rem;
+}
+
 .episode-height-edge {
   position: absolute;
   z-index: 5;

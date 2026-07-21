@@ -7,6 +7,7 @@ import {
   minimapPointerToViewportPosition,
   type LogicalPosition,
 } from '../core/coordinates'
+import { DEFAULT_EPISODE_HEIGHT_INCREMENT } from '../core/commands'
 import {
   getCoverCropRect,
   getImageMaskPath,
@@ -567,6 +568,9 @@ export function EpisodeMinimap() {
     (state) => state.setViewportPosition,
   )
   const panViewport = useEditorStore((state) => state.panViewport)
+  const extendEpisodeHeight = useEditorStore(
+    (state) => state.extendEpisodeHeight,
+  )
   const dragOffset = useRef<LogicalPosition | null>(null)
   const scrollViewportRef = useRef<HTMLDivElement>(null)
   const minimapSurfaceRef = useRef<HTMLDivElement>(null)
@@ -748,7 +752,7 @@ export function EpisodeMinimap() {
           tabIndex={0}
           aria-label="Episode position and viewport"
           aria-roledescription="two-dimensional viewport navigator"
-          aria-describedby="minimap-navigation-help minimap-position-status"
+          aria-describedby="minimap-position-status"
           data-viewport-x={viewportX}
           data-viewport-y={viewportY}
           data-image-element-count={resolvedImageAssets.size}
@@ -834,10 +838,16 @@ export function EpisodeMinimap() {
           </svg>
         </div>
       </div>
-      <p id="minimap-navigation-help" className="panel-help">
-        Click or drag the frame · x {Math.round(viewportX)}px · y{' '}
-        {Math.round(viewportY)}px
-      </p>
+      <button
+        className="extend-episode-button minimap-extend-episode-button"
+        type="button"
+        data-testid="minimap-add-scroll-space"
+        aria-label={`Add Scroll Space (${DEFAULT_EPISODE_HEIGHT_INCREMENT.toLocaleString()} pixels)`}
+        onClick={extendEpisodeHeight}
+      >
+        <span aria-hidden="true">+</span>
+        <span>Add Scroll Space</span>
+      </button>
       <p id="minimap-position-status" className="sr-only" aria-live="polite">
         Viewport starts at x {Math.round(viewportX)}, y {Math.round(viewportY)};
         visible size {Math.round(viewportLogicalWidth)} by{' '}

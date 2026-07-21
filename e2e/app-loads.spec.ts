@@ -130,6 +130,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
+  await resetDemoSafely(page)
   await showDetailsBar(page)
 
   await expect(page).toHaveTitle('ScrollSplice')
@@ -187,7 +188,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(canvas).toHaveAttribute('data-ready', 'true')
   await expect(episodePosition).toHaveAttribute(
     'aria-describedby',
-    'minimap-navigation-help minimap-position-status',
+    'minimap-position-status',
   )
   await expect(page.locator('#minimap-position-status')).toContainText(
     'Viewport starts at x 0, y 0',
@@ -1054,11 +1055,12 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   const viewportAtOriginalEnd = await episodePosition.getAttribute(
     'data-viewport-y',
   )
-  const addScrollSpace = page.getByRole('button', {
-    name: /Add scroll space/,
-  })
+  const addScrollSpace = page.getByTestId('canvas-add-scroll-space')
+  const minimapAddScrollSpace = page.getByTestId(
+    'minimap-add-scroll-space',
+  )
   await expect(addScrollSpace).toBeVisible()
-  await addScrollSpace.click()
+  await minimapAddScrollSpace.click()
 
   const onceExtendedHeight = initialEpisodeHeight + 1_280
   await expect(canvas).toHaveAttribute(
