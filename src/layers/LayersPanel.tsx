@@ -1097,7 +1097,7 @@ export function LayersPanel() {
         </details>
       ) : null}
 
-      {selectedElement ? (
+      {selectedElement && selectedElement.type !== 'text' ? (
         <div
           className="selected-layer-management"
           aria-label={`${selectedElementIds.length} selected layer action${selectedElementIds.length === 1 ? '' : 's'}`}

@@ -524,28 +524,6 @@ function ElementNode({
           event.cancelBubble = true
           onSelect(element.id, false)
         }}
-        onClick={(event) => {
-          if (
-            element.type !== 'text' ||
-            element.locked ||
-            !isPrimarySelected
-          ) {
-            return
-          }
-          event.cancelBubble = true
-          onEdit(element)
-        }}
-        onTap={(event) => {
-          if (
-            element.type !== 'text' ||
-            element.locked ||
-            !isPrimarySelected
-          ) {
-            return
-          }
-          event.cancelBubble = true
-          onEdit(element)
-        }}
         onDblClick={(event) => {
           if (element.type !== 'text' || element.locked) return
           event.cancelBubble = true
@@ -838,9 +816,12 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   }, [editingTextElement])
 
   const finishTextEditing = (commit: boolean) => {
-    if (commit && editingTextElement && editingTextDraft.trim()) {
+    const currentText =
+      editingTextAreaRef.current?.value ?? editingTextDraft
+
+    if (commit && editingTextElement && currentText.trim()) {
       updateTextElement(editingTextElement.id, {
-        text: editingTextDraft,
+        text: currentText,
         fill: editingTextElement.fill,
         fontSize: editingTextElement.fontSize,
         fontWeight: editingTextElement.fontWeight,
@@ -1100,6 +1081,9 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
         data-selected-y={selectedElement?.bounds.y ?? ''}
         data-selected-width={selectedElement?.bounds.width ?? ''}
         data-selected-height={selectedElement?.bounds.height ?? ''}
+        data-selected-text={
+          selectedElement?.type === 'text' ? selectedElement.text : ''
+        }
         data-selected-opacity={selectedElement?.opacity ?? ''}
         data-selected-blend-mode={selectedElement?.blendMode ?? ''}
         data-selected-rotation={

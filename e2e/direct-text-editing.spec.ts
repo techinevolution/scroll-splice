@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 
 async function editSelectedTextOnCanvas(page: Page, wording: string) {
   const canvas = page.getByTestId('editor-canvas')
+  await expect(canvas).toHaveAttribute('data-selected-text', 'Your text')
   const box = await canvas.boundingBox()
   expect(box).not.toBeNull()
 
@@ -16,7 +17,7 @@ async function editSelectedTextOnCanvas(page: Page, wording: string) {
   }))
   const scale = box!.width / geometry.episodeWidth
 
-  await page.mouse.click(
+  await page.mouse.dblclick(
     box!.x + (geometry.x - geometry.viewportX + geometry.width / 2) * scale,
     box!.y + (geometry.y - geometry.viewportY + geometry.height / 2) * scale,
   )
@@ -36,18 +37,13 @@ async function editSelectedTextOnCanvas(page: Page, wording: string) {
   expect(editorBox!.width).toBeCloseTo(geometry.width * scale, 0)
   expect(editorBox!.height).toBeCloseTo(geometry.height * scale, 0)
   await editor.fill(wording)
+  await expect(editor).toHaveValue(wording)
   await editor.press('ControlOrMeta+Enter')
   await expect(editor).toHaveCount(0)
-
-  await page.mouse.dblclick(
-    box!.x + (geometry.x - geometry.viewportX + geometry.width / 2) * scale,
-    box!.y + (geometry.y - geometry.viewportY + geometry.height / 2) * scale,
-  )
-  await expect(editor).toHaveValue(wording)
-  await editor.press('Escape')
+  await expect(canvas).toHaveAttribute('data-selected-text', wording)
 }
 
-test('edits canvas text directly in every composition group', async ({
+test('selects text for resizing before direct editing', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -59,24 +55,85 @@ test('edits canvas text directly in every composition group', async ({
     'true',
   )
 
-  await page
-    .getByRole('button', { name: 'Background composition group' })
-    .click()
-  await page
-    .getByRole('button', { name: 'Background plane 2', exact: true })
-    .click()
   await page.getByRole('button', { name: /^Add text/ }).click()
-  await editSelectedTextOnCanvas(page, 'Background wording')
 
-  await page
-    .getByRole('button', { name: 'Content composition group' })
-    .click()
-  await page.getByRole('button', { name: /^Add text/ }).click()
-  await editSelectedTextOnCanvas(page, 'Content wording')
+  const canvas = page.getByTestId('editor-canvas')
+  const canvasBox = await canvas.boundingBox()
+  expect(canvasBox).not.toBeNull()
 
-  await page
-    .getByRole('button', { name: 'Foreground composition group' })
-    .click()
-  await page.getByRole('button', { name: /^Add text/ }).click()
-  await editSelectedTextOnCanvas(page, 'Foreground wording')
+  const geometry = await canvas.evaluate((element) => ({
+    episodeWidth: 800,
+    viewportX: Number(element.getAttribute('data-viewport-x')),
+    viewportY: Number(element.getAttribute('data-viewport-y')),
+    x: Number(element.getAttribute('data-selected-x')),
+    y: Number(element.getAttribute('data-selected-y')),
+    width: Number(element.getAttribute('data-selected-width')),
+    height: Number(element.getAttribute('data-selected-height')),
+  }))
+  const scale = canvasBox!.width / geometry.episodeWidth
+
+  await page.mouse.click(
+    canvasBox!.x +
+      (geometry.x - geometry.viewportX + geometry.width / 2) * scale,
+    canvasBox!.y +
+      (geometry.y - geometry.viewportY + geometry.height / 2) * scale,
+  )
+
+  const editor = page.getByTestId('canvas-text-editor')
+  await expect(editor).toHaveCount(0)
+  await expect(page.getByTestId('selected-layer-management')).toHaveCount(0)
+  await expect(canvas).toHaveAttribute('data-resize-handle-count', '4')
+
+  await page.mouse.move(
+    canvasBox!.x +
+      (geometry.x - geometry.viewportX + geometry.width) * scale,
+    canvasBox!.y +
+      (geometry.y - geometry.viewportY + geometry.height) * scale,
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    canvasBox!.x +
+      (geometry.x - geometry.viewportX + geometry.width + 40) * scale,
+    canvasBox!.y +
+      (geometry.y - geometry.viewportY + geometry.height + 20) * scale,
+  )
+  await page.mouse.up()
+
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-selected-width')))
+    .toBeGreaterThan(geometry.width)
 })
+
+for (const testCase of [
+  {
+    group: 'Background',
+    plane: 'Background plane 2',
+    wording: 'Background wording',
+  },
+  { group: 'Content', wording: 'Content wording' },
+  { group: 'Foreground', wording: 'Foreground wording' },
+] as const) {
+  test(`edits canvas text directly in ${testCase.group}`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 })
+    await page.goto('/')
+    await page.evaluate(() => window.localStorage.clear())
+    await page.reload()
+    await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
+      'data-ready',
+      'true',
+    )
+
+    await page
+      .getByRole('button', {
+        name: `${testCase.group} composition group`,
+      })
+      .click()
+    if ('plane' in testCase) {
+      await page
+        .getByRole('button', { name: testCase.plane, exact: true })
+        .click()
+    }
+    await page.getByRole('button', { name: /^Add text/ }).click()
+    await editSelectedTextOnCanvas(page, testCase.wording)
+  })
+}
