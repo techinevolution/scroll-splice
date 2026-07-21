@@ -14,7 +14,7 @@ export function CanvasBaseColorControl() {
   }
 
   return (
-    <label className="canvas-base-color-control">
+    <div className="canvas-base-color-control">
       <span>
         <strong>Canvas Base</strong>
         <small>Full Episode</small>
@@ -25,6 +25,6 @@ export function CanvasBaseColorControl() {
         value={activeLayerPlane.baseColor}
         onChange={(event) => setBaseColor(event.currentTarget.value)}
       />
-    </label>
+    </div>
   )
 }

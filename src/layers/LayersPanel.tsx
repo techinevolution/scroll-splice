@@ -634,7 +634,7 @@ export function LayersPanel() {
       ) : null}
 
       {activeLayerPlane?.kind === 'base' ? (
-        <label className="base-color-control">
+        <div className="base-color-control">
           <span>
             <strong>Base Color</strong>
             <small>Full Episode</small>
@@ -645,7 +645,7 @@ export function LayersPanel() {
             value={activeLayerPlane.baseColor}
             onChange={(event) => setBaseColor(event.currentTarget.value)}
           />
-        </label>
+        </div>
       ) : null}
 
       {canHoldElements ? (
