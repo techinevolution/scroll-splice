@@ -626,6 +626,10 @@ export function App() {
           >
             {documentStatus}
           </span>
+          <AgentChatPanel
+            key={`episode:${episodeId}`}
+            projectKey={`episode:${episodeId}`}
+          />
           <button
             ref={inspectorToggleRef}
             className="inspector-toggle"
@@ -638,10 +642,6 @@ export function App() {
           >
             <span aria-hidden="true">▥</span>
           </button>
-          <AgentChatPanel
-            key={`episode:${episodeId}`}
-            projectKey={`episode:${episodeId}`}
-          />
         </div>
       </header>
 
