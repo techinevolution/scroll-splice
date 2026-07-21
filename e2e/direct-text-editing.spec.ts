@@ -17,7 +17,7 @@ async function editSelectedTextOnCanvas(page: Page, wording: string) {
   }))
   const scale = box!.width / geometry.episodeWidth
 
-  await page.mouse.click(
+  await page.mouse.dblclick(
     box!.x + (geometry.x - geometry.viewportX + geometry.width / 2) * scale,
     box!.y + (geometry.y - geometry.viewportY + geometry.height / 2) * scale,
   )
@@ -43,7 +43,7 @@ async function editSelectedTextOnCanvas(page: Page, wording: string) {
   await expect(canvas).toHaveAttribute('data-selected-text', wording)
 }
 
-test('returns from direct editing to text resizing inside the canvas', async ({
+test('moves selected text and returns from editing without deselecting it', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -80,14 +80,43 @@ test('returns from direct editing to text resizing inside the canvas', async ({
   )
 
   const editor = page.getByTestId('canvas-text-editor')
-  await expect(editor).toBeVisible()
+  await expect(editor).toHaveCount(0)
   await expect(page.getByTestId('selected-layer-management')).toHaveCount(0)
+
+  await page.mouse.move(
+    canvasBox!.x +
+      (geometry.x - geometry.viewportX + geometry.width / 2) * scale,
+    canvasBox!.y +
+      (geometry.y - geometry.viewportY + geometry.height / 2) * scale,
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    canvasBox!.x +
+      (geometry.x - geometry.viewportX + geometry.width / 2 + 30) * scale,
+    canvasBox!.y +
+      (geometry.y - geometry.viewportY + geometry.height / 2 + 20) * scale,
+  )
+  await page.mouse.up()
+
+  const movedX = Number(await canvas.getAttribute('data-selected-x'))
+  const movedY = Number(await canvas.getAttribute('data-selected-y'))
+  expect(movedX).toBeGreaterThan(geometry.x)
+  expect(movedY).toBeGreaterThan(geometry.y)
+
+  await page.mouse.dblclick(
+    canvasBox!.x +
+      (movedX - geometry.viewportX + geometry.width / 2) * scale,
+    canvasBox!.y +
+      (movedY - geometry.viewportY + geometry.height / 2) * scale,
+  )
+  await expect(editor).toBeVisible()
   await editor.fill('Resize this text')
   await expect(editor).toHaveValue('Resize this text')
 
   await page.mouse.click(canvasBox!.x + 24, canvasBox!.y + 24)
 
   await expect(editor).toHaveCount(0)
+  await expect(canvas).not.toHaveAttribute('data-selected-element-id', '')
   await expect(canvas).toHaveAttribute(
     'data-selected-text',
     'Resize this text',
@@ -96,16 +125,16 @@ test('returns from direct editing to text resizing inside the canvas', async ({
 
   await page.mouse.move(
     canvasBox!.x +
-      (geometry.x - geometry.viewportX + geometry.width) * scale,
+      (movedX - geometry.viewportX + geometry.width) * scale,
     canvasBox!.y +
-      (geometry.y - geometry.viewportY + geometry.height) * scale,
+      (movedY - geometry.viewportY + geometry.height) * scale,
   )
   await page.mouse.down()
   await page.mouse.move(
     canvasBox!.x +
-      (geometry.x - geometry.viewportX + geometry.width + 40) * scale,
+      (movedX - geometry.viewportX + geometry.width + 40) * scale,
     canvasBox!.y +
-      (geometry.y - geometry.viewportY + geometry.height + 20) * scale,
+      (movedY - geometry.viewportY + geometry.height + 20) * scale,
   )
   await page.mouse.up()
 

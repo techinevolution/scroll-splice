@@ -524,28 +524,6 @@ function ElementNode({
           event.cancelBubble = true
           onSelect(element.id, false)
         }}
-        onClick={(event) => {
-          if (
-            element.type !== 'text' ||
-            element.locked ||
-            !isPrimarySelected
-          ) {
-            return
-          }
-          event.cancelBubble = true
-          onEdit(element)
-        }}
-        onTap={(event) => {
-          if (
-            element.type !== 'text' ||
-            element.locked ||
-            !isPrimarySelected
-          ) {
-            return
-          }
-          event.cancelBubble = true
-          onEdit(element)
-        }}
         onDblClick={(event) => {
           if (element.type !== 'text' || element.locked) return
           event.cancelBubble = true
@@ -780,6 +758,7 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [editingTextDraft, setEditingTextDraft] = useState('')
   const editingTextAreaRef = useRef<HTMLTextAreaElement>(null)
+  const preserveTextSelectionOnCanvasPointerRef = useRef(false)
   const { elementRef, size } = useElementSize<HTMLDivElement>()
 
   const stageWidth = Math.max(size.width, 1)
@@ -1146,6 +1125,14 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
         onDragOver={handleAssetDragOver}
         onDragLeave={handleAssetDragLeave}
         onDrop={handleAssetDrop}
+        onPointerDownCapture={(event) => {
+          if (
+            editingTextElement &&
+            event.target !== editingTextAreaRef.current
+          ) {
+            preserveTextSelectionOnCanvasPointerRef.current = true
+          }
+        }}
       >
         <Stage
           width={stageWidth}
@@ -1164,6 +1151,11 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
             })
           }}
           onMouseDown={(event) => {
+            if (preserveTextSelectionOnCanvasPointerRef.current) {
+              preserveTextSelectionOnCanvasPointerRef.current = false
+              return
+            }
+
             if (editingTextElement) {
               finishTextEditing(true)
               return
