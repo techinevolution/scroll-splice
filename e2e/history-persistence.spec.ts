@@ -65,7 +65,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
   await page.setViewportSize({ width: 1440, height: 900 })
 
   // Load once so localStorage has an origin, then start the proof from a clean
-  // browser slot. Later reloads intentionally preserve the explicit save.
+  // browser slot. Later reloads start fresh while retaining the explicit save.
   await page.goto('/')
   await page.evaluate(() => window.localStorage.clear())
   await page.reload()
@@ -187,8 +187,18 @@ test('preserves a saved episode and keeps history inside one document', async ({
 
   await page.reload()
 
-  await expect(documentStatus).toHaveText('Opened saved episode')
+  await expect(documentStatus).toHaveText('Blank episode ready · not saved')
   await expect(episodeHeading).toHaveAttribute('data-dirty', 'false')
+  await expect(
+    page.getByRole('button', {
+      name: 'Edit episode title: Untitled Episode',
+      exact: true,
+    }),
+  ).toBeVisible()
+  await expect(contentPlane2).toHaveCount(0)
+
+  await useApplicationMenuItem(page, 'File', 'Reopen Current')
+  await expect(documentStatus).toHaveText('Reopened saved episode')
   await expect(
     page.getByRole('button', {
       name: `Edit episode title: ${savedTitle}`,

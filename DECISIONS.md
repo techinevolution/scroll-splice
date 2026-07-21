@@ -414,3 +414,11 @@ Decision: Offer two creator-selectable application appearances based on Katherin
 Reason: The former purple/cyan shell read as generic AI-generated software and competed with comic artwork. The selected references keep the story canvas dominant while giving creators a comfortable light workspace and a distinctive dark workspace without changing the editor's information architecture.
 
 Consequences: Theme and Details Bar visibility are application-chrome preferences only; they never enter the episode document, portable project, history, export, or persistence adapters. **View > Show/Hide Details Bar** owns the optional bottom property strip. The verbose document status remains available to assistive technology, while the header exposes a compact Saved/Unsaved indicator with explanatory hover text. Existing asset, canvas, minimap, Layers, menu, history, persistence, and export behavior must remain unchanged.
+
+## 2026-07-20: Start every browser session with a new episode
+
+Decision: Supersede automatic opening of the most recently saved project. Every page load or refresh starts with a fresh unsaved 800 × 1,280 **Untitled Episode**. Saved local projects and crash-recovery snapshots remain stored, but they open only after an explicit creator action through **Reopen Current**, **Open Local Project…**, or the recovery banner.
+
+Reason: Automatic reopening made an old project such as **Signal in the Fog** appear to be the product default and prevented refresh from acting like a clean creative start.
+
+Consequences: Startup must list saved projects without hydrating one into the editor. The most recent saved project remains the **Reopen Current** target, and no saved episode, reusable asset, recovery snapshot, or OpenAI login state is deleted by refresh.

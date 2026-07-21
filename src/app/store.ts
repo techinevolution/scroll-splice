@@ -1108,6 +1108,7 @@ function clearRecoverySnapshot(): void {
 function loadInitialProjectState(): {
   readonly episode: EpisodeDocument
   readonly currentProjectId: string | null
+  readonly reopenProjectId: string | null
   readonly recentProjects: readonly LocalProjectSummary[]
   readonly documentStatus: string
   readonly hasSavedEpisode: boolean
@@ -1116,62 +1117,23 @@ function loadInitialProjectState(): {
   const migration = projectLibrary.importLegacyLast()
   const listed = projectLibrary.listRecent()
 
-  if (listed.ok) {
-    const projectId =
-      migration.ok && migration.status === 'imported'
-        ? migration.projectId
-        : listed.projects[0]?.projectId
-    const loaded = projectId ? projectLibrary.load(projectId) : undefined
-
-    if (loaded?.ok) {
-      return {
-        episode: loaded.project.episode,
-        currentProjectId: loaded.project.projectId,
-        recentProjects: listed.projects,
-        documentStatus: 'Opened saved episode',
-        hasSavedEpisode: true,
-      }
-    }
-
-    if (!loaded) {
-      return {
-        episode: createBlankEpisode(createEpisodeId()),
-        currentProjectId: null,
-        recentProjects: listed.projects,
-        documentStatus: 'Blank episode ready · not saved',
-        hasSavedEpisode: listed.projects.length > 0,
-      }
-    }
-  }
-
-  const legacy = getProjectRepository().loadLast()
-
-  if (legacy.ok) {
-    return {
-      episode: legacy.episode,
-      currentProjectId: null,
-      recentProjects: listed.ok ? listed.projects : [],
-      documentStatus: 'Opened legacy saved episode',
-      hasSavedEpisode: true,
-    }
-  }
-
   const failureMessage = !listed.ok
     ? listed.message
     : !migration.ok
       ? migration.message
-      : legacy.reason !== 'not-found' && legacy.reason !== 'storage-unavailable'
-        ? legacy.message
-        : null
+      : null
+  const recentProjects = listed.ok ? listed.projects : []
+  const reopenProjectId = recentProjects[0]?.projectId ?? null
 
   return {
     episode: createBlankEpisode(createEpisodeId()),
     currentProjectId: null,
-    recentProjects: listed.ok ? listed.projects : [],
+    reopenProjectId,
+    recentProjects,
     documentStatus: failureMessage
       ? `${failureMessage} Blank episode loaded instead.`
       : 'Blank episode ready · not saved',
-    hasSavedEpisode: false,
+    hasSavedEpisode: reopenProjectId !== null,
   }
 }
 
@@ -1276,7 +1238,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   hasUnsavedChanges: false,
   hasSavedEpisode: initialProjectState.hasSavedEpisode,
   currentProjectId: initialProjectState.currentProjectId,
-  reopenProjectId: initialProjectState.currentProjectId,
+  reopenProjectId: initialProjectState.reopenProjectId,
   recentProjects: initialProjectState.recentProjects,
   projectLibraryBusy: false,
   recoveryAvailable: initialRecovery,
