@@ -11,6 +11,10 @@ import {
 } from './createBlankEpisode'
 import type { SpeechBalloonElement } from './episode'
 import { getSpeechBalloonTextLayout } from './speechBalloonLayout'
+import {
+  getSpeechBalloonPresetId,
+  SPEECH_BALLOON_PRESETS,
+} from './speechBalloonPresets'
 
 function createBalloonEpisode() {
   return createSpeechBalloonElement(createBlankEpisode('balloon-test'), {
@@ -119,5 +123,46 @@ describe('editable speech balloon commands', () => {
       width: currentRight + 120,
       height: element.bounds.height,
     })
+  })
+
+  it('creates and retargets every editable body preset without losing content controls', () => {
+    for (const preset of SPEECH_BALLOON_PRESETS) {
+      const document = createSpeechBalloonElement(createBlankEpisode('preset'), {
+        layerPlaneId: BLANK_EPISODE_LAYER_PLANE_IDS.content,
+        bounds: { x: 120, y: 200, width: 360, height: 180 },
+        presetId: preset.id,
+      })
+      const element = onlyBalloon(document)
+      expect(getSpeechBalloonPresetId(element)).toBe(preset.id)
+      expect(element.text).toBe('')
+    }
+
+    const initial = createBalloonEpisode()
+    const element = onlyBalloon(initial)
+    const updated = updateSpeechBalloonElement(initial, element.id, {
+      ...element,
+      presetId: 'wavy',
+    })
+    expect(getSpeechBalloonPresetId(onlyBalloon(updated))).toBe('wavy')
+    expect(onlyBalloon(updated).text).toBe(element.text)
+  })
+
+  it('stores a creator-shaped contour as normalized editable points', () => {
+    const initial = createBalloonEpisode()
+    const element = onlyBalloon(initial)
+    const bodyControlPoints = [
+      { x: 0.2, y: 0 },
+      { x: 0.8, y: 0.08 },
+      { x: 1, y: 0.42 },
+      { x: 0.86, y: 1 },
+      { x: 0.25, y: 0.92 },
+      { x: 0, y: 0.48 },
+    ]
+    const updated = updateSpeechBalloonElement(initial, element.id, {
+      ...element,
+      bodyControlPoints,
+    })
+
+    expect(onlyBalloon(updated).bodyControlPoints).toEqual(bodyControlPoints)
   })
 })

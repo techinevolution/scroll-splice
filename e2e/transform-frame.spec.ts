@@ -19,10 +19,10 @@ test('rotates, flips, crops, masks, and frames an image consistently', async ({
     .getByRole('menuitem', { name: 'Show Details Bar', exact: true })
     .click()
   await page
-    .getByRole('button', { name: 'Speech Balloons', exact: true })
+    .getByRole('button', { name: 'Decorations', exact: true })
     .click()
   await page
-    .getByRole('button', { name: 'Add Oval balloon', exact: true })
+    .getByRole('button', { name: 'Add Radiance accent', exact: true })
     .click()
 
   const canvas = page.getByTestId('editor-canvas')

@@ -19,20 +19,12 @@ async function useMenuItem(
   await item.click()
 }
 
-async function applyBalloonProperties(
-  page: Page,
-  wording: string,
-) {
+async function applyBalloonProperties(page: Page) {
   const controls = page.getByTestId('selected-balloon-controls')
 
-  await controls.getByLabel('Editable balloon wording').fill(wording)
+  await controls.getByLabel('Editable balloon type').selectOption('wavy')
   await controls.getByLabel('Editable balloon fill color').fill('#fff4d6')
   await controls.getByLabel('Editable balloon outline color').fill('#34213d')
-  await controls.getByLabel('Editable balloon text color').fill('#3a2147')
-  await controls.getByLabel('Editable balloon font weight').selectOption('700')
-  await controls
-    .getByLabel('Editable balloon text alignment')
-    .selectOption('right')
   await controls.getByLabel('Editable balloon tail side').selectOption('right')
   await controls.getByLabel('Editable balloon tail anchor').fill('0.7')
   await controls.getByLabel('Editable balloon tail tip X').fill('1.25')
@@ -40,7 +32,7 @@ async function applyBalloonProperties(
   await controls.getByRole('button', { name: 'Apply balloon' }).click()
 }
 
-test('edits an atomic speech balloon and preserves it through save, reopen, and reader preview', async ({
+test('edits an empty balloon body and preserves it through save, reopen, and reader preview', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -62,19 +54,16 @@ test('edits an atomic speech balloon and preserves it through save, reopen, and 
 
   const balloonRow = page.locator('[data-layer-id="speech-balloon-1"]')
   const controls = page.getByTestId('selected-balloon-controls')
-  const savedWording = 'Follow the lanterns beyond the roots.'
-
   await expect(balloonRow).toHaveAttribute('aria-pressed', 'true')
   await expect(controls).toBeVisible()
-  await applyBalloonProperties(page, savedWording)
+  await applyBalloonProperties(page)
 
   await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
     'data-selected-element-id',
     'speech-balloon-1',
   )
-  await expect(
-    controls.getByLabel('Editable balloon wording'),
-  ).toHaveValue(savedWording)
+  await expect(controls.getByLabel('Editable balloon wording')).toHaveCount(0)
+  await expect(controls.getByLabel('Editable balloon type')).toHaveValue('wavy')
   await expect(
     controls.getByLabel('Editable balloon fill color'),
   ).toHaveValue('#fff4d6')
@@ -85,9 +74,7 @@ test('edits an atomic speech balloon and preserves it through save, reopen, and 
   await useMenuItem(page, 'File', 'Save')
   await expect(page.getByTestId('document-status')).toHaveText('Saved Locally')
 
-  await controls
-    .getByLabel('Editable balloon wording')
-    .fill('This detour should be discarded.')
+  await controls.getByLabel('Editable balloon fill color').fill('#f0d8ff')
   await controls.getByRole('button', { name: 'Apply balloon' }).click()
   await expect(page.getByTestId('document-status')).toHaveText(
     'Unsaved Changes',
@@ -96,15 +83,11 @@ test('edits an atomic speech balloon and preserves it through save, reopen, and 
   page.once('dialog', (dialog) => dialog.accept())
   await useMenuItem(page, 'File', 'Reopen Current')
   await balloonRow.click()
-  await expect(
-    controls.getByLabel('Editable balloon wording'),
-  ).toHaveValue(savedWording)
+  await expect(controls.getByLabel('Editable balloon wording')).toHaveCount(0)
+  await expect(controls.getByLabel('Editable balloon type')).toHaveValue('wavy')
   await expect(
     controls.getByLabel('Editable balloon outline color'),
   ).toHaveValue('#34213d')
-  await expect(
-    controls.getByLabel('Editable balloon text alignment'),
-  ).toHaveValue('right')
   await expect(
     controls.getByLabel('Editable balloon tail tip X'),
   ).toHaveValue('1.25')
@@ -117,8 +100,8 @@ test('edits an atomic speech balloon and preserves it through save, reopen, and 
     'data-reader-element-type',
     'speech-balloon',
   )
-  await expect(readerBalloon).toContainText(savedWording)
-  await expect(readerBalloon.locator('path')).toHaveAttribute(
+  await expect(readerBalloon).toHaveText('')
+  await expect(readerBalloon.locator('path').first()).toHaveAttribute(
     'fill',
     '#fff4d6',
   )

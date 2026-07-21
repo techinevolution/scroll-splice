@@ -1250,7 +1250,7 @@ describe('editor store', () => {
     expect(
       useEditorStore
         .getState()
-        .placeBuiltInAsset('builtin-speech-balloon-oval-v1'),
+        .placeBuiltInAsset('builtin-decoration-radiance-v1'),
     ).toBe(true)
 
     const placed = useEditorStore.getState().episode.elements.at(-1)
@@ -1258,10 +1258,10 @@ describe('editor store', () => {
       id: 'image-element-1',
       type: 'image',
       layerPlaneId: BUILD_WEEK_LAYER_PLANE_IDS.contentPanels,
-      bounds: { x: 220, y: 1_325, width: 360, height: 250 },
+      bounds: { x: 240, y: 1_290, width: 320, height: 320 },
       assetReference: {
         kind: 'built-in',
-        assetId: 'builtin-speech-balloon-oval-v1',
+        assetId: 'builtin-decoration-radiance-v1',
       },
     })
     expect(useEditorStore.getState().selectedElementId).toBe(placed?.id)
@@ -1283,7 +1283,7 @@ describe('editor store', () => {
       useEditorStore.getState().placeDraggedAsset(
         {
           kind: 'built-in',
-          assetId: 'builtin-speech-balloon-oval-v1',
+          assetId: 'builtin-decoration-radiance-v1',
         },
         { x: 799, y: buildWeekEpisode.logicalHeight - 1 },
       ),
@@ -1293,14 +1293,14 @@ describe('editor store', () => {
     expect(placed).toMatchObject({
       type: 'image',
       bounds: {
-        x: buildWeekEpisode.logicalWidth - 360,
-        y: buildWeekEpisode.logicalHeight - 250,
-        width: 360,
-        height: 250,
+        x: buildWeekEpisode.logicalWidth - 320,
+        y: buildWeekEpisode.logicalHeight - 320,
+        width: 320,
+        height: 320,
       },
       assetReference: {
         kind: 'built-in',
-        assetId: 'builtin-speech-balloon-oval-v1',
+        assetId: 'builtin-decoration-radiance-v1',
       },
     })
     expect(useEditorStore.getState().episode.elements).toHaveLength(
@@ -2133,7 +2133,7 @@ describe('editor store', () => {
     expect(
       useEditorStore
         .getState()
-        .placeBuiltInAsset('builtin-speech-balloon-oval-v1'),
+        .placeBuiltInAsset('builtin-decoration-radiance-v1'),
     ).toBe(true)
     const imageId = useEditorStore.getState().selectedElementId
     expect(imageId).toBeTruthy()
@@ -2162,7 +2162,7 @@ describe('editor store', () => {
         : undefined,
     ).toBe('single')
     expect(restoredSingle?.bounds.width).toBeCloseTo(240)
-    expect(restoredSingle?.bounds.height).toBeCloseTo(240 * (250 / 360))
+    expect(restoredSingle?.bounds.height).toBeCloseTo(240)
 
     useEditorStore.getState().undo()
     const restoredTile = useEditorStore

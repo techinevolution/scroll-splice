@@ -9,6 +9,7 @@ import type {
   NormalizedPoint,
 } from './episode'
 import { getSpeechBalloonPath } from './speechBalloonGeometry'
+import { getSpeechBalloonPresetId } from './speechBalloonPresets'
 
 const FULL_TURN_DEGREES = 360
 const HALF_TURN_DEGREES = 180
@@ -109,6 +110,8 @@ export function getElementVisualBounds(
     element.bounds,
     element.cornerRadius,
     element.tail,
+    getSpeechBalloonPresetId(element),
+    element.bodyControlPoints,
   )
 
   return balloon

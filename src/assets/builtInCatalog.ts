@@ -37,7 +37,7 @@ function defineBuiltIn(
   }
 }
 
-export const BUILT_IN_ASSETS = [
+const ALL_BUILT_IN_ASSETS = [
   defineBuiltIn({
     id: 'builtin-speech-balloon-oval-v1',
     categoryId: 'speech-balloons',
@@ -183,6 +183,12 @@ export const BUILT_IN_ASSETS = [
       '<path d="M164 27c20 35 43 60 43 88 0 29-20 49-47 49s-47-20-47-49c0-28 27-56 51-88Z" fill="#211a2b"/><path d="M277 123c15 25 31 44 31 65 0 22-15 37-35 37s-35-15-35-37c0-21 20-42 39-65Z" fill="#211a2b"/><path d="M79 164c12 21 26 37 26 55 0 19-13 31-30 31s-30-12-30-31c0-18 17-35 34-55Z" fill="#211a2b"/><circle cx="172" cy="245" r="31" fill="#211a2b"/><circle cx="290" cy="278" r="14" fill="#211a2b"/><circle cx="105" cy="292" r="9" fill="#211a2b"/>',
   }),
 ] as const satisfies readonly BuiltInAssetDefinition[]
+
+// Speech balloons are first-class editable elements. The older fixed SVG
+// drawings remain below only as source-history during this replacement slice;
+// they are deliberately excluded from the runtime asset catalog.
+export const BUILT_IN_ASSETS: readonly BuiltInAssetDefinition[] =
+  ALL_BUILT_IN_ASSETS.filter(({ categoryId }) => categoryId !== 'speech-balloons')
 
 export function getBuiltInAssetsByCategory(
   categoryId: (typeof BUILT_IN_ASSET_CATEGORY_IDS)[number],

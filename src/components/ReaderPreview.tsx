@@ -25,6 +25,7 @@ import {
 } from '../core/episode'
 import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
 import { getSpeechBalloonTextLayout } from '../core/speechBalloonLayout'
+import { getSpeechBalloonPresetId } from '../core/speechBalloonPresets'
 import { useAssetImage } from '../assets/useAssetImage'
 import {
   getTilePatternScale,
@@ -252,6 +253,8 @@ function ReaderSpeechBalloon({
     element.bounds,
     element.cornerRadius,
     element.tail,
+    getSpeechBalloonPresetId(element),
+    element.bodyControlPoints,
   )
   const layout = getSpeechBalloonTextLayout(element)
 
@@ -259,14 +262,36 @@ function ReaderSpeechBalloon({
 
   return (
     <>
+      {path.tailPathData ? (
+        <path
+          d={path.tailPathData}
+          fill={element.fill}
+          stroke={element.stroke}
+          strokeWidth={element.strokeWidth}
+          strokeDasharray={path.strokeDash?.join(' ')}
+          strokeLinejoin="round"
+        />
+      ) : null}
       <path
-        d={path.pathData}
+        d={path.bodyPathData}
         fill={element.fill}
         stroke={element.stroke}
         strokeWidth={element.strokeWidth}
+        strokeDasharray={path.strokeDash?.join(' ')}
         strokeLinejoin="round"
       />
-      <foreignObject
+      {path.decorationPathData.map((data, index) => (
+        <path
+          key={`${element.id}-balloon-decoration-${index}`}
+          d={data}
+          fill="none"
+          stroke={element.stroke}
+          strokeWidth={Math.max(1, element.strokeWidth * 0.6)}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+      {element.text ? <foreignObject
         x={element.bounds.x}
         y={element.bounds.y}
         width={element.bounds.width}
@@ -293,7 +318,7 @@ function ReaderSpeechBalloon({
         >
           <div style={{ width: '100%' }}>{layout.lines.join('\n')}</div>
         </div>
-      </foreignObject>
+      </foreignObject> : null}
     </>
   )
 }

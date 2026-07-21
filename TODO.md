@@ -87,7 +87,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Include the previously local completion work, six-image demo, dual interface, layer grips, and editor adapter in one current release without rewriting the pre-event baseline.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 - [x] Research professional comic and webtoon speech-balloon conventions and record the complete practical editable inventory, composable design rule, and phased implementation path in [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md).
-- [x] Expand the Speech Balloons library from three starter graphics to the agreed ten-form core visual set: Oval/Standard, Rounded, Cloud/Thought, Whisper, Shout, Electric, Rough, Wavy, Telepathic, and Double Outline. These reusable transparent graphics do not falsely complete the separately deferred composable editable-preset system.
+- [x] Replace the fixed Speech Balloon graphics with ten empty editable body types: Standard, Rounded, Thought, Whisper, Shout, Electric, Rough, Wavy, Telepathic, and Double Outline. Every card retains editable type, fill, outline, size, tail controls, and draggable normalized contour points; lettering is added as an independent Text element.
 
 ## Joint — only after the local human-editor completion goal and submission path are stable
 
@@ -100,7 +100,7 @@ Small loose actions only. Product direction and dated implementation work belong
 ## Joint — later, not Build Week scope
 
 - [x] Before the original speech-balloon asset slice: review current Clip Studio guidance and professional lettering conventions; use only a small neutral original set and treat meanings as conventions rather than rules. Text was deferred at that historical checkpoint; independent text and an atomic editable balloon now exist.
-- [ ] After the current completion build and submission path are stable: approve a dedicated editable-balloon preset goal using [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md), beginning with its bounded core preset foundation rather than attempting every relationship and lettering tool in one risky slice.
+- [x] Implement the bounded editable-balloon preset foundation from [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md) without attempting deferred multi-tail relationships, direct joins, sound-effect lettering, or creator-saved preset infrastructure.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
 - [ ] After that upload verification and a separate export-slice approval: implement creator-reviewed deterministic slicing and preflight against a verified `ExportProfile`; do not promise that WEBTOON will preserve accepted files without optimization.
 - [ ] Before full autonomous creation: define approved project context, reference-image consent, generation budget, cancellation/recovery behavior, provenance fields, and which editor commands may run without per-action approval.

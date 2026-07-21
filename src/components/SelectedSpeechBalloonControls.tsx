@@ -6,6 +6,11 @@ import type {
   SpeechBalloonElement,
   SpeechBalloonTailSide,
 } from '../core/episode'
+import {
+  getSpeechBalloonPresetId,
+  SPEECH_BALLOON_PRESETS,
+  type SpeechBalloonPresetId,
+} from '../core/speechBalloonPresets'
 
 interface SelectedSpeechBalloonControlsProps {
   readonly element: SpeechBalloonElement
@@ -32,6 +37,7 @@ export function SelectedSpeechBalloonControls({
     const fontFamily = formData.get('fontFamily')
     const align = formData.get('align')
     const tailSide = formData.get('tailSide')
+    const presetId = formData.get('presetId')
 
     if (
       typeof text !== 'string' ||
@@ -39,6 +45,8 @@ export function SelectedSpeechBalloonControls({
       typeof stroke !== 'string' ||
       typeof textFill !== 'string' ||
       typeof fontFamily !== 'string' ||
+      typeof presetId !== 'string' ||
+      !SPEECH_BALLOON_PRESETS.some(({ id }) => id === presetId) ||
       (align !== 'left' && align !== 'center' && align !== 'right') ||
       (tailSide !== 'top' &&
         tailSide !== 'right' &&
@@ -49,6 +57,7 @@ export function SelectedSpeechBalloonControls({
     }
 
     updateSpeechBalloonElement(element.id, {
+      presetId: presetId as SpeechBalloonPresetId,
       text,
       fill,
       stroke,
@@ -82,6 +91,21 @@ export function SelectedSpeechBalloonControls({
       data-testid="selected-balloon-controls"
       onSubmit={handleSubmit}
     >
+      <label className="text-control">
+        <span>Type</span>
+        <select
+          name="presetId"
+          aria-label="Editable balloon type"
+          defaultValue={getSpeechBalloonPresetId(element)}
+        >
+          {SPEECH_BALLOON_PRESETS.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      </label>
+      {element.text ? (
       <label className="text-control text-wording-control">
         <span>Wording</span>
         <textarea
@@ -93,6 +117,7 @@ export function SelectedSpeechBalloonControls({
           required
         />
       </label>
+      ) : <input type="hidden" name="text" value="" />}
       <label className="text-control text-color-control">
         <span>Balloon</span>
         <input
@@ -134,6 +159,7 @@ export function SelectedSpeechBalloonControls({
           defaultValue={element.cornerRadius}
         />
       </label>
+      {element.text ? <>
       <label className="text-control text-color-control">
         <span>Text</span>
         <input
@@ -222,6 +248,18 @@ export function SelectedSpeechBalloonControls({
           defaultValue={element.padding}
         />
       </label>
+      </> : (
+        <>
+          <input type="hidden" name="textFill" value={element.textFill} />
+          <input type="hidden" name="fontFamily" value={element.fontFamily} />
+          <input type="hidden" name="minFontSize" value={element.minFontSize} />
+          <input type="hidden" name="maxFontSize" value={element.maxFontSize} />
+          <input type="hidden" name="fontWeight" value={element.fontWeight} />
+          <input type="hidden" name="align" value={element.align} />
+          <input type="hidden" name="lineHeight" value={element.lineHeight} />
+          <input type="hidden" name="padding" value={element.padding} />
+        </>
+      )}
       <fieldset className="balloon-tail-controls">
         <legend>Tail</legend>
         <label>

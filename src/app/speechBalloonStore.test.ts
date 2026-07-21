@@ -49,7 +49,7 @@ describe('editable speech balloon store history', () => {
     useEditorStore.getState().undo()
     expect(useEditorStore.getState().episode.elements[0]).toMatchObject({
       type: 'speech-balloon',
-      text: 'Your dialogue',
+      text: '',
     })
     useEditorStore.getState().undo()
     expect(useEditorStore.getState().episode.elements).toEqual([])

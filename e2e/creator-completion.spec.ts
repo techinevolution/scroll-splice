@@ -109,12 +109,12 @@ test('supports a creator story from blank episode through saved reader preview',
   await planeName.fill('Lettering')
   await planeName.press('Enter')
 
-  // A ready-made balloon and independent wording are assembled on one plane.
+  // A transparent decoration and independent wording are assembled on one plane.
   await page
-    .getByRole('button', { name: 'Speech Balloons', exact: true })
+    .getByRole('button', { name: 'Decorations', exact: true })
     .click()
   await page
-    .getByRole('button', { name: 'Add Oval balloon', exact: true })
+    .getByRole('button', { name: 'Add Radiance accent', exact: true })
     .click()
   await expect(page.locator('[data-layer-id="image-element-1"]')).toBeVisible()
   await page.getByRole('button', { name: 'Add Text', exact: true }).click()

@@ -9,6 +9,7 @@ import {
 import Konva from 'konva'
 import {
   Ellipse,
+  Circle,
   Group,
   Image as KonvaImage,
   Layer,
@@ -55,6 +56,10 @@ import {
 } from '../core/episode'
 import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
 import { getSpeechBalloonTextLayout } from '../core/speechBalloonLayout'
+import {
+  getDefaultSpeechBalloonBodyControlPoints,
+  getSpeechBalloonPresetId,
+} from '../core/speechBalloonPresets'
 import {
   WEBTOON_CANVAS_OBSERVED_PROFILE,
   getCandidateLogicalSliceBoundaries,
@@ -324,13 +329,35 @@ function ImageElementVisual({
 
 function SpeechBalloonVisual({
   element,
+  selected,
+  accentColor,
 }: {
   readonly element: SpeechBalloonElement
+  readonly selected: boolean
+  readonly accentColor: string
 }) {
+  const updateSpeechBalloonElement = useEditorStore(
+    (state) => state.updateSpeechBalloonElement,
+  )
+  const presetId = getSpeechBalloonPresetId(element)
+  const defaultPoints = useMemo(
+    () => getDefaultSpeechBalloonBodyControlPoints(presetId),
+    [presetId],
+  )
+  const [draftPoints, setDraftPoints] = useState(
+    element.bodyControlPoints ?? defaultPoints,
+  )
+  const [draftActive, setDraftActive] = useState(false)
+
+  const visibleControlPoints = draftActive
+    ? draftPoints
+    : element.bodyControlPoints ?? defaultPoints
   const path = getSpeechBalloonPath(
     { x: 0, y: 0, width: element.bounds.width, height: element.bounds.height },
     element.cornerRadius,
     element.tail,
+    presetId,
+    element.bodyControlPoints ?? (draftActive ? draftPoints : undefined),
   )
   const layout = getSpeechBalloonTextLayout(element)
 
@@ -338,14 +365,36 @@ function SpeechBalloonVisual({
 
   return (
     <Group data-testid={`editable-balloon-${element.id}`}>
+      {path.tailPathData ? (
+        <Path
+          data={path.tailPathData}
+          fill={element.fill}
+          stroke={element.stroke}
+          strokeWidth={element.strokeWidth}
+          dash={path.strokeDash ? [...path.strokeDash] : undefined}
+          lineJoin="round"
+        />
+      ) : null}
       <Path
-        data={path.pathData}
+        data={path.bodyPathData}
         fill={element.fill}
         stroke={element.stroke}
         strokeWidth={element.strokeWidth}
+        dash={path.strokeDash ? [...path.strokeDash] : undefined}
         lineJoin="round"
       />
-      <Text
+      {path.decorationPathData.map((data, index) => (
+        <Path
+          key={`${element.id}-balloon-decoration-${index}`}
+          data={data}
+          stroke={element.stroke}
+          strokeWidth={Math.max(1, element.strokeWidth * 0.6)}
+          lineJoin="round"
+          lineCap="round"
+          listening={false}
+        />
+      ))}
+      {element.text ? <Text
         width={element.bounds.width}
         height={element.bounds.height}
         padding={element.padding}
@@ -360,7 +409,59 @@ function SpeechBalloonVisual({
         wrap="none"
         ellipsis={!layout.fits}
         listening={false}
-      />
+      /> : null}
+      {selected && !element.locked
+        ? visibleControlPoints.map((point, index) => (
+            <Circle
+              key={`${element.id}-contour-${index}`}
+              data-testid={`balloon-contour-handle-${index}`}
+              x={point.x * element.bounds.width}
+              y={point.y * element.bounds.height}
+              radius={7}
+              fill="#fff"
+              stroke={accentColor}
+              strokeWidth={2}
+              draggable
+              dragBoundFunc={(position) => ({
+                x: Math.max(0, Math.min(element.bounds.width, position.x)),
+                y: Math.max(0, Math.min(element.bounds.height, position.y)),
+              })}
+              onMouseDown={(event) => {
+                event.cancelBubble = true
+              }}
+              onDragMove={(event) => {
+                event.cancelBubble = true
+                const next = visibleControlPoints.map((candidate, candidateIndex) =>
+                  candidateIndex === index
+                    ? {
+                        x: event.target.x() / element.bounds.width,
+                        y: event.target.y() / element.bounds.height,
+                      }
+                    : candidate,
+                )
+                setDraftActive(true)
+                setDraftPoints(next)
+              }}
+              onDragEnd={(event) => {
+                event.cancelBubble = true
+                const next = visibleControlPoints.map((candidate, candidateIndex) =>
+                  candidateIndex === index
+                    ? {
+                        x: event.target.x() / element.bounds.width,
+                        y: event.target.y() / element.bounds.height,
+                      }
+                    : candidate,
+                )
+                setDraftPoints(next)
+                updateSpeechBalloonElement(element.id, {
+                  ...element,
+                  bodyControlPoints: next,
+                })
+                setDraftActive(false)
+              }}
+            />
+          ))
+        : null}
     </Group>
   )
 }
@@ -636,7 +737,11 @@ function ElementNode({
           ) : null}
 
           {element.type === 'speech-balloon' ? (
-            <SpeechBalloonVisual element={element} />
+            <SpeechBalloonVisual
+              element={element}
+              selected={isPrimarySelected}
+              accentColor={accentColor}
+            />
           ) : null}
         </Group>
 

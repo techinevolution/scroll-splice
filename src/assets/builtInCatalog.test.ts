@@ -17,35 +17,16 @@ function decodeSvgSource(source: string): string {
 }
 
 describe('built-in asset catalog', () => {
-  it('contains the core balloon set and three entries in the other categories', () => {
+  it('keeps editable balloons out of the fixed image catalog', () => {
     expect(BUILT_IN_ASSET_CATEGORY_IDS).toEqual([
       'speech-balloons',
       'decorations',
       'splatters',
     ])
-    expect(BUILT_IN_ASSETS).toHaveLength(16)
-    expect(getBuiltInAssetsByCategory('speech-balloons')).toHaveLength(10)
+    expect(BUILT_IN_ASSETS).toHaveLength(6)
+    expect(getBuiltInAssetsByCategory('speech-balloons')).toHaveLength(0)
     expect(getBuiltInAssetsByCategory('decorations')).toHaveLength(3)
     expect(getBuiltInAssetsByCategory('splatters')).toHaveLength(3)
-  })
-
-  it('provides every agreed core speech-balloon graphic', () => {
-    expect(
-      getBuiltInAssetsByCategory('speech-balloons').map(
-        ({ displayName }) => displayName,
-      ),
-    ).toEqual([
-      'Oval balloon',
-      'Rounded balloon',
-      'Cloud balloon',
-      'Whisper balloon',
-      'Shout balloon',
-      'Electric balloon',
-      'Rough balloon',
-      'Wavy balloon',
-      'Telepathic balloon',
-      'Double Outline balloon',
-    ])
   })
 
   it('uses stable unique IDs, names, dimensions, and sources', () => {
@@ -85,19 +66,4 @@ describe('built-in asset catalog', () => {
     }
   })
 
-  it('draws the simple balloons as one continuous outlined shape', () => {
-    for (const assetId of [
-      'builtin-speech-balloon-oval-v1',
-      'builtin-speech-balloon-rounded-v1',
-    ]) {
-      const asset = BUILT_IN_ASSETS.find(({ id }) => id === assetId)
-
-      expect(asset).toBeDefined()
-      const svg = decodeSvgSource(asset?.source ?? '')
-
-      expect(svg.match(/<path\b/g)).toHaveLength(1)
-      expect(svg).not.toContain('stroke="#fff"')
-      expect(svg).toContain('stroke="#211a2b"')
-    }
-  })
 })

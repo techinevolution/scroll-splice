@@ -45,6 +45,7 @@ import {
   type UpdateSpeechBalloonElementInput,
   type UpdateTextElementInput,
 } from '../core/commands'
+import type { SpeechBalloonPresetId } from '../core/speechBalloonPresets'
 import {
   deleteElementSelection as deleteElementSelectionCommand,
   duplicateElementSelection as duplicateElementSelectionCommand,
@@ -253,7 +254,9 @@ interface EditorState {
     readonly cornerRadius?: number
   }) => void
   readonly createTextElement: () => boolean
-  readonly createSpeechBalloonElement: () => boolean
+  readonly createSpeechBalloonElement: (
+    presetId?: SpeechBalloonPresetId,
+  ) => boolean
   readonly createBackgroundColorRegion: (input: {
     readonly fill: string
     readonly startY: number
@@ -2145,7 +2148,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     return true
   },
 
-  createSpeechBalloonElement: () => {
+  createSpeechBalloonElement: (presetId = 'standard') => {
     const state = get()
     const width = Math.min(340, state.episode.logicalWidth - 48)
     const height = 176
@@ -2153,7 +2156,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       state.viewportY + (state.viewportLogicalHeight - height) / 2
     const episode = createSpeechBalloonElementCommand(state.episode, {
       layerPlaneId: state.activeLayerPlaneId,
-      text: 'Your dialogue',
+      text: '',
+      presetId,
       bounds: {
         x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
         y: Math.min(

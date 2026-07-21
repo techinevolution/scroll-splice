@@ -180,6 +180,35 @@ describe('editor adapter', () => {
     })
   })
 
+  it('creates an editable balloon type on the requested plane', () => {
+    const adapter = createEditorAdapter()
+    const plane = adapter.inspect().planes.find(
+      ({ group, kind }) => group === 'content' && kind === 'ordinary',
+    )
+
+    expect(plane).toBeDefined()
+    if (!plane) return
+
+    const result = adapter.execute({
+      type: 'create-speech-balloon',
+      planeId: plane.id,
+      presetId: 'wavy',
+    })
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(
+      result.snapshot.elements.find(({ id }) => id === result.createdId),
+    ).toMatchObject({
+      type: 'speech-balloon',
+      planeId: plane.id,
+      assetReference: {
+        kind: 'synthetic',
+        generatorId: 'scrollsplice-editable-speech-balloon-v1:wavy',
+      },
+    })
+  })
+
   it('targets an ordinary plane outside the currently active group', () => {
     const adapter = createEditorAdapter()
     const backgroundPlane = adapter.inspect().planes.find(

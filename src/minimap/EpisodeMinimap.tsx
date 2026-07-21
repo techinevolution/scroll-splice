@@ -23,6 +23,7 @@ import {
   type SpeechBalloonElement,
 } from '../core/episode'
 import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
+import { getSpeechBalloonPresetId } from '../core/speechBalloonPresets'
 import { useAssetImage } from '../assets/useAssetImage'
 import {
   getTilePatternScale,
@@ -319,24 +320,54 @@ function MinimapSpeechBalloon({
   readonly bounds: ElementBounds
   readonly isSelected: boolean
 }) {
-  const path = getSpeechBalloonPath(bounds, element.cornerRadius, element.tail)
+  const path = getSpeechBalloonPath(
+    bounds,
+    element.cornerRadius,
+    element.tail,
+    getSpeechBalloonPresetId(element),
+    element.bodyControlPoints,
+  )
 
   if (!path) return null
 
   return (
     <>
+      {path.tailPathData ? (
+        <path
+          d={path.tailPathData}
+          fill={element.fill}
+          stroke={element.stroke}
+          strokeWidth={element.strokeWidth}
+          strokeDasharray={path.strokeDash?.join(' ')}
+          opacity={element.opacity}
+          style={{ mixBlendMode: toCssMixBlendMode(element.blendMode) }}
+          strokeLinejoin="round"
+        />
+      ) : null}
       <path
         data-element-id={element.id}
         data-element-type="speech-balloon"
-        d={path.pathData}
+        d={path.bodyPathData}
         fill={element.fill}
         stroke={element.stroke}
         strokeWidth={element.strokeWidth}
+        strokeDasharray={path.strokeDash?.join(' ')}
         opacity={element.opacity}
         style={{ mixBlendMode: toCssMixBlendMode(element.blendMode) }}
         strokeLinejoin="round"
       />
-      <rect
+      {path.decorationPathData.map((data, index) => (
+        <path
+          key={`${element.id}-balloon-decoration-${index}`}
+          d={data}
+          fill="none"
+          stroke={element.stroke}
+          strokeWidth={Math.max(1, element.strokeWidth * 0.6)}
+          strokeLinecap="round"
+          opacity={element.opacity}
+        />
+      ))}
+      {element.text ? <rect
         x={bounds.x + bounds.width * 0.24}
         y={bounds.y + bounds.height * 0.42}
         width={bounds.width * 0.52}
@@ -344,7 +375,7 @@ function MinimapSpeechBalloon({
         rx="4"
         fill={element.textFill}
         opacity={element.opacity * 0.75}
-      />
+      /> : null}
       {isSelected ? (
         <path
           data-selection-outline-for={element.id}

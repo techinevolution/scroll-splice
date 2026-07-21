@@ -28,6 +28,7 @@ import {
   type ImageCrop,
   type ImageElement,
   type ImageFrame,
+  type NormalizedPoint,
   type OrdinaryLayerPlane,
   type ShapeFill,
   type ShapeFillStop,
@@ -40,6 +41,15 @@ import {
   DEFAULT_SPEECH_BALLOON_TAIL,
   normalizeSpeechBalloonTail,
 } from './speechBalloonGeometry'
+import {
+  getSpeechBalloonGeneratorId,
+  getSpeechBalloonPreset,
+  getSpeechBalloonPresetId,
+  normalizeSpeechBalloonBodyControlPoints,
+  type SpeechBalloonPresetId,
+} from './speechBalloonPresets'
+
+export { SPEECH_BALLOON_GENERATOR_ID } from './speechBalloonPresets'
 
 export const DEFAULT_EPISODE_HEIGHT_INCREMENT = 1280
 export const MIN_EPISODE_LOGICAL_HEIGHT = 1280
@@ -54,9 +64,6 @@ export const SYNTHETIC_SHAPE_GENERATOR_ID =
 export const BACKGROUND_COLOR_REGION_GENERATOR_ID =
   'scrollsplice-background-color-region-v1'
 export const TEXT_ELEMENT_GENERATOR_ID = 'scrollsplice-editor-text-v1'
-export const SPEECH_BALLOON_GENERATOR_ID =
-  'scrollsplice-editable-speech-balloon-v1'
-
 const MIN_TEXT_FONT_SIZE = 8
 
 export interface CreateSyntheticShapeElementInput {
@@ -114,9 +121,12 @@ export interface CreateSpeechBalloonElementInput {
   readonly layerPlaneId: string
   readonly bounds: ElementBounds
   readonly text?: string
+  readonly presetId?: SpeechBalloonPresetId
 }
 
 export interface UpdateSpeechBalloonElementInput {
+  readonly presetId?: SpeechBalloonPresetId
+  readonly bodyControlPoints?: readonly NormalizedPoint[]
   readonly text: string
   readonly fill: string
   readonly stroke: string
@@ -1426,13 +1436,14 @@ export function createSpeechBalloonElement(
 ): EpisodeDocument {
   const layerPlane = getLayerPlaneById(document, input.layerPlaneId)
   const bounds = clampNewElementBounds(document, input.bounds)
-  const text = (input.text ?? 'Your dialogue').trim()
+  const text = (input.text ?? '').trim()
+  const presetId = input.presetId ?? 'standard'
+  const preset = getSpeechBalloonPreset(presetId)
 
   if (
     !layerPlane ||
     layerPlane.kind !== 'ordinary' ||
     !bounds ||
-    text.length === 0 ||
     text.length > MAX_TEXT_CONTENT_LENGTH
   ) {
     return document
@@ -1448,7 +1459,7 @@ export function createSpeechBalloonElement(
   )
   const element: SpeechBalloonElement = {
     id,
-    name: `Editable balloon ${number}`,
+    name: `${preset.label} balloon ${number}`,
     layerPlaneId: layerPlane.id,
     type: 'speech-balloon',
     bounds,
@@ -1475,7 +1486,7 @@ export function createSpeechBalloonElement(
     overflow: DEFAULT_ELEMENT_OVERFLOW,
     assetReference: {
       kind: 'synthetic',
-      generatorId: SPEECH_BALLOON_GENERATOR_ID,
+      generatorId: getSpeechBalloonGeneratorId(presetId),
     },
   }
 
@@ -1493,9 +1504,12 @@ export function updateSpeechBalloonElement(
   const textFill = input.textFill.trim()
   const fontFamily = input.fontFamily.trim()
   const tail = normalizeSpeechBalloonTail(input.tail)
+  const bodyControlPoints =
+    input.bodyControlPoints === undefined
+      ? undefined
+      : normalizeSpeechBalloonBodyControlPoints(input.bodyControlPoints)
 
   if (
-    text.length === 0 ||
     text.length > MAX_TEXT_CONTENT_LENGTH ||
     !fill ||
     !stroke ||
@@ -1516,7 +1530,8 @@ export function updateSpeechBalloonElement(
     !isValidTextFontSize(input.minFontSize) ||
     !isValidTextFontSize(input.maxFontSize) ||
     input.maxFontSize < input.minFontSize ||
-    !tail
+    !tail ||
+    (input.bodyControlPoints !== undefined && !bodyControlPoints)
   ) {
     return document
   }
@@ -1535,6 +1550,15 @@ export function updateSpeechBalloonElement(
     )
     const next: SpeechBalloonElement = {
       ...element,
+      assetReference: {
+        kind: 'synthetic',
+        generatorId: getSpeechBalloonGeneratorId(
+          input.presetId ?? getSpeechBalloonPresetId(element),
+        ),
+      },
+      ...(bodyControlPoints === undefined
+        ? { bodyControlPoints: element.bodyControlPoints }
+        : { bodyControlPoints }),
       text,
       fill,
       stroke,
@@ -2034,6 +2058,11 @@ function areSpeechBalloonStylesEqual(
   second: SpeechBalloonElement,
 ): boolean {
   return (
+    first.assetReference.kind === 'synthetic' &&
+    second.assetReference.kind === 'synthetic' &&
+    first.assetReference.generatorId === second.assetReference.generatorId &&
+    JSON.stringify(first.bodyControlPoints ?? null) ===
+      JSON.stringify(second.bodyControlPoints ?? null) &&
     first.text === second.text &&
     first.fill === second.fill &&
     first.stroke === second.stroke &&

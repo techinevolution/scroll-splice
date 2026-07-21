@@ -5,6 +5,7 @@ import {
   getSpeechBalloonPath,
   normalizeSpeechBalloonTail,
 } from './speechBalloonGeometry'
+import { SPEECH_BALLOON_PRESETS } from './speechBalloonPresets'
 
 describe('speech balloon geometry', () => {
   it('builds one closed outline with an integrated bottom tail', () => {
@@ -74,5 +75,31 @@ describe('speech balloon geometry', () => {
     )
 
     expect(result?.visualBounds).toEqual({ x: 5, y: 6, width: 80, height: 50 })
+  })
+
+  it('renders every editable preset through the shared geometry path', () => {
+    const results = SPEECH_BALLOON_PRESETS.map(({ id }) =>
+      getSpeechBalloonPath(
+        { x: 0, y: 0, width: 320, height: 180 },
+        42,
+        DEFAULT_SPEECH_BALLOON_TAIL,
+        id,
+      ),
+    )
+
+    expect(results.every(Boolean)).toBe(true)
+    expect(
+      new Set(
+        results.map((result) =>
+          JSON.stringify({
+            body: result?.bodyPathData,
+            decorations: result?.decorationPathData,
+            dash: result?.strokeDash,
+          }),
+        ),
+      ).size,
+    ).toBe(10)
+    expect(results.find((_, index) => SPEECH_BALLOON_PRESETS[index]?.id === 'whisper')?.strokeDash).toEqual([10, 10])
+    expect(results.find((_, index) => SPEECH_BALLOON_PRESETS[index]?.id === 'double-outline')?.decorationPathData).toHaveLength(1)
   })
 })

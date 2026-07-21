@@ -124,7 +124,7 @@ Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without specul
 
 An empty plane's centered action area pairs the implemented **Delete plane** control with a paperclip **Add asset** action. The same add action remains available when an ordinary plane is populated. It opens the overlay Asset Library and targets the currently active ordinary plane.
 
-The fixed left rail is an application-shell concern with four destinations: **Uploads**, **Speech Balloons**, **Decorations**, and **Splatters**. Uploads owns the personal library and exposes **All**, **Unsorted**, and creator-named category filters inside the drawer so an unbounded list cannot overwhelm the rail. Filter selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The starter catalog contains nine original transparent SVG assets—three in each built-in category. The local build supports click and native drag placement, select, move, proportional resize, visibility, delete, history, opacity, the five recorded blend modes, Stretch/Cover/Tile image presentation, and independent editable text. General selected-image controls implement non-destructive Cover crop focus/zoom, rotation, and flip; the atomic editable balloon implements automatic fitting and tail editing. Static built-in balloon images remain simple assets: recoloring their artwork, coupling loose balloon images to separate text, perspective, and freeform distortion remain deferred.
+The fixed left rail is an application-shell concern with four destinations: **Uploads**, **Speech Balloons**, **Decorations**, and **Splatters**. Uploads owns the personal library and exposes **All**, **Unsorted**, and creator-named category filters inside the drawer so an unbounded list cannot overwhelm the rail. Filter selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The fixed image catalog contains six original transparent SVG assets—three Decorations and three Splatters. Speech Balloons is a separate first-class element catalog with ten empty editable body types. The local build supports click and native drag image placement, select, move, resize, visibility, delete, history, opacity, the five recorded blend modes, Stretch/Cover/Tile image presentation, independent editable text, and atomic balloon bodies with type selection and tail editing. Automatic balloon/text coupling, perspective, freeform distortion, multi-tail relationships, and creator-saved balloon presets remain deferred.
 
 ## Commands and state ownership
 
@@ -368,17 +368,17 @@ Hidden elements do not render and cannot capture canvas selection. They remain s
 
 ### Implemented editable speech-balloon flow
 
-1. **Editable balloon** creates one `SpeechBalloonElement`, not a hidden collection of loose children.
-2. The element owns body fill/stroke/corners, text and typography limits, padding/line height, and one tail with enabled state, side, anchor, width, and normalized tip.
+1. Each of the ten library cards creates one empty `SpeechBalloonElement`, not an image or hidden collection of loose children.
+2. The element owns a stable editable body-type identifier, optional normalized contour points, body fill/stroke/corners, and one tail with enabled state, side, anchor, width, and normalized tip. Selected balloons expose draggable contour handles; new library balloons carry no embedded wording, so creators add an independent Text element.
 3. A shared pure layout function fits text between the recorded minimum and maximum size whenever bounds or properties change.
 4. Canvas, minimap, Reader Preview, visual bounds/clamping, save/reopen, portable projects, history, and local output all consume the same balloon record.
 
-### Planned research-backed balloon-preset expansion
+### Implemented preset foundation and deferred expansion
 
-The current atomic balloon is the foundation, not the full preset catalog. The [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) records the future product inventory and its implementation order.
+The [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) records the broader product inventory. Its bounded core foundation is implemented as Standard, Rounded, Thought, Whisper, Shout, Electric, Rough, Wavy, Telepathic, and Double Outline starting types; every type remains editable after placement.
 
 - Extend the same atomic element with explicit body, outline, fill, tail/source-marker, and lettering-treatment properties. Do not create one unrelated element type per visual convention.
-- Treat built-in presets as immutable original starting configurations that materialize complete editable values into the episode. Rendering must never depend on a mutable preset lookup after placement.
+- Built-in type geometry is an immutable versioned renderer keyed by the stable synthetic generator ID stored in the episode. Creator-edited wording, colors, outline, typography, bounds, and tail values live directly on the element and do not mutate the preset catalog.
 - Preserve flat document structure. Direct joins, connectors, multiple tails, and reading order use explicit flat associations and must be safely unlinkable; they do not introduce recursive groups or hidden duplicate geometry.
 - Keep creator-saved presets in an application-edge repository and include them in portable packaging when approved. Provider, store, account, or credential details never enter the episode.
 - Keep captions and sound effects as separate element kinds that may reuse typography and appearance primitives. They are related lettering tools, not special balloon flags.
@@ -516,7 +516,7 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-The current July 20 working tree passes 411 Vitest cases across 34 files, 11 Node local-companion protocol/security checks, strict TypeScript, ESLint, the production build, and all 19 Playwright Chromium stories. Current focused coverage includes generated Blob/data-URL/base64 intake, provenance inspection and portable persistence, explicit-plane exact-bounds placement plus one-step undo, revision and transient-selection binding, bounded model-writable numerics, isolated App Server environment/state and generated-file cleanup, localhost/origin/capability protections, cross-group adapter plane activation and creation, visible-direction layer-grip keys, expanded-frame minimap dragging, the six-image default story, matched light/dark appearance, static-host Agent fallback, explicit login-link state, finalized-message persistence, transforms, persistence, Reader Preview, and provisional local export. The production build retains Vite's non-blocking over-500 kB advisory.
+The July 20 complete release passed 411 Vitest cases across 34 files, 11 Node local-companion protocol/security checks, strict TypeScript, ESLint, the production build, and all 19 Playwright Chromium stories. The July 21 final editable-balloon replacement passes 414 Vitest cases across 34 files, strict TypeScript, ESLint, the production build, and its focused Playwright save/reopen/Reader Preview story. Its added coverage verifies all ten stable editable type IDs, shared geometry, empty new bodies, direct normalized contour changes, persistence, and removal of fixed balloon pictures from the runtime asset catalog. The production build retains Vite's non-blocking over-500 kB advisory.
 
 Historical feature commit `a26927f` passed 377 Vitest cases across 28 files, strict TypeScript, ESLint, the production build, and all 13 Playwright Chromium stories. Its production build contained 137 modules; CSS was 40.26 kB and JavaScript was 769.96 kB minified / 222.48 kB gzip. That checkpoint added focused coverage for v3/v4/v5-to-v6 defaults, transforms and visual bounds, image crop/masks/frame parity, flat groups and populated-plane commands, fitted speech-balloon geometry and round trips, reference-safe source deletion, multiple/recovery/portable project behavior, provisional render/preflight behavior, and ExportDialog focus restoration/Tab containment.
 

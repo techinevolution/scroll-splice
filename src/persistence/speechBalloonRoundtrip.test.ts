@@ -6,6 +6,7 @@ import {
   BLANK_EPISODE_LAYER_PLANE_IDS,
   createBlankEpisode,
 } from '../core/createBlankEpisode'
+import { getSpeechBalloonPresetId } from '../core/speechBalloonPresets'
 import { serializePortableProject, parsePortableProject } from './portableProject'
 import {
   createLocalStorageProjectRepository,
@@ -28,6 +29,7 @@ function createEpisode() {
     layerPlaneId: BLANK_EPISODE_LAYER_PLANE_IDS.content,
     bounds: { x: 180, y: 200, width: 340, height: 176 },
     text: 'Portable dialogue',
+    presetId: 'wavy',
   })
 }
 
@@ -38,6 +40,14 @@ describe('editable balloon persistence', () => {
       ok: true,
       episode,
     })
+    expect(
+      getSpeechBalloonPresetId(
+        episode.elements[0] as Extract<
+          (typeof episode.elements)[number],
+          { type: 'speech-balloon' }
+        >,
+      ),
+    ).toBe('wavy')
 
     const storage = new MemoryStorage()
     const repository = createLocalStorageProjectRepository(

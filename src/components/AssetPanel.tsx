@@ -20,6 +20,11 @@ import {
   type BuiltInAssetCategoryId,
 } from '../assets'
 import { getLayerPlaneById } from '../core/episode'
+import {
+  DEFAULT_SPEECH_BALLOON_TAIL,
+  getSpeechBalloonPath,
+} from '../core/speechBalloonGeometry'
+import { SPEECH_BALLOON_PRESETS } from '../core/speechBalloonPresets'
 
 type AssetLibraryCategoryId = 'uploads' | BuiltInAssetCategoryId
 
@@ -64,7 +69,7 @@ const CATEGORY_COPY: Readonly<
   },
   'speech-balloons': {
     title: 'Speech Balloons',
-    note: 'Add an editable balloon with fitted text, or use an original ready-made graphic.',
+    note: 'Choose a starting type, then edit its text, colors, outline, size, and tail.',
   },
   decorations: {
     title: 'Decorations',
@@ -543,45 +548,77 @@ export function AssetPanel() {
             </label>
           ) : null}
 
-          {builtInAssets.length > 0 ? (
+          {activeCategoryId === 'speech-balloons' || builtInAssets.length > 0 ? (
             <div className="asset-grid" aria-label={`${activeCategory.title} assets`}>
               {activeCategoryId === 'speech-balloons' ? (
-                <button
-                  className="asset-card"
-                  type="button"
-                  aria-label="Add editable balloon"
-                  data-testid="add-editable-balloon"
-                  disabled={!canPlaceAsset}
-                  onClick={() => createSpeechBalloonElement()}
-                >
-                  <span className="asset-card-preview">
-                    <svg
-                      viewBox="0 0 360 250"
-                      role="img"
-                      aria-label="Editable speech balloon preview"
-                    >
-                      <path
-                        d="M58 28h244a34 34 0 0 1 34 34v104a34 34 0 0 1-34 34H244l34 38-72-38H58a34 34 0 0 1-34-34V62a34 34 0 0 1 34-34Z"
-                        fill="#fff"
-                        stroke="#211a2b"
-                        strokeWidth="10"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M100 92h160M84 126h192M112 160h136"
-                        fill="none"
-                        stroke="#211a2b"
-                        strokeWidth="8"
-                        strokeLinecap="round"
-                        opacity="0.55"
-                      />
-                    </svg>
-                  </span>
-                  <strong>Editable Balloon</strong>
-                  <small>Text + Tail Controls</small>
-                </button>
+                <>
+                  {SPEECH_BALLOON_PRESETS.map((preset) => {
+                    const preview = getSpeechBalloonPath(
+                      { x: 34, y: 22, width: 292, height: 164 },
+                      42,
+                      DEFAULT_SPEECH_BALLOON_TAIL,
+                      preset.id,
+                    )
+                    return (
+                      <button
+                        className="asset-card"
+                        type="button"
+                        key={preset.id}
+                        aria-label={`Add ${preset.label} balloon`}
+                        data-testid={
+                          preset.id === 'standard'
+                            ? 'add-editable-balloon'
+                            : undefined
+                        }
+                        disabled={!canPlaceAsset}
+                        onClick={() => createSpeechBalloonElement(preset.id)}
+                      >
+                        <span className="asset-card-preview">
+                          <svg
+                            viewBox="0 0 360 250"
+                            role="img"
+                            aria-label={`${preset.label} editable speech balloon preview`}
+                          >
+                            {preview?.tailPathData ? (
+                              <path
+                                d={preview.tailPathData}
+                                fill="#fff"
+                                stroke="#211a2b"
+                                strokeWidth="8"
+                                strokeDasharray={preview.strokeDash?.join(' ')}
+                                strokeLinejoin="round"
+                              />
+                            ) : null}
+                            {preview ? (
+                              <path
+                                d={preview.bodyPathData}
+                                fill="#fff"
+                                stroke="#211a2b"
+                                strokeWidth="8"
+                                strokeDasharray={preview.strokeDash?.join(' ')}
+                                strokeLinejoin="round"
+                              />
+                            ) : null}
+                            {preview?.decorationPathData.map((data, index) => (
+                              <path
+                                key={`${preset.id}-preview-decoration-${index}`}
+                                d={data}
+                                fill="none"
+                                stroke="#211a2b"
+                                strokeWidth="5"
+                                strokeLinecap="round"
+                              />
+                            ))}
+                          </svg>
+                        </span>
+                        <strong>{preset.label}</strong>
+                        <small>{preset.description}</small>
+                      </button>
+                    )
+                  })}
+                </>
               ) : null}
-              {builtInAssets.map((asset) => (
+              {activeCategoryId !== 'speech-balloons' ? builtInAssets.map((asset) => (
                 <button
                   className="asset-card"
                   type="button"
@@ -611,7 +648,7 @@ export function AssetPanel() {
                     )}
                   </small>
                 </button>
-              ))}
+              )) : null}
             </div>
           ) : null}
 

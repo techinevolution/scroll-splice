@@ -4,7 +4,6 @@ import {
   MAX_TEXT_CONTENT_LENGTH,
   MAX_TEXT_FONT_SIZE,
   MIN_EPISODE_LOGICAL_HEIGHT,
-  SPEECH_BALLOON_GENERATOR_ID,
 } from '../core/commands'
 import {
   getElementVisualBounds,
@@ -45,6 +44,10 @@ import {
   type TextElement,
 } from '../core/episode'
 import { normalizeSpeechBalloonTail } from '../core/speechBalloonGeometry'
+import {
+  normalizeSpeechBalloonBodyControlPoints,
+  parseSpeechBalloonPresetId,
+} from '../core/speechBalloonPresets'
 
 export const PROJECT_STORAGE_FORMAT_VERSION = 1 as const
 export const PROJECT_STORAGE_KEY = 'scrollsplice.project.last.v1'
@@ -766,13 +769,16 @@ function parseSpeechBalloonElement(
   const textFill = readNonEmptyString(value.textFill)
   const fontFamily = readNonEmptyString(value.fontFamily)
   const tail = parseSpeechBalloonTail(value.tail)
+  const bodyControlPoints =
+    value.bodyControlPoints === undefined
+      ? undefined
+      : normalizeSpeechBalloonBodyControlPoints(value.bodyControlPoints)
   const bodyMinimum = Math.min(common.bounds.width, common.bounds.height)
 
   if (
     common.assetReference.kind !== 'synthetic' ||
-    common.assetReference.generatorId !== SPEECH_BALLOON_GENERATOR_ID ||
+    !parseSpeechBalloonPresetId(common.assetReference.generatorId) ||
     typeof value.text !== 'string' ||
-    value.text.trim().length === 0 ||
     value.text.length > MAX_TEXT_CONTENT_LENGTH ||
     !fill ||
     !stroke ||
@@ -799,7 +805,8 @@ function parseSpeechBalloonElement(
     !isFiniteNumber(value.maxFontSize) ||
     value.maxFontSize < value.minFontSize ||
     value.maxFontSize > MAX_TEXT_FONT_SIZE ||
-    !tail
+    !tail ||
+    (value.bodyControlPoints !== undefined && !bodyControlPoints)
   ) {
     return undefined
   }
@@ -807,6 +814,7 @@ function parseSpeechBalloonElement(
   return {
     ...common,
     type: 'speech-balloon',
+    ...(bodyControlPoints ? { bodyControlPoints } : {}),
     fill,
     stroke,
     strokeWidth: value.strokeWidth,

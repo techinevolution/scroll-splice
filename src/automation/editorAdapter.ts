@@ -11,6 +11,7 @@ import type {
   UpdateTextElementInput,
 } from '../core/commands'
 import type { LogicalPosition } from '../core/coordinates'
+import type { SpeechBalloonPresetId } from '../core/speechBalloonPresets'
 import {
   COMPOSITION_GROUPS,
   ELEMENT_BLEND_MODES,
@@ -72,7 +73,7 @@ export type EditorAdapterCommand =
   | { readonly type: 'flip-element'; readonly elementId: string; readonly axis: 'horizontal' | 'vertical' }
   | { readonly type: 'set-element-overflow'; readonly elementId: string; readonly overflow: ElementOverflow }
   | { readonly type: 'create-text'; readonly planeId: string }
-  | { readonly type: 'create-speech-balloon'; readonly planeId: string }
+  | { readonly type: 'create-speech-balloon'; readonly planeId: string; readonly presetId?: SpeechBalloonPresetId }
   | { readonly type: 'create-background-region'; readonly planeId: string; readonly fill: string; readonly startY: number; readonly height: number }
   | { readonly type: 'place-built-in-asset'; readonly planeId: string; readonly assetId: string }
   | { readonly type: 'place-imported-asset'; readonly planeId: string; readonly assetId: string }
@@ -395,7 +396,7 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
       case 'flip-element': beforeState.toggleElementFlip(command.elementId, command.axis); break
       case 'set-element-overflow': beforeState.setElementOverflow(command.elementId, command.overflow); break
       case 'create-text': if (!store.getState().createTextElement()) return fail(command, 'rejected', 'Text could not be created on that plane.'); break
-      case 'create-speech-balloon': if (!store.getState().createSpeechBalloonElement()) return fail(command, 'rejected', 'Speech balloon could not be created on that plane.'); break
+      case 'create-speech-balloon': if (!store.getState().createSpeechBalloonElement(command.presetId)) return fail(command, 'rejected', 'Speech balloon could not be created on that plane.'); break
       case 'create-background-region':
         if (!store.getState().createBackgroundColorRegion({ fill: command.fill, startY: command.startY, height: command.height })) return fail(command, 'rejected', 'Background region could not be created on that plane.')
         break

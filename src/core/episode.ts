@@ -166,6 +166,8 @@ export interface SpeechBalloonTail {
 
 export interface SpeechBalloonElement extends EpisodeElementBase {
   readonly type: 'speech-balloon'
+  /** Optional normalized contour edited directly by the creator. */
+  readonly bodyControlPoints?: readonly NormalizedPoint[]
   readonly fill: string
   readonly stroke: string
   readonly strokeWidth: number

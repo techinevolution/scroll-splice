@@ -17,6 +17,7 @@ import {
 } from '../core/elementGeometry'
 import { getSpeechBalloonPath } from '../core/speechBalloonGeometry'
 import { getSpeechBalloonTextLayout } from '../core/speechBalloonLayout'
+import { getSpeechBalloonPresetId } from '../core/speechBalloonPresets'
 import {
   applyColorOpacity,
   getTilePatternScale,
@@ -383,19 +384,41 @@ function drawSpeechBalloon(
     element.bounds,
     element.cornerRadius,
     element.tail,
+    getSpeechBalloonPresetId(element),
+    element.bodyControlPoints,
   )
 
   if (!balloon) return
 
-  const path = new Path2D(balloon.pathData)
+  const bodyPath = new Path2D(balloon.bodyPathData)
   context.fillStyle = element.fill
-  context.fill(path)
+  if (balloon.tailPathData) {
+    const tailPath = new Path2D(balloon.tailPathData)
+    context.fill(tailPath)
+    if (element.strokeWidth > 0) {
+      context.strokeStyle = element.stroke
+      context.lineWidth = element.strokeWidth
+      context.lineJoin = 'round'
+      context.setLineDash(balloon.strokeDash ? [...balloon.strokeDash] : [])
+      context.stroke(tailPath)
+    }
+  }
+  context.fill(bodyPath)
   if (element.strokeWidth > 0) {
     context.strokeStyle = element.stroke
     context.lineWidth = element.strokeWidth
     context.lineJoin = 'round'
-    context.stroke(path)
+    context.setLineDash(balloon.strokeDash ? [...balloon.strokeDash] : [])
+    context.stroke(bodyPath)
+    context.setLineDash([])
+    context.lineWidth = Math.max(1, element.strokeWidth * 0.6)
+    balloon.decorationPathData.forEach((data) => {
+      context.stroke(new Path2D(data))
+    })
   }
+  context.setLineDash([])
+
+  if (!element.text) return
 
   const layout = getSpeechBalloonTextLayout(element)
   const { bounds } = element

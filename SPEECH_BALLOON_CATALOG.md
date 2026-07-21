@@ -8,6 +8,8 @@ There is no universal, exhaustive list in which every visual style has one fixed
 
 Professional letterers generally call these objects **balloons**, including thought balloons. The interface may say **Speech Balloons** because that is familiar to creators, while documentation uses “balloon” as the umbrella term.
 
+Current bounded implementation: the library offers ten empty editable starting types—Standard, Rounded, Thought, Whisper, Shout, Electric, Rough, Wavy, Telepathic, and Double Outline. Each creates the same atomic body element and preserves editable type, fill, outline, bounds, tail, and creator-shaped normalized contour points. Creators add lettering as an independent Text element. The broader body, tail, relationship, and creator-saved-preset inventory below remains the roadmap rather than a claim that every catalog row is complete.
+
 Research reviewed July 16, 2026:
 
 - [Blambot: Comic Book Grammar & Tradition](https://blambot.com/pages/comic-book-grammar-tradition) — professional lettering conventions and terminology.
@@ -159,7 +161,7 @@ Completing this catalog does not mean drawing one fixed SVG for every row. It me
 
 ### Slice 1 — Core editable preset foundation
 
-Extend the existing atomic `SpeechBalloonElement` with data-driven body, outline, and tail kinds. Deliver **Standard**, **Rounded**, **Thought**, **Whisper**, **Shout**, **Electric**, **Rough**, **Wavy**, **Telepathic**, and **Double Outline** presets. Preserve the existing fitted text behavior and current ordinary element controls.
+Extend the existing atomic `SpeechBalloonElement` with data-driven body, outline, and tail kinds. Deliver **Standard**, **Rounded**, **Thought**, **Whisper**, **Shout**, **Electric**, **Rough**, **Wavy**, **Telepathic**, and **Double Outline** presets. Keep new balloon bodies empty and use the existing independent Text element for lettering.
 
 ### Slice 2 — Source direction and relationships
 

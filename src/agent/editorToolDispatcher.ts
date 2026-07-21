@@ -6,6 +6,11 @@ import {
   type GeneratedAssetImportMetadata,
   type ScrollSpliceEditorAdapter,
 } from '../automation/editorAdapter'
+import { SPEECH_BALLOON_PRESETS } from '../core/speechBalloonPresets'
+
+const SPEECH_BALLOON_PRESET_IDS = new Set<string>(
+  SPEECH_BALLOON_PRESETS.map(({ id }) => id),
+)
 import type { GeneratedImageSource } from '../automation/generatedImageSource'
 
 export const EDITOR_TOOL_NUMERIC_LIMITS = Object.freeze({
@@ -486,8 +491,12 @@ function parseEditorCommand(value: unknown): EditorAdapterCommand | undefined {
         return exact(value, ['type', 'elementId', 'overflow']) && isSafeId(value.elementId) &&
           (value.overflow === 'constrained' || value.overflow === 'bleed')
       case 'create-text':
-      case 'create-speech-balloon':
         return exact(value, ['type', 'planeId']) && isSafeId(value.planeId)
+      case 'create-speech-balloon':
+        return exactOptional(value, ['type', 'planeId'], ['presetId']) &&
+          isSafeId(value.planeId) &&
+          (value.presetId === undefined ||
+            SPEECH_BALLOON_PRESET_IDS.has(value.presetId as string))
       case 'create-background-region':
         return exact(value, ['type', 'planeId', 'fill', 'startY', 'height']) && isSafeId(value.planeId) &&
           isSafeText(value.fill, 128, true) &&
@@ -689,11 +698,14 @@ function isTextUpdate(value: unknown): boolean {
 }
 
 function isBalloonUpdate(value: unknown): boolean {
-  return isRecordWithKeys(value, [
+  return isRecord(value) && exactOptional(value, [
     'text', 'fill', 'stroke', 'strokeWidth', 'cornerRadius', 'textFill',
     'fontFamily', 'fontWeight', 'lineHeight', 'align', 'padding',
     'minFontSize', 'maxFontSize', 'tail',
-  ]) && isSafeText(value.text, 2_000, true) && isSafeText(value.fill, 128, true) &&
+  ], ['presetId', 'bodyControlPoints']) &&
+    (value.presetId === undefined || SPEECH_BALLOON_PRESET_IDS.has(value.presetId as string)) &&
+    (value.bodyControlPoints === undefined || isBalloonControlPoints(value.bodyControlPoints)) &&
+    isSafeText(value.text, 2_000, true) && isSafeText(value.fill, 128, true) &&
     isSafeText(value.stroke, 128, true) &&
     isBoundedNumber(value.strokeWidth, 0, EDITOR_TOOL_NUMERIC_LIMITS.maxStrokeWidth) &&
     isBoundedNumber(value.cornerRadius, 0, EDITOR_TOOL_NUMERIC_LIMITS.maxCornerRadius) &&
@@ -715,6 +727,15 @@ function isBalloonUpdate(value: unknown): boolean {
       EDITOR_TOOL_NUMERIC_LIMITS.minTextFontSize,
       EDITOR_TOOL_NUMERIC_LIMITS.maxTextFontSize,
     ) && value.maxFontSize >= value.minFontSize && isBalloonTail(value.tail)
+}
+
+function isBalloonControlPoints(value: unknown): boolean {
+  return Array.isArray(value) && value.length >= 6 && value.length <= 32 &&
+    value.every((point) =>
+      isRecordWithKeys(point, ['x', 'y']) &&
+      isBoundedNumber(point.x, 0, 1) &&
+      isBoundedNumber(point.y, 0, 1),
+    )
 }
 
 function isBalloonTail(value: unknown): boolean {
