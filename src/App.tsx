@@ -604,28 +604,14 @@ export function App() {
         </div>
 
         <div className="header-actions">
-          <span
-            className={`document-state-indicator${hasUnsavedChanges ? ' is-unsaved' : ''}`}
-            title={
-              hasUnsavedChanges
-                ? `${documentStatus}. Use File > Save to keep these changes.`
-                : documentStatus
-            }
-            aria-label={
-              hasUnsavedChanges
-                ? 'Unsaved changes. Use File, Save to keep them.'
-                : 'All changes saved locally.'
-            }
-          >
-            {hasUnsavedChanges ? 'Unsaved' : 'Saved'}
-          </span>
-          <span
-            className="sr-only"
-            data-testid="document-status"
-            aria-live="polite"
-          >
-            {documentStatus}
-          </span>
+          <div className="header-history-actions" aria-label="History Actions">
+            <button type="button" disabled={!canUndo} onClick={undo}>
+              Undo
+            </button>
+            <button type="button" disabled={!canRedo} onClick={redo}>
+              Redo
+            </button>
+          </div>
           <AgentChatPanel
             key={`episode:${episodeId}`}
             projectKey={`episode:${episodeId}`}
@@ -703,6 +689,30 @@ export function App() {
           <EditorCanvas
             accentColor={theme === 'light' ? '#16878A' : '#C58A5A'}
           />
+          <div className="canvas-document-state">
+            <span
+              className={`document-state-indicator${hasUnsavedChanges ? ' is-unsaved' : ''}`}
+              title={
+                hasUnsavedChanges
+                  ? `${documentStatus}. Use File > Save to keep these changes.`
+                  : documentStatus
+              }
+              aria-label={
+                hasUnsavedChanges
+                  ? 'Unsaved changes. Use File, Save to keep them.'
+                  : 'All changes saved locally.'
+              }
+            >
+              {hasUnsavedChanges ? 'Unsaved Changes' : 'Saved'}
+            </span>
+            <span
+              className="sr-only"
+              data-testid="document-status"
+              aria-live="polite"
+            >
+              {documentStatus}
+            </span>
+          </div>
         </section>
       </div>
 

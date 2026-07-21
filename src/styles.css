@@ -3412,6 +3412,43 @@ p {
   gap: 0.35rem;
 }
 
+.header-history-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.header-history-actions button {
+  height: 32px;
+  padding: 0 0.62rem;
+  border: 1px solid var(--ui-border);
+  border-radius: 0.35rem;
+  color: var(--ui-text);
+  background: var(--ui-surface-raised);
+  font-size: 0.68rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.header-history-actions button:hover:not(:disabled) {
+  border-color: var(--ui-accent);
+  color: var(--ui-accent-strong);
+  background: var(--ui-accent-soft);
+}
+
+.header-history-actions button:disabled {
+  color: var(--ui-text-faint);
+  cursor: default;
+  opacity: 0.58;
+}
+
+.canvas-document-state {
+  position: absolute;
+  z-index: 4;
+  bottom: 0.55rem;
+  left: 0.75rem;
+}
+
 .document-state-indicator {
   display: inline-flex;
   height: 25px;
@@ -3453,6 +3490,7 @@ p {
 }
 
 .editor-workspace {
+  position: relative;
   grid-template-rows: 50px minmax(0, 1fr);
   background: var(--ui-workspace);
   background-image: none;
