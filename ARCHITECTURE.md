@@ -27,11 +27,12 @@ This is modularity by separation of responsibility, not by speculative infrastru
 - Strict TypeScript defines the core contracts.
 - Vite 8 serves the local app and produces a static deployment build.
 - GitHub Pages is the preferred judge-access adapter; an unrestricted downloadable build is the fallback.
+- An optional dependency-free Node companion may launch the installed official Codex App Server for local ChatGPT authorization and model turns. It is not part of the static deployment and has no access to the episode store except through addressed browser tool calls.
 - Vitest verifies pure model, command, and coordinate behavior; Playwright verifies one complete editor story.
 
-The required Build Week runtime has no backend, database, login, secrets, external asset upload, runtime OpenAI API dependency, or WEBTOON integration. Codex with GPT-5.6 is used to create and validate the project. The human editor must remain functional with all future OpenAI features absent or disconnected.
+The required static Build Week runtime has no backend, database, login, secrets, external asset upload, runtime OpenAI dependency, or WEBTOON integration. The human editor remains functional when the optional companion is absent, disconnected, or stopped.
 
-A single generate-and-place proof is permitted only as late stretch work under the explicit gate in `PLAN.md`. That gate does not change the locked stack by itself: any backend, OAuth flow, OpenAI SDK, secret storage, or other new runtime dependency still needs a separate recorded decision before implementation.
+Katherine approved the late local generate-and-place stretch on July 20 after the human editor and public path were stable. `DECISIONS.md` records the narrow exception: use the official `codex app-server` through a localhost companion and an app-specific `CODEX_HOME`; do not add a cloud backend, OpenAI SDK/API key, browser OAuth implementation, database, or provider credentials to the web app.
 
 ## Minimal module boundaries
 
@@ -54,6 +55,9 @@ Create a folder only when its active behavior exists. The intended ownership is:
 - `src/persistence/portableProject.ts` and `portableProjectMerge.ts`: validated `.scrollsplice` files containing one episode plus reusable asset blobs, with collision-safe ID remapping on import.
 - `src/export/profiles.ts`: provisional versioned output-profile data and pure candidate-boundary/slice-plan math.
 - `src/export/renderEpisode.ts`: browser-local tall-master and slice rendering plus encoded-file preflight; it does not upload or publish.
+- `src/agent/`: browser-local conversation persistence, companion transport, run state, and strict dispatch from model tool requests into the versioned editor adapter.
+- `companion/`: localhost-only Codex App Server lifecycle, official ChatGPT authorization, model discovery, bounded turn streaming, and short-lived generated-image staging. It never imports React, Zustand, Konva, browser persistence, or episode commands.
+- `scripts/dev-local.mjs`: one-command development launcher that gives the Vite proxy a random per-launch companion capability and starts both local processes.
 
 Do not create empty `services`, `adapters`, or `auth` trees merely to represent future ideas. Their boundaries are documented below and become files only when an approved slice needs them. The implemented persistence and export trees remain browser-local application-edge adapters; they are not a backend, cloud/account sync system, WEBTOON connector, or publishing service.
 
@@ -395,38 +399,37 @@ The current atomic balloon is the foundation, not the full preset catalog. The [
 
 The adapter now also owns a narrow asynchronous generated-image intake seam. An authorized host may provide a PNG/JPEG/WebP `Blob`, base64 data URL, or raw base64 payload plus non-secret provider/model/prompt/timestamp metadata. The adapter validates the same 20 MiB, 40-megapixel, header, media-type, and browser-decode rules as human imports, persists the unchanged Blob and provenance through `AssetRepository`, and returns its stable asset ID. A separate placement command creates one imported-image element on an explicit ordinary plane at requested logical bounds through one normal history checkpoint. Undo removes the instance while retaining the reusable source.
 
-Vite development builds expose this adapter as `window.scrollSpliceEditor` for inspection, test automation, and precise local manipulation. That writable global is not included in production builds. A future authenticated agent imports the adapter behind authorization, approval, cancellation, and provenance controls; OAuth/provider credentials never enter this contract. Raw file import/export remains host-mediated rather than crossing the serializable command boundary.
+Vite development builds expose this adapter as `window.scrollSpliceEditor` for inspection, test automation, and precise local manipulation. That writable global is not included in production builds. The authenticated browser tool dispatcher imports the adapter directly, validates every network value, binds mutations to the inspected episode and revision, and returns a post-call snapshot. OAuth/provider credentials never enter this contract. Raw human file import/export remains host-mediated rather than crossing the serializable command boundary.
 
-The browser-local project, recovery, asset, portable-file, and renderer adapters are implemented. Network/authentication contracts remain future boundaries, not Build Week infrastructure to scaffold:
+The browser-local project, recovery, asset, portable-file, renderer, conversation, and editor-tool adapters are implemented. The approved local companion implements only the model-authorization and run-coordination boundaries below:
 
 - `ProjectRepository`/`ProjectLibraryRepository`: validate supported episode versions and own explicit current/multiple local saves without changing core commands.
 - `RecoveryRepository`: owns debounced unsaved snapshots and Restore/Discard, never identity or cloud sync.
 - `AssetRepository`: imports, identifies, persists, resolves, safely replaces, and reference-checks local PNG/JPEG/WebP sources and creator categories.
 - Portable project codec/merge: transfers a validated episode plus unchanged asset blobs with collision-safe ID remapping.
 - Local renderer: renders masters and profile slices without editor chrome, then preflights encoded local files. It does not upload.
-- `AuthSessionProvider`: expose a neutral ScrollSplice user/workspace session at the application edge.
-- `ModelConnectionProvider`: expose an authorized, revocable OpenAI model connection without leaking provider credentials into UI or core modules.
-- `ProjectContextReader`: produce bounded, serializable project and episode context for future model tools.
-- `ImageGenerationGateway`: generate or edit image candidates behind a provider adapter.
-- `EditorToolRegistry`: expose approved read and command operations to a model through schemas.
-- `AgentRunCoordinator`: manage one autonomous run, progress, cancellation, cost limits, tool approvals, and provenance.
+- `ModelConnectionProvider`: the local companion owns the official App Server login and exposes only neutral connection/model state to the browser; it never returns reusable credentials.
+- `ProjectContextReader`: the browser editor adapter produces bounded, serializable project and episode context with a current revision.
+- `ImageGenerationGateway`: App Server image-generation results are held behind short-lived opaque references until the browser validates and imports them.
+- `EditorToolRegistry`: exactly four model-visible tools inspect the editor, apply a validated reversible command, import the latest generated source, or place a generated source on explicit logical bounds.
+- `AgentRunCoordinator`: the companion owns bounded threads/turns and cancellation; the browser owns project/session addressing and tool execution.
 - `AgentConversationRepository`: persist local chat messages and tool summaries by stable project ID without placing conversation state in the episode document.
 
-ScrollSplice account authentication and OpenAI model authorization are separate concerns. A future app login identifies a ScrollSplice user/workspace. A future model connection authorizes OpenAI requests. Neither authenticates to WEBTOON, and neither changes the episode document or command layer. Provider tokens and raw identity details stay inside their application-edge adapters; the editor receives only neutral session and connection state.
+ScrollSplice still has no app account system. The optional OpenAI connection authorizes only the local Codex App Server; it does not identify a ScrollSplice workspace, authenticate to WEBTOON, or change the episode document or command layer. Provider tokens and raw identity details remain inside the app-specific Codex state directory or OS credential store; the browser receives only neutral connection state, allowed model IDs, and reasoning choices.
 
-The agent UI foundation is a fixed upper-right launcher plus an overlay panel above the canvas side of the workspace. The panel opens leftward below its header control, never resizes the canvas, and never covers the minimap or Layers inspector. Closing it preserves the current project conversation. The implemented browser-local `AgentConversationRepository` stores validated version-1 messages under the episode's stable ID, which keeps an unsaved conversation attached when that episode is first saved or reopened, and remains separate from episode data, history, saves, portable project files, assets, and recovery. The current panel is explicitly labeled as an offline preview: it can retain creator messages but does not fabricate model replies. A later authorized run coordinator will read the transcript, call the model, and use the editor adapter for approved inspection and mutations. OAuth state and agent-run state remain application chrome, not episode data.
+The agent UI is a fixed upper-right launcher plus an overlay panel above the canvas side of the workspace. The panel opens leftward below its header control, never resizes the canvas, and never covers the minimap or Layers inspector. Closing it preserves the current project conversation. The browser-local `AgentConversationRepository` stores validated version-1 user/final-assistant messages under the episode's stable ID and remains separate from episode data, history, saves, portable project files, assets, recovery, authorization, and Codex thread state. Without the companion the panel reports that the human editor still works. When disconnected it presents one explicit OpenAI-connect action; when connected it shows only the live allowed GPT-5.5/GPT-5.6 catalog, supported reasoning levels, streamed progress, and Stop. OAuth and run state remain transient application chrome.
 
-The desired user-authorized OpenAI connection may resemble the Sign in with ChatGPT experience used by coding clients, but support for that exact flow in a general ScrollSplice web application is not assumed. Verify an official supported path before choosing OAuth dependencies. Never ship a reusable OpenAI credential in browser JavaScript, persisted episode data, generated asset metadata, logs, or git.
+The supported authorization path is the official Codex App Server's `account/login/start` ChatGPT flow, not a ScrollSplice-authored OAuth client. The companion starts disconnected and presents the returned authorization URL only after the creator asks to connect. Never ship a reusable OpenAI credential in browser JavaScript, persisted episode data, generated asset metadata, logs, screenshots, or git.
 
 Do not scrape WEBTOON, automate login, store WEBTOON credentials, or simulate direct publishing. Publishing remains a manual website workflow unless an official supported integration is later discovered and explicitly approved.
 
-## Future OpenAI creation boundary
+## Local OpenAI creation boundary
 
-Autonomous creation follows the creator-ready human workflow. It is designed now as a boundary so the editor core remains usable, but it is not infrastructure to scaffold during the human MVP.
+Autonomous creation follows the creator-ready human workflow. The local companion is an optional late Build Week proof layered over the complete human editor; the editor core and static judge experience do not depend on it.
 
-### OpenAI API shape
+### Official App Server shape
 
-The likely orchestration boundary is the [Responses API with image generation](https://developers.openai.com/api/docs/guides/image-generation), because OpenAI documents it for conversational and multi-step image flows. A simple isolated generation or edit may instead use the Image API behind the same gateway. Model names and API details remain adapter configuration rather than episode-schema fields.
+The orchestration boundary is the official Codex App Server over JSONL stdio. The companion uses `account/*` for the creator-controlled ChatGPT connection, `model/list` for the signed-in account's live catalog, bounded `thread/start` and `turn/start` requests for chat, host-owned dynamic tools for editor actions, and the App Server's intentional image-generation item for candidates. Model names and protocol details remain application-edge configuration rather than episode-schema fields.
 
 ScrollSplice's project-inspection and editor-action capabilities are application-owned function tools. OpenAI describes [function calling](https://developers.openai.com/api/docs/guides/function-calling) as the way a model connects to data and actions supplied by an application. These internal tools are not the same as OpenAI connectors.
 
@@ -486,7 +489,7 @@ The intended end state may assemble a complete first-pass episode autonomously, 
 
 ### Build Week stretch boundary
 
-The generated-image intake and exact-bounds placement half of the Build Week proof is implemented. A complete network proof still requires one supported model-authorization path, a bounded chat/run UI, one synthetic generation request, creator-visible progress/cancellation, and a successful handoff of returned bytes into these commands. It must not require private art, broad filesystem access, an external connector, full agent autonomy, or judge credentials. If secure model authorization cannot be completed without weakening the static app or schedule, the human editor remains the valid fallback.
+The generated-image intake, exact-bounds placement, official App Server authorization path, bounded chat/run UI, creator-visible progress/cancellation, and returned-byte handoff are implemented. The disconnected companion and synthetic protocol paths are validated without exposing credentials or account identity. The remaining complete network proof is Katherine's first official login, one live streamed response, and one native synthetic generate/import/place/undo run. It must not require private art, broad filesystem access, an external connector, full agent autonomy, or judge credentials. The static human editor remains the valid judge path even if that optional live proof fails.
 
 ## Implemented provisional export boundary
 
@@ -513,7 +516,7 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-The current July 20 working tree passes 390 Vitest cases across 30 files, strict TypeScript, ESLint, the production build, and all 15 Playwright Chromium stories. Current focused coverage includes generated Blob/data-URL/base64 intake, provenance inspection and portable persistence, explicit-plane exact-bounds placement plus one-step undo, cross-group adapter plane activation and creation, visible-direction layer-grip keys, expanded-frame minimap dragging, the six-image default story, matched light/dark appearance, transforms, persistence, Reader Preview, and provisional local export. The production build retains Vite's non-blocking over-500 kB advisory.
+The current July 20 working tree passes 411 Vitest cases across 34 files, 11 Node local-companion protocol/security checks, strict TypeScript, ESLint, the production build, and all 19 Playwright Chromium stories. Current focused coverage includes generated Blob/data-URL/base64 intake, provenance inspection and portable persistence, explicit-plane exact-bounds placement plus one-step undo, revision and transient-selection binding, bounded model-writable numerics, isolated App Server environment/state and generated-file cleanup, localhost/origin/capability protections, cross-group adapter plane activation and creation, visible-direction layer-grip keys, expanded-frame minimap dragging, the six-image default story, matched light/dark appearance, static-host Agent fallback, explicit login-link state, finalized-message persistence, transforms, persistence, Reader Preview, and provisional local export. The production build retains Vite's non-blocking over-500 kB advisory.
 
 Historical feature commit `a26927f` passed 377 Vitest cases across 28 files, strict TypeScript, ESLint, the production build, and all 13 Playwright Chromium stories. Its production build contained 137 modules; CSS was 40.26 kB and JavaScript was 769.96 kB minified / 222.48 kB gzip. That checkpoint added focused coverage for v3/v4/v5-to-v6 defaults, transforms and visual bounds, image crop/masks/frame parity, flat groups and populated-plane commands, fitted speech-balloon geometry and round trips, reference-safe source deletion, multiple/recovery/portable project behavior, provisional render/preflight behavior, and ExportDialog focus restoration/Tab containment.
 
@@ -547,7 +550,7 @@ The historical fixed-width corrective checkpoint passed 120 unit tests. Its supe
 - Model context is explicit, bounded, serializable, and approved before private material leaves the app.
 - Model write tools call the same tested commands available to humans and cannot mutate UI framework state directly.
 - Generated assets retain provenance and remain ordinary editable assets after creation.
-- A model run has visible progress, cancellation, and cost limits; it never publishes to WEBTOON.
+- A model run has visible progress and cancellation and never publishes to WEBTOON. The current one-turn ChatGPT proof exposes no reliable spend telemetry and makes no spend-limit guarantee; any future multi-step or metered autonomy must add an explicit creator-approved time/budget policy before it is considered safe.
 
 
 ## Application appearance preferences

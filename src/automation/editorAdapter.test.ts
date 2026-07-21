@@ -112,6 +112,9 @@ describe('editor adapter', () => {
     const snapshot = createEditorAdapter().inspect()
 
     expect(snapshot.apiVersion).toBe(2)
+    expect(snapshot.editor.currentRevision).toBe(
+      useEditorStore.getState().currentRevision,
+    )
     expect(snapshot.episode.logicalWidth).toBe(800)
     expect(snapshot.planes.length).toBeGreaterThan(0)
     expect(snapshot.elements.length).toBeGreaterThan(0)

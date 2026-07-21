@@ -90,9 +90,11 @@ Small loose actions only. Product direction and dated implementation work belong
 
 ## Joint — only after the local human-editor completion goal and submission path are stable
 
-- [ ] Decide whether to spend remaining Build Week time on the optional generate-and-place proof or submission polish.
-- [ ] If choosing the proof, verify an officially supported OpenAI authorization path and approve the network, credential, privacy, synthetic-data, cost, and time limits before adding dependencies.
-- [ ] Keep the judge-facing human editor usable without OpenAI login or credits; abandon the proof immediately if it threatens validation or submission evidence.
+- [x] Decide whether to spend remaining Build Week time on the optional generate-and-place proof or submission polish. Katherine selected the bounded proof on July 20.
+- [x] Verify an officially supported authorization boundary and approve the network, credential, privacy, synthetic-data, and single-turn limits. The recorded choice is the official Codex App Server behind an isolated localhost companion with no browser credential or cloud backend. The ChatGPT subscription path exposes no reliable per-turn spend telemetry, so the proof does not claim a spend meter or enforceable cost ceiling.
+- [x] Keep the judge-facing human editor usable without OpenAI login or credits; GitHub Pages and the ordinary `dev`/build path remain independent of the companion.
+- [ ] Katherine: after Codex finishes disconnected-state validation, click the in-app connect action, complete the official ChatGPT login, and approve only a synthetic first prompt.
+- [ ] Codex and Katherine: verify one live streamed response plus inspect, generated-image import, explicit-plane placement, and undo without exposing credentials or private art.
 
 ## Joint — later, not Build Week scope
 

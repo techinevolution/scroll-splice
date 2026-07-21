@@ -5,37 +5,30 @@ import {
   type FormEvent,
 } from 'react'
 
-import {
-  createBrowserAgentConversationRepository,
-  type AgentConversationMessage,
-} from '../agent/conversationRepository'
+import { useAgentSession } from '../agent/useAgentSession'
 
 interface AgentChatPanelProps {
   readonly projectKey: string
 }
 
-function createMessageId() {
-  return globalThis.crypto?.randomUUID?.() ?? `message-${Date.now()}`
-}
-
 export function AgentChatPanel({ projectKey }: AgentChatPanelProps) {
-  const [repository] = useState(() =>
-    createBrowserAgentConversationRepository(),
-  )
   const [isOpen, setIsOpen] = useState(false)
   const [draft, setDraft] = useState('')
-  const [messages, setMessages] = useState<readonly AgentConversationMessage[]>(
-    () => repository.load(projectKey),
-  )
+  const session = useAgentSession(projectKey)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const transcriptEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!isOpen) return
 
-    inputRef.current?.focus()
+    if (session.phase === 'connected') inputRef.current?.focus()
     transcriptEndRef.current?.scrollIntoView({ block: 'end' })
-  }, [isOpen, messages.length])
+  }, [
+    isOpen,
+    session.messages.length,
+    session.phase,
+    session.streamingText,
+  ])
 
   useEffect(() => {
     if (!isOpen) return
@@ -50,28 +43,18 @@ export function AgentChatPanel({ projectKey }: AgentChatPanelProps) {
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [isOpen])
 
-  const saveMessage = (event: FormEvent) => {
+  const sendMessage = (event: FormEvent) => {
     event.preventDefault()
     const text = draft.trim()
+    if (!text || session.phase !== 'connected') return
 
-    if (!text) return
-
-    setMessages(
-      repository.append(projectKey, {
-        id: createMessageId(),
-        role: 'user',
-        text,
-        createdAt: new Date().toISOString(),
-      }),
-    )
     setDraft('')
+    void session.sendMessage(text)
   }
 
-  const clearConversation = () => {
-    repository.clear(projectKey)
-    setMessages([])
-    inputRef.current?.focus()
-  }
+  const connected =
+    session.phase === 'connected' || session.phase === 'running'
+  const hasPermittedModel = session.models.length > 0
 
   return (
     <div className="agent-chat-root">
@@ -89,7 +72,7 @@ export function AgentChatPanel({ projectKey }: AgentChatPanelProps) {
 
       {isOpen ? (
         <section
-          className="agent-chat-panel"
+          className={`agent-chat-panel is-${session.phase}`}
           id="scrollsplice-agent-chat"
           aria-label="ScrollSplice agent chat"
         >
@@ -108,62 +91,205 @@ export function AgentChatPanel({ projectKey }: AgentChatPanelProps) {
             </button>
           </header>
 
-          <div className="agent-chat-connection" role="status">
-            <span aria-hidden="true" />
-            Local preview · OpenAI not connected
-          </div>
+          {session.phase === 'checking' ? (
+            <div className="agent-chat-empty" role="status">
+              <span className="agent-chat-progress" aria-hidden="true" />
+              <p>Checking the local AI companion…</p>
+            </div>
+          ) : null}
 
-          <div className="agent-chat-transcript" aria-live="polite">
-            <article className="agent-chat-message is-assistant">
-              <span>ScrollSplice</span>
+          {session.phase === 'unavailable' ? (
+            <div className="agent-chat-empty">
               <p>
-                I’ll be able to inspect and edit this episode through the editor
-                adapter. Until the OpenAI connection is added, messages you enter
-                here are saved only in this browser for this project.
+                AI needs the local ScrollSplice build. The hosted human editor
+                remains fully available without it.
               </p>
-            </article>
-
-            {messages.map((message) => (
-              <article
-                className={`agent-chat-message is-${message.role}`}
-                key={message.id}
-              >
-                <span>{message.role === 'user' ? 'You' : 'ScrollSplice'}</span>
-                <p>{message.text}</p>
-              </article>
-            ))}
-            <div ref={transcriptEndRef} />
-          </div>
-
-          <form className="agent-chat-composer" onSubmit={saveMessage}>
-            <label htmlFor="agent-chat-message">Message about this episode</label>
-            <textarea
-              ref={inputRef}
-              id="agent-chat-message"
-              rows={3}
-              value={draft}
-              placeholder="Ask the agent to inspect or change the episode…"
-              onChange={(event) => setDraft(event.currentTarget.value)}
-            />
-            <div className="agent-chat-composer-actions">
-              <button
-                className="agent-chat-clear"
-                type="button"
-                disabled={messages.length === 0}
-                onClick={clearConversation}
-              >
-                Clear
-              </button>
-              <button
-                className="agent-chat-save"
-                type="submit"
-                disabled={!draft.trim()}
-                title="Saves locally until the OpenAI connection is added"
-              >
-                Save message
+              <button type="button" onClick={() => void session.refreshStatus()}>
+                Check again
               </button>
             </div>
-          </form>
+          ) : null}
+
+          {session.phase === 'disconnected' ? (
+            <div className="agent-chat-empty is-connect">
+              <button
+                className="agent-chat-connect"
+                type="button"
+                onClick={() => void session.startLogin()}
+              >
+                Click here to connect your OpenAI account.
+              </button>
+            </div>
+          ) : null}
+
+          {session.phase === 'authorizing' ? (
+            <div className="agent-chat-empty is-authorizing" role="status">
+              <span className="agent-chat-progress" aria-hidden="true" />
+              <p>{session.activityMessage ?? 'Waiting for OpenAI sign-in…'}</p>
+              {session.authUrl ? (
+                <a
+                  className="agent-chat-authorize-link"
+                  href={session.authUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Continue to OpenAI
+                </a>
+              ) : null}
+              <button
+                className="agent-chat-secondary-action"
+                type="button"
+                onClick={() => void session.cancelLogin()}
+              >
+                Cancel
+              </button>
+            </div>
+          ) : null}
+
+          {session.phase === 'error' ? (
+            <div className="agent-chat-empty is-error" role="alert">
+              <p>{session.errorMessage}</p>
+              <button type="button" onClick={() => void session.refreshStatus()}>
+                Try again
+              </button>
+            </div>
+          ) : null}
+
+          {connected ? (
+            <>
+              <div className="agent-chat-connection" role="status">
+                <span aria-hidden="true" />
+                <strong>
+                  {session.phase === 'running'
+                    ? session.activityMessage ?? 'Working…'
+                    : 'OpenAI connected'}
+                </strong>
+                <button
+                  type="button"
+                  disabled={session.phase === 'running'}
+                  onClick={() => void session.logout()}
+                >
+                  Disconnect
+                </button>
+              </div>
+
+              <div className="agent-chat-model-controls">
+                <label>
+                  <span>Model</span>
+                  <select
+                    aria-label="OpenAI model"
+                    value={session.selectedModelId}
+                    disabled={session.phase === 'running'}
+                    onChange={(event) =>
+                      session.selectModel(event.currentTarget.value)
+                    }
+                  >
+                    {session.models.map((model) => (
+                      <option key={model.id} value={model.id}>
+                        {model.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <span>Reasoning</span>
+                  <select
+                    aria-label="Reasoning effort"
+                    value={session.selectedEffort}
+                    disabled={session.phase === 'running'}
+                    onChange={(event) =>
+                      session.setSelectedEffort(event.currentTarget.value)
+                    }
+                  >
+                    {session.supportedEfforts.map((effort) => (
+                      <option
+                        key={effort.reasoningEffort}
+                        value={effort.reasoningEffort}
+                      >
+                        {effort.reasoningEffort.charAt(0).toUpperCase() +
+                          effort.reasoningEffort.slice(1)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+
+              <div className="agent-chat-transcript" aria-live="polite">
+                {session.messages.length === 0 && !session.streamingText ? (
+                  <div className="agent-chat-transcript-empty">
+                    Ask ScrollSplice to inspect the current episode or make a
+                    precise edit.
+                  </div>
+                ) : null}
+
+                {session.messages.map((message) => (
+                  <article
+                    className={`agent-chat-message is-${message.role}`}
+                    key={message.id}
+                  >
+                    <span>{message.role === 'user' ? 'You' : 'ScrollSplice'}</span>
+                    <p>{message.text}</p>
+                  </article>
+                ))}
+
+                {session.streamingText ? (
+                  <article className="agent-chat-message is-assistant is-streaming">
+                    <span>ScrollSplice</span>
+                    <p>{session.streamingText}</p>
+                  </article>
+                ) : null}
+                <div ref={transcriptEndRef} />
+              </div>
+
+              <form className="agent-chat-composer" onSubmit={sendMessage}>
+                {!hasPermittedModel ? (
+                  <p className="agent-chat-model-warning" role="alert">
+                    This account does not currently offer GPT-5.5 or GPT-5.6 in
+                    Codex.
+                  </p>
+                ) : null}
+                <label htmlFor="agent-chat-message">Message about this episode</label>
+                <textarea
+                  ref={inputRef}
+                  id="agent-chat-message"
+                  rows={3}
+                  value={draft}
+                  disabled={session.phase === 'running' || !hasPermittedModel}
+                  placeholder="Ask the agent to inspect or change the episode…"
+                  onChange={(event) => setDraft(event.currentTarget.value)}
+                />
+                <div className="agent-chat-composer-actions">
+                  <button
+                    className="agent-chat-clear"
+                    type="button"
+                    disabled={
+                      session.phase === 'running' || session.messages.length === 0
+                    }
+                    onClick={session.clearConversation}
+                  >
+                    Clear
+                  </button>
+                  {session.phase === 'running' ? (
+                    <button
+                      className="agent-chat-stop"
+                      type="button"
+                      onClick={session.cancelTurn}
+                    >
+                      Stop
+                    </button>
+                  ) : (
+                    <button
+                      className="agent-chat-send"
+                      type="submit"
+                      disabled={!draft.trim() || !hasPermittedModel}
+                    >
+                      Send
+                    </button>
+                  )}
+                </div>
+              </form>
+            </>
+          ) : null}
         </section>
       ) : null}
     </div>

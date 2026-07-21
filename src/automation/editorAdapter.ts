@@ -174,6 +174,7 @@ export interface EditorAdapterSnapshot {
     }[]
   }
   readonly editor: {
+    readonly currentRevision: number
     readonly canUndo: boolean
     readonly canRedo: boolean
     readonly hasUnsavedChanges: boolean
@@ -296,6 +297,7 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
         })),
       },
       editor: {
+        currentRevision: state.currentRevision,
         canUndo: state.canUndo,
         canRedo: state.canRedo,
         hasUnsavedChanges: state.hasUnsavedChanges,

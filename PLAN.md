@@ -16,7 +16,7 @@ Katherine completed the corrective checkpoint's human retest on July 14 and mark
 
 ## Completed human-editor goal and current submission gate
 
-On July 16 Katherine replaced the earlier three-slice stopping point with one broader instruction: continue through the documented human-editor backlog and make ScrollSplice as complete as practical before preparing the feature-by-feature test sheet. That locally feasible human-editor goal is now complete. Current work is submission access, hands-on verification, evidence, and narrowly scoped reconciliation. It does **not** authorize external services, private-data transfer, a new runtime stack, OAuth, or claims that have not been validated.
+On July 16 Katherine replaced the earlier three-slice stopping point with one broader instruction: continue through the documented human-editor backlog and make ScrollSplice as complete as practical before preparing the feature-by-feature test sheet. That locally feasible human-editor goal is now complete. Its original boundary did **not** authorize external services, private-data transfer, a new runtime stack, OAuth, or unvalidated claims. Katherine separately approved the isolated local Codex App Server companion on July 20 under the narrower credential, privacy, tool, and synthetic-data limits recorded below.
 
 Implementation status in the current working build:
 
@@ -27,9 +27,9 @@ Implementation status in the current working build:
 5. **Panels, crop, and intentional overflow — implemented as bounded presets:** rectangle/rounded/slant-left/slant-right/diamond image masks, Cover focus/zoom, optional mask-following frame border, and constrained or final-output-clipped **episode-edge** bleed. A masked image remains clipped to its frame. First-class panel breakout is not implemented; the current manual workaround is a separate duplicated unmasked overlay. Arbitrary point editing remains outside this build.
 6. **Text and speech-balloon composition — implemented as one atomic editable balloon element:** automatic fitting, typography/body controls, and editable tail side/anchor/width/tip. Creator template saving remains outside this build.
 7. **Local render/export proof — implemented provisionally:** tall master, creator-reviewed deterministic PNG/JPEG slices, observed-profile preflight, and explicit **not upload-verified / manual upload** labeling.
-8. **Reliability and handoff — complete:** 390 unit tests across 30 files, strict typecheck, ESLint, production build, and all 15 Playwright Chromium stories pass. The editor, Reader Preview, provisional export, and matched dark/light release screenshots are indexed; [Feature Test Sheet](FEATURE_TEST_SHEET.md) is ready for Katherine's review.
+8. **Reliability and handoff — complete:** 411 Vitest cases across 34 files, 11 local-companion protocol/security checks, strict typecheck, ESLint, production build, and all 19 Playwright Chromium stories pass. The editor, Reader Preview, provisional export, matched dark/light release, and disconnected Agent screenshots are indexed; [Feature Test Sheet](FEATURE_TEST_SHEET.md) records Katherine's review.
 
-The locally feasible goal excludes production accounts, OAuth, OpenAI runtime access, cloud sync, external connectors, desktop packaging, automated WEBTOON login/upload/publishing, and any use of private Root & Table material. Those features need their existing network, privacy, credential, platform, or stack decisions before implementation. Public deployment and Devpost evidence remain scheduled work rather than editor features.
+The completed human-editor goal still excludes production ScrollSplice accounts, cloud sync, external connectors, desktop packaging, automated WEBTOON login/upload/publishing, and any use of private Root & Table material. The separately approved local companion is the sole current exception for creator-controlled OpenAI authorization and bounded runtime model access; it does not authorize a cloud backend or broader autonomous infrastructure. Public deployment and Devpost evidence remain scheduled work rather than editor features.
 
 ### Implemented bounded format-v6 direction
 
@@ -585,25 +585,25 @@ Items 1–16 preserve the historical slice record. On July 16 Katherine authoriz
 11. Plane optional names/reordering plus explicit element stacking and Move to Plane. **Implemented, validated, and published in `cb1f284`.**
 12. The simple persistent Asset Library above: Uploads, original built-ins, creator categories, safe click-to-place, image elements, and local source persistence. **Complete, validated, and published July 15 in `fdd4ead`.**
 13. Asset-to-canvas drag. **Folded into current item 9; click-to-place remains the accessible fallback.**
-14. An isolated OpenAI generate-and-place proof using only synthetic content, but only after the additional external-services gate below is satisfied. This is not part of the completed local human-editor baseline.
+14. An isolated OpenAI generate-and-place proof using only synthetic content. **Gate approved July 20; current optional local-companion slice. It is not part of the completed human-editor baseline or required judge path.**
 15. Basic independent text creation and editing over existing balloon assets. **Implemented, validated, and published in `cb1f284`.**
 16. Chrome-free reader preview plus safe unsaved confirmation for Reset Demo. **Implemented, validated, and published in `cb1f284`.**
 
-Completion-pass additions across the historical items are implemented and validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, atomic editable speech balloons, provisional rendering, the six-image default story, dual light/dark appearances, compact element grips, the versioned editor adapter, and provider-neutral generated-image intake with exact-bounds placement. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 390 unit tests, typecheck, lint, build, and all 15 Playwright stories. The live model connection and persistent chat UI remain the next separately gated slice.
+Completion-pass additions across the historical items are implemented and validated: visible polish and responsive inspector; Finder/canvas/plane/Layers image drop; complete local category/source management; crash recovery; multiple and portable local projects; format-v6 transforms, image masks/crop/frame and episode-edge bleed, flat grouping, populated-plane handling, story-beat movement, atomic editable speech balloons, provisional rendering, the six-image default story, dual light/dark appearances, compact element grips, the versioned editor adapter, and provider-neutral generated-image intake with exact-bounds placement. Grouped pointer moves preview only the primary member live, then commit all followers together on release. Masks remain clipping boundaries, so first-class panel breakout is still outside this build. The combined result passes 411 Vitest cases across 34 files, 11 local-companion protocol/security checks, typecheck, lint, build, and all 19 Playwright stories. The optional local model connection is implemented through the separately bounded companion; its live creator-login proof remains pending.
 
-The locally feasible human-editor queue is complete. The provider-neutral generated-image intake seam is now implemented: an authorized host can persist generated PNG/JPEG/WebP bytes with provenance and place them through one normal undoable image-element command. The upper-right Agent control now supplies the bounded chat shell: it overlays only the canvas side, stays left of the inspector, does not resize the workspace, and retains locally entered messages per project. It is deliberately labeled as an offline preview. OAuth and the live model runtime remain gated until the supported authorization, credential, privacy, consent, cost, and cancellation questions are explicitly resolved.
+The locally feasible human-editor queue is complete. The provider-neutral generated-image intake seam is implemented: an authorized host can persist generated PNG/JPEG/WebP bytes with provenance and place them through one normal undoable image-element command. The upper-right Agent control supplies the bounded overlay shell and browser-local project transcript. On July 20 Katherine approved the network, credential, privacy, synthetic-data, and schedule boundary after review of the official Codex App Server path. The active slice connects that shell to an isolated localhost companion, keeps official ChatGPT authorization and Codex state outside the browser/repository, live-discovers only GPT-5.5/GPT-5.6 choices, and routes every editor change through the same inspected/revision-checked adapter used by the human workflow.
 
-### Additional gate for the OpenAI stretch
+### Approved boundary for the OpenAI stretch
 
-The image-generation proof is lower priority than the human interaction stretches above. It may begin only when:
+The image-generation proof remains lower priority than the human interaction stretches above. Its gate was satisfied and approved on July 20 with these controlling limits:
 
-- the complete human editor story, automated validation, public access, and required submission evidence are already passing
+- the complete human editor story, automated validation, and public access are already passing; video, final Devpost fields, and submission assembly remain July 20–21 work
 - Katherine separately approves the network, privacy, credential, and cost implications
 - a supported model-access method and secret-handling boundary have been verified and recorded; never place an API key or reusable provider token in browser code or git
 - the base editor remains usable by judges without login, credits, or model access
-- the proof has a strict time and spend limit and uses only synthetic prompts and references
+- the proof is one creator-started, creator-stoppable turn using only synthetic prompts and references; the ChatGPT subscription path exposes no reliable per-turn spend telemetry, so this build does not promise a spend meter or enforceable cost ceiling
 
-The remaining smallest acceptable proof is one authorized request that produces one synthetic image candidate and passes its bytes into the implemented `import-generated-asset` and `place-generated-asset` commands. The commands record provenance, persist the source, return stable IDs, and use the ordinary episode history path. The bounded chat overlay and local project-scoped transcript are implemented; the missing proof pieces are the supported model connection, authenticated run coordination, progress/cancellation, and one live end-to-end request. Do not attempt full autonomous episode creation, private-asset upload, external-service connectors, or unrestricted agent writes during Build Week.
+The smallest acceptable proof is one creator-authorized request that produces one synthetic image candidate and passes its bytes into the implemented generated-asset import and explicit-plane placement path. The commands record provenance, persist the source, return stable IDs, and use ordinary episode history. The companion now exposes progress/cancellation and only the four bounded ScrollSplice tools; it does not expose shell, files, web, connectors, browser control, MCP, private assets, unrestricted agent writes, or WEBTOON credentials. Its disconnected transport, UI, protocol, and tool paths are implemented and validated. Katherine's first real login, one live response, and one native generate/import/place/undo run remain deliberately unperformed so she controls the authorization test.
 
 ## Deferred or gated work
 
@@ -613,8 +613,8 @@ Still deferred or gated:
 
 - Native operating-system menus and desktop packaging. Browser-app File/Edit/View/Window/Help surfaces may be added only where they perform real local actions.
 - A claim of upload-verified WEBTOON compatibility, exact production profile enforcement, or automatic publishing until the manual discovery in `WEBTOON_REQUIREMENTS.md` is complete. Provisional local files must say what was and was not verified.
-- Cloud/account sync, collaboration, provider-backed storage, production OAuth, and authenticated external connectors.
-- OpenAI runtime access, autonomous episode creation, and generated-asset network workflows until the separate credential, privacy, cost, and supported-auth gates pass.
+- Cloud/account sync, collaboration, provider-backed storage, a ScrollSplice account system, and authenticated external connectors.
+- Production cloud model infrastructure and unrestricted autonomous episode creation. The approved local App Server proof remains optional and bounded to the recorded companion/tool surface.
 - A full Photoshop replacement: painting, unrestricted vector editing, arbitrary nested layers/groups, perspective/freeform distortion, animation, or destructive source editing.
 - Additional import or export formats without a demonstrated creator or platform need.
 - Canvas Zoom and 2D Viewport is complete and published in the earlier A/B/C stack; its state is transient and does not alter episode or export geometry.
@@ -632,15 +632,15 @@ Keep platform constraints in a data-driven export profile so a changed limit can
 
 ## Open questions for autonomous creation
 
-These questions do not block the human MVP:
+The credential-path question is resolved for the optional local proof. The remaining questions do not block the human MVP:
 
-- Which officially supported credential path will ScrollSplice use for model access: a future user-authorized OpenAI connection, an app-managed server credential, or another documented method?
+- **Resolved for the local proof:** the official Codex App Server owns creator-controlled ChatGPT authorization inside an app-specific local state directory; ScrollSplice does not implement OAuth or hold provider credentials in the browser.
 - What project information and reference images may be sent to OpenAI, and how will the creator preview and approve that context?
 - What cost ceiling, cancellation behavior, generation history, and retry policy should each run have?
 - Which actions may eventually run autonomously, and which require review until undo, recovery, and provenance are mature?
 - Should external connectors ever import creator assets from services such as Drive or Dropbox, or should local import remain the only source?
 
-Do not treat an OpenAI/ChatGPT OAuth flow used by a coding harness as automatically approved for a general web application. Verify the supported product path before choosing dependencies or designing the login UI.
+Do not copy OAuth client identities or private ChatGPT endpoints from other coding harnesses. ScrollSplice uses only the official Codex App Server's documented ChatGPT login request from the isolated local companion.
 
 ## Validation path
 
@@ -682,8 +682,8 @@ The Build Week submission is complete only when:
 - The first-testable-editor `/goal`, the layer-plane checkpoint, Episode Setup and Expandable Scroll, Direct Creator Controls, Safe Precise Height and solid Background Color Regions, and Canvas Zoom/2D are complete and published on `main` through `8a493a2`. Corrective checkpoint D passed Katherine's retest with notes, and the optional history/save/menu slice passed her July 15 review. The persistent Asset Library passes 214 unit tests across 11 files, static/build checks, four Chromium stories, supported-size visual inspection, and screenshot capture; the combined stack was published and verified in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`. The direct-placement and foundational-appearance goal passes 255 unit tests across 13 files, strict typecheck, lint, production build, and all 6 Playwright Chromium stories and was published in `7768daa0617b66c696f769d97dd531f9029272c8`. The creator-completion pass passes the complete current regression suite, all seven Playwright stories, and indexed visual evidence and was published in `cb1f28443f7b1045d139879a2bba7b03edf25856`. The historical three-slice stop and the broader locally feasible human-editor goal are complete; restrict current work to submission access, evidence, stabilization, and narrowly scoped corrections. Upload-verified WEBTOON compatibility, OpenAI/OAuth, cloud services, and external connectors remain separately gated.
 - Never amend, squash, delete, or force-move the `e4db897` baseline commit or `pre-build-week-planning` tag.
 - Do not expand the required submission target to import, persistence, undo, resize, ordering, production export, OAuth, or autonomous creation.
-- Do not begin the optional OpenAI stretch until the complete human MVP and submission path pass and Katherine approves the additional gate. An organizer reply may affect compliance priority but is not the only reason for a real future image-generation feature.
-- Do not add Next.js, Tauri, dnd-kit, a backend, database, cloud service, OAuth dependency, OpenAI SDK, or WEBTOON automation during Build Week without explicit approval and a recorded decision. The OpenAI stretch gate does not silently authorize those changes.
+- The optional OpenAI stretch was approved July 20 only through the recorded localhost Codex App Server companion. Do not broaden it to a cloud backend, browser OAuth client, private endpoint, API key, connector, or unrestricted tool runtime.
+- Do not add Next.js, Tauri, dnd-kit, a cloud backend, database, cloud service, OpenAI SDK, or WEBTOON automation during Build Week without another explicit approval and recorded decision.
 - Do not commit private Root & Table assets, secrets, or unlicensed content.
 - Do not claim visual or public-access behavior works unless it was actually inspected.
 - If the outline, plan, architecture, and compliance checklist disagree, resolve the documents before coding.

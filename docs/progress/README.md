@@ -211,3 +211,14 @@ These screenshots preserve dated, public-safe visual checkpoints from the Build 
 - SHA-256: `1cb823648159d9f44923f8e2c93bfa0d935767875e15f2e5a21dd3501071b0ec`.
 
 The release passes 385 unit tests across 29 files, strict typecheck, ESLint, the production build, and all 15 Playwright Chromium stories. The still images document the two interface appearances; interaction behavior is supported by the automated and hands-on evidence elsewhere in this repository.
+
+## July 20 — Local Agent companion, disconnected state
+
+![ScrollSplice local Agent companion before OpenAI authorization](2026-07-20-local-agent-disconnected.png)
+
+- Captured from the real `corepack pnpm dev:agent` build at 1440 × 900 with official `codex-cli 0.144.5` running in isolated local state.
+- Shows the optional Agent overlay over only the canvas, with the minimap and Layers inspector still visible and usable. The static human editor remains the underlying application.
+- The centered action is the complete pre-authorization state. No login action was clicked, no authorization URL was requested, and no account identity or credential appears in the image.
+- File: 1440 × 900 PNG, 707,456 bytes.
+- SHA-256: `1c1892e62d8ab413ffff8ed1db12a1af7e22584de5e5103a496c2c918c3bafc9`.
+- This image proves the real disconnected companion/UI boundary. The current build passes 411 Vitest cases across 34 files, 11 local-companion protocol/security checks, typecheck, lint, build, and all 19 Playwright Chromium stories. Katherine's first official login and native live generate/import/place/undo proof remain separate creator-controlled verification.

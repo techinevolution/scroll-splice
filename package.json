@@ -10,10 +10,14 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:agent": "node scripts/dev-local.mjs",
     "build": "tsc -b && vite build",
     "test": "vitest run",
+    "test:companion": "node --test companion/*.test.mjs",
     "typecheck": "tsc -p tsconfig.app.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "lint": "eslint .",
+    "start:local": "node companion/server.mjs --serve-dist",
+    "local": "corepack pnpm build && corepack pnpm start:local",
     "deploy:pages": "bash scripts/deploy-pages.sh",
     "test:e2e": "playwright test"
   },

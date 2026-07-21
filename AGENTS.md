@@ -69,13 +69,13 @@ When unsure, choose the smallest clean implementation that can be understood, re
 - Vitest for pure/unit contracts and Playwright for the complete editor regression stories.
 - ESLint and `tsc --noEmit` for static validation.
 
-Do not add Next.js, Tauri, a backend, database, cloud service, OAuth dependency, or OpenAI runtime dependency to the required human MVP. Resolve current stable package versions during scaffolding and commit `pnpm-lock.yaml`. The optional OpenAI stretch in `PLAN.md` requires a separate recorded stack/auth decision; its gate does not silently amend this stack.
+Do not add Next.js, Tauri, a cloud backend, database, cloud service, browser OAuth library, or OpenAI API-key dependency to the required human MVP. Resolve current stable package versions during scaffolding and commit `pnpm-lock.yaml`. Katherine approved the optional local OpenAI stretch on July 20 under the recorded `DECISIONS.md` boundary: it may use only the installed official Codex CLI/App Server through a dependency-free localhost companion, while the static human editor must remain complete without it.
 
 ## Human-Editor Completion Baseline
 
 Katherine's July 16 instruction superseded the historical three-slice stop. The locally feasible implementation now exists and passes the complete local validation suite: visible polish; complete local asset intake/management; recovery and portable/multiple local projects; bounded format-v6 transforms, snapping, organization, masks/crop/frame/bleed; atomic editable speech balloons; and clearly provisional local rendering/slicing. That human-editor goal is complete. Current work is the documented feature-sheet handoff, public judge access, submission evidence, and accurate commit/publication status—not another speculative feature expansion.
 
-Format v6 is the current working schema. Preserve deterministic v3/v4/v5 defaults and reject unknown formats. This goal does not authorize a backend, cloud database, OAuth, OpenAI runtime access, external connectors, native desktop packaging, private-asset transfer, or automated WEBTOON login/upload/publishing. Local output based on the observed profile must stay labeled provisional, not upload-verified, and manual-upload only.
+Format v6 is the current working schema. Preserve deterministic v3/v4/v5 defaults and reject unknown formats. The approved optional companion is not a cloud backend and does not authorize cloud storage, external connectors, native desktop packaging, private-asset transfer, or automated WEBTOON login/upload/publishing. Local output based on the observed profile must stay labeled provisional, not upload-verified, and manual-upload only.
 
 ## Commands
 
@@ -83,7 +83,10 @@ These command contracts were verified against the July 13 foundation scaffold. K
 
 - Setup: `corepack pnpm install`
 - Run: `corepack pnpm dev`
+- Run with the optional local OpenAI companion: `corepack pnpm dev:agent`
+- Build and run the same-origin local companion: `corepack pnpm local`
 - Unit tests: `corepack pnpm test`
+- Companion tests: `corepack pnpm test:companion`
 - Typecheck: `corepack pnpm typecheck`
 - Lint: `corepack pnpm lint`
 - Build: `corepack pnpm build`
@@ -130,9 +133,9 @@ These command contracts were verified against the July 13 foundation scaffold. K
 - Keep provisional WEBTOON slice guides profile-derived and editor-only: for `webtoon-canvas-2026-07-13-observed`, use dotted horizontal boundaries every 1,280 logical units across the 800-unit episode width, aligned through pan and zoom, but absent from the episode document, minimap content, rendered exports, and compatibility claims.
 - Center and clamp the viewport when the layers list selects an off-screen element.
 - Keep the implemented `ProjectRepository` and `AssetRepository` adapters and future export, account-backed persistence, and authentication integrations behind application-edge interfaces. Episode saves never contain source blobs, data URLs, or object URLs.
-- Keep future OpenAI model access, image generation, project context, editor tools, and run coordination behind the application-edge interfaces in `ARCHITECTURE.md`.
-- Expose logical, serializable project context to a future model; never expose React components, Konva nodes, Zustand setters, raw filesystem handles, or credentials.
-- Route every future model-driven document edit through the same implemented and tested command used by the human editor.
+- Keep the implemented bounded local companion—and any future cloud model access, image generation, project context, editor tools, or run coordination—behind the application-edge interfaces in `ARCHITECTURE.md`.
+- Expose only logical, serializable project context to the model; never expose React components, Konva nodes, Zustand setters, raw filesystem handles, or credentials.
+- Route every model-driven document edit through the same implemented and tested command used by the human editor.
 - For programmatic editor work, use the versioned adapter in `src/automation/editorAdapter.ts`: inspect first, target returned stable IDs in logical episode pixels, execute one command, verify its returned snapshot, and undo a valid but unwanted result. Do not manipulate the DOM, Konva nodes, or Zustand setters as an automation shortcut.
 - Keep platform limits in a versioned `ExportProfile`, never in the episode model or scattered UI constants. The provisional WEBTOON profile may retain the authenticated UI labels—800 × 1280 px, 2 MB per image, 50 MB and 100 images total, JPG/JPEG/PNG—until upload tests verify exact enforcement and byte units. The active local renderer may self-slice and preflight only with visible provisional labeling; it must never promise that WEBTOON will preserve accepted files without optimization, recompression, resizing, or reformatting.
 - Keep the committed six-image **The Light We Planted** Build Week sample original, synthetic, public-safe, and covered by recorded provenance and licensing. Any replacement fixture assets require the same documentation and must not contain private Root & Table art.
@@ -163,14 +166,15 @@ The July 21 submission must prove reviewer understanding and UX clarity through:
 
 Production export, portable project files, desktop packaging, OAuth, accounts, cloud storage, autonomous creation, and direct publishing are not required for the submission. Checkpoint D's transforms, local history/save/menu work, the persistent Asset Library, and the implemented three-slice creator completion pass are optional creator-workflow additions, not new contest requirements. A single synthetic OpenAI generate-and-place proof is optional only after the complete human MVP, validation, public access, and submission evidence pass and Katherine approves its additional gate. The editor and judge walkthrough must work without model access. Static deployment is required only as the simplest judge-access path. Follow the dated schedule and fallback rules in `PLAN.md`.
 
-## Future OpenAI Autonomy Boundary
+## Optional Local OpenAI Autonomy Boundary
 
 - Treat the human editor as the source of the tools an autonomous mode may use; do not create a second model-only mutation path.
 - Keep ScrollSplice user/workspace authentication separate from OpenAI model authorization.
-- Do not assume coding-harness Sign in with ChatGPT OAuth is supported for this web app; verify an official path before choosing dependencies.
+- Use only the official Codex App Server login flow from the isolated local companion. Do not copy another product's client identity, call private ChatGPT endpoints directly, or put provider credentials in browser JavaScript.
+- Keep the companion bound to localhost, keep its Codex state outside the repository, and expose only the recorded ScrollSplice dynamic tools. Treat any shell, file, web, connector, browser-control, MCP, or approval request as a boundary failure.
 - Treat internal editor operations as custom function tools. Treat OpenAI connectors or remote MCP as optional external-service integrations with separate authorization, scopes, privacy review, and approvals.
 - Keep private comic assets local unless Katherine explicitly approves the exact material and context for an OpenAI request.
-- Record generated-asset provenance and provide visible progress, cancellation, error, and cost-limit behavior before autonomous runs are considered safe.
+- Record generated-asset provenance and provide visible progress, cancellation, and errors. The current single-turn ChatGPT proof explicitly has no spend-meter guarantee; require a creator-approved time/budget control before any later multi-step or metered autonomous run is considered safe.
 - Never give a model WEBTOON credentials or automate WEBTOON login, upload, or publication.
 
 ## Build Week Provenance and Compliance
@@ -210,7 +214,7 @@ Production export, portable project files, desktop packaging, OAuth, accounts, c
 - When deployment exists, repeat the defining user story through the public judge-access URL in a clean browser session.
 - Confirm no real creative assets or private content were added to git.
 - Confirm no secrets, credentials, generated reports, or local-only files were added to git.
-- If the optional OpenAI proof exists, confirm the base editor works with it disabled, synthetic inputs are used, credentials are absent from the client bundle and git, generated-asset provenance is visible, and the run respects its cancellation and spend limit.
+- If the optional OpenAI proof exists, confirm the base editor works with it disabled, synthetic inputs are used, credentials are absent from the client bundle and git, generated-asset provenance is visible, and cancellation works. Do not claim spend enforcement for the ChatGPT subscription path; separately verify any future metered budget control before documenting it.
 - Check `git diff` and report unrelated pre-existing changes separately.
 
 ## Git Behavior
@@ -222,7 +226,7 @@ Production export, portable project files, desktop packaging, OAuth, accounts, c
 - On July 13, Katherine explicitly authorized Codex to commit and push the current unpushed work and each later coherent, passing Build Week slice directly to `main` through the first complete human-editor MVP that she can test. This includes the workspace, shared canvas/minimap/layers behavior, navigation, synchronized selection, movement, reset, tests, and status documentation.
 - During that authorized goal, Codex owns routine commit and push mechanics. Push only after the relevant validation passes, never push secrets or private creative content, and report the pushed commit after each coherent checkpoint. Do not interrupt Katherine for routine Git permission while this authorization is active.
 - The first testable-editor authorization completed in `05ac06b`, and Katherine separately authorized the composition checkpoint pushed in `f02776f`.
-- Katherine's July 14 human test completed the A/B/C checkpoint. The validated Episode Setup and A/B/C checkpoints, tests/screenshots, and accompanying status and feedback documentation were published to `main` through `8a493a2`; remote `main` was `6d6437e` before the July 15 publication gate. Corrective checkpoint D is validated and human-reviewed **PASS WITH NOTES**. Katherine passed the local history/save/menu slice July 15, approved the persistent Asset Library slice, and explicitly authorized publishing the complete passing stack after its tests, screenshot, documentation, and private-file checks passed. That complete stack was published in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`, with local and remote `main` verified equal immediately after the push. The five-slice direct-placement and foundational-appearance `/goal` was implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8`. Provisional local rendering is part of the completed human-editor baseline; deployment, upload-verified WEBTOON compatibility, OpenAI, OAuth, and external-service work remain separately gated.
+- Katherine's July 14 human test completed the A/B/C checkpoint. The validated Episode Setup and A/B/C checkpoints, tests/screenshots, and accompanying status and feedback documentation were published to `main` through `8a493a2`; remote `main` was `6d6437e` before the July 15 publication gate. Corrective checkpoint D is validated and human-reviewed **PASS WITH NOTES**. Katherine passed the local history/save/menu slice July 15, approved the persistent Asset Library slice, and explicitly authorized publishing the complete passing stack after its tests, screenshot, documentation, and private-file checks passed. That complete stack was published in `fdd4ead37e7071bc7c69c9c4d8b49c557ddd95d7`, with local and remote `main` verified equal immediately after the push. The five-slice direct-placement and foundational-appearance `/goal` was implemented, validated, and published in `7768daa0617b66c696f769d97dd531f9029272c8`. Provisional local rendering is part of the completed human-editor baseline; upload-verified WEBTOON compatibility and external connectors remain gated. Katherine separately approved the optional isolated local Codex App Server proof on July 20.
 - Katherine authorized the three-slice creator completion pass on July 15: plane organization/element stacking, independent basic text, and reader preview/safe Reset Demo. All three slices are implemented, validated, and published in `cb1f28443f7b1045d139879a2bba7b03edf25856`, with local and remote `main` verified equal after the push and the public-safe screenshot indexed. WEBTOON export, OpenAI/OAuth, Finder drop, autosave/recovery, source deletion, masks, crop, and rotation remain outside it.
 - Katherine's first Asset Library review passed upload, placement, alpha, and proportional resize, then requested menu layering, a compact Decorations label, and active-category toggle-close. That correction and its public-safe screenshot were published in `3ec9bd095fab5ba2fb19f9d97cfeb79fcdbceae5`, with local and remote `main` verified equal after the push.
 - Never rewrite the baseline commit or tag, even during cleanup.

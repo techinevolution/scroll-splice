@@ -76,20 +76,22 @@ The project requirements and overview describe **building with Codex and GPT-5.6
 - [ ] Ask the hackathon manager for written clarification: does substantial Codex-with-GPT-5.6 development plus the required evidence satisfy this requirement for a consumer app, or is an in-product OpenAI API/SDK integration expected?
 - [ ] If a response arrives, save it with the submission notes and revise scope only if the answer requires it.
 
-This clarification reduces risk but is not a blocker if the organizer does not reply: the live project requirements expressly say to build with Codex and GPT-5.6 and do not separately state that the finished consumer app must call an OpenAI API. OpenAI-powered autonomous comic creation is now an intended ScrollSplice product direction, but it follows the human editor and must not become a decorative eligibility feature or a new submission dependency. If an in-product integration is required or attempted as stretch, Katherine must approve the scope change and the implementation must solve the real generate-and-place need described in `PLAN.md`.
+This clarification reduces risk but is not a blocker if the organizer does not reply: the live project requirements expressly say to build with Codex and GPT-5.6 and do not separately state that the finished consumer app must call an OpenAI API. OpenAI-powered autonomous comic creation is now an intended ScrollSplice product direction, but it follows the human editor and must not become a decorative eligibility feature or a new submission dependency. Katherine approved the optional local proof on July 20 after the human editor and public path were stable. Its supported boundary is the official Codex App Server through an isolated localhost companion—not a copied client identity, private ChatGPT endpoint, browser-held credential, or cloud backend—and it must solve the real inspect/generate/import/place need described in `PLAN.md`.
 
 ### Optional OpenAI runtime stretch
 
 These items apply only if the generate-and-place proof is actually attempted:
 
-- [ ] The complete human editor, validation suite, public access, and submission evidence passed before runtime OpenAI work began.
-- [ ] Katherine approved the network, privacy, credential, cost, and dependency boundary in writing in the project record.
-- [ ] The base judge experience remains free and usable without OpenAI login, API credits, or model access.
-- [ ] Only synthetic prompts and references are sent; no Root & Table production art or other private creative material is uploaded.
-- [ ] No API key, OAuth token, reusable provider credential, or private response data appears in the browser bundle, repository, logs, screenshots, or video.
+- [x] The complete human editor, validation suite, and public access passed before runtime OpenAI work began; submission media remains a separate July 20–21 task.
+- [x] Katherine approved the network, privacy, credential, cost, and dependency boundary in this project record on July 20.
+- [x] The base judge experience remains free and usable without OpenAI login, API credits, or model access; GitHub Pages never requires the companion.
+- [x] The proof is restricted to synthetic prompts and references; no Root & Table production art or other private creative material may be uploaded.
+- [x] The July 20 repository, production-bundle, and disconnected-screenshot scans contain no API key, OAuth token, reusable provider credential, private response, authorization URL, or account identity.
+- [ ] Recheck the final post-login screenshots, logs, and video before submission; do not record the authorization URL, account identity, or credentials.
 - [x] Generated assets record provenance, and the demo distinguishes implemented behavior from the later full-autonomy vision. The six-panel **The Light We Planted** fixture was generated with OpenAI image generation on July 17 from original text prompts without private or third-party reference art; optimized copies live under public/demo/the-light-we-planted/.
 - [x] The provider-neutral editor adapter can validate and persist host-generated PNG/JPEG/WebP bytes with provider/model/prompt/timestamp provenance, return a stable Asset Library ID, place the source on an explicit ordinary plane and logical bounds, and undo the placed instance without deleting the reusable source. This is local intake infrastructure, not proof of a live OpenAI connection.
-- [ ] The integration follows current OpenAI terms, usage policies, model availability, and an officially supported authorization path.
+- [x] Verify the completed disconnected local companion against official `codex-cli 0.144.5`, including localhost protections, isolated state, model filtering, static fallback, and the bounded synthetic protocol/tool path.
+- [ ] Have Katherine perform the first creator-controlled ChatGPT login, one live streamed reply, and one synthetic generate/import/place/undo run. Do not record the auth URL, account identity, or credentials in evidence.
 
 ## 5. Working-project requirements
 
@@ -265,12 +267,14 @@ Stage One is pass/fail for baseline viability and event-tool fit. Resolve the AP
 | Drag-and-appearance screenshot | `docs/progress/2026-07-15-drag-and-appearance-controls.png`, 1440 × 900 RGB PNG, 124,384 bytes, SHA-256 `c0b9bc5a359d23035cd965001b5f1e51056ee08cd87a0a36093771096ab7e4e3`; visually inspected public-safe synthetic blank plus original built-in Radiance | Published in `7768daa0617b66c696f769d97dd531f9029272c8`; the still image alone does not prove interaction behavior |
 | Creator-completion pass | Plane naming/reordering, local element stacking and Move to Plane, independent text, Reader Preview, and safe Reset Demo | Published in `cb1f28443f7b1045d139879a2bba7b03edf25856`; 270 unit tests and 7 Playwright stories passed at that checkpoint |
 | Big feature/UI release | Complete local human editor; six-image default story stored in-repository; dual dark/light appearance; compact draggable element grips; larger scrollable minimap; versioned editor adapter; provisional local master/slice rendering | Validated July 19 with 385 unit tests across 29 files, typecheck, lint, production build, and all 15 Playwright Chromium stories; matched public-safe dark/light screenshots recorded |
+| Optional local Agent companion | Official `codex-cli 0.144.5` App Server in isolated local state; localhost/capability/origin protections; disconnected/static fallback; GPT-5.5/GPT-5.6 model filtering; persistent overlay; bounded revision/context-checked editor tools; generated-image staging/import/place/undo | Disconnected and synthetic protocol paths validated July 20 with 411 Vitest cases across 34 files, 11 companion checks, typecheck, lint, production build, and all 19 Playwright Chromium stories; first creator login and native live generation remain pending |
+| Local Agent disconnected screenshot | `docs/progress/2026-07-20-local-agent-disconnected.png`, 1440 × 900 PNG, 707,456 bytes, SHA-256 `1c1892e62d8ab413ffff8ed1db12a1af7e22584de5e5103a496c2c918c3bafc9`; no login click, authorization URL, account identity, or credential | Complete July 20; live signed-in proof remains separate |
 | Complete local editor screenshot | `docs/progress/2026-07-16-complete-local-editor.png`, 1440 × 900 PNG, 161,742 bytes, SHA-256 `47a4aa54e64e836c792e25ef84e84e5a19ca51e8786b9c1bd0c3c7a9633c5f82`; synthetic fixture plus code-defined editable balloon only | Captured from the build recorded in commit `a26927f`, later included in the July 19 big feature and UI publication |
 | Complete Reader Preview screenshot | `docs/progress/2026-07-16-complete-reader-preview.png`, PNG, 45,519 bytes, SHA-256 `6a4ab652e790a2e4fd31c364a3dc436e26bf549859218d75c01b1bd3f11ffdb4`; same public-safe document without editor chrome | Captured from the build recorded in commit `a26927f`, later included in the July 19 big feature and UI publication |
 | Provisional export screenshot | `docs/progress/2026-07-16-provisional-export.png`, PNG, 197,505 bytes, SHA-256 `c21b04b1298b202bae65040ae0e8701e5c4f839e190bc953dcf1afb4e2e08915`; cut controls, PNG/JPEG settings, render actions, and prominent observed-profile warning | Captured from the build recorded in commit `a26927f`, later included in the July 19 big feature and UI publication; does not prove WEBTOON acceptance or upload verification |
 | Devpost thumbnail | `public/submission/devpost-thumbnail.png`, 1536 × 1024 PNG with provenance record | Complete |
 | WEBTOON Manage Episode discovery | Katherine's July 13 authenticated form transcription recorded in `WEBTOON_REQUIREMENTS.md` | Form contract recorded; upload behavior pending |
-| Working project URL | Pending | Pending |
+| Working project URL | <https://techinevolution.github.io/scroll-splice/> | Public human editor verified from a clean browser profile July 19; optional local companion is deliberately not part of static hosting |
 | Public YouTube URL | Pending | Pending |
 | Primary `/feedback` Session ID | `019f5921-6190-7520-ba51-f5e0897c5af9` | Recorded in published docs; Devpost entry pending |
 | Devpost submission URL | Pending | Pending |

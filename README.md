@@ -2,7 +2,7 @@
 
 ScrollSplice is a scroll-native vertical comic editor. Its defining workspace combines a large editing viewport, a full-episode minimap, a synchronized layers list, and direct manipulation of comic elements.
 
-Programmatic editor inspection and manipulation now use the versioned [Editor Adapter](EDITOR_ADAPTER.md). In development it is available as `window.scrollSpliceEditor`; future authenticated model tools will wrap the same command surface rather than manipulate the DOM or canvas directly. The adapter can accept host-generated PNG/JPEG/WebP bytes as a Blob, data URL, or base64 payload, retain generation provenance in the persistent Asset Library, and place the returned stable asset on an explicit plane and logical bounds through one undoable editor command. The upper-right Agent control now opens a non-resizing overlay to the left of the inspector. Its locally entered messages persist by project in this browser and are clearly marked as an offline preview. OAuth and the live OpenAI model connection are not implemented yet.
+Programmatic editor inspection and manipulation use the versioned [Editor Adapter](EDITOR_ADAPTER.md). In development it is available as `window.scrollSpliceEditor`; the optional authenticated tool dispatcher imports the same adapter directly rather than manipulating the DOM or canvas. The adapter can accept host-generated PNG/JPEG/WebP bytes, retain generation provenance in the persistent Asset Library, and place the returned stable asset on an explicit plane and logical bounds through one undoable editor command. The upper-right Agent control opens a non-resizing overlay to the left of the inspector and keeps finalized conversation text browser-local by project. The static editor remains completely usable without OpenAI. A separate local-only companion may launch the official Codex App Server for creator-controlled ChatGPT authorization, live GPT-5.5/GPT-5.6 discovery, streamed chat, bounded editor tools, and generated-image intake; credentials never enter browser JavaScript, project files, logs, or git.
 
 **Try the deployed human editor:** <https://techinevolution.github.io/scroll-splice/>
 
@@ -62,9 +62,9 @@ The complete human editor is now included in the current big feature/UI release.
 
 Creators can now use edge/center/nearby-element snapping, rotation, flip, lock, exact geometry, alignment, multi-selection, flat grouping, populated-plane deletion, and 128-unit story movement. A grouped move commits every member atomically, but only the primary member previews live in the status bar and minimap; follower members update when the drag is released. Images add Stretch/Cover/Tile presentation, non-destructive crop focus/zoom, rectangle/rounded/slanted/diamond masks, frame borders, and constrained or episode-edge bleed behavior. A masked image always remains clipped to its frame; first-class art breaking out of a panel mask is not implemented and currently requires a separate duplicated unmasked overlay. Shapes have direct style controls, and **Editable balloon** is one atomic resizable body/text/tail element with automatic fitting and practical typography/tail controls. Canvas, minimap, Layers, Reader Preview, history, explicit save/reopen, recovery, portable projects, and the local renderer share the same authoritative episode data.
 
-**File > Export Episode Images…** can render a tall master and creator-reviewed PNG or JPEG slices, then preflight the currently observed 800 × 1,280, 2 MB-per-image, 50 MB-total, 100-image form profile. That workflow is deliberately labeled **provisional, not upload-verified, not guaranteed WEBTOON-ready, and for manual upload only**. Public-safe evidence includes the [complete editor](docs/progress/2026-07-16-complete-local-editor.png), [Reader Preview](docs/progress/2026-07-16-complete-reader-preview.png), [provisional export](docs/progress/2026-07-16-provisional-export.png), and matched July 19 [dark](docs/progress/2026-07-19-big-feature-ui-dark.png) and [light](docs/progress/2026-07-19-big-feature-ui-light.png) release views. The current build passes 390 unit tests across 30 files, strict typecheck, ESLint, the production build, and all 15 Playwright Chromium stories. Katherine's full hands-on walkthrough remains available in [Feature Test Sheet](FEATURE_TEST_SHEET.md).
+**File > Export Episode Images…** can render a tall master and creator-reviewed PNG or JPEG slices, then preflight the currently observed 800 × 1,280, 2 MB-per-image, 50 MB-total, 100-image form profile. That workflow is deliberately labeled **provisional, not upload-verified, not guaranteed WEBTOON-ready, and for manual upload only**. Public-safe evidence includes the [complete editor](docs/progress/2026-07-16-complete-local-editor.png), [Reader Preview](docs/progress/2026-07-16-complete-reader-preview.png), [provisional export](docs/progress/2026-07-16-provisional-export.png), matched July 19 [dark](docs/progress/2026-07-19-big-feature-ui-dark.png) and [light](docs/progress/2026-07-19-big-feature-ui-light.png) release views, and the July 20 [disconnected local Agent](docs/progress/2026-07-20-local-agent-disconnected.png). The current build passes 411 Vitest cases across 34 files, 11 local-companion protocol/security checks, strict typecheck, ESLint, the production build, and all 19 Playwright Chromium stories. Katherine's full hands-on walkthrough remains available in [Feature Test Sheet](FEATURE_TEST_SHEET.md).
 
-This pass does not authorize OAuth, OpenAI runtime access, a backend, cloud storage, private-asset transfer, automated WEBTOON login/upload/publishing, or native desktop packaging. Those remain behind their existing privacy, credential, platform, and stack gates. See the [current execution record](PLAN.md#completed-human-editor-goal-and-current-submission-gate).
+That July 16 human-editor pass did not itself authorize OAuth, OpenAI runtime access, a backend, cloud storage, private-asset transfer, automated WEBTOON login/upload/publishing, or native desktop packaging. Katherine separately approved the narrow local Codex App Server proof on July 20; it does not authorize any cloud backend, browser-held provider credential, private-art transfer, or WEBTOON automation. See the [current execution record](PLAN.md#completed-human-editor-goal-and-current-submission-gate).
 
 ## Product sequence
 
@@ -89,13 +89,13 @@ Its workspace model uses three fixed full-scroll composition groups—**Backgrou
 
 The numbered-plane and editable-backdrop foundation, **Episode Setup and Expandable Scroll**, and the three post-review checkpoints are implemented. Empty-plane deletion protects Background plane 1, populated planes, and the final plane in each group; title edits enforce the observed 60-character WEBTOON limit; height changes leave existing content intact while the base and minimap follow the episode. The paperclip opens the overlay Asset Library, whose original built-ins and locally imported images can be placed into any active ordinary plane.
 
-Katherine's July 14 A/B/C human-test checkpoint and corrective checkpoint D are complete; D passed with notes. The optional history/save/menu slice passed her July 15 review. The Asset Library, direct placement, format-v5 appearance, plane organization, independent text, Reader Preview, and safe Reset Demo are published through `cb1f284`. Those remaining workflows and the July 19 visual refresh are included in the current big feature and UI release; they do not change the Devpost minimum. Deployment and AI remain separate gates. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components), [Plan](PLAN.md#completed-human-editor-goal-and-current-submission-gate), and [Feature Test Sheet](FEATURE_TEST_SHEET.md).
+Katherine's July 14 A/B/C human-test checkpoint and corrective checkpoint D are complete; D passed with notes. The optional history/save/menu slice passed her July 15 review. The Asset Library, direct placement, format-v5 appearance, plane organization, independent text, Reader Preview, and safe Reset Demo are published through `cb1f284`. Those remaining workflows and the July 19 visual refresh are included in the current big feature and UI release; they do not change the Devpost minimum. The optional local AI proof remains separate from the deployed judge path. See [Project Outline](PROJECT_OUTLINE.md#creator-ready-mvp-components), [Plan](PLAN.md#completed-human-editor-goal-and-current-submission-gate), and [Feature Test Sheet](FEATURE_TEST_SHEET.md).
 
 ### Autonomous creation — after the human workflow
 
-The intended product later adds an OpenAI-powered creation mode that can understand a story brief, inspect a safe normalized view of the current project and episode layout, generate or edit comic images, add them to the asset library, and place them on the scroll through the same document commands used by a human.
+The intended optional local creation mode can understand a story brief, inspect a safe normalized view of the current project and episode layout, generate or edit comic images, add them to the asset library, and place them on the scroll through the same document commands used by a human. The isolated companion, disconnected/login UI, streaming transport, bounded tools, generated-image staging, import, placement, and undo paths are implemented. Katherine's first official login, one live streamed response, and one native generate/import/place/undo run remain the final creator-controlled proof.
 
-This is a real product direction, not a Build Week requirement. The manual editor remains fully usable with AI turned off. A future model connection, editor tools, skills/instruction packs, generated-asset provenance, cost controls, and approval boundaries are described in [Architecture](ARCHITECTURE.md#future-openai-creation-boundary).
+This is a real product direction, not a Build Week requirement. The manual editor remains fully usable with AI turned off. The approved local model connection, bounded editor tools, generated-asset provenance, and remaining future autonomy controls are described in [Architecture](ARCHITECTURE.md#local-openai-creation-boundary).
 
 ## Locked stack
 
@@ -111,10 +111,13 @@ The command contracts were verified on July 13 against the initial scaffold:
 ```bash
 corepack pnpm install
 corepack pnpm dev
+corepack pnpm dev:agent
 corepack pnpm test
+corepack pnpm test:companion
 corepack pnpm typecheck
 corepack pnpm lint
 corepack pnpm build
+corepack pnpm local
 corepack pnpm test:e2e
 ```
 
@@ -125,7 +128,31 @@ corepack pnpm install
 corepack pnpm dev
 ```
 
-Open the local URL printed by Vite in a desktop Chrome-class browser. The current local format-v6 build passes 390 unit tests across 30 files, strict typecheck, ESLint, production build, and all 15 Playwright Chromium stories. Coverage includes generated-image source intake and one-step placement/undo, the six-image default story, editor adapter, local projects/recovery/portable files, reusable transparent image import, direct placement and appearance, plane organization and stack-direction keys, transforms, atomic editable balloons, Reader Preview, provisional local export, the larger scrollable minimap, and safe reset/reopen behavior. The running UI has been checked at representative desktop sizes. The latest matched public-safe views are the July 19 [dark](docs/progress/2026-07-19-big-feature-ui-dark.png) and [light](docs/progress/2026-07-19-big-feature-ui-light.png) release screenshots.
+Open the local URL printed by Vite in a desktop Chrome-class browser. The current local format-v6 build passes 411 Vitest cases across 34 files, 11 local-companion protocol/security checks, strict typecheck, ESLint, production build, and all 19 Playwright Chromium stories. Coverage includes generated-image source intake and one-step placement/undo, the six-image default story, editor adapter, local projects/recovery/portable files, reusable transparent image import, direct placement and appearance, plane organization and stack-direction keys, transforms, atomic editable balloons, Reader Preview, provisional local export, the larger scrollable minimap, safe reset/reopen behavior, the optional Agent overlay, static-host fallback, explicit login-link state, and finalized-message persistence. The running UI has been checked at representative desktop sizes. The latest public-safe views include the July 19 matched [dark](docs/progress/2026-07-19-big-feature-ui-dark.png) and [light](docs/progress/2026-07-19-big-feature-ui-light.png) release screenshots plus the July 20 [real disconnected Agent state](docs/progress/2026-07-20-local-agent-disconnected.png).
+
+### Run with the optional OpenAI companion
+
+The AI connection is an optional **local** feature. It requires official `codex-cli 0.144.5` and a creator-controlled ChatGPT account; it is not available from the static GitHub Pages build. Check the installed CLI first:
+
+```bash
+codex --version
+```
+
+If that exact compatible version is not installed, use OpenAI's documented package with the version pinned for this proof: `npm install --global @openai/codex@0.144.5`. Then start Vite and the isolated localhost companion together with:
+
+```bash
+corepack pnpm dev:agent
+```
+
+Then open the Vite URL, choose **Agent**, and select **Click here to connect your OpenAI account.** ScrollSplice opens only the authorization URL returned by the official Codex App Server. The persistent App Server state lives under the current user's ScrollSplice application-support folder outside the repository, so a completed login can survive app restarts. The browser receives no access or refresh token. Until login is completed, the editor and every human workflow continue to work normally.
+
+To exercise the production build through the same-origin local companion instead of Vite:
+
+```bash
+corepack pnpm local
+```
+
+Use `corepack pnpm test:companion` for the local protocol checks. The first real account login and synthetic generate/import/place proof remain a creator-controlled manual verification; do not include its authorization URL, account details, or credentials in screenshots or bug reports. This proof is one creator-started turn with visible progress and **Stop**. The ChatGPT subscription flow does not expose reliable per-turn spend telemetry to ScrollSplice, so this build does not claim a spend meter or enforceable cost ceiling.
 
 **Local persistence boundary:** Explicit **Save** and **Save As** write validated format-v6 episodes to a browser-local project library that retains up to 100 projects. Debounced crash recovery is stored separately and is never presented as an explicit save. The Asset Library stores imported sources and creator categories in IndexedDB; each library mutation reads, merges, validates, and writes one snapshot atomically so concurrent tabs do not silently overwrite one another. Portable `.scrollsplice` export/import packages one validated episode with its reusable asset snapshot for manual transfer. Clearing site data, changing browsers/profiles, or using a different origin loses the browser-local projects, recovery record, and Asset Library unless the creator exported a portable file. This remains local-only: there is no account, cloud sync, collaboration, or server backup.
 
