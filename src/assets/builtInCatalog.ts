@@ -66,6 +66,69 @@ export const BUILT_IN_ASSETS = [
       '<path d="M85 190c-37 0-62-21-62-51 0-24 17-43 43-49-7-34 18-65 54-65 18 0 33 7 44 19 14-19 36-31 62-31 38 0 69 26 73 60 34 2 60 25 60 55 0 34-31 62-69 62H85Z" fill="#fff" stroke="#211a2b" stroke-width="10" stroke-linejoin="round"/><circle cx="98" cy="222" r="18" fill="#fff" stroke="#211a2b" stroke-width="8"/><circle cx="65" cy="250" r="10" fill="#fff" stroke="#211a2b" stroke-width="6"/>',
   }),
   defineBuiltIn({
+    id: 'builtin-speech-balloon-whisper-v1',
+    categoryId: 'speech-balloons',
+    displayName: 'Whisper balloon',
+    intrinsicWidth: 380,
+    intrinsicHeight: 270,
+    body:
+      '<path d="M190 24c91 0 165 42 165 94 0 40-43 73-104 87 18 14 34 31 47 50-31-10-60-25-84-43-8 1-16 1-24 1-91 0-165-42-165-95s74-94 165-94Z" fill="#fff" stroke="#211a2b" stroke-width="8" stroke-dasharray="8 9" stroke-linecap="round" stroke-linejoin="round"/>',
+  }),
+  defineBuiltIn({
+    id: 'builtin-speech-balloon-shout-v1',
+    categoryId: 'speech-balloons',
+    displayName: 'Shout balloon',
+    intrinsicWidth: 390,
+    intrinsicHeight: 290,
+    body:
+      '<path d="m195 16 20 35 34-27 5 43 45-14-13 42 48 2-30 34 43 20-42 19 29 35-48 1 13 43-45-15-5 43-34-27-20 35-20-35-34 27-5-43-45 15 13-43-48-1 29-35-42-19 43-20-30-34 48-2-13-42 45 14 5-43 34 27 20-35Z" fill="#fff" stroke="#211a2b" stroke-width="10" stroke-linejoin="round"/><path d="m245 224 58 49-25-66" fill="#fff" stroke="#211a2b" stroke-width="10" stroke-linejoin="round"/>',
+  }),
+  defineBuiltIn({
+    id: 'builtin-speech-balloon-electric-v1',
+    categoryId: 'speech-balloons',
+    displayName: 'Electric balloon',
+    intrinsicWidth: 390,
+    intrinsicHeight: 290,
+    body:
+      '<path d="M45 72 72 51l19 13 24-28 25 19 28-31 27 26 29-26 24 31 30-19 19 30 31-14 9 34 33 1-12 33 31 15-25 26 24 25-32 14 11 34-34 1-10 33-30-14-20 29-26-20-27 27-25-30-30 18-17-31-32 12-7-35-34-3 14-32-30-17 26-25-22-28 32-12-8-35 34 2Z" fill="#fff" stroke="#211a2b" stroke-width="9" stroke-linejoin="round"/><path d="m250 217 16 57 19-27 24 22-13-58" fill="#fff" stroke="#211a2b" stroke-width="9" stroke-linejoin="round"/>',
+  }),
+  defineBuiltIn({
+    id: 'builtin-speech-balloon-rough-v1',
+    categoryId: 'speech-balloons',
+    displayName: 'Rough balloon',
+    intrinsicWidth: 380,
+    intrinsicHeight: 280,
+    body:
+      '<path d="M49 76c18-32 51-51 91-47 27-21 66-17 88 5 38-9 75 7 91 36 32 14 45 46 31 73 11 35-13 68-50 76-18 27-55 38-88 24-34 15-76 9-99-17-38 1-70-21-73-52-26-26-21-66 9-88Z" fill="#fff" stroke="#211a2b" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="M224 229c18 18 39 33 66 42-12-18-20-37-23-58" fill="#fff" stroke="#211a2b" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/><path d="M51 83 35 69m65-31L91 19m78 9 2-17m70 29 11-17m58 55 19-8m18 66 19 4M61 203l-18 9m81 26-7 19" fill="none" stroke="#211a2b" stroke-width="5" stroke-linecap="round"/>',
+  }),
+  defineBuiltIn({
+    id: 'builtin-speech-balloon-wavy-v1',
+    categoryId: 'speech-balloons',
+    displayName: 'Wavy balloon',
+    intrinsicWidth: 380,
+    intrinsicHeight: 280,
+    body:
+      '<path d="M38 121c7-27 24-27 29-54 5-25 25-29 47-20 18-24 39-22 58-4 22-21 45-20 65 1 22-17 45-12 58 12 27-5 44 10 43 36 24 13 27 34 8 53 16 23 5 43-22 49-2 25-23 37-46 26-15 24-38 26-60 8-22 18-46 16-62-6-23 13-44 4-50-21-27 5-44-11-40-37-24-10-28-29-8-47-17-20-8-40 20-50Z" fill="#fff" stroke="#211a2b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M230 222c14 20 35 36 61 46-11-18-17-39-17-59" fill="#fff" stroke="#211a2b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>',
+  }),
+  defineBuiltIn({
+    id: 'builtin-speech-balloon-telepathic-v1',
+    categoryId: 'speech-balloons',
+    displayName: 'Telepathic balloon',
+    intrinsicWidth: 390,
+    intrinsicHeight: 280,
+    body:
+      '<path d="M195 31c87 0 157 40 157 90s-70 90-157 90S38 171 38 121s70-90 157-90Z" fill="#fff" stroke="#211a2b" stroke-width="9" stroke-linejoin="round"/><path d="M26 77c-17 12-17 33 0 45-17 12-17 33 0 45M364 77c17 12 17 33 0 45 17 12 17 33 0 45" fill="none" stroke="#211a2b" stroke-width="8" stroke-linecap="round"/><circle cx="118" cy="232" r="14" fill="#fff" stroke="#211a2b" stroke-width="7"/><circle cx="92" cy="258" r="8" fill="#fff" stroke="#211a2b" stroke-width="5"/>',
+  }),
+  defineBuiltIn({
+    id: 'builtin-speech-balloon-double-outline-v1',
+    categoryId: 'speech-balloons',
+    displayName: 'Double Outline balloon',
+    intrinsicWidth: 390,
+    intrinsicHeight: 280,
+    body:
+      '<path d="M195 18c95 0 172 43 172 97 0 40-43 75-105 89 18 16 34 35 48 57-35-12-67-29-93-49-7 1-14 1-22 1-95 0-172-44-172-98s77-97 172-97Z" fill="#fff" stroke="#211a2b" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="M195 36c82 0 149 35 149 79 0 34-42 64-101 74l-17 3 14 11c10 8 19 16 28 26-15-8-30-17-43-27l-7-5-9 1c-5 0-10 1-14 1-82 0-149-38-149-84s67-79 149-79Z" fill="none" stroke="#211a2b" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>',
+  }),
+  defineBuiltIn({
     id: 'builtin-decoration-corner-flourish-v1',
     categoryId: 'decorations',
     displayName: 'Corner flourish',

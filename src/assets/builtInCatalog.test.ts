@@ -17,17 +17,35 @@ function decodeSvgSource(source: string): string {
 }
 
 describe('built-in asset catalog', () => {
-  it('contains exactly three original entries in each required category', () => {
+  it('contains the core balloon set and three entries in the other categories', () => {
     expect(BUILT_IN_ASSET_CATEGORY_IDS).toEqual([
       'speech-balloons',
       'decorations',
       'splatters',
     ])
-    expect(BUILT_IN_ASSETS).toHaveLength(9)
+    expect(BUILT_IN_ASSETS).toHaveLength(16)
+    expect(getBuiltInAssetsByCategory('speech-balloons')).toHaveLength(10)
+    expect(getBuiltInAssetsByCategory('decorations')).toHaveLength(3)
+    expect(getBuiltInAssetsByCategory('splatters')).toHaveLength(3)
+  })
 
-    for (const categoryId of BUILT_IN_ASSET_CATEGORY_IDS) {
-      expect(getBuiltInAssetsByCategory(categoryId)).toHaveLength(3)
-    }
+  it('provides every agreed core speech-balloon graphic', () => {
+    expect(
+      getBuiltInAssetsByCategory('speech-balloons').map(
+        ({ displayName }) => displayName,
+      ),
+    ).toEqual([
+      'Oval balloon',
+      'Rounded balloon',
+      'Cloud balloon',
+      'Whisper balloon',
+      'Shout balloon',
+      'Electric balloon',
+      'Rough balloon',
+      'Wavy balloon',
+      'Telepathic balloon',
+      'Double Outline balloon',
+    ])
   })
 
   it('uses stable unique IDs, names, dimensions, and sources', () => {

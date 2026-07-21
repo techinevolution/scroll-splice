@@ -87,6 +87,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Include the previously local completion work, six-image demo, dual interface, layer grips, and editor adapter in one current release without rewriting the pre-event baseline.
 - [x] After the corrective product checkpoint passes locally, give Katherine one reconciled list of implemented features and remaining requests from the documents and this task before proposing more product work.
 - [x] Research professional comic and webtoon speech-balloon conventions and record the complete practical editable inventory, composable design rule, and phased implementation path in [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md).
+- [x] Expand the Speech Balloons library from three starter graphics to the agreed ten-form core visual set: Oval/Standard, Rounded, Cloud/Thought, Whisper, Shout, Electric, Rough, Wavy, Telepathic, and Double Outline. These reusable transparent graphics do not falsely complete the separately deferred composable editable-preset system.
 
 ## Joint — only after the local human-editor completion goal and submission path are stable
 
