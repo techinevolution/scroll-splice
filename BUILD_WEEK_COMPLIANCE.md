@@ -99,7 +99,7 @@ These items apply only if the generate-and-place proof is actually attempted:
 - [ ] The project runs consistently and matches the text description and video.
 - [x] README contains verified setup, run, validation, supported-browser, and sample-data instructions.
 - [x] The bundled **The Light We Planted** Reset Demo combines the existing code-defined fixture elements with six original OpenAI-generated story panels; it contains no private comic art or third-party reference images. A clean browser now starts from a blank **Untitled Episode** instead.
-- [ ] Typecheck, lint, unit tests, production build, and the Playwright smoke test pass from a clean checkout.
+- [x] Typecheck, lint, all 417 unit tests, production build, and the complete editor Playwright smoke test pass from a clean detached checkout of final commit `7abf82a` on July 21.
 - [x] The published A/B/C and later-published corrective running UIs were visually inspected at 1440 × 900, 1280 × 720, and 1024 × 768. Corrective resize handles were additionally exercised at 50%, 100%, and 200% zoom.
 - [x] The historical A/B/C Playwright story completed title validation, plane/element controls, synthetic placement, episode-height changes, freely movable and independently resizable Background regions, magnet snap/bypass, live status `x/y/w/h` and minimap previews, bounded zoom, minimap agreement, and reset. Its synthetic-only paperclip claim applies to that dated checkpoint and is superseded by the persistent Asset Library evidence below.
 - [x] Katherine's July 13 hands-on follow-up confirmed that empty-plane deletion works and that minimap navigation remains reliable after episode expansion.
