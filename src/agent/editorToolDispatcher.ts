@@ -12,6 +12,10 @@ const SPEECH_BALLOON_PRESET_IDS = new Set<string>(
   SPEECH_BALLOON_PRESETS.map(({ id }) => id),
 )
 import type { GeneratedImageSource } from '../automation/generatedImageSource'
+import {
+  renderEditorVisualPreview,
+  type EditorVisualPreview,
+} from './editorPreview'
 
 export const EDITOR_TOOL_NUMERIC_LIMITS = Object.freeze({
   maxRevision: Number.MAX_SAFE_INTEGER,
@@ -44,6 +48,7 @@ export const EDITOR_TOOL_NUMERIC_LIMITS = Object.freeze({
 
 export const EDITOR_TOOL_NAMES = [
   'scrollsplice.inspect_editor',
+  'scrollsplice.preview_editor',
   'scrollsplice.apply_editor_command',
   'scrollsplice.import_latest_generated_asset',
   'scrollsplice.place_generated_asset',
@@ -70,6 +75,7 @@ export type EditorToolDispatchResult =
       readonly ok: true
       readonly tool: EditorToolName
       readonly snapshot: EditorAdapterSnapshot
+      readonly preview?: EditorVisualPreview
       readonly command?: string
       readonly changed?: boolean
       readonly createdId?: string
@@ -127,6 +133,7 @@ const IMAGE_MEDIA_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp'])
 
 export function createEditorToolDispatcher(
   adapter: ScrollSpliceEditorAdapter = createEditorAdapter(),
+  previewEditor: () => Promise<EditorVisualPreview> = renderEditorVisualPreview,
 ): EditorToolDispatcher {
   return async (call) => {
     const snapshot = adapter.inspect()
@@ -160,6 +167,33 @@ export function createEditorToolDispatcher(
       }
 
       return { ok: true, tool: call.name, snapshot: adapter.inspect() }
+    }
+
+    if (call.name === 'scrollsplice.preview_editor') {
+      if (!isRecordWithKeys(call.arguments, [])) {
+        return failure(
+          call.name,
+          'invalid-arguments',
+          'Preview editor does not accept arguments.',
+          adapter.inspect(),
+        )
+      }
+
+      try {
+        return {
+          ok: true,
+          tool: call.name,
+          snapshot: adapter.inspect(),
+          preview: await previewEditor(),
+        }
+      } catch {
+        return failure(
+          call.name,
+          'adapter-error',
+          'The current episode could not be rendered for visual inspection.',
+          adapter.inspect(),
+        )
+      }
     }
 
     const binding = parseMutationBinding(call.arguments)

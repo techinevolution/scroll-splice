@@ -22,9 +22,14 @@ import {
 test('dynamic editor schema bounds every model-writable numeric field', () => {
   const namespace = SCROLLSPLICE_DYNAMIC_TOOLS[0]
   const applyTool = namespace.tools.find(({ name }) => name === 'apply_editor_command')
+  const previewTool = namespace.tools.find(({ name }) => name === 'preview_editor')
   const placeTool = namespace.tools.find(({ name }) => name === 'place_generated_asset')
   assert.ok(applyTool)
+  assert.ok(previewTool)
   assert.ok(placeTool)
+  assert.deepEqual(previewTool.inputSchema, {
+    type: 'object', properties: {}, additionalProperties: false,
+  })
 
   const commandVariants = applyTool.inputSchema.properties.command.oneOf
   const commandNames = commandVariants.map(({ properties }) => properties.type.const)
@@ -63,6 +68,7 @@ test('dynamic editor schema bounds every model-writable numeric field', () => {
   assert.match(AGENT_DEVELOPER_INSTRUCTIONS, /episode height is 1,280-1,000,000/)
   assert.match(AGENT_DEVELOPER_INSTRUCTIONS, /Do not stop after placing blank balloons/)
   assert.match(AGENT_DEVELOPER_INSTRUCTIONS, /revise existing lettering in place/)
+  assert.match(AGENT_DEVELOPER_INSTRUCTIONS, /Call preview_editor again/)
 })
 
 function assertEveryNumericSchemaIsBounded(value, path = 'schema') {
@@ -275,6 +281,52 @@ test('client initializes experimental API, starts locked-down thread/turn, and s
   const toolResponse = transcript.find(({ id, result }) => id === 700 && result)
   assert.equal(toolResponse.result.success, true)
   assert.deepEqual(JSON.parse(toolResponse.result.contentItems[0].text), { ok: true })
+
+  const previewPromise = once(client, 'toolCall')
+  child.stdout.write(`${JSON.stringify({
+    id: 701,
+    method: 'item/tool/call',
+    params: {
+      threadId,
+      turnId,
+      callId: 'call-2',
+      namespace: 'scrollsplice',
+      tool: 'preview_editor',
+      arguments: {},
+    },
+  })}\n`)
+  await previewPromise
+  client.respondToolCall('call-2', {
+    success: true,
+    result: {
+      ok: true,
+      preview: {
+        imageDataUrl: 'data:image/jpeg;base64,cHJldmlldw==',
+        width: 400,
+        height: 640,
+        logicalWidth: 800,
+        logicalHeight: 1_280,
+      },
+    },
+  })
+  await new Promise((resolve) => setImmediate(resolve))
+  const previewResponse = transcript.find(({ id, result }) => id === 701 && result)
+  assert.equal(previewResponse.result.success, true)
+  assert.deepEqual(previewResponse.result.contentItems, [
+    {
+      type: 'inputText',
+      text: JSON.stringify({
+        ok: true,
+        preview: {
+          width: 400,
+          height: 640,
+          logicalWidth: 800,
+          logicalHeight: 1_280,
+        },
+      }),
+    },
+    { type: 'inputImage', imageUrl: 'data:image/jpeg;base64,cHJldmlldw==' },
+  ])
 
   const modes = await Promise.all([
     fs.stat(appDataRoot),

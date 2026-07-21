@@ -88,6 +88,7 @@ const SAFE_ITEM_TYPES = new Set([
 
 const ALLOWED_TOOL_NAMES = new Set([
   'inspect_editor',
+  'preview_editor',
   'apply_editor_command',
   'import_latest_generated_asset',
   'place_generated_asset',
@@ -500,6 +501,12 @@ export const SCROLLSPLICE_DYNAMIC_TOOLS = Object.freeze([
       },
       {
         type: 'function',
+        name: 'preview_editor',
+        description: 'Render the authoritative episode as a bounded full-scroll image for visual inspection. Use it after placing generated art and again after positioning text or other overlays.',
+        inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+      },
+      {
+        type: 'function',
         name: 'apply_editor_command',
         description: 'Apply one supported editor command using the episode ID and revision returned by inspect_editor. Project lifecycle commands are forbidden.',
         inputSchema: {
@@ -599,7 +606,7 @@ export const AGENT_DEVELOPER_INSTRUCTIONS = `You are the optional local ScrollSp
 
 Use only the ScrollSplice tools exposed in this run. Inspect before each mutation, use stable IDs and the exact current revision, make one bounded change at a time, and verify the returned snapshot. Obey every numeric minimum and maximum in the tool schema: episode height is 1,280-1,000,000 logical pixels; element bounds use 24-1,000,000 pixel dimensions and coordinates within +/-1,000,000; opacity and normalized values stay in their declared ranges. Selection-based commands must also copy the complete selection object from the latest inspect result into expectedSelection. select-all-in-plane must copy the latest active object into expectedActive. Never request or attempt shell commands, filesystem access, web search, browser control, MCP, connectors, approvals, project save/reopen/reset, or account actions.
 
-For images: use the native image-generation capability, then call import_latest_generated_asset. The companion attaches the latest generated image without exposing a local path. Use the returned stable asset ID with place_generated_asset. When a creator requests dialogue, captions, labels, or other lettering, use blank generated balloons or clean lettering space and then create each requested line as editable ScrollSplice text with create-positioned-text on the intended ordinary plane. That command takes planeId, bounds, text, and style with fontSize, fontWeight, color, and textAlign. To revise existing lettering in place, use update-text with the stable elementId and the complete text input copied from the latest snapshot; use move-element or resize-element separately for geometry. Do not replace an existing text element merely to change its properties. Do not stop after placing blank balloons, and do not claim the comic is complete until a final inspect shows the requested text elements and their exact text content. Do not claim an edit succeeded unless its tool result says it succeeded.`
+For images: use the native image-generation capability, then call import_latest_generated_asset. The companion attaches the latest generated image without exposing a local path. Use the returned stable asset ID with place_generated_asset. After placing generated art, call preview_editor so you can see the authoritative rendered episode before choosing overlay coordinates. When a creator requests dialogue, captions, labels, or other lettering, use blank generated balloons or clean lettering space and then create each requested line as editable ScrollSplice text with create-positioned-text on the intended ordinary plane. That command takes planeId, bounds, text, and style with fontSize, fontWeight, color, and textAlign. Call preview_editor again after positioning lettering, and correct any text that is not visibly inside its intended balloon before finishing. To revise existing lettering in place, use update-text with the stable elementId and the complete text input copied from the latest snapshot; use move-element or resize-element separately for geometry. Do not replace an existing text element merely to change its properties. Do not stop after placing blank balloons, and do not claim the comic is complete until a final inspect shows the requested text elements and their exact text content and the final preview confirms their visual placement. Do not claim an edit succeeded unless its tool result says it succeeded.`
 
 export function buildCodexArgs() {
   return [
@@ -906,16 +913,36 @@ export class AppServerClient extends EventEmitter {
     clearTimeout(pending.timeout)
     this.pendingTools.delete(callId)
     const success = envelope?.success === true
+    const preview = envelope?.result?.preview
+    const imageUrl =
+      typeof preview?.imageDataUrl === 'string' &&
+      preview.imageDataUrl.length <= 800_000 &&
+      /^data:image\/(?:jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(preview.imageDataUrl)
+        ? preview.imageDataUrl
+        : null
+    const resultForText = imageUrl
+      ? {
+          ...envelope.result,
+          preview: {
+            width: preview.width,
+            height: preview.height,
+            logicalWidth: preview.logicalWidth,
+            logicalHeight: preview.logicalHeight,
+          },
+        }
+      : envelope?.result ?? envelope ?? null
     let text
     try {
-      text = JSON.stringify(envelope?.result ?? envelope ?? null)
+      text = JSON.stringify(resultForText)
     } catch {
       text = JSON.stringify({ ok: false, message: 'The browser returned a non-serializable tool result.' })
     }
     if (text.length > 1_000_000) {
       text = JSON.stringify({ ok: false, message: 'The editor tool result was too large.' })
     }
-    this.respond(pending.requestId, { success, contentItems: [{ type: 'inputText', text }] })
+    const contentItems = [{ type: 'inputText', text }]
+    if (imageUrl) contentItems.push({ type: 'inputImage', imageUrl })
+    this.respond(pending.requestId, { success, contentItems })
   }
 
   getGeneration(generationRef) {

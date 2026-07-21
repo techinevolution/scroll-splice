@@ -125,6 +125,33 @@ describe('editor tool dispatcher', () => {
     })
   })
 
+  it('returns a rendered episode preview beside the structural snapshot', async () => {
+    const dispatch = createEditorToolDispatcher(createEditorAdapter(), async () => ({
+      imageDataUrl: 'data:image/jpeg;base64,cHJldmlldw==',
+      width: 400,
+      height: 640,
+      logicalWidth: 800,
+      logicalHeight: 1_280,
+    }))
+    const result = await dispatch({
+      name: 'scrollsplice.preview_editor',
+      arguments: {},
+    })
+
+    expect(result).toMatchObject({
+      ok: true,
+      tool: 'scrollsplice.preview_editor',
+      snapshot: { apiVersion: 2 },
+      preview: {
+        imageDataUrl: 'data:image/jpeg;base64,cHJldmlldw==',
+        width: 400,
+        height: 640,
+        logicalWidth: 800,
+        logicalHeight: 1_280,
+      },
+    })
+  })
+
   it('rejects a mutation after the inspected revision becomes stale', async () => {
     const adapter = createEditorAdapter()
     const dispatch = createEditorToolDispatcher(adapter)
