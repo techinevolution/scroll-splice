@@ -36,7 +36,6 @@ import {
   clientPointToEpisodePosition,
   getFitScale,
   getElementSnap,
-  getVerticalScrollProgress,
   getViewportScale,
 } from '../core/coordinates'
 import {
@@ -797,11 +796,6 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   const baseColor = getEffectiveEpisodeBaseColor(episode)
   const isAtEpisodeEnd =
     viewportY + viewportLogicalHeight >= episode.logicalHeight - 1
-  const scrollProgress = getVerticalScrollProgress(
-    viewportY,
-    viewportLogicalHeight,
-    episode.logicalHeight,
-  )
   const selectedElement = episode.elements.find(
     ({ id }) => id === selectedElementId,
   )
@@ -1379,9 +1373,6 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
           }
         />
         <output>{Math.round(zoomFactor * 100)}%</output>
-        <span aria-live="polite">
-          {Math.round(scrollProgress * 100)}% down
-        </span>
       </div>
     </div>
   )
