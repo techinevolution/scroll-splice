@@ -3948,6 +3948,12 @@ button:focus-visible,
   background: var(--ui-surface-raised);
 }
 
+.view-toggle-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+}
+
 .theme-light .extend-episode-button,
 .theme-light .plane-element-actions button,
 .theme-light .layer-empty-action:not(:disabled),
