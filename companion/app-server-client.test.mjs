@@ -30,6 +30,17 @@ test('dynamic editor schema bounds every model-writable numeric field', () => {
   const commandNames = commandVariants.map(({ properties }) => properties.type.const)
   assert.equal(new Set(commandNames).size, commandNames.length)
   assert.ok(commandNames.includes('resize-episode'))
+  assert.ok(commandNames.includes('create-positioned-text'))
+  assert.ok(commandNames.includes('create-positioned-shape'))
+  const positionedText = commandVariants.find(
+    ({ properties }) => properties.type.const === 'create-positioned-text',
+  )
+  assert.deepEqual(positionedText.required.sort(), [
+    'bounds', 'planeId', 'style', 'text', 'type',
+  ])
+  assert.deepEqual(positionedText.properties.style.required.sort(), [
+    'color', 'fontSize', 'fontWeight', 'textAlign',
+  ])
   assert.ok(commandNames.includes('update-speech-balloon'))
   assert.ok(commandNames.includes('set-image-frame'))
   assert.ok(!commandNames.includes('save'))
@@ -50,6 +61,8 @@ test('dynamic editor schema bounds every model-writable numeric field', () => {
 
   assertEveryNumericSchemaIsBounded(namespace)
   assert.match(AGENT_DEVELOPER_INSTRUCTIONS, /episode height is 1,280-1,000,000/)
+  assert.match(AGENT_DEVELOPER_INSTRUCTIONS, /Do not stop after placing blank balloons/)
+  assert.match(AGENT_DEVELOPER_INSTRUCTIONS, /revise existing lettering in place/)
 })
 
 function assertEveryNumericSchemaIsBounded(value, path = 'schema') {

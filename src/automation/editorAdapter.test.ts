@@ -180,6 +180,82 @@ describe('editor adapter', () => {
     })
   })
 
+  it('creates styled text at exact bounds in one adapter command', () => {
+    const adapter = createEditorAdapter()
+    const plane = adapter.inspect().planes.find(
+      ({ group, kind }) => group === 'content' && kind === 'ordinary',
+    )
+
+    expect(plane).toBeDefined()
+    if (!plane) return
+
+    const result = adapter.execute({
+      type: 'create-positioned-text',
+      planeId: plane.id,
+      bounds: { x: 120, y: 420, width: 260, height: 88 },
+      input: {
+        text: 'Hands off my strawberry!',
+        fill: '#161616',
+        fontSize: 30,
+        fontWeight: 700,
+        align: 'center',
+      },
+    })
+
+    expect(result).toMatchObject({ ok: true, changed: true })
+    if (!result.ok) return
+    expect(result.snapshot.elements.find(({ id }) => id === result.createdId)).toMatchObject({
+      type: 'text',
+      planeId: plane.id,
+      bounds: { x: 120, y: 420, width: 260, height: 88 },
+      text: 'Hands off my strawberry!',
+      properties: {
+        text: 'Hands off my strawberry!',
+        fill: '#161616',
+        fontSize: 30,
+        fontWeight: 700,
+        align: 'center',
+      },
+    })
+  })
+
+  it('creates a positioned shape and exposes all of its editable styling', () => {
+    const adapter = createEditorAdapter()
+    const plane = adapter.inspect().planes.find(
+      ({ group, kind }) => group === 'content' && kind === 'ordinary',
+    )
+
+    expect(plane).toBeDefined()
+    if (!plane) return
+
+    const result = adapter.execute({
+      type: 'create-positioned-shape',
+      planeId: plane.id,
+      name: 'Panel frame',
+      bounds: { x: 40, y: 80, width: 720, height: 360 },
+      shape: 'rectangle',
+      fill: '#ffffff',
+      stroke: '#111111',
+      strokeWidth: 6,
+      cornerRadius: 18,
+    })
+
+    expect(result).toMatchObject({ ok: true, changed: true })
+    if (!result.ok) return
+    expect(result.snapshot.elements.find(({ id }) => id === result.createdId)).toMatchObject({
+      name: 'Panel frame',
+      type: 'shape',
+      bounds: { x: 40, y: 80, width: 720, height: 360 },
+      properties: {
+        shape: 'rectangle',
+        fill: { kind: 'solid', color: '#ffffff' },
+        stroke: '#111111',
+        strokeWidth: 6,
+        cornerRadius: 18,
+      },
+    })
+  })
+
   it('creates an editable balloon type on the requested plane', () => {
     const adapter = createEditorAdapter()
     const plane = adapter.inspect().planes.find(

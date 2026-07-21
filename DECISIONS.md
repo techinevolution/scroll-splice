@@ -198,6 +198,14 @@ Reason: Creators need high-resolution and unusually sized working images even th
 
 Consequences: This supersedes the earlier authoring-intake caps while retaining signature, header, media-type, browser-decode, and header/decode agreement checks. The editor scales only placed instances; it does not destructively resize source blobs. Portable project packaging may still report its own whole-package resource limit because that is a transfer-container boundary, not a WEBTOON or Asset Library intake limit. The companion never exposes generated filesystem paths, and the model-visible tool call carries only metadata plus an opaque generation reference; the browser retrieves the Blob and runs the normal generated-asset adapter path. Export remains responsible for conversion, scaling, slicing, compression, and platform preflight.
 
+## 2026-07-21: Expose complete persisted canvas state and exact creation commands
+
+Decision: Expand the normalized adapter snapshot with plane base colors, flat group membership, text content, and complete persisted type-specific shape, text, balloon, and image properties. Add exact positioned text and shape creation commands, and teach the authenticated tool schema the simple text command form observed in the live Agent run.
+
+Reason: A model cannot reliably verify or revise canvas work when inspection omits the actual lettering or type-specific properties. Exact creation also avoids fragile sequences of create, select, move, resize, and style calls when placing dialogue or a panel at known logical bounds.
+
+Consequences: The Agent can inspect and edit every persisted canvas/document property exposed by the human editor while still lacking DOM, Konva, raw Zustand, browser-storage, credential, filesystem, or project-lifecycle access. Each mutation continues through ordinary validated commands and history. Transient application chrome and source image bytes remain outside the snapshot.
+
 ## 2026-07-20: Use the official Codex App Server through an isolated local companion
 
 Decision: Implement ScrollSplice's optional OpenAI connection as a local-only companion process that launches the official `codex app-server` over JSONL stdio. The browser talks only to ScrollSplice's narrow localhost API; it never receives OAuth access or refresh tokens and never receives a general App Server proxy. Keep the hosted GitHub Pages editor fully functional without the companion. Use an app-specific `CODEX_HOME`, disable execution environments, shell, file-edit, web-search, app, connector, browser-control, and multi-agent capabilities, and expose only the versioned ScrollSplice editor tools plus the App Server's intentional built-in image-generation item. Discover the signed-in account's live GPT-5.5/GPT-5.6 catalog and reasoning levels, defaulting to Medium when offered.

@@ -838,7 +838,7 @@ export function LayersPanel() {
                   ? `Add text to ${planeLabel}`
                   : 'Select an ordinary numbered plane to add text'
               }
-              onClick={createTextElement}
+              onClick={() => createTextElement()}
             >
               <TextIcon />
               <span>Add Text</span>
@@ -1359,7 +1359,7 @@ export function LayersPanel() {
           </button>
           <button
             type="button"
-            onClick={createTextElement}
+            onClick={() => createTextElement()}
             title={`Add text to ${planeLabel}`}
           >
             <TextIcon />

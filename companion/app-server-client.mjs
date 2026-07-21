@@ -358,6 +358,39 @@ const editorCommandSchema = {
     }),
     ...['create-text', 'create-speech-balloon'].map((type) =>
       commandSchema(type, { planeId: idSchema })),
+    commandSchema('create-positioned-text', {
+      planeId: idSchema,
+      bounds: elementBoundsSchema,
+      text: { type: 'string', minLength: 1, maxLength: 2_000 },
+      style: strictObject({
+        fontSize: {
+          type: 'number',
+          minimum: EDITOR_TOOL_NUMERIC_LIMITS.minTextFontSize,
+          maximum: EDITOR_TOOL_NUMERIC_LIMITS.maxTextFontSize,
+        },
+        fontWeight: { type: 'integer', enum: [400, 600, 700] },
+        color: colorSchema,
+        textAlign: { type: 'string', enum: ['left', 'center', 'right'] },
+      }),
+    }),
+    commandSchema('create-positioned-shape', {
+      planeId: idSchema,
+      name: { type: 'string', minLength: 1, maxLength: 80 },
+      bounds: elementBoundsSchema,
+      shape: { type: 'string', enum: ['rectangle', 'ellipse'] },
+      fill: colorSchema,
+      stroke: { type: ['string', 'null'], maxLength: 128 },
+      strokeWidth: {
+        type: 'number',
+        minimum: 0,
+        maximum: EDITOR_TOOL_NUMERIC_LIMITS.maxStrokeWidth,
+      },
+      cornerRadius: {
+        type: 'number',
+        minimum: 0,
+        maximum: EDITOR_TOOL_NUMERIC_LIMITS.maxCornerRadius,
+      },
+    }),
     commandSchema('create-background-region', {
       planeId: idSchema,
       fill: colorSchema,
@@ -566,7 +599,7 @@ export const AGENT_DEVELOPER_INSTRUCTIONS = `You are the optional local ScrollSp
 
 Use only the ScrollSplice tools exposed in this run. Inspect before each mutation, use stable IDs and the exact current revision, make one bounded change at a time, and verify the returned snapshot. Obey every numeric minimum and maximum in the tool schema: episode height is 1,280-1,000,000 logical pixels; element bounds use 24-1,000,000 pixel dimensions and coordinates within +/-1,000,000; opacity and normalized values stay in their declared ranges. Selection-based commands must also copy the complete selection object from the latest inspect result into expectedSelection. select-all-in-plane must copy the latest active object into expectedActive. Never request or attempt shell commands, filesystem access, web search, browser control, MCP, connectors, approvals, project save/reopen/reset, or account actions.
 
-For images: use the native image-generation capability, then call import_latest_generated_asset. The companion attaches the latest generated image without exposing a local path. Use the returned stable asset ID with place_generated_asset. Do not claim an edit succeeded unless its tool result says it succeeded.`
+For images: use the native image-generation capability, then call import_latest_generated_asset. The companion attaches the latest generated image without exposing a local path. Use the returned stable asset ID with place_generated_asset. When a creator requests dialogue, captions, labels, or other lettering, use blank generated balloons or clean lettering space and then create each requested line as editable ScrollSplice text with create-positioned-text on the intended ordinary plane. That command takes planeId, bounds, text, and style with fontSize, fontWeight, color, and textAlign. To revise existing lettering in place, use update-text with the stable elementId and the complete text input copied from the latest snapshot; use move-element or resize-element separately for geometry. Do not replace an existing text element merely to change its properties. Do not stop after placing blank balloons, and do not claim the comic is complete until a final inspect shows the requested text elements and their exact text content. Do not claim an edit succeeded unless its tool result says it succeeded.`
 
 export function buildCodexArgs() {
   return [

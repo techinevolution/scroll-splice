@@ -491,6 +491,47 @@ describe('editor tool dispatcher', () => {
     ).toMatchObject({ type: 'text', planeId: targetPlane.id })
   })
 
+  it('creates requested dialogue at exact bounds through one tool result', async () => {
+    const adapter = createEditorAdapter()
+    const dispatch = createEditorToolDispatcher(adapter)
+    const before = adapter.inspect()
+    const targetPlane = before.planes.find(
+      ({ group, kind }) => group === 'content' && kind === 'ordinary',
+    )
+
+    expect(targetPlane).toBeDefined()
+    if (!targetPlane) return
+
+    const result = await dispatch({
+      name: 'scrollsplice.apply_editor_command',
+      arguments: {
+        episodeId: before.episode.id,
+        expectedRevision: before.editor.currentRevision,
+        command: {
+          type: 'create-positioned-text',
+          planeId: targetPlane.id,
+          bounds: { x: 410, y: 500, width: 280, height: 90 },
+          text: 'SKREEEE!',
+          style: {
+            fontSize: 36,
+            fontFamily: 'Arial',
+            fontWeight: 700,
+            color: '#111111',
+            textAlign: 'center',
+          },
+        },
+      },
+    })
+
+    expect(result).toMatchObject({ ok: true, changed: true })
+    if (!result.ok) return
+    expect(result.snapshot.elements.find(({ id }) => id === result.createdId)).toMatchObject({
+      type: 'text',
+      bounds: { x: 410, y: 500, width: 280, height: 90 },
+      text: 'SKREEEE!',
+    })
+  })
+
   it('imports, places, and undoes the latest generated image', async () => {
     const repository = new MemoryAssetRepository()
     setAssetRepositoryForTesting(repository)

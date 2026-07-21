@@ -27,6 +27,7 @@ import {
   type ImageCrop,
   type ImageFrame,
   type ImagePresentation,
+  type EpisodeElement,
   type ShapeFill,
 } from '../core/episode'
 import {
@@ -73,6 +74,8 @@ export type EditorAdapterCommand =
   | { readonly type: 'flip-element'; readonly elementId: string; readonly axis: 'horizontal' | 'vertical' }
   | { readonly type: 'set-element-overflow'; readonly elementId: string; readonly overflow: ElementOverflow }
   | { readonly type: 'create-text'; readonly planeId: string }
+  | { readonly type: 'create-positioned-text'; readonly planeId: string; readonly bounds: ElementBounds; readonly input: UpdateTextElementInput }
+  | { readonly type: 'create-positioned-shape'; readonly planeId: string; readonly name: string; readonly bounds: ElementBounds; readonly shape: 'rectangle' | 'ellipse'; readonly fill: string; readonly stroke: string | null; readonly strokeWidth: number; readonly cornerRadius: number }
   | { readonly type: 'create-speech-balloon'; readonly planeId: string; readonly presetId?: SpeechBalloonPresetId }
   | { readonly type: 'create-background-region'; readonly planeId: string; readonly fill: string; readonly startY: number; readonly height: number }
   | { readonly type: 'place-built-in-asset'; readonly planeId: string; readonly assetId: string }
@@ -144,6 +147,7 @@ export interface EditorAdapterSnapshot {
     readonly name: string | null
     readonly visible: boolean
     readonly elementCount: number
+    readonly baseColor: string | null
   }[]
   readonly elements: readonly {
     readonly id: string
@@ -161,6 +165,13 @@ export interface EditorAdapterSnapshot {
     readonly transform: ElementTransform
     readonly overflow: ElementOverflow
     readonly assetReference: unknown
+    readonly text: string | null
+    readonly elementGroupId: string | null
+    readonly properties: Readonly<Record<string, unknown>>
+  }[]
+  readonly elementGroups: readonly {
+    readonly id: string
+    readonly memberElementIds: readonly string[]
   }[]
   readonly assets: {
     readonly builtIn: readonly { readonly id: string; readonly name: string; readonly categoryId: string; readonly width: number; readonly height: number }[]
@@ -217,7 +228,9 @@ export const EDITOR_ADAPTER_COMMAND_TYPES = [
   'align-selection', 'move-element-in-stack', 'move-element-to-plane',
   'reorder-element-in-stack',
   'set-element-opacity', 'set-element-blend-mode', 'set-element-transform',
-  'flip-element', 'set-element-overflow', 'create-text', 'create-speech-balloon',
+  'flip-element', 'set-element-overflow', 'create-text', 'create-positioned-text',
+  'create-positioned-shape',
+  'create-speech-balloon',
   'create-background-region', 'place-built-in-asset', 'place-imported-asset',
   'set-shape-fill', 'update-shape-style', 'update-text', 'update-speech-balloon',
   'set-image-presentation', 'set-image-frame', 'set-image-crop', 'group-selection',
@@ -229,6 +242,69 @@ export const EDITOR_ADAPTER_ASYNC_COMMAND_TYPES = [
   'import-generated-asset',
   'place-generated-asset',
 ] as const satisfies readonly EditorAdapterAsyncCommand['type'][]
+
+function inspectElementProperties(
+  element: EpisodeElement,
+): Readonly<Record<string, unknown>> {
+  switch (element.type) {
+    case 'shape':
+      return {
+        shape: element.shape,
+        fill: element.fill,
+        stroke: element.stroke ?? null,
+        strokeWidth: element.strokeWidth ?? 0,
+        cornerRadius: element.cornerRadius ?? 0,
+      }
+    case 'text':
+      return {
+        text: element.text,
+        fill: element.fill,
+        fontFamily: element.fontFamily,
+        fontSize: element.fontSize,
+        fontWeight: element.fontWeight,
+        lineHeight: element.lineHeight,
+        align: element.align,
+      }
+    case 'speech-balloon':
+      return {
+        bodyControlPoints: element.bodyControlPoints
+          ? element.bodyControlPoints.map((point) => ({ ...point }))
+          : null,
+        fill: element.fill,
+        stroke: element.stroke,
+        strokeWidth: element.strokeWidth,
+        cornerRadius: element.cornerRadius,
+        text: element.text,
+        textFill: element.textFill,
+        fontFamily: element.fontFamily,
+        fontWeight: element.fontWeight,
+        lineHeight: element.lineHeight,
+        align: element.align,
+        padding: element.padding,
+        minFontSize: element.minFontSize,
+        maxFontSize: element.maxFontSize,
+        tail: {
+          ...element.tail,
+          tip: { ...element.tail.tip },
+        },
+      }
+    case 'image':
+      return {
+        presentation: element.presentation,
+        frame: {
+          mask:
+            element.frame.mask.kind === 'rectangle'
+              ? { ...element.frame.mask }
+              : {
+                  ...element.frame.mask,
+                  points: element.frame.mask.points.map((point) => ({ ...point })),
+                },
+          crop: { ...element.frame.crop },
+          border: element.frame.border ? { ...element.frame.border } : null,
+        },
+      }
+  }
+}
 
 export function createEditorAdapter(store: EditorStore = useEditorStore): ScrollSpliceEditorAdapter {
   const inspect = (): EditorAdapterSnapshot => {
@@ -267,6 +343,7 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
           name: item.name ?? null,
           visible: item.visible,
           elementCount: elementCounts.get(item.id) ?? 0,
+          baseColor: item.kind === 'base' ? item.baseColor : null,
         })),
       elements: [...state.episode.elements].sort(compareElementsByCanvasPosition).map((item) => ({
         id: item.id,
@@ -284,6 +361,18 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
         transform: { ...item.transform },
         overflow: item.overflow,
         assetReference: { ...item.assetReference },
+        text:
+          item.type === 'text' || item.type === 'speech-balloon'
+            ? item.text
+            : null,
+        elementGroupId:
+          state.episode.elementGroups.find(({ memberElementIds }) =>
+            memberElementIds.includes(item.id))?.id ?? null,
+        properties: inspectElementProperties(item),
+      })),
+      elementGroups: state.episode.elementGroups.map((group) => ({
+        id: group.id,
+        memberElementIds: [...group.memberElementIds],
       })),
       assets: {
         builtIn: BUILT_IN_ASSETS.map((asset) => ({ id: asset.id, name: asset.displayName, categoryId: asset.categoryId, width: asset.intrinsicWidth, height: asset.intrinsicHeight })),
@@ -330,6 +419,8 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
 
     const createsElementOnTargetPlane =
       command.type === 'create-text' ||
+      command.type === 'create-positioned-text' ||
+      command.type === 'create-positioned-shape' ||
       command.type === 'create-speech-balloon' ||
       command.type === 'create-background-region' ||
       command.type === 'place-built-in-asset' ||
@@ -396,6 +487,22 @@ export function createEditorAdapter(store: EditorStore = useEditorStore): Scroll
       case 'flip-element': beforeState.toggleElementFlip(command.elementId, command.axis); break
       case 'set-element-overflow': beforeState.setElementOverflow(command.elementId, command.overflow); break
       case 'create-text': if (!store.getState().createTextElement()) return fail(command, 'rejected', 'Text could not be created on that plane.'); break
+      case 'create-positioned-text':
+        if (!store.getState().createTextElement({ ...command.input, bounds: command.bounds })) {
+          return fail(command, 'rejected', 'Positioned text could not be created on that plane.')
+        }
+        break
+      case 'create-positioned-shape':
+        store.getState().placeSyntheticAsset({
+          name: command.name,
+          shape: command.shape,
+          fill: command.fill,
+          stroke: command.stroke ?? undefined,
+          strokeWidth: command.strokeWidth,
+          cornerRadius: command.cornerRadius,
+          bounds: command.bounds,
+        })
+        break
       case 'create-speech-balloon': if (!store.getState().createSpeechBalloonElement(command.presetId)) return fail(command, 'rejected', 'Speech balloon could not be created on that plane.'); break
       case 'create-background-region':
         if (!store.getState().createBackgroundColorRegion({ fill: command.fill, startY: command.startY, height: command.height })) return fail(command, 'rejected', 'Background region could not be created on that plane.')

@@ -97,6 +97,7 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Keep the judge-facing human editor usable without OpenAI login or credits; GitHub Pages and the ordinary `dev`/build path remain independent of the companion.
 - [x] Katherine completed the official in-app ChatGPT connection and approved a synthetic first prompt.
 - [x] Katherine and Codex verified a live response and native synthetic generation/import/explicit-plane placement without exposing credentials or private art; adapter/browser coverage verifies the matching undo path.
+- [x] Clear the failed test episode and verify the real Agent flow from a blank canvas: generate and place fresh 800 × 1,280 art, add separate editable lettering, inspect both, then revise the lettering's wording, color, size, and position without changing the artwork.
 
 ## Joint — later, not Build Week scope
 

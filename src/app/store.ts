@@ -40,6 +40,7 @@ import {
   updateShapeElementStyle as updateShapeElementStyleCommand,
   updateSpeechBalloonElement as updateSpeechBalloonElementCommand,
   updateTextElement as updateTextElementCommand,
+  type CreateTextElementInput,
   type ElementAlignment,
   type UpdateShapeElementStyleInput,
   type UpdateSpeechBalloonElementInput,
@@ -253,8 +254,11 @@ interface EditorState {
     readonly stroke?: string
     readonly strokeWidth?: number
     readonly cornerRadius?: number
+    readonly bounds?: ElementBounds
   }) => void
-  readonly createTextElement: () => boolean
+  readonly createTextElement: (
+    input?: Omit<CreateTextElementInput, 'layerPlaneId'>,
+  ) => boolean
   readonly createSpeechBalloonElement: (
     presetId?: SpeechBalloonPresetId,
   ) => boolean
@@ -2086,6 +2090,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     stroke,
     strokeWidth,
     cornerRadius,
+    bounds,
   }) => {
     set((state) => {
       const width = 150
@@ -2098,7 +2103,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         stroke,
         strokeWidth,
         cornerRadius,
-        bounds: {
+        bounds: bounds ?? {
           x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
           y: state.viewportY + (state.viewportLogicalHeight - height) / 2,
           width,
@@ -2119,20 +2124,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     })
   },
 
-  createTextElement: () => {
+  createTextElement: (input) => {
     const state = get()
     const width = Math.min(520, state.episode.logicalWidth)
     const height = 96
     const episode = createTextElementCommand(state.episode, {
       layerPlaneId: state.activeLayerPlaneId,
-      text: 'Your text',
-      fill: '#1b1630',
-      bounds: {
-        x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
-        y: state.viewportY + (state.viewportLogicalHeight - height) / 2,
-        width,
-        height,
-      },
+      text: input?.text ?? 'Your text',
+      fill: input?.fill ?? '#1b1630',
+      fontSize: input?.fontSize,
+      fontWeight: input?.fontWeight,
+      align: input?.align,
+      bounds: input?.bounds ?? {
+          x: state.viewportX + (state.viewportLogicalWidth - width) / 2,
+          y: state.viewportY + (state.viewportLogicalHeight - height) / 2,
+          width,
+          height,
+        },
     })
 
     if (episode === state.episode) {

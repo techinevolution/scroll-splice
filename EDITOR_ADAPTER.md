@@ -102,6 +102,41 @@ if (planeId) {
 }
 ```
 
+Create precisely positioned editable lettering in one operation:
+
+```js
+editor.execute({
+  type: 'create-positioned-text',
+  planeId: 'ordinary-plane-id-from-inspect',
+  bounds: { x: 395, y: 145, width: 300, height: 80 },
+  input: {
+    text: 'CAUGHT YOU!',
+    fill: '#111111',
+    fontSize: 42,
+    fontWeight: 700,
+    align: 'center',
+  },
+})
+```
+
+The authenticated JSON tool presents the same operation as `planeId`, `bounds`, `text`, and a `style` object with `fontSize`, `fontWeight`, `color`, and `textAlign`. The dispatcher normalizes that public shape before calling the adapter.
+
+Create a positioned shape with its complete initial style:
+
+```js
+editor.execute({
+  type: 'create-positioned-shape',
+  planeId: 'ordinary-plane-id-from-inspect',
+  name: 'Inset panel',
+  bounds: { x: 64, y: 520, width: 672, height: 400 },
+  shape: 'rectangle',
+  fill: '#ffffff',
+  stroke: '#111111',
+  strokeWidth: 4,
+  cornerRadius: 0,
+})
+```
+
 Create an empty editable balloon body on an explicit plane:
 
 ```js
@@ -161,8 +196,10 @@ The placement result returns the stable element ID and an updated snapshot. Plac
 - episode ID, title, format, and logical dimensions
 - viewport, zoom, active group/plane, selection, history, and dirty state
 - all three composition groups and their visibility
-- ordered layer planes with stable IDs and element counts
-- every element's ID, type, plane, logical bounds, visibility, stacking, opacity, blend mode, transform, overflow, and stable asset reference
+- ordered layer planes with stable IDs, element counts, and the pinned plane's base color where applicable
+- every element's ID, type, plane, logical bounds, visibility, stacking, opacity, blend mode, transform, overflow, stable asset reference, text content where applicable, and element-group membership
+- complete persisted type-specific properties for shapes, independent text, editable balloon bodies/tails, and image presentation/frame/mask/crop settings
+- flat element groups with their stable member IDs
 - built-in and imported asset metadata without blobs, object URLs, or filesystem handles; generated sources include provider, model, prompt, and generation timestamp provenance
 
 ## Command families
@@ -171,7 +208,7 @@ The placement result returns the stable element ID and an updated snapshot. Plac
 - Selection and organization: select/clear/select-all, group/ungroup, story-beat movement, alignment, one-step or direct-index stacking, and Move to Plane.
 - Episode and planes: rename/extend/resize the episode; create/delete/rename/reorder/show/hide planes and groups; change the base color.
 - Elements: create, select, rename, move, resize, duplicate, delete, show/hide, lock, opacity, blend, transforms, flips, and overflow.
-- Type-specific editing: shape fill/style, independent text, ten empty editable balloon types plus normalized contour points, image presentation/frame/crop, and Background color regions.
+- Type-specific editing: exact positioned shape/text creation, shape fill/style, independent text updates, ten empty editable balloon types plus normalized contour points, image presentation/frame/crop, and Background color regions.
 - Assets: place an existing built-in or imported asset by stable ID.
 - Generated assets: asynchronously import validated PNG/JPEG/WebP bytes with provenance, then place a generated source on a specified ordinary plane and logical bounds.
 - Editor/project: magnet, slice guides, undo, redo, Save, Save As, Reopen, New Episode, and Reset Demo.

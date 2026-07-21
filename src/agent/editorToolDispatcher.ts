@@ -400,6 +400,11 @@ function parseEditorCommand(value: unknown): EditorAdapterCommand | undefined {
   if (!isRecord(value) || typeof value.type !== 'string') return undefined
   if (FORBIDDEN_LIFECYCLE_COMMANDS.has(value.type)) return undefined
 
+  if (value.type === 'create-positioned-text') {
+    const normalized = normalizePositionedTextCommand(value)
+    if (normalized) return normalized
+  }
+
   if (NO_ARGUMENT_COMMANDS.has(value.type)) {
     return isRecordWithKeys(value, ['type'])
       ? (value as unknown as EditorAdapterCommand)
@@ -491,6 +496,21 @@ function parseEditorCommand(value: unknown): EditorAdapterCommand | undefined {
           (value.overflow === 'constrained' || value.overflow === 'bleed')
       case 'create-text':
         return exact(value, ['type', 'planeId']) && isSafeId(value.planeId)
+      case 'create-positioned-text':
+        return exact(value, ['type', 'planeId', 'bounds', 'input']) &&
+          isSafeId(value.planeId) && isElementBounds(value.bounds) &&
+          isTextUpdate(value.input)
+      case 'create-positioned-shape':
+        return exact(value, [
+          'type', 'planeId', 'name', 'bounds', 'shape', 'fill', 'stroke',
+          'strokeWidth', 'cornerRadius',
+        ]) && isSafeId(value.planeId) && isSafeText(value.name, 80, true) &&
+          isElementBounds(value.bounds) &&
+          (value.shape === 'rectangle' || value.shape === 'ellipse') &&
+          isSafeText(value.fill, 128, true) &&
+          (value.stroke === null || isSafeText(value.stroke, 128, true)) &&
+          isBoundedNumber(value.strokeWidth, 0, EDITOR_TOOL_NUMERIC_LIMITS.maxStrokeWidth) &&
+          isBoundedNumber(value.cornerRadius, 0, EDITOR_TOOL_NUMERIC_LIMITS.maxCornerRadius)
       case 'create-speech-balloon':
         return exactOptional(value, ['type', 'planeId'], ['presetId']) &&
           isSafeId(value.planeId) &&
@@ -531,6 +551,58 @@ function parseEditorCommand(value: unknown): EditorAdapterCommand | undefined {
   })()
 
   return valid ? (value as unknown as EditorAdapterCommand) : undefined
+}
+
+function normalizePositionedTextCommand(
+  value: Record<string, unknown>,
+): Extract<EditorAdapterCommand, { readonly type: 'create-positioned-text' }> | undefined {
+  if (!isSafeId(value.planeId) || !isElementBounds(value.bounds)) return undefined
+
+  if (
+    exact(value, ['type', 'planeId', 'bounds', 'input']) &&
+    isTextUpdate(value.input)
+  ) {
+    return value as unknown as Extract<
+      EditorAdapterCommand,
+      { readonly type: 'create-positioned-text' }
+    >
+  }
+
+  if (
+    !exact(value, ['type', 'planeId', 'bounds', 'text', 'style']) ||
+    !isSafeText(value.text, 2_000, true) ||
+    !isRecord(value.style) ||
+    !exactOptional(
+      value.style,
+      ['fontSize', 'fontWeight', 'color', 'textAlign'],
+      ['fontFamily'],
+    ) ||
+    !isBoundedNumber(
+      value.style.fontSize,
+      EDITOR_TOOL_NUMERIC_LIMITS.minTextFontSize,
+      EDITOR_TOOL_NUMERIC_LIMITS.maxTextFontSize,
+    ) ||
+    ![400, 600, 700].includes(value.style.fontWeight as number) ||
+    !isSafeText(value.style.color, 128, true) ||
+    !['left', 'center', 'right'].includes(value.style.textAlign as string) ||
+    (value.style.fontFamily !== undefined &&
+      !isSafeText(value.style.fontFamily, 128, true))
+  ) {
+    return undefined
+  }
+
+  return {
+    type: 'create-positioned-text',
+    planeId: value.planeId,
+    bounds: value.bounds,
+    input: {
+      text: value.text,
+      fill: value.style.color,
+      fontSize: value.style.fontSize,
+      fontWeight: value.style.fontWeight as 400 | 600 | 700,
+      align: value.style.textAlign as 'left' | 'center' | 'right',
+    },
+  }
 }
 
 function parseGeneratedImport(value: unknown):
