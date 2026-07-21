@@ -1771,7 +1771,14 @@ p {
 }
 
 .minimap-card .panel-heading {
+  position: relative;
   padding-right: 2rem;
+}
+
+.minimap-card .panel-count {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .panel-heading {
