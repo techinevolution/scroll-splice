@@ -23,6 +23,18 @@ async function editSelectedTextOnCanvas(page: Page, wording: string) {
 
   const editor = page.getByTestId('canvas-text-editor')
   await expect(editor).toBeVisible()
+  const editorBox = await editor.boundingBox()
+  expect(editorBox).not.toBeNull()
+  expect(editorBox!.x).toBeCloseTo(
+    box!.x + (geometry.x - geometry.viewportX) * scale,
+    0,
+  )
+  expect(editorBox!.y).toBeCloseTo(
+    box!.y + (geometry.y - geometry.viewportY) * scale,
+    0,
+  )
+  expect(editorBox!.width).toBeCloseTo(geometry.width * scale, 0)
+  expect(editorBox!.height).toBeCloseTo(geometry.height * scale, 0)
   await editor.fill(wording)
   await editor.press('ControlOrMeta+Enter')
   await expect(editor).toHaveCount(0)

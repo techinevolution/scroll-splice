@@ -6,7 +6,7 @@ import {
   type DragEvent as ReactDragEvent,
   type KeyboardEvent,
 } from 'react'
-import type Konva from 'konva'
+import Konva from 'konva'
 import {
   Ellipse,
   Group,
@@ -809,6 +809,31 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
     (element): element is TextElement =>
       element.id === editingTextId && element.type === 'text',
   )
+  const editingTextVerticalInset = useMemo(() => {
+    if (!editingTextElement) return 0
+
+    const measurement = new Konva.Text({
+      width: editingTextElement.bounds.width,
+      height: editingTextElement.bounds.height,
+      text: editingTextDraft,
+      fontFamily: editingTextElement.fontFamily,
+      fontSize: editingTextElement.fontSize,
+      fontStyle: toKonvaFontStyle(editingTextElement.fontWeight),
+      lineHeight: editingTextElement.lineHeight,
+      align: editingTextElement.align,
+      verticalAlign: 'middle',
+    })
+    const renderedTextHeight =
+      measurement.textArr.length *
+      editingTextElement.fontSize *
+      editingTextElement.lineHeight
+    measurement.destroy()
+
+    return Math.max(
+      (editingTextElement.bounds.height - renderedTextHeight) / 2,
+      0,
+    )
+  }, [editingTextDraft, editingTextElement])
 
   useEffect(() => {
     if (!editingTextElement) return
@@ -1251,9 +1276,16 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
             maxLength={MAX_TEXT_CONTENT_LENGTH}
             value={editingTextDraft}
             style={{
-              left: groupX + editingTextElement.bounds.x * viewScale,
+              left:
+                groupX +
+                (editingTextElement.bounds.x +
+                  editingTextElement.bounds.width / 2) *
+                  viewScale,
               top:
-                (editingTextElement.bounds.y - viewportY) * viewScale,
+                (editingTextElement.bounds.y +
+                  editingTextElement.bounds.height / 2 -
+                  viewportY) *
+                viewScale,
               width: editingTextElement.bounds.width * viewScale,
               height: editingTextElement.bounds.height * viewScale,
               color: editingTextElement.fill,
@@ -1262,7 +1294,10 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
               fontWeight: editingTextElement.fontWeight,
               lineHeight: editingTextElement.lineHeight,
               textAlign: editingTextElement.align,
-              borderColor: accentColor,
+              paddingTop: editingTextVerticalInset * viewScale,
+              outlineColor: accentColor,
+              opacity: editingTextElement.opacity,
+              transform: `translate(-50%, -50%) rotate(${editingTextElement.transform.rotationDegrees}deg) scale(${editingTextElement.transform.flipX ? -1 : 1}, ${editingTextElement.transform.flipY ? -1 : 1})`,
             }}
             onChange={(event) => setEditingTextDraft(event.currentTarget.value)}
             onBlur={() => finishTextEditing(true)}
