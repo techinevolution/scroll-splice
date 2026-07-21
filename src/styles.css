@@ -1633,23 +1633,21 @@ p {
   align-items: center;
   gap: 0.08rem 0.42rem;
   padding: 0.48rem 0.72rem;
-  border: 1px solid rgb(101 228 255 / 48%);
+  border: 1px solid rgb(255 255 255 / 12%);
   border-radius: 0.65rem;
   color: #f6f2ff;
-  background: rgb(25 20 34 / 94%);
-  box-shadow:
-    0 12px 28px rgb(0 0 0 / 32%),
-    0 0 0 3px rgb(101 228 255 / 7%);
+  background: #211a2a;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 32%);
   cursor: pointer;
 }
 
 .extend-episode-button:hover {
-  border-color: #65e4ff;
-  background: #282033;
+  border-color: rgb(154 124 255 / 48%);
+  background: #2a2137;
 }
 
 .extend-episode-button > span:first-child {
-  color: #65e4ff;
+  color: #9a7cff;
   font-size: 1.15rem;
   line-height: 1;
 }
