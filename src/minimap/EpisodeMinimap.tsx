@@ -726,10 +726,7 @@ export function EpisodeMinimap() {
   return (
     <section className="panel-card minimap-card" aria-labelledby="minimap-heading">
       <header className="panel-heading">
-        <div>
-          <p className="panel-kicker">Full episode</p>
-          <h2 id="minimap-heading">Minimap</h2>
-        </div>
+        <h2 id="minimap-heading">Minimap</h2>
         <span className="panel-count">
           {episode.logicalHeight.toLocaleString()}px
         </span>

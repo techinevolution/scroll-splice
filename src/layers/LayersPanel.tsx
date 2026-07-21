@@ -615,10 +615,7 @@ export function LayersPanel() {
   return (
     <section className="panel-card layers-card" aria-labelledby="layers-heading">
       <header className="panel-heading">
-        <div>
-          <p className="panel-kicker">Episode structure</p>
-          <h2 id="layers-heading">Layers · {groupLabel}</h2>
-        </div>
+        <h2 id="layers-heading">Layers · {groupLabel}</h2>
         <span className="panel-count">{orderedElements.length}</span>
       </header>
 
