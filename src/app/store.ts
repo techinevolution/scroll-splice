@@ -1135,10 +1135,10 @@ function loadInitialProjectState(): {
 
     if (!loaded) {
       return {
-        episode: buildWeekEpisode,
+        episode: createBlankEpisode(createEpisodeId()),
         currentProjectId: null,
         recentProjects: listed.projects,
-        documentStatus: 'Demo ready · not saved',
+        documentStatus: 'Blank episode ready · not saved',
         hasSavedEpisode: listed.projects.length > 0,
       }
     }
@@ -1165,12 +1165,12 @@ function loadInitialProjectState(): {
         : null
 
   return {
-    episode: buildWeekEpisode,
+    episode: createBlankEpisode(createEpisodeId()),
     currentProjectId: null,
     recentProjects: listed.ok ? listed.projects : [],
     documentStatus: failureMessage
-      ? `${failureMessage} Demo loaded instead.`
-      : 'Demo ready · not saved',
+      ? `${failureMessage} Blank episode loaded instead.`
+      : 'Blank episode ready · not saved',
     hasSavedEpisode: false,
   }
 }
@@ -1564,7 +1564,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             ? 'Unsaved changes'
             : state.hasSavedEpisode
               ? 'Saved locally'
-              : 'Demo ready · not saved',
+              : 'Blank episode ready · not saved',
         }
       }
 
@@ -1604,7 +1604,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           ? 'Unsaved changes'
           : state.hasSavedEpisode
             ? 'Saved locally'
-            : 'Demo ready · not saved',
+            : 'Blank episode ready · not saved',
       }
     })
   },
@@ -2422,7 +2422,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
             ? 'Unsaved changes'
             : state.hasSavedEpisode
               ? 'Saved locally'
-              : 'Demo ready · not saved',
+              : 'Blank episode ready · not saved',
         }
       }
 
@@ -2465,7 +2465,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           ? 'Unsaved changes'
           : state.hasSavedEpisode
             ? 'Saved locally'
-            : 'Demo ready · not saved',
+            : 'Blank episode ready · not saved',
       }
     })
   },

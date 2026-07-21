@@ -75,8 +75,15 @@ test('preserves a saved episode and keeps history inside one document', async ({
   const documentStatus = page.getByTestId('document-status')
   const episodeHeading = page.getByTestId('episode-heading')
 
-  await expect(documentStatus).toHaveText('Demo ready · not saved')
+  await expect(documentStatus).toHaveText('Blank episode ready · not saved')
   await expect(episodeHeading).toHaveAttribute('data-dirty', 'false')
+  await expect(
+    page.getByRole('button', {
+      name: 'Edit episode title: Untitled Episode',
+      exact: true,
+    }),
+  ).toBeVisible()
+  await expectEmptyElementList(page.getByTestId('layer-elements-list'))
 
   const fileMenu = await openApplicationMenu(page, 'File')
   await expect(fileMenu.getByRole('menuitem')).toHaveText([
@@ -110,13 +117,13 @@ test('preserves a saved episode and keeps history inside one document', async ({
   const addContentPlane = page.getByRole('button', {
     name: 'Add Content plane',
   })
-  const contentPlane3 = page.getByRole('button', {
-    name: 'Content plane 3',
+  const contentPlane2 = page.getByRole('button', {
+    name: 'Content plane 2',
     exact: true,
   })
 
   await addContentPlane.click()
-  await expect(contentPlane3).toHaveAttribute('aria-pressed', 'true')
+  await expect(contentPlane2).toHaveAttribute('aria-pressed', 'true')
   await expect(documentStatus).toHaveText('Unsaved changes')
 
   const undoMenu = await openApplicationMenu(page, 'Edit')
@@ -129,7 +136,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
   await undoMenu
     .getByRole('menuitem', { name: 'Undo', exact: true })
     .click()
-  await expect(contentPlane3).toHaveCount(0)
+  await expect(contentPlane2).toHaveCount(0)
 
   const redoMenu = await openApplicationMenu(page, 'Edit')
   await expect(
@@ -141,12 +148,12 @@ test('preserves a saved episode and keeps history inside one document', async ({
   await redoMenu
     .getByRole('menuitem', { name: 'Redo', exact: true })
     .click()
-  await expect(contentPlane3).toHaveAttribute('aria-pressed', 'true')
+  await expect(contentPlane2).toHaveAttribute('aria-pressed', 'true')
 
   await page.keyboard.press('Control+z')
-  await expect(contentPlane3).toHaveCount(0)
+  await expect(contentPlane2).toHaveCount(0)
   await page.keyboard.press('Control+Shift+z')
-  await expect(contentPlane3).toHaveAttribute('aria-pressed', 'true')
+  await expect(contentPlane2).toHaveAttribute('aria-pressed', 'true')
 
   await page
     .getByRole('button', { name: 'Decorations', exact: true })
@@ -164,11 +171,11 @@ test('preserves a saved episode and keeps history inside one document', async ({
   const savedTitle = 'History and Persistence Proof'
   await editEpisodeTitle(page, savedTitle)
 
-  const contentPlane3Visibility = page.getByRole('button', {
-    name: 'Content plane 3 visibility',
+  const contentPlane2Visibility = page.getByRole('button', {
+    name: 'Content plane 2 visibility',
   })
-  await contentPlane3Visibility.click()
-  await expect(contentPlane3Visibility).toHaveAttribute(
+  await contentPlane2Visibility.click()
+  await expect(contentPlane2Visibility).toHaveAttribute(
     'aria-pressed',
     'false',
   )
@@ -188,12 +195,12 @@ test('preserves a saved episode and keeps history inside one document', async ({
       exact: true,
     }),
   ).toBeVisible()
-  await expect(contentPlane3).toBeVisible()
-  await expect(contentPlane3Visibility).toHaveAttribute(
+  await expect(contentPlane2).toBeVisible()
+  await expect(contentPlane2Visibility).toHaveAttribute(
     'aria-pressed',
     'false',
   )
-  await contentPlane3.click()
+  await contentPlane2.click()
   await expect(syntheticShapeRow).toBeVisible()
 
   const editMenuAfterReload = await openApplicationMenu(page, 'Edit')
@@ -212,8 +219,8 @@ test('preserves a saved episode and keeps history inside one document', async ({
   await page.keyboard.press('Escape')
 
   await editEpisodeTitle(page, 'Unsaved Detour')
-  await contentPlane3Visibility.click()
-  await expect(contentPlane3Visibility).toHaveAttribute('aria-pressed', 'true')
+  await contentPlane2Visibility.click()
+  await expect(contentPlane2Visibility).toHaveAttribute('aria-pressed', 'true')
   await expect(documentStatus).toHaveText('Unsaved changes')
 
   await acceptDiscardDialog(
@@ -230,11 +237,11 @@ test('preserves a saved episode and keeps history inside one document', async ({
       exact: true,
     }),
   ).toBeVisible()
-  await expect(contentPlane3Visibility).toHaveAttribute(
+  await expect(contentPlane2Visibility).toHaveAttribute(
     'aria-pressed',
     'false',
   )
-  await contentPlane3.click()
+  await contentPlane2.click()
   await expect(syntheticShapeRow).toBeVisible()
 
   await useApplicationMenuItem(page, 'File', 'New Episode')
@@ -251,7 +258,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
     'data-episode-height',
     '1280',
   )
-  await expect(contentPlane3).toHaveCount(0)
+  await expect(contentPlane2).toHaveCount(0)
   await expectEmptyElementList(page.getByTestId('layer-elements-list'))
 
   const editMenuAfterNewEpisode = await openApplicationMenu(page, 'Edit')
@@ -282,12 +289,12 @@ test('preserves a saved episode and keeps history inside one document', async ({
       exact: true,
     }),
   ).toBeVisible()
-  await expect(contentPlane3).toBeVisible()
-  await expect(contentPlane3Visibility).toHaveAttribute(
+  await expect(contentPlane2).toBeVisible()
+  await expect(contentPlane2Visibility).toHaveAttribute(
     'aria-pressed',
     'false',
   )
-  await contentPlane3.click()
+  await contentPlane2.click()
   await expect(syntheticShapeRow).toBeVisible()
 
   const finalEditMenu = await openApplicationMenu(page, 'Edit')

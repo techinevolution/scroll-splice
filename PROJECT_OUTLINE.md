@@ -23,7 +23,7 @@ Root & Table is the first real story used to test whether the tool supports an e
 
 ### Build Week MVP
 
-The July 21 submission is a small but complete working editor experience, not the full product. It uses the fixed-width original six-image **The Light We Planted** sample episode with separate editable title and narration to deliver:
+The July 21 submission is a small but complete working editor experience, not the full product. A clean browser starts from a blank **Untitled Episode**, and the File menu retains the fixed-width original six-image **The Light We Planted** Reset Demo with separate editable title and narration to demonstrate:
 
 - a viewport-sized vertical editing canvas
 - a lightweight full-episode minimap with synchronized navigation
