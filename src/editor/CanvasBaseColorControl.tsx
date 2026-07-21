@@ -1,4 +1,5 @@
 import { useEditorStore } from '../app/store'
+import { BaseColorInput } from '../components/BaseColorInput'
 import { getLayerPlaneById } from '../core/episode'
 
 export function CanvasBaseColorControl() {
@@ -6,7 +7,6 @@ export function CanvasBaseColorControl() {
   const activeLayerPlaneId = useEditorStore(
     (state) => state.activeLayerPlaneId,
   )
-  const setBaseColor = useEditorStore((state) => state.setBaseColor)
   const activeLayerPlane = getLayerPlaneById(episode, activeLayerPlaneId)
 
   if (activeLayerPlane?.kind !== 'base') {
@@ -19,11 +19,9 @@ export function CanvasBaseColorControl() {
         <strong>Canvas Base</strong>
         <small>Full Episode</small>
       </span>
-      <input
-        type="color"
-        aria-label="Canvas base color"
+      <BaseColorInput
+        ariaLabel="Canvas base color"
         value={activeLayerPlane.baseColor}
-        onChange={(event) => setBaseColor(event.currentTarget.value)}
       />
     </div>
   )

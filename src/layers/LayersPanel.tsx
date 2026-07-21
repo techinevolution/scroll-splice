@@ -9,6 +9,7 @@ import {
 } from 'react'
 
 import { useEditorStore } from '../app/store'
+import { BaseColorInput } from '../components/BaseColorInput'
 import {
   ASSET_DRAG_MIME_TYPE,
   parseAssetDragPayload,
@@ -262,7 +263,6 @@ export function LayersPanel() {
     (state) => state.createBackgroundColorRegion,
   )
   const viewportY = useEditorStore((state) => state.viewportY)
-  const setBaseColor = useEditorStore((state) => state.setBaseColor)
   const setElementVisibility = useEditorStore(
     (state) => state.setElementVisibility,
   )
@@ -639,11 +639,9 @@ export function LayersPanel() {
             <strong>Base Color</strong>
             <small>Full Episode</small>
           </span>
-          <input
-            type="color"
-            aria-label="Base color"
+          <BaseColorInput
+            ariaLabel="Base color"
             value={activeLayerPlane.baseColor}
-            onChange={(event) => setBaseColor(event.currentTarget.value)}
           />
         </div>
       ) : null}

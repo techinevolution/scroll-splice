@@ -91,6 +91,54 @@ const FREEFORM_RESIZE_ANCHORS = [
   'bottom-right',
 ]
 
+function sampleCanvasColorAtPoint(
+  container: HTMLElement,
+  clientX: number,
+  clientY: number,
+): string | null {
+  const canvases = [
+    ...container.querySelectorAll<HTMLCanvasElement>('.konvajs-content canvas'),
+  ].reverse()
+
+  for (const canvas of canvases) {
+    const bounds = canvas.getBoundingClientRect()
+
+    if (
+      clientX < bounds.left ||
+      clientX >= bounds.right ||
+      clientY < bounds.top ||
+      clientY >= bounds.bottom
+    ) {
+      continue
+    }
+
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    if (!context) continue
+
+    try {
+      const x = Math.min(
+        Math.floor(((clientX - bounds.left) / bounds.width) * canvas.width),
+        canvas.width - 1,
+      )
+      const y = Math.min(
+        Math.floor(((clientY - bounds.top) / bounds.height) * canvas.height),
+        canvas.height - 1,
+      )
+      const [red, green, blue, alpha] = context.getImageData(x, y, 1, 1).data
+
+      if (alpha === 0) continue
+
+      return `#${[red ?? 0, green ?? 0, blue ?? 0]
+        .map((channel) => channel.toString(16).padStart(2, '0'))
+        .join('')}`
+    } catch {
+      return null
+    }
+  }
+
+  return null
+}
+
 interface ElementNodeProps {
   readonly element: EpisodeElement
   readonly imageSourceUrl?: string
@@ -389,7 +437,7 @@ function ElementNode({
   const nodeRef = useRef<Konva.Group>(null)
   const transformerRef = useRef<Konva.Transformer>(null)
   const isFreeformResizable = isElementFreeformResizable(element)
-  const isResizable = isPrimarySelected && !element.locked && !isEditing
+  const isResizable = isPrimarySelected && !element.locked
   const flipScaleX = element.transform.flipX ? -1 : 1
   const flipScaleY = element.transform.flipY ? -1 : 1
 
@@ -709,6 +757,13 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   const sliceGuidesVisible = useEditorStore(
     (state) => state.sliceGuidesVisible,
   )
+  const baseColorSamplerActive = useEditorStore(
+    (state) => state.baseColorSamplerActive,
+  )
+  const setBaseColorSamplerActive = useEditorStore(
+    (state) => state.setBaseColorSamplerActive,
+  )
+  const setBaseColor = useEditorStore((state) => state.setBaseColor)
   const setFitViewportLogicalHeight = useEditorStore(
     (state) => state.setFitViewportLogicalHeight,
   )
@@ -757,7 +812,20 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   const [showFileDropFeedback, setShowFileDropFeedback] = useState(false)
   const [editingTextId, setEditingTextId] = useState<string | null>(null)
   const [editingTextDraft, setEditingTextDraft] = useState('')
+  const [editingTextDragOffset, setEditingTextDragOffset] = useState({
+    x: 0,
+    y: 0,
+  })
   const editingTextAreaRef = useRef<HTMLTextAreaElement>(null)
+  const editingTextDragRef = useRef<{
+    readonly pointerId: number
+    readonly clientX: number
+    readonly clientY: number
+    readonly startX: number
+    readonly startY: number
+    offsetX: number
+    offsetY: number
+  } | null>(null)
   const preserveTextSelectionOnCanvasPointerRef = useRef(false)
   const { elementRef, size } = useElementSize<HTMLDivElement>()
 
@@ -816,6 +884,17 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
     textArea?.select()
   }, [editingTextElement])
 
+  useEffect(() => {
+    if (!baseColorSamplerActive) return
+
+    const cancelOnEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === 'Escape') setBaseColorSamplerActive(false)
+    }
+
+    window.addEventListener('keydown', cancelOnEscape)
+    return () => window.removeEventListener('keydown', cancelOnEscape)
+  }, [baseColorSamplerActive, setBaseColorSamplerActive])
+
   const finishTextEditing = (commit: boolean) => {
     const currentText =
       editingTextAreaRef.current?.value ?? editingTextDraft
@@ -831,6 +910,27 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
     }
 
     setEditingTextId(null)
+    setEditingTextDragOffset({ x: 0, y: 0 })
+  }
+
+  const finishEditingTextDrag = (
+    element: HTMLElement,
+    pointerId: number,
+  ) => {
+    const drag = editingTextDragRef.current
+    if (!drag || !editingTextElement || drag.pointerId !== pointerId) return
+
+    if (element.hasPointerCapture(pointerId)) {
+      element.releasePointerCapture(pointerId)
+    }
+    moveElement(editingTextElement.id, {
+      x: drag.startX + drag.offsetX,
+      y: drag.startY + drag.offsetY,
+    })
+    clearElementBoundsPreview(editingTextElement.id)
+    editingTextDragRef.current = null
+    setEditingTextDragOffset({ x: 0, y: 0 })
+    requestAnimationFrame(() => editingTextAreaRef.current?.focus())
   }
   const sliceBoundaries = useMemo(
     () =>
@@ -1116,6 +1216,7 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
               : PROPORTIONAL_RESIZE_ANCHORS.length
             : 0
         }
+        data-color-sampler-active={baseColorSamplerActive}
         role="region"
         aria-busy={size.width <= 0 || size.height <= 0}
         aria-label="Episode editing canvas. Use the mouse wheel, trackpad, or arrow keys to move through the episode."
@@ -1126,6 +1227,23 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
         onDragLeave={handleAssetDragLeave}
         onDrop={handleAssetDrop}
         onPointerDownCapture={(event) => {
+          if (
+            baseColorSamplerActive &&
+            event.target instanceof HTMLCanvasElement
+          ) {
+            event.preventDefault()
+            event.stopPropagation()
+            const sampledColor = sampleCanvasColorAtPoint(
+              event.currentTarget,
+              event.clientX,
+              event.clientY,
+            )
+
+            if (sampledColor) setBaseColor(sampledColor)
+            setBaseColorSamplerActive(false)
+            return
+          }
+
           if (
             editingTextElement &&
             event.target !== editingTextAreaRef.current
@@ -1203,6 +1321,7 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
                   onEdit={(textElement) => {
                     selectElement(textElement.id)
                     setEditingTextDraft(textElement.text)
+                    setEditingTextDragOffset({ x: 0, y: 0 })
                     setEditingTextId(textElement.id)
                   }}
                   onMove={(elementId, x, y) =>
@@ -1276,10 +1395,12 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
               left:
                 groupX +
                 (editingTextElement.bounds.x +
+                  editingTextDragOffset.x +
                   editingTextElement.bounds.width / 2) *
                   viewScale,
               top:
                 (editingTextElement.bounds.y +
+                  editingTextDragOffset.y +
                   editingTextElement.bounds.height / 2 -
                   viewportY) *
                 viewScale,
@@ -1313,6 +1434,74 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
               }
             }}
           />
+        ) : null}
+
+        {editingTextElement ? (
+          <button
+            type="button"
+            className="canvas-text-move-handle"
+            aria-label={`Move ${editingTextElement.name}`}
+            title="Drag To Move Text Box"
+            style={{
+              left:
+                groupX +
+                (editingTextElement.bounds.x +
+                  editingTextDragOffset.x +
+                  editingTextElement.bounds.width / 2) *
+                  viewScale,
+              top:
+                (editingTextElement.bounds.y +
+                  editingTextDragOffset.y -
+                  viewportY) *
+                viewScale,
+              transform: `translate(-50%, calc(-100% - 5px)) rotate(${editingTextElement.transform.rotationDegrees}deg)`,
+            }}
+            onPointerDown={(event) => {
+              event.preventDefault()
+              event.stopPropagation()
+              event.currentTarget.setPointerCapture(event.pointerId)
+              editingTextDragRef.current = {
+                pointerId: event.pointerId,
+                clientX: event.clientX,
+                clientY: event.clientY,
+                startX: editingTextElement.bounds.x,
+                startY: editingTextElement.bounds.y,
+                offsetX: 0,
+                offsetY: 0,
+              }
+            }}
+            onPointerMove={(event) => {
+              const drag = editingTextDragRef.current
+              if (!drag || drag.pointerId !== event.pointerId) return
+
+              const offset = {
+                x: (event.clientX - drag.clientX) / viewScale,
+                y: (event.clientY - drag.clientY) / viewScale,
+              }
+              drag.offsetX = offset.x
+              drag.offsetY = offset.y
+              setEditingTextDragOffset(offset)
+              previewElementBounds(editingTextElement.id, {
+                ...editingTextElement.bounds,
+                x: drag.startX + offset.x,
+                y: drag.startY + offset.y,
+              })
+            }}
+            onPointerUp={(event) =>
+              finishEditingTextDrag(event.currentTarget, event.pointerId)
+            }
+            onPointerCancel={(event) =>
+              finishEditingTextDrag(event.currentTarget, event.pointerId)
+            }
+          >
+            <span aria-hidden="true">•••</span>
+          </button>
+        ) : null}
+
+        {baseColorSamplerActive ? (
+          <div className="canvas-color-sampler-prompt" role="status">
+            Click The Canvas To Sample A Color · Esc To Cancel
+          </div>
         ) : null}
 
         <CanvasBaseColorControl />

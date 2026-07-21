@@ -113,6 +113,37 @@ test('moves selected text and returns from editing without deselecting it', asyn
   await editor.fill('Resize this text')
   await expect(editor).toHaveValue('Resize this text')
 
+  const editMoveHandle = page.getByRole('button', { name: 'Move Text 1' })
+  await expect(editMoveHandle).toBeVisible()
+  const editMoveHandleBox = await editMoveHandle.boundingBox()
+  expect(editMoveHandleBox).not.toBeNull()
+  const beforeEditingMoveX = Number(
+    await canvas.getAttribute('data-selected-x'),
+  )
+  const beforeEditingMoveY = Number(
+    await canvas.getAttribute('data-selected-y'),
+  )
+
+  await page.mouse.move(
+    editMoveHandleBox!.x + editMoveHandleBox!.width / 2,
+    editMoveHandleBox!.y + editMoveHandleBox!.height / 2,
+  )
+  await page.mouse.down()
+  await page.mouse.move(
+    editMoveHandleBox!.x + editMoveHandleBox!.width / 2 + 24,
+    editMoveHandleBox!.y + editMoveHandleBox!.height / 2 + 16,
+  )
+  await page.mouse.up()
+
+  await expect(editor).toBeVisible()
+  await expect(editor).toHaveValue('Resize this text')
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-selected-x')))
+    .toBeGreaterThan(beforeEditingMoveX)
+  await expect
+    .poll(async () => Number(await canvas.getAttribute('data-selected-y')))
+    .toBeGreaterThan(beforeEditingMoveY)
+
   await page.mouse.click(canvasBox!.x + 24, canvasBox!.y + 24)
 
   await expect(editor).toHaveCount(0)
@@ -123,18 +154,21 @@ test('moves selected text and returns from editing without deselecting it', asyn
   )
   await expect(canvas).toHaveAttribute('data-resize-handle-count', '4')
 
+  const resizedFromX = Number(await canvas.getAttribute('data-selected-x'))
+  const resizedFromY = Number(await canvas.getAttribute('data-selected-y'))
+
   await page.mouse.move(
     canvasBox!.x +
-      (movedX - geometry.viewportX + geometry.width) * scale,
+      (resizedFromX - geometry.viewportX + geometry.width) * scale,
     canvasBox!.y +
-      (movedY - geometry.viewportY + geometry.height) * scale,
+      (resizedFromY - geometry.viewportY + geometry.height) * scale,
   )
   await page.mouse.down()
   await page.mouse.move(
     canvasBox!.x +
-      (movedX - geometry.viewportX + geometry.width + 40) * scale,
+      (resizedFromX - geometry.viewportX + geometry.width + 40) * scale,
     canvasBox!.y +
-      (movedY - geometry.viewportY + geometry.height + 20) * scale,
+      (resizedFromY - geometry.viewportY + geometry.height + 20) * scale,
   )
   await page.mouse.up()
 

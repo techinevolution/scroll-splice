@@ -177,6 +177,7 @@ interface EditorState {
   readonly importedImageAssets: readonly RuntimeImportedImage[]
   readonly magnetEnabled: boolean
   readonly sliceGuidesVisible: boolean
+  readonly baseColorSamplerActive: boolean
   readonly setActiveCompositionGroup: (group: CompositionGroup) => void
   readonly setActiveLayerPlane: (layerPlaneId: string) => void
   readonly createLayerPlane: () => void
@@ -222,6 +223,7 @@ interface EditorState {
     visible: boolean,
   ) => void
   readonly setBaseColor: (color: string) => void
+  readonly setBaseColorSamplerActive: (active: boolean) => void
   readonly setElementName: (elementId: string, name: string) => void
   readonly setElementLocked: (elementId: string, locked: boolean) => void
   readonly toggleElementLocked: (elementId: string) => void
@@ -1194,6 +1196,7 @@ function createLoadedEpisodePatch(
     assetPanelOpen: false,
     magnetEnabled: true,
     sliceGuidesVisible: true,
+    baseColorSamplerActive: false,
   }
 }
 
@@ -1267,6 +1270,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   importedImageAssets: [],
   magnetEnabled: true,
   sliceGuidesVisible: true,
+  baseColorSamplerActive: false,
 
   setActiveCompositionGroup: (group) => {
     set((state) => {
@@ -1854,6 +1858,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         setBaseColorCommand(state.episode, color),
       ),
     )
+  },
+
+  setBaseColorSamplerActive: (active) => {
+    set({ baseColorSamplerActive: active })
   },
 
   setElementName: (elementId, name) => {
@@ -4061,6 +4069,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         assetPanelOpen: false,
         magnetEnabled: true,
         sliceGuidesVisible: true,
+        baseColorSamplerActive: false,
       }
     })
   },
@@ -4100,6 +4109,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         assetPanelOpen: false,
         magnetEnabled: true,
         sliceGuidesVisible: true,
+        baseColorSamplerActive: false,
       }
     })
   },
