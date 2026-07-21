@@ -524,6 +524,28 @@ function ElementNode({
           event.cancelBubble = true
           onSelect(element.id, false)
         }}
+        onClick={(event) => {
+          if (
+            element.type !== 'text' ||
+            element.locked ||
+            !isPrimarySelected
+          ) {
+            return
+          }
+          event.cancelBubble = true
+          onEdit(element)
+        }}
+        onTap={(event) => {
+          if (
+            element.type !== 'text' ||
+            element.locked ||
+            !isPrimarySelected
+          ) {
+            return
+          }
+          event.cancelBubble = true
+          onEdit(element)
+        }}
         onDblClick={(event) => {
           if (element.type !== 'text' || element.locked) return
           event.cancelBubble = true
@@ -1142,6 +1164,11 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
             })
           }}
           onMouseDown={(event) => {
+            if (editingTextElement) {
+              finishTextEditing(true)
+              return
+            }
+
             if (event.target === event.target.getStage()) {
               selectElement(null)
             }

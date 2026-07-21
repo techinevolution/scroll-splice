@@ -17,7 +17,7 @@ async function editSelectedTextOnCanvas(page: Page, wording: string) {
   }))
   const scale = box!.width / geometry.episodeWidth
 
-  await page.mouse.dblclick(
+  await page.mouse.click(
     box!.x + (geometry.x - geometry.viewportX + geometry.width / 2) * scale,
     box!.y + (geometry.y - geometry.viewportY + geometry.height / 2) * scale,
   )
@@ -43,7 +43,7 @@ async function editSelectedTextOnCanvas(page: Page, wording: string) {
   await expect(canvas).toHaveAttribute('data-selected-text', wording)
 }
 
-test('selects text for resizing before direct editing', async ({
+test('returns from direct editing to text resizing inside the canvas', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 })
@@ -80,8 +80,18 @@ test('selects text for resizing before direct editing', async ({
   )
 
   const editor = page.getByTestId('canvas-text-editor')
-  await expect(editor).toHaveCount(0)
+  await expect(editor).toBeVisible()
   await expect(page.getByTestId('selected-layer-management')).toHaveCount(0)
+  await editor.fill('Resize this text')
+  await expect(editor).toHaveValue('Resize this text')
+
+  await page.mouse.click(canvasBox!.x + 24, canvasBox!.y + 24)
+
+  await expect(editor).toHaveCount(0)
+  await expect(canvas).toHaveAttribute(
+    'data-selected-text',
+    'Resize this text',
+  )
   await expect(canvas).toHaveAttribute('data-resize-handle-count', '4')
 
   await page.mouse.move(
