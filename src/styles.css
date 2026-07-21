@@ -2263,56 +2263,6 @@ p {
   cursor: pointer;
 }
 
-.base-color-input {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.base-color-eyedropper {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  padding: 5px;
-  border: 1px solid var(--ui-border, rgb(255 255 255 / 18%));
-  border-radius: 0.4rem;
-  color: var(--ui-text-muted, #d7cfdf);
-  background: var(--ui-surface-raised, #211b2b);
-  cursor: pointer;
-  place-items: center;
-}
-
-.base-color-eyedropper svg {
-  width: 16px;
-  height: 16px;
-}
-
-.base-color-eyedropper:hover,
-.base-color-eyedropper[aria-pressed="true"] {
-  border-color: var(--ui-accent);
-  color: var(--ui-accent-strong);
-  background: var(--ui-accent-soft);
-}
-
-.editor-canvas-frame[data-color-sampler-active="true"] canvas {
-  cursor: crosshair !important;
-}
-
-.canvas-color-sampler-prompt {
-  position: absolute;
-  z-index: 8;
-  top: 0.75rem;
-  left: 50%;
-  padding: 0.42rem 0.65rem;
-  border: 1px solid var(--ui-accent);
-  border-radius: 0.45rem;
-  color: var(--ui-text);
-  background: var(--ui-surface);
-  box-shadow: 0 6px 18px var(--ui-shadow);
-  font-size: 0.62rem;
-  pointer-events: none;
-  transform: translateX(-50%);
-}
 
 .plane-element-actions {
   display: flex;

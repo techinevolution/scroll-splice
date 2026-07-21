@@ -91,54 +91,6 @@ const FREEFORM_RESIZE_ANCHORS = [
   'bottom-right',
 ]
 
-function sampleCanvasColorAtPoint(
-  container: HTMLElement,
-  clientX: number,
-  clientY: number,
-): string | null {
-  const canvases = [
-    ...container.querySelectorAll<HTMLCanvasElement>('.konvajs-content canvas'),
-  ].reverse()
-
-  for (const canvas of canvases) {
-    const bounds = canvas.getBoundingClientRect()
-
-    if (
-      clientX < bounds.left ||
-      clientX >= bounds.right ||
-      clientY < bounds.top ||
-      clientY >= bounds.bottom
-    ) {
-      continue
-    }
-
-    const context = canvas.getContext('2d', { willReadFrequently: true })
-    if (!context) continue
-
-    try {
-      const x = Math.min(
-        Math.floor(((clientX - bounds.left) / bounds.width) * canvas.width),
-        canvas.width - 1,
-      )
-      const y = Math.min(
-        Math.floor(((clientY - bounds.top) / bounds.height) * canvas.height),
-        canvas.height - 1,
-      )
-      const [red, green, blue, alpha] = context.getImageData(x, y, 1, 1).data
-
-      if (alpha === 0) continue
-
-      return `#${[red ?? 0, green ?? 0, blue ?? 0]
-        .map((channel) => channel.toString(16).padStart(2, '0'))
-        .join('')}`
-    } catch {
-      return null
-    }
-  }
-
-  return null
-}
-
 interface ElementNodeProps {
   readonly element: EpisodeElement
   readonly imageSourceUrl?: string
@@ -757,13 +709,6 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
   const sliceGuidesVisible = useEditorStore(
     (state) => state.sliceGuidesVisible,
   )
-  const baseColorSamplerActive = useEditorStore(
-    (state) => state.baseColorSamplerActive,
-  )
-  const setBaseColorSamplerActive = useEditorStore(
-    (state) => state.setBaseColorSamplerActive,
-  )
-  const setBaseColor = useEditorStore((state) => state.setBaseColor)
   const setFitViewportLogicalHeight = useEditorStore(
     (state) => state.setFitViewportLogicalHeight,
   )
@@ -883,17 +828,6 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
     textArea?.focus()
     textArea?.select()
   }, [editingTextElement])
-
-  useEffect(() => {
-    if (!baseColorSamplerActive) return
-
-    const cancelOnEscape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') setBaseColorSamplerActive(false)
-    }
-
-    window.addEventListener('keydown', cancelOnEscape)
-    return () => window.removeEventListener('keydown', cancelOnEscape)
-  }, [baseColorSamplerActive, setBaseColorSamplerActive])
 
   const finishTextEditing = (commit: boolean) => {
     const currentText =
@@ -1216,7 +1150,6 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
               : PROPORTIONAL_RESIZE_ANCHORS.length
             : 0
         }
-        data-color-sampler-active={baseColorSamplerActive}
         role="region"
         aria-busy={size.width <= 0 || size.height <= 0}
         aria-label="Episode editing canvas. Use the mouse wheel, trackpad, or arrow keys to move through the episode."
@@ -1227,23 +1160,6 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
         onDragLeave={handleAssetDragLeave}
         onDrop={handleAssetDrop}
         onPointerDownCapture={(event) => {
-          if (
-            baseColorSamplerActive &&
-            event.target instanceof HTMLCanvasElement
-          ) {
-            event.preventDefault()
-            event.stopPropagation()
-            const sampledColor = sampleCanvasColorAtPoint(
-              event.currentTarget,
-              event.clientX,
-              event.clientY,
-            )
-
-            if (sampledColor) setBaseColor(sampledColor)
-            setBaseColorSamplerActive(false)
-            return
-          }
-
           if (
             editingTextElement &&
             event.target !== editingTextAreaRef.current
@@ -1496,12 +1412,6 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
           >
             <span aria-hidden="true">•••</span>
           </button>
-        ) : null}
-
-        {baseColorSamplerActive ? (
-          <div className="canvas-color-sampler-prompt" role="status">
-            Click The Canvas To Sample A Color · Esc To Cancel
-          </div>
         ) : null}
 
         <CanvasBaseColorControl />
