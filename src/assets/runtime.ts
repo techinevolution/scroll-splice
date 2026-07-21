@@ -1,5 +1,5 @@
 import type { ImageAssetReference } from '../core/episode'
-import { BUILT_IN_ASSETS } from './builtInCatalog'
+import { RESOLVABLE_BUILT_IN_ASSETS } from './builtInCatalog'
 import type { ImportedImageSnapshot } from './types'
 
 const DEMO_STORY_ASSETS = Array.from({ length: 6 }, (_, index) => {
@@ -69,7 +69,9 @@ export function resolveImageAsset(
 
     if (demoStoryAsset) return demoStoryAsset
 
-    const asset = BUILT_IN_ASSETS.find(({ id }) => id === reference.assetId)
+    const asset = RESOLVABLE_BUILT_IN_ASSETS.find(
+      ({ id }) => id === reference.assetId,
+    )
 
     return asset
       ? {

@@ -66,11 +66,13 @@ export function getDefaultSpeechBalloonBodyControlPoints(
       ? [1, 0.72, 1, 0.68, 1, 0.74, 1, 0.7, 1, 0.72, 1, 0.68]
       : presetId === 'electric'
         ? [1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8, 1, 0.8]
-        : presetId === 'thought'
-          ? [1, 0.9, 1, 0.9, 1, 0.9, 1, 0.9, 1, 0.9, 1, 0.9]
-          : presetId === 'wavy'
-            ? [1, 0.94, 1, 0.94, 1, 0.94, 1, 0.94, 1, 0.94, 1, 0.94]
-            : [1, 1, 1, 1, 1, 1, 1, 1]
+        : presetId === 'rough'
+          ? [1, 0.9, 0.98, 0.84, 1, 0.91, 0.96, 0.86, 1, 0.88, 0.97, 0.9]
+          : presetId === 'thought'
+            ? [1, 0.9, 1, 0.9, 1, 0.9, 1, 0.9, 1, 0.9, 1, 0.9]
+            : presetId === 'wavy'
+              ? [1, 0.94, 1, 0.94, 1, 0.94, 1, 0.94, 1, 0.94, 1, 0.94]
+              : [1, 1, 1, 1, 1, 1, 1, 1]
   return scales.map((scale, index) => {
     const angle = -Math.PI / 2 + (index / scales.length) * Math.PI * 2
     return {

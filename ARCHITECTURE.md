@@ -63,7 +63,7 @@ Do not create empty `services`, `adapters`, or `auth` trees merely to represent 
 
 ## Current validated document model
 
-The implemented format-v6 document uses one shallow, explicit organization path: fixed composition group -> ordered layer plane -> flat element references by `layerPlaneId`. An element's group is derived from its plane rather than duplicated on the element. Version 4 introduced real image references, version 5 added shared appearance, and version 6 adds bounded transforms/protection/overflow, image frames/crop/masks, flat element-group membership, and one atomic editable speech-balloon element. Source bytes and browser object URLs never enter the episode document.
+The implemented format-v6 document uses one shallow, explicit organization path: fixed composition group -> ordered layer plane -> flat element references by `layerPlaneId`. An element's group is derived from its plane rather than duplicated on the element. Version 4 introduced real image references, version 5 added shared appearance, and version 6 adds bounded transforms/protection/overflow, image frames/crop/masks, flat element-group membership, and one editable speech-balloon element. Source bytes and browser object URLs never enter the episode document.
 
 The sample document contains:
 
@@ -75,7 +75,7 @@ The sample document contains:
 - for each element: stable ID, readable name, plane reference, asset reference, logical bounds, visibility, lock state, stacking, opacity/blend, rotation/flip, and constrained-or-episode-edge-bleed behavior
 - for image elements: a built-in or imported asset reference plus Stretch/Cover/Tile presentation, crop focus/zoom, rectangle or normalized-polygon mask, and optional frame border; source data resolves at the application edge
 - for text elements: wording, color, font family, font size, weight, line height, and left/center/right alignment
-- for speech balloons: body/outline styling, fitted text and typography bounds, and one editable tail side/anchor/width/tip
+- for speech balloons: a stable editable body type, optional normalized creator-shaped contour points, body/outline styling, and one editable tail side/anchor/width/tip; new balloons are empty and use independent text elements for lettering
 - a flat collection of non-nested `ElementGroup` member-ID records used for selection and atomic movement
 
 The format-v6 appearance shape remains plain data: every element has normalized opacity and one of Normal, Multiply, Screen, Overlay, or Soft Light; Background color regions may be solid or vertical two-stop color/alpha gradients; and images use Stretch, Cover, or Tile. Tile presentation uses a fixed automatic scale capped at a 160-logical-unit tile edge. Supported v3/v4/v5 documents normalize to deterministic v6 defaults without changing source assets.
@@ -124,7 +124,7 @@ Commit `c5f83c5` bumped the unsaved fixture directly to format v3 without specul
 
 An empty plane's centered action area pairs the implemented **Delete plane** control with a paperclip **Add asset** action. The same add action remains available when an ordinary plane is populated. It opens the overlay Asset Library and targets the currently active ordinary plane.
 
-The fixed left rail is an application-shell concern with four destinations: **Uploads**, **Speech Balloons**, **Decorations**, and **Splatters**. Uploads owns the personal library and exposes **All**, **Unsorted**, and creator-named category filters inside the drawer so an unbounded list cannot overwhelm the rail. Filter selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The fixed image catalog contains six original transparent SVG assets—three Decorations and three Splatters. Speech Balloons is a separate first-class element catalog with ten empty editable body types. The local build supports click and native drag image placement, select, move, resize, visibility, delete, history, opacity, the five recorded blend modes, Stretch/Cover/Tile image presentation, independent editable text, and atomic balloon bodies with type selection and tail editing. Automatic balloon/text coupling, perspective, freeform distortion, multi-tail relationships, and creator-saved balloon presets remain deferred.
+The fixed left rail is an application-shell concern with four destinations: **Uploads**, **Speech Balloons**, **Decorations**, and **Splatters**. Uploads owns the personal library and exposes **All**, **Unsorted**, and creator-named category filters inside the drawer so an unbounded list cannot overwhelm the rail. Filter selection and drawer state remain transient; creator categories and imported source images persist through `AssetRepository`. The visible fixed-image catalog contains six original transparent SVG assets—three Decorations and three Splatters. Speech Balloons is a separate first-class element catalog with ten empty editable body types. Retired fixed-balloon definitions remain in a compatibility-only resolver so older v4/v5 projects keep their artwork, but those definitions are not advertised or placeable from the current library. The local build supports click and native drag image placement, select, move, resize, visibility, delete, history, opacity, the five recorded blend modes, Stretch/Cover/Tile image presentation, independent editable text, and atomic balloon bodies with type selection and tail editing. Automatic balloon/text coupling, perspective, freeform distortion, multi-tail relationships, and creator-saved balloon presets remain deferred.
 
 ## Commands and state ownership
 
@@ -370,19 +370,19 @@ Hidden elements do not render and cannot capture canvas selection. They remain s
 
 1. Each of the ten library cards creates one empty `SpeechBalloonElement`, not an image or hidden collection of loose children.
 2. The element owns a stable editable body-type identifier, optional normalized contour points, body fill/stroke/corners, and one tail with enabled state, side, anchor, width, and normalized tip. Selected balloons expose draggable contour handles; new library balloons carry no embedded wording, so creators add an independent Text element.
-3. A shared pure layout function fits text between the recorded minimum and maximum size whenever bounds or properties change.
-4. Canvas, minimap, Reader Preview, visual bounds/clamping, save/reopen, portable projects, history, and local output all consume the same balloon record.
+3. Older format-v6 balloons that already contain embedded wording retain their recorded typography and pure fitting behavior for backward compatibility; new library balloons deliberately start empty and use independent Text elements.
+4. Canvas, minimap, Reader Preview, visual bounds/clamping, save/reopen, portable projects, history, adapter snapshots, and local output all consume the same balloon record.
 
 ### Implemented preset foundation and deferred expansion
 
 The [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) records the broader product inventory. Its bounded core foundation is implemented as Standard, Rounded, Thought, Whisper, Shout, Electric, Rough, Wavy, Telepathic, and Double Outline starting types; every type remains editable after placement.
 
-- Extend the same atomic element with explicit body, outline, fill, tail/source-marker, and lettering-treatment properties. Do not create one unrelated element type per visual convention.
-- Built-in type geometry is an immutable versioned renderer keyed by the stable synthetic generator ID stored in the episode. Creator-edited wording, colors, outline, typography, bounds, and tail values live directly on the element and do not mutate the preset catalog.
+- Extend the same body element with explicit body, outline, fill, and tail/source-marker properties. Keep lettering independent unless a later versioned decision deliberately introduces a compound relationship; do not create one unrelated element type per visual convention.
+- Built-in type geometry is an immutable renderer keyed by the stable synthetic generator ID stored in the episode. Creator-edited colors, outline, bounds, contour points, and tail values live directly on the element and do not mutate the preset catalog.
 - Preserve flat document structure. Direct joins, connectors, multiple tails, and reading order use explicit flat associations and must be safely unlinkable; they do not introduce recursive groups or hidden duplicate geometry.
 - Keep creator-saved presets in an application-edge repository and include them in portable packaging when approved. Provider, store, account, or credential details never enter the episode.
 - Keep captions and sound effects as separate element kinds that may reuse typography and appearance primitives. They are related lettering tools, not special balloon flags.
-- Add new schema fields only through a separately approved, explicit versioned document change with deterministic defaults for existing format-v6 balloons.
+- Treat optional normalized `bodyControlPoints` as the backward-compatible final format-v6 balloon extension: absence means the preset's deterministic contour. Any later non-optional or structurally incompatible field requires an explicit versioned document change with deterministic defaults.
 - Require command, history, persistence, recovery, portable-project, canvas, minimap, Reader Preview, and output parity for every added primitive before calling a preset complete.
 
 ### Implemented reader-preview and reset flow
@@ -516,7 +516,7 @@ The public demo uses only original synthetic content or explicitly approved asse
 
 ## Validation
 
-The July 20 complete release passed 411 Vitest cases across 34 files, 11 Node local-companion protocol/security checks, strict TypeScript, ESLint, the production build, and all 19 Playwright Chromium stories. The July 21 final editable-balloon replacement passes 414 Vitest cases across 34 files, strict TypeScript, ESLint, the production build, and its focused Playwright save/reopen/Reader Preview story. Its added coverage verifies all ten stable editable type IDs, shared geometry, empty new bodies, direct normalized contour changes, persistence, and removal of fixed balloon pictures from the runtime asset catalog. The production build retains Vite's non-blocking over-500 kB advisory.
+The July 21 final release passes 417 Vitest cases across 34 files, 11 Node local-companion protocol/security checks, strict TypeScript, ESLint, the production build, and all 24 Playwright Chromium stories. Its added coverage verifies all ten stable editable type IDs, shared geometry, empty new bodies, direct normalized contour changes, preservation and export parity of preset-specific treatments after contour editing, persistence, hidden compatibility resolution for retired fixed balloons, blank startup, explicit demo loading, and the complete editor/export lifecycle. The production build retains Vite's non-blocking over-500 kB advisory.
 
 Historical feature commit `a26927f` passed 377 Vitest cases across 28 files, strict TypeScript, ESLint, the production build, and all 13 Playwright Chromium stories. Its production build contained 137 modules; CSS was 40.26 kB and JavaScript was 769.96 kB minified / 222.48 kB gzip. That checkpoint added focused coverage for v3/v4/v5-to-v6 defaults, transforms and visual bounds, image crop/masks/frame parity, flat groups and populated-plane commands, fitted speech-balloon geometry and round trips, reference-safe source deletion, multiple/recovery/portable project behavior, provisional render/preflight behavior, and ExportDialog focus restoration/Tab containment.
 

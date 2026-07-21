@@ -1,5 +1,17 @@
 import { expect, test, type Page } from '@playwright/test'
 
+async function useFileMenuItem(
+  page: Page,
+  itemName: 'Save' | 'Reopen Current' | 'Reset Demo',
+) {
+  await page.getByRole('button', { name: 'File', exact: true }).click()
+  const item = page
+    .getByRole('menu', { name: 'File' })
+    .getByRole('menuitem', { name: itemName, exact: true })
+  await expect(item).toBeEnabled()
+  await item.click()
+}
+
 async function expectPanelClearOfInspector(page: Page) {
   const panel = page.getByRole('region', { name: 'ScrollSplice agent chat' })
   const inspector = page.getByRole('complementary', {
@@ -158,6 +170,8 @@ test('streams a connected response and retains only finalized conversation text'
   })
 
   await page.goto('/')
+  await useFileMenuItem(page, 'Reset Demo')
+  await useFileMenuItem(page, 'Save')
   await page
     .getByRole('button', { name: 'Open ScrollSplice agent chat' })
     .click()
@@ -173,6 +187,7 @@ test('streams a connected response and retains only finalized conversation text'
   await expect(page.getByText('The title is The Light We Planted.')).toBeVisible()
 
   await page.reload()
+  await useFileMenuItem(page, 'Reopen Current')
   await page
     .getByRole('button', { name: 'Open ScrollSplice agent chat' })
     .click()

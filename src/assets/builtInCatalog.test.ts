@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   BUILT_IN_ASSETS,
   getBuiltInAssetsByCategory,
+  RESOLVABLE_BUILT_IN_ASSETS,
 } from './builtInCatalog'
+import { resolveImageAsset } from './runtime'
 import { BUILT_IN_ASSET_CATEGORY_IDS } from './types'
 
 function decodeSvgSource(source: string): string {
@@ -29,14 +31,38 @@ describe('built-in asset catalog', () => {
     expect(getBuiltInAssetsByCategory('splatters')).toHaveLength(3)
   })
 
+  it('keeps retired fixed balloons hidden but resolvable for saved projects', () => {
+    const legacyBalloon = RESOLVABLE_BUILT_IN_ASSETS.find(
+      ({ id }) => id === 'builtin-speech-balloon-oval-v1',
+    )
+
+    expect(RESOLVABLE_BUILT_IN_ASSETS).toHaveLength(16)
+    expect(legacyBalloon).toMatchObject({
+      categoryId: 'speech-balloons',
+      displayName: 'Oval balloon',
+    })
+    expect(BUILT_IN_ASSETS).not.toContain(legacyBalloon)
+    expect(
+      resolveImageAsset(
+        { kind: 'built-in', assetId: 'builtin-speech-balloon-oval-v1' },
+        [],
+      ),
+    ).toMatchObject({
+      id: 'builtin-speech-balloon-oval-v1',
+      displayName: 'Oval balloon',
+    })
+  })
+
   it('uses stable unique IDs, names, dimensions, and sources', () => {
-    const ids = new Set(BUILT_IN_ASSETS.map(({ id }) => id))
-    const sources = new Set(BUILT_IN_ASSETS.map(({ source }) => source))
+    const ids = new Set(RESOLVABLE_BUILT_IN_ASSETS.map(({ id }) => id))
+    const sources = new Set(
+      RESOLVABLE_BUILT_IN_ASSETS.map(({ source }) => source),
+    )
 
-    expect(ids.size).toBe(BUILT_IN_ASSETS.length)
-    expect(sources.size).toBe(BUILT_IN_ASSETS.length)
+    expect(ids.size).toBe(RESOLVABLE_BUILT_IN_ASSETS.length)
+    expect(sources.size).toBe(RESOLVABLE_BUILT_IN_ASSETS.length)
 
-    for (const asset of BUILT_IN_ASSETS) {
+    for (const asset of RESOLVABLE_BUILT_IN_ASSETS) {
       expect(asset.id).toMatch(/^builtin-[a-z0-9-]+-v1$/)
       expect(asset.displayName.trim()).toBe(asset.displayName)
       expect(asset.displayName.length).toBeGreaterThan(0)
@@ -50,7 +76,7 @@ describe('built-in asset catalog', () => {
   })
 
   it('keeps every inline SVG transparent and self-contained', () => {
-    for (const asset of BUILT_IN_ASSETS) {
+    for (const asset of RESOLVABLE_BUILT_IN_ASSETS) {
       const svg = decodeSvgSource(asset.source)
 
       expect(svg).toContain('data-scrollsplice-transparent="true"')

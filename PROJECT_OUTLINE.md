@@ -32,7 +32,7 @@ The July 21 submission is a small but complete working editor experience, not th
 - a reset action that restores the known demonstration state
 - reliable public judge access and a clear demonstration
 
-Import, save/reopen, undo, resize, layer or panel reordering, production export, OpenAI model access, autonomous generation, OAuth, and cloud services are outside the required milestone. ScrollSplice includes passing optional creator-workflow additions without making them contest requirements; the current format-v6 human editor adds local projects and recovery, a persistent Asset Library, direct placement, transforms and organization, bounded masks and appearance, editable text and balloons, Reader Preview, and provisional manual export. The locally feasible human-editor completion goal is finished without enlarging the contest minimum. A narrow autonomous-generation proof remains stretch work only after the complete human-operated judge experience and submission path are stable.
+Import, save/reopen, undo, resize, layer or panel reordering, production export, OpenAI model access, autonomous generation, OAuth, and cloud services are outside the required milestone. ScrollSplice includes passing optional creator-workflow additions without making them contest requirements; the current format-v6 human editor adds local projects and recovery, a persistent Asset Library, direct placement, transforms and organization, bounded masks and appearance, editable text and empty editable balloon bodies, Reader Preview, and provisional manual export. The locally feasible human-editor completion goal is finished without enlarging the contest minimum. A separately gated local companion has also demonstrated one creator-authorized synthetic generate/import/place flow through the same adapter, while the public judge editor remains complete without login or model access.
 
 ### Creator-ready MVP
 
@@ -50,7 +50,7 @@ After the creator-ready human workflow, ScrollSplice can add an autonomous creat
 - checks the whole scroll for pacing, gaps, overlaps, continuity, and export readiness
 - leaves the creator able to stop, review, replace, move, or remove any generated result
 
-The full autonomous mode is not required for Build Week. A single synthetic generate-and-place proof may be attempted only as gated stretch work.
+The full autonomous mode is not required for Build Week. The implemented local companion proves only a bounded creator-started synthetic generate-and-place turn; unattended planning, repeated generation, and autonomous publication remain future work.
 
 ## Core Workflows
 
@@ -165,7 +165,7 @@ The full autonomous mode is not required for Build Week. A single synthetic gene
 - Allow a precise drop onto a numbered plane tab or the active Layers list to choose the destination plane directly.
 - Reusing an asset must not duplicate the original source file unnecessarily.
 - Include a free starter set of resizable comic speech balloons and let creators add their own reusable balloon or decorative assets. The implemented starter catalog has three original neutral balloons, three decorations, and three splatters.
-- Use the research-backed [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) as the product inventory for future balloon depth. Treat familiar forms as composable, fully editable presets rather than locked meanings or fixed pictures. The current atomic fitted body/text/tail element is the foundation; body, outline, tail, relationship, lettering-treatment, and creator-preset expansions follow in separately validated slices.
+- Use the research-backed [Editable Speech-Balloon Catalog](SPEECH_BALLOON_CATALOG.md) as the product inventory for future balloon depth. Treat familiar forms as composable, fully editable presets rather than locked meanings or fixed pictures. The current foundation is ten empty editable body/tail types with direct contour handles plus independent Text lettering; multiple tails, relationships, richer lettering treatments, and creator presets follow in separately validated slices.
 
 ### 6. Drag-and-drop interaction system
 

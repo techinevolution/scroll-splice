@@ -102,6 +102,18 @@ if (planeId) {
 }
 ```
 
+Create an empty editable balloon body on an explicit plane:
+
+```js
+const balloon = editor.execute({
+  type: 'create-speech-balloon',
+  planeId: 'ordinary-plane-id-from-inspect',
+  presetId: 'wavy',
+})
+```
+
+The stable preset IDs are `standard`, `rounded`, `thought`, `whisper`, `shout`, `electric`, `rough`, `wavy`, `telepathic`, and `double-outline`. New balloons contain no lettering; create a separate Text element when words are needed. `update-speech-balloon` accepts the complete current balloon property object and may include 6–32 normalized `{ x, y }` `bodyControlPoints` for direct contour editing.
+
 Undo:
 
 ```js
@@ -159,7 +171,7 @@ The placement result returns the stable element ID and an updated snapshot. Plac
 - Selection and organization: select/clear/select-all, group/ungroup, story-beat movement, alignment, one-step or direct-index stacking, and Move to Plane.
 - Episode and planes: rename/extend/resize the episode; create/delete/rename/reorder/show/hide planes and groups; change the base color.
 - Elements: create, select, rename, move, resize, duplicate, delete, show/hide, lock, opacity, blend, transforms, flips, and overflow.
-- Type-specific editing: shape fill/style, text, editable balloons, image presentation/frame/crop, and Background color regions.
+- Type-specific editing: shape fill/style, independent text, ten empty editable balloon types plus normalized contour points, image presentation/frame/crop, and Background color regions.
 - Assets: place an existing built-in or imported asset by stable ID.
 - Generated assets: asynchronously import validated PNG/JPEG/WebP bytes with provenance, then place a generated source on a specified ordinary plane and logical bounds.
 - Editor/project: magnet, slice guides, undo, redo, Save, Save As, Reopen, New Episode, and Reset Demo.

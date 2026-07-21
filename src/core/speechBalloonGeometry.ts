@@ -108,15 +108,18 @@ export function getSpeechBalloonPath(
   const maxY = includesTail ? Math.max(bottom, tip.y) : bottom
 
   const standardPathData = commands.join(' ')
+  const defaultGeometry = presetId === 'standard'
+    ? { bodyPathData: standardPathData, decorationPathData: [] }
+    : createPresetGeometry(bounds, radius, normalizedTail, presetId)
   const presetGeometry = bodyControlPoints
-    ? {
-        bodyPathData: createCustomBodyPath(bounds, bodyControlPoints),
-        tailPathData: createDetachedTailPath(bounds, normalizedTail),
-        decorationPathData: [],
-      }
-    : presetId === 'standard'
-      ? { bodyPathData: standardPathData, decorationPathData: [] }
-      : createPresetGeometry(bounds, radius, normalizedTail, presetId)
+    ? createCustomPresetGeometry(
+        bounds,
+        normalizedTail,
+        presetId,
+        bodyControlPoints,
+        defaultGeometry,
+      )
+    : defaultGeometry
 
   return {
     pathData: [
@@ -139,12 +142,15 @@ export function getSpeechBalloonPath(
 function createCustomBodyPath(
   bounds: ElementBounds,
   points: readonly NormalizedPoint[],
+  pathStyle: 'smooth' | 'angular' = 'smooth',
 ): string {
   const mapped = points.map((point) => ({
     x: bounds.x + point.x * bounds.width,
     y: bounds.y + point.y * bounds.height,
   }))
-  return createClosedSmoothPath(mapped)
+  return pathStyle === 'angular'
+    ? createClosedAngularPath(mapped)
+    : createClosedSmoothPath(mapped)
 }
 
 interface PresetGeometry {
@@ -152,6 +158,45 @@ interface PresetGeometry {
   readonly tailPathData?: string
   readonly decorationPathData: readonly string[]
   readonly strokeDash?: readonly number[]
+}
+
+function createCustomPresetGeometry(
+  bounds: ElementBounds,
+  tail: SpeechBalloonTailGeometry,
+  presetId: SpeechBalloonPresetId,
+  bodyControlPoints: readonly NormalizedPoint[],
+  defaultGeometry: PresetGeometry,
+): PresetGeometry {
+  const pathStyle =
+    presetId === 'shout' ||
+    presetId === 'electric' ||
+    presetId === 'rough'
+      ? 'angular'
+      : 'smooth'
+  const decorationPathData = presetId === 'double-outline'
+    ? [
+        createCustomBodyPath(
+          {
+            x: bounds.x + bounds.width * 0.045,
+            y: bounds.y + bounds.height * 0.07,
+            width: bounds.width * 0.91,
+            height: bounds.height * 0.86,
+          },
+          bodyControlPoints,
+        ),
+      ]
+    : defaultGeometry.decorationPathData
+
+  return {
+    bodyPathData: createCustomBodyPath(
+      bounds,
+      bodyControlPoints,
+      pathStyle,
+    ),
+    tailPathData: createDetachedTailPath(bounds, tail),
+    decorationPathData,
+    strokeDash: defaultGeometry.strokeDash,
+  }
 }
 
 function createPresetGeometry(
@@ -356,6 +401,17 @@ function createClosedSmoothPath(
     }),
     'Z',
   ].join(' ')
+}
+
+function createClosedAngularPath(
+  points: readonly NormalizedPoint[],
+): string {
+  return `${points
+    .map(
+      (point, index) =>
+        `${index === 0 ? 'M' : 'L'} ${number(point.x)} ${number(point.y)}`,
+    )
+    .join(' ')} Z`
 }
 
 function createRipplePaths(bounds: ElementBounds): readonly string[] {

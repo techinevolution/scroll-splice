@@ -53,6 +53,7 @@ async function answerNextDialog(
 test('supports a creator story from blank episode through saved reader preview', async ({
   page,
 }) => {
+  test.setTimeout(60_000)
   await page.setViewportSize({ width: 1440, height: 900 })
   await page.goto('/')
   await page.evaluate(() => window.localStorage.clear())
@@ -79,6 +80,7 @@ test('supports a creator story from blank episode through saved reader preview',
   await page.keyboard.press('Control+s')
   await expect(page.getByTestId('document-status')).toHaveText('Saved Locally')
   await page.reload()
+  await useMenuItem(page, 'File', 'Reopen Current')
   await page
     .getByRole('button', { name: 'Background composition group' })
     .click()
@@ -133,20 +135,23 @@ test('supports a creator story from blank episode through saved reader preview',
 
   // Stack controls explain overlap, and Move to Plane reorganizes without
   // forcing the creator to delete and re-place anything.
-  const sendBackward = page.getByRole('button', {
-    name: 'Send Text 1 backward',
+  await page.getByRole('button', { name: 'Radiance accent', exact: true }).click()
+  const bringForward = page.getByRole('button', {
+    name: 'Bring Radiance accent forward',
   })
-  await expect(sendBackward).toBeEnabled()
-  await sendBackward.click()
-  await expect(sendBackward).toBeDisabled()
-  await page.getByRole('button', { name: 'Bring Text 1 forward' }).click()
+  await expect(bringForward).toBeEnabled()
+  await bringForward.click()
+  await expect(bringForward).toBeDisabled()
+  await page
+    .getByRole('button', { name: 'Send Radiance accent backward' })
+    .click()
 
   await page.getByTestId('move-element-plane-select').selectOption(
     'content-plane-1',
   )
   await page.getByTestId('move-element-plane-submit').click()
   await expect(
-    page.locator('[data-layer-id="text-element-1"]'),
+    page.locator('[data-layer-id="image-element-1"]'),
   ).toHaveAttribute('aria-pressed', 'true')
   await expect(planeName).toHaveValue('Panels')
 
@@ -186,7 +191,7 @@ test('supports a creator story from blank episode through saved reader preview',
   await expect(preview).toHaveCount(0)
   await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
     'data-selected-element-id',
-    'text-element-1',
+    'image-element-1',
   )
   await expect(page.getByTestId('editor-canvas')).toHaveAttribute(
     'data-viewport-x',
@@ -201,6 +206,7 @@ test('supports a creator story from blank episode through saved reader preview',
   await useMenuItem(page, 'File', 'Save')
   await expect(page.getByTestId('document-status')).toHaveText('Saved Locally')
   await page.reload()
+  await useMenuItem(page, 'File', 'Reopen Current')
   await expect(
     page.getByRole('button', {
       name: 'Edit episode title: Moonlit Garden',

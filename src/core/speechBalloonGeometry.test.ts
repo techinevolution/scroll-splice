@@ -102,4 +102,70 @@ describe('speech balloon geometry', () => {
     expect(results.find((_, index) => SPEECH_BALLOON_PRESETS[index]?.id === 'whisper')?.strokeDash).toEqual([10, 10])
     expect(results.find((_, index) => SPEECH_BALLOON_PRESETS[index]?.id === 'double-outline')?.decorationPathData).toHaveLength(1)
   })
+
+  it('preserves preset-specific outline treatments after contour editing', () => {
+    const customPoints = [
+      { x: 0.5, y: 0 },
+      { x: 1, y: 0.5 },
+      { x: 0.5, y: 1 },
+      { x: 0, y: 0.5 },
+      { x: 0.2, y: 0.2 },
+      { x: 0.8, y: 0.2 },
+    ]
+    const bounds = { x: 0, y: 0, width: 320, height: 180 }
+
+    const whisper = getSpeechBalloonPath(
+      bounds,
+      42,
+      DEFAULT_SPEECH_BALLOON_TAIL,
+      'whisper',
+      customPoints,
+    )
+    const telepathic = getSpeechBalloonPath(
+      bounds,
+      42,
+      DEFAULT_SPEECH_BALLOON_TAIL,
+      'telepathic',
+      customPoints,
+    )
+    const doubleOutline = getSpeechBalloonPath(
+      bounds,
+      42,
+      DEFAULT_SPEECH_BALLOON_TAIL,
+      'double-outline',
+      customPoints,
+    )
+    const shout = getSpeechBalloonPath(
+      bounds,
+      42,
+      DEFAULT_SPEECH_BALLOON_TAIL,
+      'shout',
+      customPoints,
+    )
+    const electric = getSpeechBalloonPath(
+      bounds,
+      42,
+      DEFAULT_SPEECH_BALLOON_TAIL,
+      'electric',
+      customPoints,
+    )
+    const rough = getSpeechBalloonPath(
+      bounds,
+      42,
+      DEFAULT_SPEECH_BALLOON_TAIL,
+      'rough',
+      customPoints,
+    )
+
+    expect(whisper?.strokeDash).toEqual([10, 10])
+    expect(telepathic?.decorationPathData).toHaveLength(2)
+    expect(doubleOutline?.decorationPathData).toHaveLength(1)
+    expect(doubleOutline?.decorationPathData[0]).not.toBe(
+      doubleOutline?.bodyPathData,
+    )
+    for (const angular of [shout, electric, rough]) {
+      expect(angular?.bodyPathData).toContain(' L ')
+      expect(angular?.bodyPathData).not.toContain(' Q ')
+    }
+  })
 })

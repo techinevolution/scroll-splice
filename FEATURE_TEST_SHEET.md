@@ -2,7 +2,7 @@
 
 Use this sheet for Katherine's hands-on review of the completed **deployed human editor**. The walkthrough follows one synthetic creator story so each test builds on the last instead of feeling like a disconnected checklist. Test one row at a time; record the result before moving on.
 
-Use the public editor at <https://techinevolution.github.io/scroll-splice/>. Its GitHub Pages access and clean-profile launch have already passed automated verification; this sheet records Katherine's product review. It does **not** test OpenAI generation, OAuth, cloud sync, automated WEBTOON login/upload/publishing, native desktop packaging, or the final Devpost video/submission. Those capabilities remain separately gated. Episode-image export uses the limits observed on WEBTOON's July 13 form and must remain labeled **provisional, not upload-verified, and for manual upload only**.
+Use the public editor at <https://techinevolution.github.io/scroll-splice/>. Its GitHub Pages access and clean-profile launch have already passed automated verification; this sheet records Katherine's product review. The optional local OpenAI companion was verified separately and is not available in the static judge build. This sheet does **not** test cloud sync, automated WEBTOON login/upload/publishing, native desktop packaging, or the final Devpost video/submission. Episode-image export uses the limits observed on WEBTOON's July 13 form and must remain labeled **provisional, not upload-verified, and for manual upload only**.
 
 ## Review record
 
@@ -10,9 +10,9 @@ Use the public editor at <https://techinevolution.github.io/scroll-splice/>. Its
 - Browser and version:
 - Window size or display resolution:
 - Public URL: <https://techinevolution.github.io/scroll-splice/>
-- Build/commit: `2849d81`
+- Review began on build/commit: `2849d81`; the current public `main` release supersedes it while preserving recorded results
 - Tester: Katherine
-- Current test: `L01`
+- Current test: `L06`
 - Overall result: In progress / Pass / Pass with notes / Fail
 - Blocking issue, if any:
 
@@ -34,7 +34,7 @@ Imagine that you are starting a short vertical episode about a character crossin
 
 | ID | Action | Expected result | Result | Notes |
 | --- | --- | --- | --- | --- |
-| W01 | Open the [deployed ScrollSplice editor](https://techinevolution.github.io/scroll-splice/) in a fresh browser tab. | **The Light We Planted** loads with the story canvas, left Asset Library rail, full-episode minimap, and Layers inspector visible; the canvas is usable rather than squeezed. | Pass | Editor opened; The Light We Planted loaded; Asset Library rail appeared on the left; the scrollable canvas allowed element movement; minimap and Layers appeared on the right with ample canvas room. |
+| W01 | Open the [deployed ScrollSplice editor](https://techinevolution.github.io/scroll-splice/) in a fresh browser tab. | A blank **Untitled Episode** loads with the story canvas, left Asset Library rail, minimap, and Layers inspector visible; the optional **The Light We Planted** story remains available through **File > Reset Demo**. | Pass | The review originally opened The Light We Planted on build `2849d81`. The final build intentionally supersedes that startup behavior with a blank Untitled Episode while preserving Reset Demo, the Asset Library rail, scrollable canvas, minimap, Layers, and ample canvas room. |
 | W02 | Click **File**, **Edit**, **View**, **Window**, and **Help**. | Each working menu opens above the Asset Library and canvas; moving between menus does not trigger an editor action. | Pass | Every menu opened above the workspace. Opening another menu closed the previous one; clicking the active menu again closed it. No visible canvas content changed. |
 | W03 | Open **Help > Shortcuts & About**, then close it with Escape. | The shortcut list is present. The **About** paragraph explains that episode/assets stay in the current browser unless deliberately exported and that a portable `.scrollsplice` file carries the episode plus its local asset library; these are concepts, not required section headings. Escape closes the dialog. | Pass | The complete shortcut list and both About explanations were present. Escape closed the dialog and the episode remained unchanged. Screenshot reviewed from Katherine's July 19 test. |
 | W04 | Use **Window > Hide Inspector**, then show it again from the header control or Window menu. | The minimap/Layers inspector hides and returns without changing the episode. | Pass | Window menu and header controls both hid/restored the inspector. The inspector's own × button also closed it. Episode title and content remained unchanged. |
@@ -53,17 +53,17 @@ Imagine that you are starting a short vertical episode about a character crossin
 | E06 | Hide Background plane 1, then reveal it. | Hidden base content stops rendering while its eye state remains recoverable from Layers. | Pass | Hiding plane 1 replaced the base with a checkerboard transparency indicator; revealing it restored the same base. The Background group eye performed the related group-level action and hid all Background items. |
 | E07 | Click **Add scroll space** twice. | The episode grows by 1,280 logical units per click; the base, canvas, slice guides, scrollbar, and minimap refit to the new height. | Pass | Both 1,280px additions worked. The base filled the added area; the longer canvas, slice guides, scrollbar, and minimap all refit correctly without moving existing content. |
 | E08 | Drag the episode's bottom resize edge down, then back upward. | Height changes continuously; shrinking stops before it would clip any visible or hidden element and never moves existing content. | Pass with notes | Height changed continuously in both directions; the minimap canvas and pixel count updated, and content did not move or crop. With only a base color, the main canvas offered little visual feedback. Dragging the pointer beyond the browser window stopped further expansion, making long downward resizing awkward. Logged as non-blocking resize-feedback and pointer-capture polish. |
-| E09 | Toggle **Slice guides** off and on. | Gray dotted 1,280-unit candidate boundaries disappear and return; they do not appear as layers or minimap content. | Pass | Slice guides disappeared and returned correctly at the 1,280px boundaries. They remained canvas-only guidance and did not appear in Layers or the minimap. |
+| E09 | Toggle **Slice guides** off and on. | Gray dotted 1,280-unit candidate boundaries disappear and return; they do not appear as layers or minimap content. | Pass with notes | Slice guides disappeared and returned correctly and remained canvas-only guidance. Each boundary looked like two closely merged dotted lines that changed in response to the selected base color so a line stayed visible. The resulting thick mark made the exact cut position ambiguous and raised concern that export could omit or duplicate a 2–3px strip. Logged for guide/export-boundary verification. |
 
 ## Story 3 — Build Background, Content, and Foreground planes
 
 | ID | Action | Expected result | Result | Notes |
 | --- | --- | --- | --- | --- |
-| L01 | In Background, add two ordinary planes with the tab-strip **+**. | New numbered tabs appear; Background plane 1 remains pinned as the base. |  |  |
-| L02 | Give the ordinary planes useful names such as **Night fade** and **Edge texture**. | Names save without replacing stable plane numbers or changing their composition group. |  |  |
-| L03 | Reorder the ordinary planes with the tab drag grip, then with **Move Left/Right**. | Both methods change within-group order consistently; Background plane 1 cannot move. |  |  |
-| L04 | Add enough planes for the tab strip to overflow. Use its left/right arrows. | The strip stays on one line; arrows reveal hidden tabs without reordering them. |  |  |
-| L05 | On an empty ordinary plane, use **Delete plane**. | The plane is removed and another nearby plane activates; the base and the final plane in a group remain protected. |  |  |
+| L01 | In Background, add two ordinary planes with the tab-strip **+**. | New numbered tabs appear; Background plane 1 remains pinned as the base. | Pass | Background already contained planes 1 and 2, so the two additions created planes 3 and 4. Plane 1 remained pinned and had no Move Left or Move Right actions; all new planes remained in Background. |
+| L02 | Give the ordinary planes useful names such as **Night fade** and **Edge texture**. | Names save without replacing stable plane numbers or changing their composition group. | Pass | Night fade and Edge texture saved on Background planes 3 and 4. The stable plane numbers, Background group membership, order, and contents remained unchanged. |
+| L03 | Reorder the ordinary planes with the tab drag grip, then with **Move Left/Right**. | Both methods change within-group order consistently; Background plane 1 cannot move. | Pass with notes | Dragging and Move Left/Right reordered ordinary planes consistently while preserving names and contents; Background plane 1 remained pinned. The selected-tab highlight followed the move, but the button-driven change was instantaneous. A short slide animation would make the direction and destination clearer. Logged as non-blocking motion-feedback polish. |
+| L04 | Add enough planes for the tab strip to overflow. Use its left/right arrows. | The strip stays on one line; arrows reveal hidden tabs without reordering them. | Pass with notes | Adding plane 5 revealed the overflow arrows. Navigation, end-state disabling, numbering, names, and one-line layout all worked; a stress test with more than 250 tabs also passed, after which the extras were deleted back to four planes. Future polish: create a new plane immediately right of the selected tab and animate existing right-side tabs shifting aside. |
+| L05 | On an empty ordinary plane, use **Delete plane**. | The plane is removed and another nearby plane activates; the base and the final plane in a group remain protected. | Pass | Deleting Background plane 2 activated plane 1 immediately to its left, matching the behavior seen while removing the 250+ stress-test planes. Background plane 1 remained protected, and the sole Content and Foreground planes could not be deleted. |
 | L06 | Populate an ordinary plane, open its plane actions, and choose a destination for its elements before deletion. | All elements move to the chosen same-group plane, then the old plane is deleted without data loss. |  |  |
 | L07 | Repeat with a disposable populated plane and choose the destructive confirmation path. | The warning is explicit; confirmation deletes that plane and its elements. Cancel leaves everything unchanged. |  |  |
 | L08 | Toggle a whole composition group's eye, a plane eye, and an element eye independently. | Parent visibility hides descendants without erasing their individual eye settings. Hidden elements remain selectable from Layers. |  |  |
@@ -80,7 +80,7 @@ Imagine that you are starting a short vertical episode about a character crossin
 | A05 | Drag an asset onto a numbered plane tab, then onto the active Layers list. | Each valid drop places one element on the intended plane and gives clear target feedback. |  |  |
 | A06 | Try dropping a non-image file or an asset on Background plane 1. | ScrollSplice refuses the invalid target/file clearly and does not create a broken layer. |  |  |
 | A07 | Place a transparent PNG over a colored background. | Transparent pixels stay transparent in the canvas, minimap, Reader Preview, save/reopen path, and local renderer. |  |  |
-| A08 | Open **Speech Balloons**, **Decor**, and **Splatters** and place at least one original built-in from each. | Each built-in is reusable, resizable, transparent, and independently selectable. The Oval and Rounded balloon outlines have no white seam. |  |  |
+| A08 | Open **Speech Balloons**, **Decor**, and **Splatters** and place at least one item from each. | Decor and Splatter images remain reusable transparent assets. Each Speech Balloon card creates an empty editable body/tail element rather than a fixed image; all placed items are resizable and independently selectable. |  |  |
 | A09 | In **Uploads**, create the creator category **Garden Kit**, rename it, move it left/right among creator categories, and then return it to that name. | Creator categories live inside Uploads, persist locally, and reorder without moving or duplicating source bytes. |  |  |
 | A10 | Move an imported source into **Garden Kit**, rename the source, and replace its image. | The stable source remains reusable; placed references update to the replacement rather than becoming detached. |  |  |
 | A11 | Try deleting a source still referenced by the current episode or a saved/recovery/local project. | Deletion is blocked with a useful explanation; no placed or saved image becomes silently missing. |  |  |
@@ -93,10 +93,10 @@ Imagine that you are starting a short vertical episode about a character crossin
 | C01 | In Content, use **Panel / shape** to create a rectangle and an ellipse with custom names, fill, outline, width, and corners. | Each shape appears as an editable element with the chosen style and its own Layers row. |  |  |
 | C02 | Select a shape and change rectangle/ellipse type, fill, outline visibility/color/width, and corner radius in the bottom controls. | Canvas, minimap, Reader Preview, undo/redo, and saved state agree. |  |  |
 | C03 | Add independent text and edit wording, color, font size, weight, and alignment. | The text updates as its own movable/resizable element and can sit over any image or balloon. |  |  |
-| C04 | Open **Speech Balloons** and choose **Editable balloon**. | One atomic balloon element appears with fitted text, an editable body, and an editable tail. |  |  |
-| C05 | Change balloon wording, body/outline/text colors, line width, corners, font, min/max size, weight, alignment, line height, and padding; apply it. | Text refits inside the resized body and the complete edit is undoable. |  |  |
-| C06 | Toggle the balloon tail, try every side, and adjust anchor, width, Tip X, and Tip Y. | Tail placement changes while the body and text remain editable; bounds, minimap, Reader Preview, and renderer include the tail. |  |  |
-| C07 | Resize the editable balloon narrower, wider, shorter, and taller. | Text automatically refits between the chosen minimum and maximum font sizes instead of becoming a separate loose layer. |  |  |
+| C04 | Open **Speech Balloons** and place Standard, Thought, Shout, and Wavy. | Each card creates one empty editable balloon body with a stable type and tail; no fixed image or embedded placeholder text appears. |  |  |
+| C05 | Change a balloon's type, fill, outline color/width, and corner setting. | The body updates everywhere, remains empty, and the complete edit is undoable. |  |  |
+| C06 | Toggle the balloon tail, try every side, and adjust anchor, width, Tip X, and Tip Y. | Tail placement changes while the body remains editable; bounds, minimap, Reader Preview, and renderer include the tail. |  |  |
+| C07 | Resize the balloon from its ordinary handles, then drag several contour points on the selected body. Add a separate Text element over it. | Resize changes the overall bounds; contour handles reshape the body directly; the independent Text remains separately editable and movable. Whisper keeps its dashed outline, Telepathic keeps its ripple marks, and Double Outline keeps its second border after contour edits. |  |  |
 
 ## Story 6 — Arrange, transform, and style elements
 
@@ -185,7 +185,7 @@ The repository's unit and browser checks should cover these low-level safety con
 
 Do not report these as missing regressions; they require separate approval or outside verification:
 
-- OpenAI image generation, model tools, agent autonomy, or OpenAI OAuth
+- the optional local OpenAI companion in the static GitHub Pages build; its bounded login/chat/generate/place proof is tested separately
 - user accounts, cloud storage/sync, backend services, or collaboration
 - automated WEBTOON login, upload, preview inspection, scheduling, or publishing
 - an upload-verified or guaranteed-WEBTOON-ready export claim
@@ -193,7 +193,7 @@ Do not report these as missing regressions; they require separate approval or ou
 - final Devpost video production and submission-form completion
 - arbitrary freehand polygon-point editing, perspective/freeform distortion, or nested groups
 - first-class art breaking out of an image mask; use a separate duplicated unmasked overlay in this build
-- reusable editable-balloon template saving; the atomic editable balloon itself is implemented
+- multiple balloon tails, balloon joining, creator-saved balloon templates, and automatic balloon/text coupling; empty editable balloon bodies and independent Text are implemented
 
 ## Final sign-off
 

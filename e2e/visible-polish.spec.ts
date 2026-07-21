@@ -14,6 +14,8 @@ test('fits minimap geometry and exposes constrained inspector and help controls'
 }) => {
   await page.setViewportSize({ width: 1024, height: 768 })
   await page.goto('/')
+  await page.getByRole('button', { name: 'File', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Reset Demo', exact: true }).click()
 
   const canvas = page.getByTestId('editor-canvas')
   const brandMark = page.getByTestId('brand-mark')

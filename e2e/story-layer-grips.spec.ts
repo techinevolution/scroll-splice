@@ -13,6 +13,8 @@ test('loads the six-panel story and reorders its local layer stack by grip', asy
   page,
 }) => {
   await page.goto('/')
+  await page.getByRole('button', { name: 'File', exact: true }).click()
+  await page.getByRole('menuitem', { name: 'Reset Demo', exact: true }).click()
 
   await expect(
     page.getByRole('button', {

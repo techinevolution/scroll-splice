@@ -392,7 +392,7 @@ Decision: Implement the broad local-human-editor goal as one bounded format-v6 e
 
 Reason: These capabilities need durable parity across canvas, minimap, Layers, Reader Preview, history, persistence, and output. One shallow versioned record is easier to validate and reopen than renderer-only state, nested scene graphs, or hidden compound children. Local adapters can add useful recovery and transfer without introducing accounts, a backend, or credentials.
 
-Consequences: Supported v3/v4/v5 documents receive deterministic v6 defaults; unknown future formats fail safely. Groups remain flat, masks use bounded presets/normalized polygons rather than an arbitrary vector editor, and the atomic balloon owns its fitted text and editable tail. Creator-saved balloon templates, arbitrary polygon-point editing, perspective/freeform distortion, and recursive groups remain future choices rather than implied omissions.
+Consequences: Supported v3/v4/v5 documents receive deterministic v6 defaults; unknown future formats fail safely. Groups remain flat, masks use bounded presets/normalized polygons rather than an arbitrary vector editor, and the initial atomic balloon owns its fitted text and editable tail. The July 21 empty-body decision supersedes that ownership for new balloons while preserving older saved records. Creator-saved balloon templates, perspective/freeform distortion, and recursive groups remain future choices rather than implied omissions.
 
 The local renderer may produce a tall master and creator-reviewed deterministic PNG/JPEG slices and may preflight the current observed limits. Its UI and documentation must state that this profile is **provisional, not upload-verified, not guaranteed WEBTOON-ready, and manual-upload only**. It does not authenticate to WEBTOON, upload files, inspect previews, schedule, or publish. OpenAI/OAuth/cloud work remains gated and absent.
 
@@ -422,3 +422,11 @@ Decision: Supersede automatic opening of the most recently saved project. Every 
 Reason: Automatic reopening made an old project such as **Signal in the Fog** appear to be the product default and prevented refresh from acting like a clean creative start.
 
 Consequences: Startup must list saved projects without hydrating one into the editor. The most recent saved project remains the **Reopen Current** target, and no saved episode, reusable asset, recovery snapshot, or OpenAI login state is deleted by refresh.
+
+## 2026-07-21: Replace fixed balloon pictures with empty editable bodies
+
+Decision: The Speech Balloons library creates ten first-class empty `SpeechBalloonElement` starting types—Standard, Rounded, Thought, Whisper, Shout, Electric, Rough, Wavy, Telepathic, and Double Outline. A balloon owns body style, optional normalized contour points, and one editable tail. Lettering is a separate `TextElement`; legacy format-v6 balloons with embedded text remain readable for compatibility.
+
+Reason: Fixed SVG pictures could not provide the direct shape editing Katherine expected, and embedded placeholder text made the library less flexible. One shared editable element plus independent lettering keeps canvas behavior predictable and preserves creator control.
+
+Consequences: Fixed speech-balloon SVGs are absent from the visible Asset Library and cannot be newly placed, but their stable definitions remain in a compatibility-only resolver so older v4/v5 saves and portable projects keep rendering. Canvas, minimap, Reader Preview, local output, persistence, portable projects, history, and the editor adapter use the same current balloon geometry. Contour editing must preserve type-specific treatments such as Whisper dashes, Telepathic ripples, and Double Outline's second border. Multiple tails, joined balloons, automatic text coupling, and creator-saved balloon presets remain deferred.

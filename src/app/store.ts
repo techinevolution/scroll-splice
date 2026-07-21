@@ -91,6 +91,7 @@ import {
 import {
   ASSET_LIBRARY_SNAPSHOT_FORMAT_VERSION,
   BUILT_IN_ASSETS,
+  RESOLVABLE_BUILT_IN_ASSETS,
   checkImportedAssetDeletionSafety,
   createIndexedDbAssetRepository,
   createRuntimeImportedImage,
@@ -2527,7 +2528,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       const source =
         element?.type === 'image'
           ? element.assetReference.kind === 'built-in'
-            ? BUILT_IN_ASSETS.find(
+            ? RESOLVABLE_BUILT_IN_ASSETS.find(
                 ({ id }) => id === element.assetReference.assetId,
               )
             : state.importedImageAssets.find(

@@ -410,13 +410,15 @@ function drawSpeechBalloon(
     context.lineJoin = 'round'
     context.setLineDash(balloon.strokeDash ? [...balloon.strokeDash] : [])
     context.stroke(bodyPath)
-    context.setLineDash([])
-    context.lineWidth = Math.max(1, element.strokeWidth * 0.6)
-    balloon.decorationPathData.forEach((data) => {
-      context.stroke(new Path2D(data))
-    })
   }
   context.setLineDash([])
+  context.strokeStyle = element.stroke
+  context.lineWidth = Math.max(1, element.strokeWidth * 0.6)
+  context.lineJoin = 'round'
+  context.lineCap = 'round'
+  balloon.decorationPathData.forEach((data) => {
+    context.stroke(new Path2D(data))
+  })
 
   if (!element.text) return
 

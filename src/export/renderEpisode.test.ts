@@ -12,7 +12,12 @@ import {
   BLANK_EPISODE_LAYER_PLANE_IDS,
   createBlankEpisode,
 } from '../core/createBlankEpisode'
-import type { EpisodeDocument, ImageElement, ShapeElement } from '../core/episode'
+import type {
+  EpisodeDocument,
+  ImageElement,
+  ShapeElement,
+  SpeechBalloonElement,
+} from '../core/episode'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -77,6 +82,7 @@ function installCanvasRendererMock() {
     clip: vi.fn(),
     closePath: vi.fn(),
     drawImage: vi.fn(),
+    fill: vi.fn(),
     fillRect: vi.fn(),
     lineTo: vi.fn(),
     moveTo: vi.fn(),
@@ -94,6 +100,7 @@ function installCanvasRendererMock() {
     fillStyle: '#000000',
     globalAlpha: 1,
     globalCompositeOperation: 'source-over',
+    lineCap: 'butt',
     lineJoin: 'miter',
     lineWidth: 1,
     strokeStyle: '#000000',
@@ -125,6 +132,9 @@ function installCanvasRendererMock() {
     createElement: vi.fn(() => canvas),
   })
   vi.stubGlobal('Image', FakeImage)
+  vi.stubGlobal('Path2D', class FakePath2D {
+    constructor(readonly data = '') {}
+  })
 
   return { canvas, context }
 }
@@ -305,6 +315,75 @@ describe('v6 render geometry', () => {
       200,
     )
     expect(context.scale).toHaveBeenCalledWith(1, -1)
+  })
+
+  it('exports preset decorations after contour editing even with no main outline', async () => {
+    const { context } = installCanvasRendererMock()
+    const balloon: SpeechBalloonElement = {
+      id: 'speech-balloon-render-test',
+      name: 'Telepathic balloon',
+      layerPlaneId: BLANK_EPISODE_LAYER_PLANE_IDS.content,
+      bounds: { x: 100, y: 100, width: 300, height: 180 },
+      visible: true,
+      locked: false,
+      zIndex: 0,
+      opacity: 1,
+      blendMode: 'normal',
+      transform: { rotationDegrees: 0, flipX: false, flipY: false },
+      overflow: 'bleed',
+      assetReference: {
+        kind: 'synthetic',
+        generatorId: 'scrollsplice-editable-speech-balloon-v1:telepathic',
+      },
+      type: 'speech-balloon',
+      fill: '#FFFFFF',
+      stroke: '#211A2B',
+      strokeWidth: 0,
+      cornerRadius: 40,
+      text: '',
+      textFill: '#211A2B',
+      fontFamily: 'sans-serif',
+      fontWeight: 600,
+      lineHeight: 1.15,
+      align: 'center',
+      padding: 24,
+      minFontSize: 12,
+      maxFontSize: 44,
+      tail: {
+        enabled: false,
+        side: 'bottom',
+        anchor: 0.5,
+        width: 0.18,
+        tip: { x: 0, y: 0.45 },
+      },
+      bodyControlPoints: [
+        { x: 0.5, y: 0.02 },
+        { x: 0.86, y: 0.14 },
+        { x: 0.98, y: 0.5 },
+        { x: 0.86, y: 0.86 },
+        { x: 0.5, y: 0.98 },
+        { x: 0.14, y: 0.86 },
+        { x: 0.02, y: 0.5 },
+        { x: 0.14, y: 0.14 },
+      ],
+    }
+    const episode: EpisodeDocument = {
+      ...createBlankEpisode('episode-balloon-decoration-render'),
+      logicalHeight: 400,
+      elements: [balloon],
+    }
+
+    await renderEpisodeSlices({
+      episode,
+      profile: WEBTOON_CANVAS_OBSERVED_PROFILE,
+      mediaType: 'image/png',
+      resolveImageSource: () => undefined,
+    })
+
+    expect(context.stroke).toHaveBeenCalledTimes(2)
+    expect(context.lineWidth).toBe(1)
+    expect(context.lineCap).toBe('round')
+    expect(context.strokeStyle).toBe('#211A2B')
   })
 })
 

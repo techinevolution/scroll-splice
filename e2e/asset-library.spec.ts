@@ -394,8 +394,8 @@ test('places reusable assets and preserves their local sources across the docume
   await expect(documentStatus).toHaveText('Saved Locally')
 
   await page.reload()
-
-  await expect(documentStatus).toHaveText('Opened saved episode')
+  await useFileMenuItem(page, 'Reopen Current')
+  await expect(documentStatus).toHaveText('Reopened Saved Episode')
   await expect(builtInRow).toBeVisible()
   await expect(uploadedRow).toBeVisible()
   await expect(canvas).toHaveAttribute('data-image-element-count', '2')
@@ -617,12 +617,12 @@ test('edits opacity, gradients, tiled textures, and blend modes through save and
     .getByRole('button', { name: 'Background plane 2', exact: true })
     .click()
   await page
-    .getByRole('button', { name: 'Color region', exact: true })
+    .getByRole('button', { name: 'Color Region', exact: true })
     .click()
   await page.getByLabel('Color region color').fill('#406080')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
   await page
-    .getByRole('button', { name: 'Color region', exact: true })
+    .getByRole('button', { name: 'Color Region', exact: true })
     .click()
   await page.getByLabel('Color region color').fill('#c08040')
   await page.getByRole('button', { name: 'Add', exact: true }).click()
@@ -735,7 +735,8 @@ test('edits opacity, gradients, tiled textures, and blend modes through save and
   await expect(documentStatus).toHaveText('Saved Locally')
 
   await page.reload()
-  await expect(documentStatus).toHaveText('Opened saved episode')
+  await useFileMenuItem(page, 'Reopen Current')
+  await expect(documentStatus).toHaveText('Reopened Saved Episode')
   await imageRow.click()
   await expect(canvas).toHaveAttribute(
     'data-selected-image-presentation',

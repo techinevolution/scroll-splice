@@ -37,7 +37,7 @@ function defineBuiltIn(
   }
 }
 
-const ALL_BUILT_IN_ASSETS = [
+export const RESOLVABLE_BUILT_IN_ASSETS = [
   defineBuiltIn({
     id: 'builtin-speech-balloon-oval-v1',
     categoryId: 'speech-balloons',
@@ -184,11 +184,13 @@ const ALL_BUILT_IN_ASSETS = [
   }),
 ] as const satisfies readonly BuiltInAssetDefinition[]
 
-// Speech balloons are first-class editable elements. The older fixed SVG
-// drawings remain below only as source-history during this replacement slice;
-// they are deliberately excluded from the runtime asset catalog.
+// Speech balloons are now first-class editable elements. Keep the older fixed
+// SVG definitions resolvable so saved v4/v5 projects reopen without missing
+// artwork, but do not advertise them in the current Asset Library.
 export const BUILT_IN_ASSETS: readonly BuiltInAssetDefinition[] =
-  ALL_BUILT_IN_ASSETS.filter(({ categoryId }) => categoryId !== 'speech-balloons')
+  RESOLVABLE_BUILT_IN_ASSETS.filter(
+    ({ categoryId }) => categoryId !== 'speech-balloons',
+  )
 
 export function getBuiltInAssetsByCategory(
   categoryId: (typeof BUILT_IN_ASSET_CATEGORY_IDS)[number],

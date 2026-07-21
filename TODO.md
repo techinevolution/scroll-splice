@@ -94,12 +94,12 @@ Small loose actions only. Product direction and dated implementation work belong
 - [x] Decide whether to spend remaining Build Week time on the optional generate-and-place proof or submission polish. Katherine selected the bounded proof on July 20.
 - [x] Verify an officially supported authorization boundary and approve the network, credential, privacy, synthetic-data, and single-turn limits. The recorded choice is the official Codex App Server behind an isolated localhost companion with no browser credential or cloud backend. The ChatGPT subscription path exposes no reliable per-turn spend telemetry, so the proof does not claim a spend meter or enforceable cost ceiling.
 - [x] Keep the judge-facing human editor usable without OpenAI login or credits; GitHub Pages and the ordinary `dev`/build path remain independent of the companion.
-- [ ] Katherine: after Codex finishes disconnected-state validation, click the in-app connect action, complete the official ChatGPT login, and approve only a synthetic first prompt.
-- [ ] Codex and Katherine: verify one live streamed response plus inspect, generated-image import, explicit-plane placement, and undo without exposing credentials or private art.
+- [x] Katherine completed the official in-app ChatGPT connection and approved a synthetic first prompt.
+- [x] Katherine and Codex verified a live response and native synthetic generation/import/explicit-plane placement without exposing credentials or private art; adapter/browser coverage verifies the matching undo path.
 
 ## Joint — later, not Build Week scope
 
-- [x] Before the original speech-balloon asset slice: review current Clip Studio guidance and professional lettering conventions; use only a small neutral original set and treat meanings as conventions rather than rules. Text was deferred at that historical checkpoint; independent text and an atomic editable balloon now exist.
+- [x] Before the original speech-balloon asset slice: review current Clip Studio guidance and professional lettering conventions; use only a small neutral original set and treat meanings as conventions rather than rules. Text was deferred at that historical checkpoint; independent text and empty editable balloon bodies now exist.
 - [x] Implement the bounded editable-balloon preset foundation from [SPEECH_BALLOON_CATALOG.md](SPEECH_BALLOON_CATALOG.md) without attempting deferred multi-tail relationships, direct joins, sound-effect lettering, or creator-saved preset infrastructure.
 - [ ] Before production export: Katherine signs into WEBTOON and performs the harmless unpublished upload test; Codex prepares safe test files, records generalized results, and updates [WEBTOON Requirements](WEBTOON_REQUIREMENTS.md). Do not automate login or publishing.
 - [ ] After that upload verification and a separate export-slice approval: implement creator-reviewed deterministic slicing and preflight against a verified `ExportProfile`; do not promise that WEBTOON will preserve accepted files without optimization.

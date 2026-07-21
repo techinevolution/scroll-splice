@@ -11,6 +11,10 @@ test('reviews provisional cuts, preflights, and downloads local episode images',
     'true',
   )
 
+  // The final app opens as a one-slice blank episode. Extend it once so the
+  // export review has an interior cut to inspect and adjust.
+  await page.getByTestId('minimap-add-scroll-space').click()
+
   await page.getByRole('button', { name: 'File', exact: true }).click()
   await page
     .getByRole('menuitem', { name: 'Export Episode Images…', exact: true })
