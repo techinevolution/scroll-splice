@@ -1960,8 +1960,10 @@ p {
   min-width: 0;
   flex-direction: column;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  scrollbar-color: #433850 #17131f;
+  scrollbar-color:
+    color-mix(in srgb, var(--ui-accent) 58%, var(--ui-border)) transparent;
   scrollbar-width: thin;
 }
 
