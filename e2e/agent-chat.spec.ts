@@ -165,7 +165,7 @@ test('streams a connected response and retains only finalized conversation text'
   await expect(page.getByLabel('OpenAI model')).toHaveValue('gpt-5.6-terra')
   await expect(page.getByLabel('Reasoning effort')).toHaveValue('medium')
   await page
-    .getByRole('textbox', { name: 'Message about this episode' })
+    .getByRole('textbox', { name: 'Message About This Episode' })
     .fill('What is the current episode title?')
   await page.getByRole('button', { name: 'Send' }).click()
 

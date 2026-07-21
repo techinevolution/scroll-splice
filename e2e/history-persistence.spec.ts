@@ -75,7 +75,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
   const documentStatus = page.getByTestId('document-status')
   const episodeHeading = page.getByTestId('episode-heading')
 
-  await expect(documentStatus).toHaveText('Blank episode ready · not saved')
+  await expect(documentStatus).toHaveText('Blank Episode Ready · Not Saved')
   await expect(episodeHeading).toHaveAttribute('data-dirty', 'false')
   await expect(
     page.getByRole('button', {
@@ -124,7 +124,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
 
   await addContentPlane.click()
   await expect(contentPlane2).toHaveAttribute('aria-pressed', 'true')
-  await expect(documentStatus).toHaveText('Unsaved changes')
+  await expect(documentStatus).toHaveText('Unsaved Changes')
 
   const undoMenu = await openApplicationMenu(page, 'Edit')
   await expect(
@@ -181,13 +181,13 @@ test('preserves a saved episode and keeps history inside one document', async ({
   )
 
   await useApplicationMenuItem(page, 'File', 'Save')
-  await expect(documentStatus).toHaveText('Saved locally')
+  await expect(documentStatus).toHaveText('Saved Locally')
   await expect(episodeHeading).toHaveAttribute('data-dirty', 'false')
   await expect(fileTrigger).toHaveAttribute('aria-expanded', 'false')
 
   await page.reload()
 
-  await expect(documentStatus).toHaveText('Blank episode ready · not saved')
+  await expect(documentStatus).toHaveText('Blank Episode Ready · Not Saved')
   await expect(episodeHeading).toHaveAttribute('data-dirty', 'false')
   await expect(
     page.getByRole('button', {
@@ -198,7 +198,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
   await expect(contentPlane2).toHaveCount(0)
 
   await useApplicationMenuItem(page, 'File', 'Reopen Current')
-  await expect(documentStatus).toHaveText('Reopened saved episode')
+  await expect(documentStatus).toHaveText('Reopened Saved Episode')
   await expect(
     page.getByRole('button', {
       name: `Edit episode title: ${savedTitle}`,
@@ -231,7 +231,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
   await editEpisodeTitle(page, 'Unsaved Detour')
   await contentPlane2Visibility.click()
   await expect(contentPlane2Visibility).toHaveAttribute('aria-pressed', 'true')
-  await expect(documentStatus).toHaveText('Unsaved changes')
+  await expect(documentStatus).toHaveText('Unsaved Changes')
 
   await acceptDiscardDialog(
     page,
@@ -239,7 +239,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
     () => useApplicationMenuItem(page, 'File', 'Reopen Current'),
   )
 
-  await expect(documentStatus).toHaveText('Reopened saved episode')
+  await expect(documentStatus).toHaveText('Reopened Saved Episode')
   await expect(episodeHeading).toHaveAttribute('data-dirty', 'false')
   await expect(
     page.getByRole('button', {
@@ -256,7 +256,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
 
   await useApplicationMenuItem(page, 'File', 'New Episode')
 
-  await expect(documentStatus).toHaveText('New episode · not saved')
+  await expect(documentStatus).toHaveText('New Episode · Not Saved')
   await expect(episodeHeading).toHaveAttribute('data-dirty', 'true')
   await expect(
     page.getByRole('button', {
@@ -292,7 +292,7 @@ test('preserves a saved episode and keeps history inside one document', async ({
     () => useApplicationMenuItem(page, 'File', 'Reopen Current'),
   )
 
-  await expect(documentStatus).toHaveText('Reopened saved episode')
+  await expect(documentStatus).toHaveText('Reopened Saved Episode')
   await expect(
     page.getByRole('button', {
       name: `Edit episode title: ${savedTitle}`,

@@ -77,7 +77,7 @@ test('supports a creator story from blank episode through saved reader preview',
   const planeName = page.getByTestId('active-layer-plane-name')
   await planeName.fill('Evening color')
   await page.keyboard.press('Control+s')
-  await expect(page.getByTestId('document-status')).toHaveText('Saved locally')
+  await expect(page.getByTestId('document-status')).toHaveText('Saved Locally')
   await page.reload()
   await page
     .getByRole('button', { name: 'Background composition group' })
@@ -117,7 +117,7 @@ test('supports a creator story from blank episode through saved reader preview',
     .getByRole('button', { name: 'Add Oval balloon', exact: true })
     .click()
   await expect(page.locator('[data-layer-id="image-element-1"]')).toBeVisible()
-  await page.getByRole('button', { name: 'Add text', exact: true }).click()
+  await page.getByRole('button', { name: 'Add Text', exact: true }).click()
   await expect(page.getByTestId('selected-text-controls')).toBeVisible()
   await page
     .getByTestId('selected-text-wording')
@@ -199,7 +199,7 @@ test('supports a creator story from blank episode through saved reader preview',
 
   // The complete document survives save, reload, and preview reopening.
   await useMenuItem(page, 'File', 'Save')
-  await expect(page.getByTestId('document-status')).toHaveText('Saved locally')
+  await expect(page.getByTestId('document-status')).toHaveText('Saved Locally')
   await page.reload()
   await expect(
     page.getByRole('button', {

@@ -45,9 +45,9 @@ test('reviews provisional cuts, preflights, and downloads local episode images',
 
   await dialog.getByLabel('Format').selectOption('image/jpeg')
   await expect(dialog.getByLabel(/JPEG quality/)).toBeEnabled()
-  await dialog.getByRole('button', { name: 'Render tall master' }).click()
+  await dialog.getByRole('button', { name: 'Render Tall Master' }).click()
   await expect(
-    dialog.getByRole('heading', { name: 'Tall master' }),
+    dialog.getByRole('heading', { name: 'Tall Master' }),
   ).toBeVisible({ timeout: 20_000 })
 
   const tallDownload = page.waitForEvent('download')

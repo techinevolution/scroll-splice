@@ -1316,7 +1316,7 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
 
         {externalFileDropActive ? (
           <div className="canvas-file-drop-prompt" aria-hidden="true">
-            <strong>Drop to import and place</strong>
+            <strong>Drop to Import and Place</strong>
             <span>PNG, JPEG, or WebP · saved locally with source alpha</span>
           </div>
         ) : null}
@@ -1356,7 +1356,7 @@ export function EditorCanvas({ accentColor }: { readonly accentColor: string }) 
           title="Show candidate WEBTOON slice boundaries every 1280 output pixels."
         >
           <span aria-hidden="true">⋯</span>
-          Slice guides {sliceGuidesVisible ? 'On' : 'Off'}
+          Slice Guides {sliceGuidesVisible ? 'On' : 'Off'}
         </button>
         <button type="button" onClick={() => setZoomFactor(1)}>
           Fit Width

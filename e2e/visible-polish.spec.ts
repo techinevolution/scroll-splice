@@ -124,9 +124,9 @@ test('fits minimap geometry and exposes constrained inspector and help controls'
   await expect(inspector).toHaveCount(0)
 
   await useMenuItem(page, 'Help', 'Shortcuts & About')
-  const helpDialog = page.getByRole('dialog', { name: 'ScrollSplice help' })
+  const helpDialog = page.getByRole('dialog', { name: 'ScrollSplice Help' })
   await expect(helpDialog).toBeVisible()
-  await expect(helpDialog).toContainText('Bypass snapping while dragging')
+  await expect(helpDialog).toContainText('Bypass Snapping While Dragging')
   await expect(helpDialog).toContainText('local-first editor')
   await page.keyboard.press('Escape')
   await expect(helpDialog).toHaveCount(0)
@@ -151,7 +151,7 @@ test('switches and remembers the selected appearance and optional details bar', 
   await useMenuItem(page, 'View', 'Show Details Bar')
   await expect(page.getByTestId('details-bar')).toBeVisible()
   await expect(page.getByTestId('selection-status')).toHaveText(
-    'Nothing selected',
+    'Nothing Selected',
   )
 
   await page.reload()

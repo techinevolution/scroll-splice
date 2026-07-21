@@ -446,7 +446,7 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
             disabled={status === 'rendering'}
             onClick={() => void createSlices()}
           >
-            {status === 'rendering' ? 'Rendering…' : 'Render safe slices'}
+            {status === 'rendering' ? 'Rendering…' : 'Render Safe Slices'}
           </button>
           <button
             type="button"
@@ -454,7 +454,7 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
             disabled={status === 'rendering'}
             onClick={() => void createTallMaster()}
           >
-            Render tall master
+            Render Tall Master
           </button>
         </div>
 
@@ -539,7 +539,7 @@ export function ExportDialog({ onClose }: ExportDialogProps) {
 
         {resultIsCurrent && tallMaster ? (
           <section style={{ marginTop: 18 }} aria-labelledby="tall-master-title">
-            <h3 id="tall-master-title">Tall master</h3>
+            <h3 id="tall-master-title">Tall Master</h3>
             <p style={{ color: '#c8bdd8' }}>
               {tallMaster.fileName} · {describeFile(tallMaster)}
             </p>

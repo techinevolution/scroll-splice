@@ -385,13 +385,13 @@ export function AssetPanel() {
                 onSubmit={handleCreateCategory}
               >
                 <label className="sr-only" htmlFor={categoryNameInputId}>
-                  New category name
+                  New Category Name
                 </label>
                 <input
                   id={categoryNameInputId}
                   type="text"
                   maxLength={MAX_CREATOR_CATEGORY_NAME_LENGTH}
-                  placeholder="New category name"
+                  placeholder="New Category Name"
                   value={categoryNameDraft}
                   disabled={assetLibraryBusy || assetLibraryStatus !== 'ready'}
                   onChange={(event) => setCategoryNameDraft(event.currentTarget.value)}
@@ -404,7 +404,7 @@ export function AssetPanel() {
                     categoryNameDraft.trim() === ''
                   }
                 >
-                  Create category
+                  Create Category
                 </button>
               </form>
 
@@ -457,7 +457,7 @@ export function AssetPanel() {
                 >
                   <form onSubmit={handleRenameCategory}>
                     <label>
-                      <span>Category name</span>
+                      <span>Category Name</span>
                       <input
                         key={`${selectedCreatorCategory.id}:${selectedCreatorCategory.name}`}
                         name="categoryName"
@@ -522,7 +522,7 @@ export function AssetPanel() {
 
           {activeCategoryId === 'uploads' ? (
             <label className="asset-upload-control" htmlFor={uploadInputId}>
-              <strong>Upload image</strong>
+              <strong>Upload Image</strong>
               <span>
                 {effectiveUploadFilter.kind === 'category'
                   ? 'The source will be saved in the selected category.'
@@ -577,8 +577,8 @@ export function AssetPanel() {
                       />
                     </svg>
                   </span>
-                  <strong>Editable balloon</strong>
-                  <small>Text + tail controls</small>
+                  <strong>Editable Balloon</strong>
+                  <small>Text + Tail Controls</small>
                 </button>
               ) : null}
               {builtInAssets.map((asset) => (
@@ -653,7 +653,7 @@ export function AssetPanel() {
                     </small>
                   </button>
                   <details className="imported-asset-management">
-                    <summary>Manage source</summary>
+                    <summary>Manage Source</summary>
                     <form
                       className="imported-asset-rename"
                       onSubmit={(event) =>
@@ -696,7 +696,7 @@ export function AssetPanel() {
                       </select>
                     </label>
                     <label className="imported-asset-replace">
-                      <span>Replace image</span>
+                      <span>Replace Image</span>
                       <input
                         type="file"
                         accept="image/png,image/jpeg,image/webp"

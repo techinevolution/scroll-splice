@@ -137,7 +137,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(
     page.getByRole('heading', { level: 1, name: 'ScrollSplice' }),
   ).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Story canvas' })).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Story Canvas' })).toBeVisible()
 
   const canvas = page.getByTestId('editor-canvas')
   const sceneCanvas = canvas.locator('canvas').first()
@@ -206,7 +206,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(
     page.getByRole('heading', { level: 2, name: 'Layers · Content' }),
   ).toBeVisible()
-  await expect(selectionStatus).toHaveText('Nothing selected')
+  await expect(selectionStatus).toHaveText('Nothing Selected')
 
   const editEpisodeTitle = page.getByRole('button', {
     name: /Edit episode title:/,
@@ -580,7 +580,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
       'beat-06-dawn-story-image',
     ])
 
-  await page.getByRole('button', { name: 'Add asset', exact: true }).click()
+  await page.getByRole('button', { name: 'Add Asset', exact: true }).click()
   await expect(decorationsCategory).toHaveAttribute('aria-expanded', 'true')
   await page.getByRole('button', { name: 'Add Radiance accent' }).click()
   const syntheticShapeRow = page.locator(
@@ -732,7 +732,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
     exact: true,
   })
   await backgroundPlane2.click()
-  await page.getByRole('button', { name: 'Color region' }).click()
+  await page.getByRole('button', { name: 'Color Region' }).click()
   await page.getByLabel('Color region color').fill('#334477')
   await page.getByLabel('Color region start').fill('300')
   await page.getByLabel('Color region length').fill('')
@@ -1010,7 +1010,7 @@ test('completes the ScrollSplice layer-plane editor walkthrough', async ({
   await expect(
     page.getByText('The Light We Planted', { exact: true }),
   ).toBeVisible()
-  await expect(selectionStatus).toHaveText('Nothing selected')
+  await expect(selectionStatus).toHaveText('Nothing Selected')
   await expect(episodePosition).toHaveAttribute('data-viewport-y', '0')
   await expect(canvas).toHaveAttribute('data-base-color', '#F3F0EA')
   await expect(minimapBase).toHaveAttribute('fill', '#F3F0EA')

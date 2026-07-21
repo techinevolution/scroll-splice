@@ -78,7 +78,7 @@ export function AgentChatPanel({ projectKey }: AgentChatPanelProps) {
         >
           <header className="agent-chat-heading">
             <div>
-              <p>Project assistant</p>
+              <p>Project Assistant</p>
               <h2>ScrollSplice Agent</h2>
             </div>
             <button
@@ -162,7 +162,7 @@ export function AgentChatPanel({ projectKey }: AgentChatPanelProps) {
                 <strong>
                   {session.phase === 'running'
                     ? session.activityMessage ?? 'Working…'
-                    : 'OpenAI connected'}
+                    : 'OpenAI Connected'}
                 </strong>
                 <button
                   type="button"
@@ -248,7 +248,7 @@ export function AgentChatPanel({ projectKey }: AgentChatPanelProps) {
                     Codex.
                   </p>
                 ) : null}
-                <label htmlFor="agent-chat-message">Message about this episode</label>
+                <label htmlFor="agent-chat-message">Message About This Episode</label>
                 <textarea
                   ref={inputRef}
                   id="agent-chat-message"

@@ -38,8 +38,8 @@ export function HelpDialog({ onClose }: HelpDialogProps) {
     >
       <header className="help-dialog-heading">
         <div>
-          <p className="panel-kicker">Local browser editor</p>
-          <h2 id="help-dialog-heading">ScrollSplice help</h2>
+          <p className="panel-kicker">Local Browser Editor</p>
+          <h2 id="help-dialog-heading">ScrollSplice Help</h2>
         </div>
         <button type="button" aria-label="Close help" onClick={onClose}>
           ×
@@ -47,14 +47,14 @@ export function HelpDialog({ onClose }: HelpDialogProps) {
       </header>
 
       <section aria-labelledby="help-shortcuts-heading">
-        <h3 id="help-shortcuts-heading">Keyboard shortcuts</h3>
+        <h3 id="help-shortcuts-heading">Keyboard Shortcuts</h3>
         <dl className="shortcut-list">
           <div>
             <dt>Save</dt>
             <dd>⌘/Ctrl + S</dd>
           </div>
           <div>
-            <dt>Save as a new local project</dt>
+            <dt>Save As a New Local Project</dt>
             <dd>⇧ + ⌘/Ctrl + S</dd>
           </div>
           <div>
@@ -66,23 +66,23 @@ export function HelpDialog({ onClose }: HelpDialogProps) {
             <dd>⇧ + ⌘/Ctrl + Z</dd>
           </div>
           <div>
-            <dt>Duplicate selection</dt>
+            <dt>Duplicate Selection</dt>
             <dd>⌘/Ctrl + D</dd>
           </div>
           <div>
-            <dt>Nudge selection</dt>
+            <dt>Nudge Selection</dt>
             <dd>Arrow keys · Shift for 10px</dd>
           </div>
           <div>
-            <dt>Delete selection</dt>
+            <dt>Delete Selection</dt>
             <dd>Delete / Backspace</dd>
           </div>
           <div>
-            <dt>Bypass snapping while dragging</dt>
+            <dt>Bypass Snapping While Dragging</dt>
             <dd>Hold Alt/Option</dd>
           </div>
           <div>
-            <dt>Close an overlay</dt>
+            <dt>Close an Overlay</dt>
             <dd>Escape</dd>
           </div>
         </dl>

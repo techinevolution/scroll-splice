@@ -90,7 +90,7 @@ function SelectionStatus() {
     >
       {selectedElement && bounds
         ? `${selectedElementIds.length > 1 ? `${selectedElementIds.length} selected · ` : ''}x ${Math.round(bounds.x)} · y ${Math.round(bounds.y)} · w ${Math.round(bounds.width)} · h ${Math.round(bounds.height)}`
-        : 'Nothing selected'}
+        : 'Nothing Selected'}
     </span>
   )
 }
@@ -550,7 +550,7 @@ export function App() {
             data-testid="brand-mark"
           />
           <div>
-            <p>Vertical comic editor</p>
+            <p>Vertical Comic Editor</p>
             <h1 aria-label="ScrollSplice">
               <span className="brand-name-scroll">Scroll</span>
               <span className="brand-name-splice">Splice</span>
@@ -695,8 +695,8 @@ export function App() {
         <section className="editor-workspace" aria-labelledby="canvas-heading">
           <header className="workspace-heading">
             <div className="workspace-title">
-              <p className="panel-kicker">Editing viewport</p>
-              <h2 id="canvas-heading">Story canvas</h2>
+              <p className="panel-kicker">Editing Viewport</p>
+              <h2 id="canvas-heading">Story Canvas</h2>
             </div>
             <CompositionGroupControls />
           </header>

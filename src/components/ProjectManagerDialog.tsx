@@ -72,8 +72,8 @@ export function ProjectManagerDialog({
       >
         <header>
           <div>
-            <p className="panel-kicker">This browser</p>
-            <h2 id="project-dialog-title">Local projects</h2>
+            <p className="panel-kicker">This Browser</p>
+            <h2 id="project-dialog-title">Local Projects</h2>
           </div>
           <button
             ref={closeRef}

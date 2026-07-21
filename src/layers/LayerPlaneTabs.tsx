@@ -505,19 +505,19 @@ export function LayerPlaneTabs() {
               Move Left
             </button>
           ) : (
-            <span className="layer-plane-pinned-label">Pinned base</span>
+            <span className="layer-plane-pinned-label">Pinned Base</span>
           )}
 
           {activeLayerPlane.kind === 'ordinary' ? (
             <label className="layer-plane-name-control">
-              <span>Plane name</span>
+              <span>Plane Name</span>
               <input
                 key={`${activeLayerPlane.id}:${activeLayerPlane.name ?? ''}`}
                 ref={planeNameInputRef}
                 type="text"
                 maxLength={32}
                 defaultValue={activeLayerPlane.name ?? ''}
-                placeholder="Optional name"
+                placeholder="Optional Name"
                 aria-label={`${groupLabel} plane ${activeLayerPlane.order} name`}
                 data-testid="active-layer-plane-name"
                 onBlur={handlePlaneNameBlur}

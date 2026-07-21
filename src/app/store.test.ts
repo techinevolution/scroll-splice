@@ -2323,7 +2323,7 @@ describe('editor store', () => {
     expect(useEditorStore.getState().savedRevision).toBeNull()
     expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)
     expect(useEditorStore.getState().documentStatus).toBe(
-      'Demo reset · unsaved changes',
+      'Demo Reset · Unsaved Changes',
     )
 
     useEditorStore.setState({
@@ -2378,7 +2378,7 @@ describe('editor store', () => {
       expect(useEditorStore.getState().currentProjectId).toBeTruthy()
       expect(useEditorStore.getState().recentProjects).toHaveLength(1)
       expect(useEditorStore.getState().hasUnsavedChanges).toBe(false)
-      expect(useEditorStore.getState().documentStatus).toBe('Saved locally')
+      expect(useEditorStore.getState().documentStatus).toBe('Saved Locally')
 
       useEditorStore.getState().setEpisodeName('Unsaved branch')
       expect(useEditorStore.getState().hasUnsavedChanges).toBe(true)

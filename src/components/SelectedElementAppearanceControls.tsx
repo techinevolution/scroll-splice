@@ -464,8 +464,8 @@ export function SelectedElementAppearanceControls() {
             )
           }
         >
-          <option value="bleed">Allow outside canvas</option>
-          <option value="constrained">Keep fully inside</option>
+          <option value="bleed">Allow Outside Canvas</option>
+          <option value="constrained">Keep Fully Inside</option>
         </select>
       </label>
 
@@ -540,7 +540,7 @@ export function SelectedElementAppearanceControls() {
                 }}
               >
                 <option value="solid">Solid</option>
-                <option value="vertical-gradient">Vertical fade</option>
+                <option value="vertical-gradient">Vertical Fade</option>
               </select>
             </label>
           )}
@@ -689,7 +689,7 @@ export function SelectedElementAppearanceControls() {
             >
               <option value="single">Stretch</option>
               <option value="cover">Cover / crop</option>
-              <option value="tile">Tile texture</option>
+              <option value="tile">Tile Texture</option>
             </select>
           </label>
 
@@ -728,7 +728,7 @@ export function SelectedElementAppearanceControls() {
                 <span aria-hidden="true">%</span>
               </label>
               <label className="appearance-control">
-                <span>Crop zoom</span>
+                <span>Crop Zoom</span>
                 <CommittedNumberInput
                   label="Image crop zoom"
                   value={selectedElement.frame.crop.zoom}
@@ -779,9 +779,9 @@ export function SelectedElementAppearanceControls() {
               }}
             >
               <option value="rectangle">Rectangle</option>
-              <option value="rounded">Rounded rectangle</option>
-              <option value="slant-left">Slant left</option>
-              <option value="slant-right">Slant right</option>
+              <option value="rounded">Rounded Rectangle</option>
+              <option value="slant-left">Slant Left</option>
+              <option value="slant-right">Slant Right</option>
               <option value="diamond">Diamond</option>
             </select>
           </label>
@@ -838,7 +838,7 @@ export function SelectedElementAppearanceControls() {
           selectedElement.frame.border.width > 0 ? (
             <>
               <label className="appearance-control appearance-color-control">
-                <span>Frame color</span>
+                <span>Frame Color</span>
                 <input
                   type="color"
                   aria-label="Selected image frame color"
@@ -855,7 +855,7 @@ export function SelectedElementAppearanceControls() {
                 />
               </label>
               <label className="appearance-control">
-                <span>Frame width</span>
+                <span>Frame Width</span>
                 <CommittedNumberInput
                   label="Selected image frame width"
                   value={selectedElement.frame.border.width}

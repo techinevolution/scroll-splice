@@ -243,11 +243,11 @@ test('places reusable assets and preserves their local sources across the docume
   await expect(
     page.getByRole('button', { name: 'Unsorted', exact: true }),
   ).toBeVisible()
-  const categoryName = page.getByLabel('New category name')
+  const categoryName = page.getByLabel('New Category Name')
   await expect(categoryName).toBeEnabled()
   await categoryName.fill('Effects')
   await page
-    .getByRole('button', { name: 'Create category', exact: true })
+    .getByRole('button', { name: 'Create Category', exact: true })
     .click()
   await expect(creatorCategory).toHaveAttribute('aria-pressed', 'true')
 
@@ -391,7 +391,7 @@ test('places reusable assets and preserves their local sources across the docume
   )
 
   await useFileMenuItem(page, 'Save')
-  await expect(documentStatus).toHaveText('Saved locally')
+  await expect(documentStatus).toHaveText('Saved Locally')
 
   await page.reload()
 
@@ -420,7 +420,7 @@ test('places reusable assets and preserves their local sources across the docume
 
   await page.getByRole('button', { name: 'Close Asset Library' }).click()
   await useFileMenuItem(page, 'New Episode')
-  await expect(documentStatus).toHaveText('New episode · not saved')
+  await expect(documentStatus).toHaveText('New Episode · Not Saved')
   await expect(builtInRow).toHaveCount(0)
   await expect(uploadedRow).toHaveCount(0)
 
@@ -432,7 +432,7 @@ test('places reusable assets and preserves their local sources across the docume
 
   await page.getByRole('button', { name: 'Close Asset Library' }).click()
   await acceptDiscardDialog(page, () => useFileMenuItem(page, 'Reopen Current'))
-  await expect(documentStatus).toHaveText('Reopened saved episode')
+  await expect(documentStatus).toHaveText('Reopened Saved Episode')
   await expect(builtInRow).toBeVisible()
   await expect(uploadedRow).toBeVisible()
   await expect(canvas).toHaveAttribute('data-missing-image-element-count', '0')
@@ -732,7 +732,7 @@ test('edits opacity, gradients, tiled textures, and blend modes through save and
   await blendMode.selectOption('multiply')
   await opacityPercent.fill('70')
   await useFileMenuItem(page, 'Save')
-  await expect(documentStatus).toHaveText('Saved locally')
+  await expect(documentStatus).toHaveText('Saved Locally')
 
   await page.reload()
   await expect(documentStatus).toHaveText('Opened saved episode')

@@ -112,7 +112,7 @@ export function SelectedSpeechBalloonControls({
         />
       </label>
       <label className="text-control">
-        <span>Line width</span>
+        <span>Line Width</span>
         <input
           name="strokeWidth"
           type="number"
@@ -154,7 +154,7 @@ export function SelectedSpeechBalloonControls({
         />
       </label>
       <label className="text-control">
-        <span>Min size</span>
+        <span>Min Size</span>
         <input
           name="minFontSize"
           type="number"
@@ -165,7 +165,7 @@ export function SelectedSpeechBalloonControls({
         />
       </label>
       <label className="text-control">
-        <span>Max size</span>
+        <span>Max Size</span>
         <input
           name="maxFontSize"
           type="number"
@@ -200,7 +200,7 @@ export function SelectedSpeechBalloonControls({
         </select>
       </label>
       <label className="text-control">
-        <span>Line height</span>
+        <span>Line Height</span>
         <input
           name="lineHeight"
           type="number"

@@ -83,14 +83,14 @@ test('edits an atomic speech balloon and preserves it through save, reopen, and 
   ).toHaveValue('right')
 
   await useMenuItem(page, 'File', 'Save')
-  await expect(page.getByTestId('document-status')).toHaveText('Saved locally')
+  await expect(page.getByTestId('document-status')).toHaveText('Saved Locally')
 
   await controls
     .getByLabel('Editable balloon wording')
     .fill('This detour should be discarded.')
   await controls.getByRole('button', { name: 'Apply balloon' }).click()
   await expect(page.getByTestId('document-status')).toHaveText(
-    'Unsaved changes',
+    'Unsaved Changes',
   )
 
   page.once('dialog', (dialog) => dialog.accept())

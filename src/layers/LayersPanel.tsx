@@ -636,8 +636,8 @@ export function LayersPanel() {
       {activeLayerPlane?.kind === 'base' ? (
         <label className="base-color-control">
           <span>
-            <strong>Base color</strong>
-            <small>Full episode</small>
+            <strong>Base Color</strong>
+            <small>Full Episode</small>
           </span>
           <input
             type="color"
@@ -668,7 +668,7 @@ export function LayersPanel() {
               }}
             >
               <span aria-hidden="true">▰</span>
-              <span>Color region</span>
+              <span>Color Region</span>
             </button>
           ) : null}
           <button
@@ -677,7 +677,7 @@ export function LayersPanel() {
             onClick={() => setShowShapeForm((isOpen) => !isOpen)}
           >
             <ShapeIcon />
-            <span>Panel / shape</span>
+            <span>Panel / Shape</span>
           </button>
         </div>
       ) : null}
@@ -803,7 +803,7 @@ export function LayersPanel() {
               onClick={() => deleteLayerPlane(activeLayerPlane.id)}
             >
               <TrashIcon />
-              <span>Delete plane</span>
+              <span>Delete Plane</span>
             </button>
             <button
               className="layer-empty-action layer-empty-attach"
@@ -822,7 +822,7 @@ export function LayersPanel() {
               onClick={openAssetPanel}
             >
               <PaperclipIcon />
-              <span>Add asset</span>
+              <span>Add Asset</span>
             </button>
             <button
               className="layer-empty-action layer-empty-text"
@@ -841,7 +841,7 @@ export function LayersPanel() {
               onClick={createTextElement}
             >
               <TextIcon />
-              <span>Add text</span>
+              <span>Add Text</span>
             </button>
           </div>
         </div>
@@ -1030,7 +1030,7 @@ export function LayersPanel() {
 
       {activeLayerPlane?.kind === 'ordinary' && orderedElements.length > 0 ? (
         <details className="populated-plane-actions">
-          <summary>Plane options</summary>
+          <summary>Plane Options</summary>
           {activeGroupLayerPlanes.length <= 1 ? (
             <p>{groupLabel} must keep at least one plane.</p>
           ) : orderedElements.some(({ locked }) => locked) ? (
@@ -1042,7 +1042,7 @@ export function LayersPanel() {
                 plane, or permanently delete them with this plane.
               </p>
               <label>
-                <span>Move elements to</span>
+                <span>Move Elements To</span>
                 <select
                   value={resolvedPlaneDeleteTargetId}
                   disabled={populatedPlaneMoveTargets.length === 0}
@@ -1051,7 +1051,7 @@ export function LayersPanel() {
                   }
                 >
                   {populatedPlaneMoveTargets.length === 0 ? (
-                    <option value="">No ordinary destination plane</option>
+                    <option value="">No Ordinary Destination Plane</option>
                   ) : null}
                   {populatedPlaneMoveTargets.map((plane) => (
                     <option key={plane.id} value={plane.id}>
@@ -1089,7 +1089,7 @@ export function LayersPanel() {
                     }
                   }}
                 >
-                  Delete plane &amp; elements
+                  Delete Plane &amp; Elements
                 </button>
               </div>
             </>
@@ -1106,8 +1106,8 @@ export function LayersPanel() {
           <div className="selection-organization-actions">
             <strong>
               {selectedElementIds.length > 1
-                ? `${selectedElementIds.length} elements selected`
-                : 'Selected element'}
+                ? `${selectedElementIds.length} Elements Selected`
+                : 'Selected Element'}
             </strong>
             <div>
               <button
@@ -1136,14 +1136,14 @@ export function LayersPanel() {
                 disabled={selectionHasLockedElement}
                 onClick={() => moveSelectedStoryBeat('up')}
               >
-                Move up 128
+                Move Up 128
               </button>
               <button
                 type="button"
                 disabled={selectionHasLockedElement}
                 onClick={() => moveSelectedStoryBeat('down')}
               >
-                Move down 128
+                Move Down 128
               </button>
             </div>
           </div>
@@ -1181,14 +1181,14 @@ export function LayersPanel() {
               onClick={() => toggleElementLocked(selectedElement.id)}
             >
               <LockIcon locked={selectedElement.locked} />
-              {selectedElement.locked ? 'Unlock selection' : 'Lock selection'}
+              {selectedElement.locked ? 'Unlock Selection' : 'Lock Selection'}
             </button>
             <button
               type="button"
               disabled={selectionHasLockedElement}
               onClick={() => duplicateElement(selectedElement.id)}
             >
-              Duplicate selection
+              Duplicate Selection
             </button>
           </div>
 
@@ -1222,7 +1222,7 @@ export function LayersPanel() {
           </div>
 
           <label className="selected-element-placement">
-            <span>Canvas placement</span>
+            <span>Canvas Placement</span>
             <select
               aria-label="Selected element canvas placement"
               value={selectedElement.overflow}
@@ -1236,8 +1236,8 @@ export function LayersPanel() {
                 )
               }
             >
-              <option value="bleed">Allow partial outside</option>
-              <option value="constrained">Keep fully inside</option>
+              <option value="bleed">Allow Partial Outside</option>
+              <option value="constrained">Keep Fully Inside</option>
             </select>
             <small>Outside portions are cropped in preview and export.</small>
           </label>
@@ -1301,7 +1301,7 @@ export function LayersPanel() {
             }}
           >
             <label>
-              <span>Move to Plane</span>
+              <span>Move To Plane</span>
               <select
                 value={resolvedMoveTargetPlaneId}
                 disabled={
@@ -1319,7 +1319,7 @@ export function LayersPanel() {
                 }
               >
                 {availableMoveTargets.length === 0 ? (
-                  <option value="">No other ordinary planes</option>
+                  <option value="">No Other Ordinary Planes</option>
                 ) : null}
                 {availableMoveTargets.map((layerPlane) => (
                   <option value={layerPlane.id} key={layerPlane.id}>
@@ -1355,7 +1355,7 @@ export function LayersPanel() {
             title="Open the Asset Library"
           >
             <PaperclipIcon />
-            <span>Add asset</span>
+            <span>Add Asset</span>
           </button>
           <button
             type="button"
@@ -1363,7 +1363,7 @@ export function LayersPanel() {
             title={`Add text to ${planeLabel}`}
           >
             <TextIcon />
-            <span>Add text</span>
+            <span>Add Text</span>
           </button>
           <button
             type="button"

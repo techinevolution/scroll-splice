@@ -36,7 +36,7 @@ test('recovers work, manages local projects, and round-trips a portable project'
   const recoveredTitle = 'Recovered Local Story'
   await editEpisodeTitle(page, recoveredTitle)
   await expect(page.getByTestId('document-status')).toHaveText(
-    'Unsaved changes',
+    'Unsaved Changes',
   )
 
   await page.waitForTimeout(850)
@@ -52,16 +52,16 @@ test('recovers work, manages local projects, and round-trips a portable project'
   ).toBeVisible()
 
   await useFileMenuItem(page, 'Save')
-  await expect(page.getByTestId('document-status')).toHaveText('Saved locally')
+  await expect(page.getByTestId('document-status')).toHaveText('Saved Locally')
   await expect(recoveryBanner).toHaveCount(0)
 
   await useFileMenuItem(page, 'Save As…')
   await expect(page.getByTestId('document-status')).toHaveText(
-    'Saved a new local project',
+    'Saved a New Local Project',
   )
 
   await useFileMenuItem(page, 'Open Local Project…')
-  const projectDialog = page.getByRole('dialog', { name: 'Local projects' })
+  const projectDialog = page.getByRole('dialog', { name: 'Local Projects' })
   await expect(projectDialog).toBeVisible()
   await expect(projectDialog.locator('.project-list > li')).toHaveCount(2)
   await expect(projectDialog.getByRole('button', { name: 'Current' })).toBeDisabled()
@@ -112,6 +112,6 @@ test('recovers work, manages local projects, and round-trips a portable project'
     }),
   ).toBeVisible()
   await expect(page.getByTestId('document-status')).toContainText(
-    'Imported portable project',
+    'Imported Portable Project',
   )
 })

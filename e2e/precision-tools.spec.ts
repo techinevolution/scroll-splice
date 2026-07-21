@@ -19,7 +19,7 @@ test('creates, names, locks, positions, aligns, and duplicates a panel', async (
     .getByRole('menuitem', { name: 'Show Details Bar', exact: true })
     .click()
 
-  await page.getByRole('button', { name: 'Panel / shape' }).click()
+  await page.getByRole('button', { name: 'Panel / Shape' }).click()
   const shapeForm = page.locator('.shape-create-form')
   await expect(shapeForm).toBeVisible()
   await shapeForm.getByLabel('Name').fill('Opening panel')
@@ -38,7 +38,7 @@ test('creates, names, locks, positions, aligns, and duplicates a panel', async (
   await expect(nameInput).toHaveValue('Establishing panel')
 
   await management
-    .getByRole('button', { name: 'Lock selection', exact: true })
+    .getByRole('button', { name: 'Lock Selection', exact: true })
     .click()
   await expect(
     page.getByRole('button', { name: 'Unlock Establishing panel' }),
@@ -51,7 +51,7 @@ test('creates, names, locks, positions, aligns, and duplicates a panel', async (
     '0',
   )
   await management
-    .getByRole('button', { name: 'Unlock selection', exact: true })
+    .getByRole('button', { name: 'Unlock Selection', exact: true })
     .click()
 
   await management.getByLabel('Selected element X').fill('30')

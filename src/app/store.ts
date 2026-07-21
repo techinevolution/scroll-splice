@@ -955,7 +955,7 @@ function commitEpisodeChange(
     canUndo: true,
     canRedo: false,
     hasUnsavedChanges: isDirtyAtRevision(revision, state.savedRevision),
-    documentStatus: 'Unsaved changes',
+    documentStatus: 'Unsaved Changes',
   }
 }
 
@@ -1132,7 +1132,7 @@ function loadInitialProjectState(): {
     recentProjects,
     documentStatus: failureMessage
       ? `${failureMessage} Blank episode loaded instead.`
-      : 'Blank episode ready · not saved',
+      : 'Blank Episode Ready · Not Saved',
     hasSavedEpisode: reopenProjectId !== null,
   }
 }
@@ -1488,7 +1488,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           ...patch,
           episode,
           hasUnsavedChanges: true,
-          documentStatus: 'Unsaved changes',
+          documentStatus: 'Unsaved Changes',
         }
       }
 
@@ -1523,10 +1523,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           canUndo: state.historyPast.length > 0,
           canRedo: state.historyFuture.length > 0,
           documentStatus: restored.hasUnsavedChanges
-            ? 'Unsaved changes'
+            ? 'Unsaved Changes'
             : state.hasSavedEpisode
-              ? 'Saved locally'
-              : 'Blank episode ready · not saved',
+              ? 'Saved Locally'
+              : 'Blank Episode Ready · Not Saved',
         }
       }
 
@@ -1541,7 +1541,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         canUndo: true,
         canRedo: false,
         hasUnsavedChanges: isDirtyAtRevision(revision, state.savedRevision),
-        documentStatus: 'Unsaved changes',
+        documentStatus: 'Unsaved Changes',
       }
     })
   },
@@ -1563,10 +1563,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         canUndo: state.historyPast.length > 0,
         canRedo: state.historyFuture.length > 0,
         documentStatus: restored.hasUnsavedChanges
-          ? 'Unsaved changes'
+          ? 'Unsaved Changes'
           : state.hasSavedEpisode
-            ? 'Saved locally'
-            : 'Blank episode ready · not saved',
+            ? 'Saved Locally'
+            : 'Blank Episode Ready · Not Saved',
       }
     })
   },
@@ -2347,7 +2347,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         : {
             episode,
             hasUnsavedChanges: true,
-            documentStatus: 'Unsaved changes',
+            documentStatus: 'Unsaved Changes',
           }
     })
   },
@@ -2381,10 +2381,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
           canUndo: state.historyPast.length > 0,
           canRedo: state.historyFuture.length > 0,
           documentStatus: restored.hasUnsavedChanges
-            ? 'Unsaved changes'
+            ? 'Unsaved Changes'
             : state.hasSavedEpisode
-              ? 'Saved locally'
-              : 'Blank episode ready · not saved',
+              ? 'Saved Locally'
+              : 'Blank Episode Ready · Not Saved',
         }
       }
 
@@ -2402,7 +2402,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         canUndo: true,
         canRedo: false,
         hasUnsavedChanges: isDirtyAtRevision(revision, state.savedRevision),
-        documentStatus: 'Unsaved changes',
+        documentStatus: 'Unsaved Changes',
       }
     })
   },
@@ -2424,10 +2424,10 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         canUndo: state.historyPast.length > 0,
         canRedo: state.historyFuture.length > 0,
         documentStatus: restored.hasUnsavedChanges
-          ? 'Unsaved changes'
+          ? 'Unsaved Changes'
           : state.hasSavedEpisode
-            ? 'Saved locally'
-            : 'Blank episode ready · not saved',
+            ? 'Saved Locally'
+            : 'Blank Episode Ready · Not Saved',
       }
     })
   },
@@ -3809,7 +3809,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         historyFuture,
         canUndo: historyPast.length > 0,
         canRedo: true,
-        documentStatus: 'Undid last change',
+        documentStatus: 'Undid Last Change',
       }
     })
   },
@@ -3833,7 +3833,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         historyFuture,
         canUndo: true,
         canRedo: historyFuture.length > 0,
-        documentStatus: 'Redid last change',
+        documentStatus: 'Redid Last Change',
       }
     })
   },
@@ -3876,7 +3876,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       hasUnsavedChanges: false,
       recoveryAvailable: null,
       recoveryMessage: null,
-      documentStatus: 'Saved locally',
+      documentStatus: 'Saved Locally',
     })
     return true
   },
@@ -3903,7 +3903,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       hasUnsavedChanges: false,
       recoveryAvailable: null,
       recoveryMessage: null,
-      documentStatus: 'Saved a new local project',
+      documentStatus: 'Saved a New Local Project',
     })
     return true
   },
@@ -3962,8 +3962,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       savedRevision: deletedCurrent ? null : state.savedRevision,
       hasUnsavedChanges: deletedCurrent ? true : state.hasUnsavedChanges,
       documentStatus: deletedCurrent
-        ? 'Deleted local project · current episode is now unsaved'
-        : 'Deleted local project',
+        ? 'Deleted Local Project · Current Episode Is Now Unsaved'
+        : 'Deleted Local Project',
     })
     return true
   },
@@ -3987,7 +3987,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         ...createLoadedEpisodePatch(currentState, result.project.episode, {
           currentProjectId: projectId,
           saved: true,
-          documentStatus: 'Reopened saved episode',
+          documentStatus: 'Reopened Saved Episode',
         }),
         reopenProjectId: projectId,
         recentProjects: recent.ok
@@ -4012,7 +4012,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...createLoadedEpisodePatch(currentState, legacy.episode, {
         currentProjectId: null,
         saved: true,
-        documentStatus: 'Reopened legacy saved episode',
+        documentStatus: 'Reopened Legacy Saved Episode',
       }),
       hasSavedEpisode: true,
       recoveryAvailable: null,
@@ -4048,7 +4048,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         currentProjectId: null,
         recoveryAvailable: null,
         recoveryMessage: null,
-        documentStatus: 'New episode · not saved',
+        documentStatus: 'New Episode · Not Saved',
         selectedElementId: null,
         selectedElementIds: [],
         liveElementBounds: null,
@@ -4086,7 +4086,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         canUndo: false,
         canRedo: false,
         hasUnsavedChanges: true,
-        documentStatus: 'Demo reset · unsaved changes',
+        documentStatus: 'Demo Reset · Unsaved Changes',
         selectedElementId: null,
         selectedElementIds: [],
         liveElementBounds: null,
@@ -4121,7 +4121,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ...createLoadedEpisodePatch(currentState, recovery.episode, {
         currentProjectId: projectId,
         saved: false,
-        documentStatus: 'Restored crash recovery · save to keep it',
+        documentStatus: 'Restored Crash Recovery · Save to Keep It',
       }),
       reopenProjectId: projectId ?? currentState.reopenProjectId,
       hasSavedEpisode:
@@ -4143,7 +4143,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     set({
       recoveryAvailable: null,
       recoveryMessage: null,
-      documentStatus: 'Discarded crash recovery',
+      documentStatus: 'Discarded Crash Recovery',
     })
     return true
   },
@@ -4173,7 +4173,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       return null
     }
 
-    set({ documentStatus: 'Portable project ready to download' })
+    set({ documentStatus: 'Portable Project Ready to Download' })
     return { blob: result.blob, fileName: result.fileName }
   },
 
@@ -4223,8 +4223,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         saved: false,
         documentStatus:
           merged!.remappedAssetCount + merged!.remappedCategoryCount > 0
-            ? 'Imported portable project safely · conflicting library IDs were remapped'
-            : 'Imported portable project · save to add it to local projects',
+            ? 'Imported Portable Project Safely · Conflicting Library IDs Were Remapped'
+            : 'Imported Portable Project · Save to Add It to Local Projects',
       }),
       ...createAssetLibraryRefreshPatch(
         currentState,

@@ -16,8 +16,8 @@ export function CanvasBaseColorControl() {
   return (
     <label className="canvas-base-color-control">
       <span>
-        <strong>Canvas base</strong>
-        <small>Full episode</small>
+        <strong>Canvas Base</strong>
+        <small>Full Episode</small>
       </span>
       <input
         type="color"

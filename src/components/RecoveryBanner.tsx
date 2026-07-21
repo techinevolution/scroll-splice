@@ -27,7 +27,7 @@ export function RecoveryBanner({
       data-testid="recovery-banner"
     >
       <div>
-        <strong>{recovery ? 'Unsaved work was recovered' : 'Recovery needs attention'}</strong>
+        <strong>{recovery ? 'Unsaved Work Was Recovered' : 'Recovery Needs Attention'}</strong>
         <span>
           {recovery
             ? `A local snapshot from ${recoveredLabel} is available.`
